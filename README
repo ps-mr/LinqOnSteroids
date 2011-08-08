@@ -1,0 +1,11 @@
+== Compilation instructions ==
+To compile this project, you can either use Sbt or load the project into Eclipse or IDEA.
+The IDEA project files might refer to libraries downloaded through Sbt, and requires the IDEA Scala plugin. Similarly, the Eclipse project relies on the Eclipse Scala plugin - which however is rather troublesome to use.
+
+1) To install Sbt 0.7.7, follow instructions on this page:
+  http://code.google.com/p/simple-build-tool/wiki/Setup
+Ignore the redirect to Github, as documentation there describes the new and incompatible Sbt 0.10.x.
+2) After installing sbt, cd into this folder and launch sbt. It will find the build instructions in the 'project' folder. During the first execution it will auto-download various dependencies needed for itself (including the Scala compiler).
+3) Then, at the sbt prompt, type the update command (simply "update" without quotes, and then enter). This step downloads external libraries and needs not be repeated afterwards, unless new external libraries are added.
+4) Finally, you can similarly run any command between "compile", "test-compile" (also compiles tests) and "test" (which additionally _runs_ the tests - they include performance tests and take some time).
+
