@@ -66,3 +66,10 @@ private[ivm] object Exp {
   def min[T](a: Exp[T], b: Exp[T]) : Exp[T] = ordering.min(a,b)
   def max[T](a: Exp[T], b: Exp[T]) : Exp[T] = ordering.max(a,b)
 }
+
+trait ChildlessExp[T] extends Exp[T] {
+  def genericConstructor = _ => this
+  def children = Seq()
+}
+
+trait ChildlessQueryReifier[T] extends ChildlessExp[QueryReifier[T]] with QueryOp[T]

@@ -1,5 +1,5 @@
 package ivm.expressiontree
 
-abstract class QueryOp[T] extends QueryReifier[T] with Exp[QueryReifier[T]] {
+trait QueryOp[T] extends QueryReifier[T] {
   override def interpret() = this
 }

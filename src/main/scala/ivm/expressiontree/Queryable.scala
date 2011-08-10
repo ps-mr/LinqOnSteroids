@@ -28,9 +28,8 @@ import collection.mutable.ArrayBuffer
 
 //Probably Repr is also needed, especially if the produced Iterable must also offer stronger
 //interfaces.
-trait Queryable[T, Repr] extends ConstBase[QueryReifier[T]] with QueryReifier[T] {
+trait Queryable[T, Repr] extends ChildlessQueryReifier[T] {
   self : scala.collection.Traversable[T] with Repr =>
-  override val x = this
   def asQueryable: QueryReifier[T] = this
   def asCollection: Repr = this
   override def exec(isLazy: Boolean) = this

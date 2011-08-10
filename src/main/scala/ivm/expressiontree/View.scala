@@ -2,20 +2,13 @@ package ivm.expressiontree
 
 import collection.TraversableView
 
-//Also for CollectionReifier
-trait ChildlessQueryReifier[T] extends QueryReifier[T] {
-  override def interpret = this
-  override def genericConstructor = _ => this
-  override def children = Seq()
-}
-
 //case class View[T](col: Exp[QueryReifier[T]]) extends Exp[TraversableView[T, Traversable[T]]] {
 //override def interpret = col.interpret().exec().view //XXX. The return value should be executed when exec() is called.
-case class View[T](col: QueryReifier[T]) extends QueryReifier[T] with ChildlessQueryReifier[T] {
+case class View[T](col: QueryReifier[T]) extends ChildlessQueryReifier[T] {
   override def exec(isLazy: Boolean) = col.exec(isLazy).view
 }
 
-case class Force[T](col: QueryReifier[T]) extends QueryReifier[T] with ChildlessQueryReifier[T]  {
+case class Force[T](col: QueryReifier[T]) extends ChildlessQueryReifier[T]  {
   /* XXX the default case might be unwanted - why should it ever trigger?
    * Do we build Force nodes on non-views?
    * We probably want to forbid that when constructing the expression tree, i.e., when
