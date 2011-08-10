@@ -12,7 +12,7 @@ trait Exp[+T] {
     val newself = genericConstructor(transformedChilds)
     transformer(newself).asInstanceOf[Exp[T]]
   }
-  def map[S](mapper: (Exp[_], Seq[S]) => S): S = {
+  private[ivm] def map[S](mapper: (Exp[_], Seq[S]) => S): S = {
     val mappedChilds = for (c <- children) yield c.map(mapper)
     mapper(this, mappedChilds)
   }
