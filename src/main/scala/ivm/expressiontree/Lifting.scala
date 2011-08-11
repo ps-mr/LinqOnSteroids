@@ -2,6 +2,10 @@ package ivm.expressiontree
 
 
 object Lifting {
+  implicit def it[T]: IsTraversable[Traversable[T], T] = new IsTraversable[Traversable[T], T] {
+    override def toTravExp(t: Exp[Traversable[T]]): Exp[Traversable[T]] = t
+    override def toTrav(t: Traversable[T]): Traversable[T] = t
+  }
 
   //In Haskell:
   //instance Numeric a => Summable a (Plus a) where...
@@ -36,6 +40,7 @@ object Lifting {
   implicit def liftBool(x: Boolean) : Exp[Boolean] = Const(x)
   implicit def liftString(x: String) : Exp[String] = Const(x)
   implicit def liftPair[A,B](pair: (Exp[A],Exp[B])) : Exp[(A,B)] = Pair[A,B](pair._1, pair._2)
+  implicit def liftQueryReifier[T](x: QueryReifier[T]) = Const(x)
   
 
   

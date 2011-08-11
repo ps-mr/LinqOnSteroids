@@ -1,6 +1,6 @@
 package ivm.expressiontree
-
-case class WithFilter[S](col: QueryReifier[S], f: FuncExp[S,Boolean]) extends QueryOp[S] {
+import Lifting._
+case class WithFilter[S](col: Exp[Traversable[S]], f: FuncExp[S,Boolean]) extends QueryOp[S] {
   def children = Seq(col,f)
   def genericConstructor = (v) => WithFilter(v(0).asInstanceOf[QueryReifier[S]], 
                                        v(1).asInstanceOf[FuncExp[S,Boolean]])

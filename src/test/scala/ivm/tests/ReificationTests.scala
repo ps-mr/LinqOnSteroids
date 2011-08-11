@@ -16,11 +16,11 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   def bar(x: Int) : Int = x
   val l : QueryReifier[Int] = new CollectionReifier(Vector.range(1,10))
   val j : QueryReifier[Int] = new CollectionReifier(Vector.range(1,10))
-  val q = for (k  <- l if k <= 5 ) yield k+3
-  val r = for (k  <- l; k2  <- j if k is k2) yield k+k2
-  val r1 = for (k <- l; k2 <- j if k + k2 is k2 + k) yield k+k2
-  val r2 = for (k <- l; k2 <- j if liftCall(test, k,k2)) yield k+k2
-  val r3 = for (k <- l; k2 <- j if liftCall(foo,k) is liftCall(bar,k2)) yield (k,k2)
+  val q = for ((k: Exp[Int])  <- l if k <= 5 ) yield k+3
+  val r = for ((k: Exp[Int])  <- l; (k2: Exp[Int])  <- j if k is k2) yield k+k2
+  val r1 = for ((k: Exp[Int]) <- l; (k2: Exp[Int]) <- j if k + k2 is k2 + k) yield k+k2
+  val r2 = for ((k: Exp[Int]) <- l; (k2: Exp[Int])  <- j if liftCall(test, k,k2)) yield k+k2
+  val r3 = for ((k: Exp[Int]) <- l; (k2: Exp[Int])  <- j if liftCall(foo,k) is liftCall(bar,k2)) yield (k,k2)
   @Test
   def testq() {
     optimize(q) should be (q)
@@ -82,7 +82,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
     val c2 : QueryReifier[Int] = new CollectionReifier(Vector.range(1,testSize))
     val n1 = Vector.range(1,testSize)
     val n2 = Vector.range(1,testSize)
-    val notoptimized = for (k  <- c1; k2  <- c2 if k is k2) yield k+k2
+    val notoptimized = for ((k: Exp[Int])  <- c1; (k2: Exp[Int])  <- c2 if k is k2) yield k+k2
     benchMark("Native query") {
       val nativequery  = for (k  <- n1; k2  <- n2 if k.equals(k2)) yield k+k2
       print("Size = " + nativequery.size +", ")
@@ -98,7 +98,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
     // RE: In my tests, I seldom get a difference, it is not significant, and seems to disappear
     // by enabling the Scala optimizer.
     benchMark("Non optimized")(print("Size = "+notoptimized.exec().size+", "))
-    benchMark("Optimized")(print("Size = "+optimize(notoptimized).interpret().exec().size+", "))
+    benchMark("Optimized")(print("Size = "+optimize(notoptimized).interpret().size+", "))
   }
 
  

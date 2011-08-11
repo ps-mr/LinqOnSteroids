@@ -56,9 +56,9 @@ object QueryableTest {
     println("vQueryable: " + vQueryable)
     assert(vQueryable == v)
     //val vQueryablePlusOne2: ArrayBuffer[Int] = vQueryable.map((i: Int) => i + 1) //gives error
-    val vQueryablePlusOne: QueryReifier[Int] = vQueryable.map(_ + 1)
+    val vQueryablePlusOne: Exp[Traversable[Int]] = vQueryable.map((x: Exp[Int]) => x + 1)
     println("vQueryablePlusOne: " + vQueryablePlusOne)
-    println("vQueryablePlusOne.interpret.exec(): " + vQueryablePlusOne.interpret.exec())
+    println("vQueryablePlusOne.interpret.exec(): " + vQueryablePlusOne.interpret())
 
     val vColl: ArrayBuffer[Int] = v.asCollection
     println("vColl: " + vColl)

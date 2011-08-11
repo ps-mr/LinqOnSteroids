@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-case class FuncExp[S, T](f: Exp[S] => Exp[T]) extends Exp[S => T] {
+case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends Exp[S => T] {
   import FuncExp._
   val x = gensym()
   override def toString() = {

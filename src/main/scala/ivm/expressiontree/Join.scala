@@ -1,7 +1,9 @@
 package ivm.expressiontree
 
-case class Join[T, S, TKey, TResult](colouter: QueryReifier[T],
-  colinner: QueryReifier[S],
+import Lifting._
+
+case class Join[T, S, TKey, TResult](colouter: Exp[Traversable[T]],
+  colinner: Exp[Traversable[S]],
   outerKeySelector: FuncExp[T,TKey],
   innerKeySelector: FuncExp[S,TKey],
   resultSelector: FuncExp[(T, S),TResult]) extends QueryOp[TResult] {

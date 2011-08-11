@@ -1,6 +1,7 @@
 package ivm.expressiontree
 
 import collection.TraversableView
+import Lifting._
 
 //case class View[T](col: Exp[QueryReifier[T]]) extends Exp[TraversableView[T, Traversable[T]]] {
 //override def interpret = col.interpret().exec().view //XXX. The return value should be executed when exec() is called.

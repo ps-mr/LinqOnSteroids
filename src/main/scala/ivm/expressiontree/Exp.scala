@@ -1,4 +1,15 @@
-package ivm.expressiontree
+package ivm
+package expressiontree
+
+import Lifting._
+import collection.mutable
+import indexing.HashIndex
+import collection.mutable.HashMap
+
+trait IsTraversable[-Trav, +Elem] {
+  def toTravExp(t: Exp[Trav]): Exp[Traversable[Elem]]
+  def toTrav(t: Trav): Traversable[Elem]
+}
 
 trait Exp[+T] {
 
@@ -49,6 +60,25 @@ trait Exp[+T] {
   def <=[S >: T](that: Exp[S])(implicit ord: Ordering[S]) = LEq(this, that)
   def is[S >: T](that: Exp[S]): Exp[Boolean] = Eq(this, that)
   //def is(that: Exp[Int]): Exp[Boolean] = Eq(this, that)
+  def exec[T1 >: T, U](isLazy: Boolean = false)(implicit t: IsTraversable[T1, U]): T
+
+  // XXX: IsTraversable[T, U] prevents type inference from discovering U, because this parameter is passed in a later
+  // parameter list. Type inference instead propagates information from left to right.
+  def map[U, V](f: Exp[U]=>Exp[V])(implicit convMap: IsTraversable[T, U]) : Exp[Traversable[V]] = new Map[U,V](convMap.toTravExp(this), FuncExp(f))
+  def withFilter[U](p: Exp[U]=>Exp[Boolean])(implicit convWithFilter: IsTraversable[T, U]) : Exp[Traversable[U]] = new WithFilter[U](convWithFilter.toTravExp(this), FuncExp(p))
+  //Causes test failures - the optimizer must still be adapted! But seemingly produces the same speedup
+  //def withFilter(p: Exp[T]=>Exp[Boolean]) : QueryReifier[T] = new WithFilter[T](this.view, FuncExp(p)).force
+  def flatMap[U, V](f: Exp[U]=>Exp[Traversable[V]])(implicit convFlatMap: IsTraversable[T, U]) : Exp[Traversable[V]] = new FlatMap[U,V](convFlatMap.toTravExp(this), FuncExp(f))
+
+  //Compute fix point of f applied to this collection. Useful for static analyses
+  def fix[U](f: Exp[Traversable[U]] => Exp[Traversable[U]])(implicit conv: IsTraversable[T, U]): Exp[Traversable[U]] = null
+  /*
+   * Alternative type:
+   * trait ReifyingTraversableLike[T, Repr[_]]
+   * def fix(f: Exp[Repr[T] => Repr[T]]): Exp[Repr[T]]
+   * This way, the type of fix gets refined for inheritors of ReifyingTraversableLike (say ReifyingSeqLike).
+   */
+
 
   // method is used for testing. It is overriden in CallN to treat all calls as potentially equal
   private[ivm] def potentiallyEquals[S](other: Exp[S]) : Boolean = {
@@ -57,6 +87,7 @@ trait Exp[+T] {
       c.map({ case (a, b) => a.potentiallyEquals(b)}).forall(identity)
  
   }
+  def indexes[U](implicit convFlatMap: IsTraversable[T, U]) : mutable.Map[FuncExp[U,_],HashIndex[U,_]] = HashMap()
 }
 
 private[ivm] object Exp {
@@ -72,4 +103,4 @@ trait ChildlessExp[T] extends Exp[T] {
   def children = Seq()
 }
 
-trait ChildlessQueryReifier[T] extends ChildlessExp[QueryReifier[T]] with QueryOp[T]
+trait ChildlessQueryReifier[T] extends ChildlessExp[Traversable[T]] with QueryOp[T]
