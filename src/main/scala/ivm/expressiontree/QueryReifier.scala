@@ -1,7 +1,6 @@
 package ivm
 package expressiontree
 
-import scala.collection.Iterator
 import scala.collection.mutable.HashMap
 import scala.collection.mutable
 import indexing.HashIndex
@@ -15,11 +14,11 @@ import optimization.Optimization
 trait QueryReifier[T] extends Exp[QueryReifier[T]]  {
   def exec(isLazy: Boolean = false): Traversable[T]
 
-  def map[U](f: Exp[T]=>Exp[U]) : QueryReifier[U] = new Map[T,U](this, FuncExp(f))
-  def withFilter(p: Exp[T]=>Exp[Boolean]) : QueryReifier[T] = new WithFilter[T](this, FuncExp(p))
+  def map[U](f: Exp[T] => Exp[U]): QueryReifier[U] = Map[T,U](this, FuncExp(f))
+  def withFilter(p: Exp[T] => Exp[Boolean]): QueryReifier[T] = WithFilter[T](this, FuncExp(p))
   //Causes test failures - the optimizer must still be adapted! But seemingly produces the same speedup
   //def withFilter(p: Exp[T]=>Exp[Boolean]) : QueryReifier[T] = new WithFilter[T](this.view, FuncExp(p)).force
-  def flatMap[U](f: Exp[T]=>Exp[QueryReifier[U]]) : QueryReifier[U] = new FlatMap[T,U](this, FuncExp(f))
+  def flatMap[U](f: Exp[T] => Exp[QueryReifier[U]]): QueryReifier[U] = FlatMap[T,U](this, FuncExp(f))
 
   //Compute fix point of f applied to this collection. Useful for static analyses
   def fix(f: Exp[QueryReifier[T]] => Exp[QueryReifier[T]]): Exp[QueryReifier[T]] = null
