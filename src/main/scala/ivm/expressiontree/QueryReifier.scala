@@ -37,13 +37,15 @@ trait QueryReifier[T] extends Exp[QueryReifier[T]]  {
   def join[S,TKey,TResult](outercol: QueryReifier[S],
                            outerKeySelector: Exp[T] =>Exp[TKey],
                            innerKeySelector: Exp[S]=>Exp[TKey],
-                           resultSelector: Exp[(T,S)] => Exp[TResult]) : QueryReifier[TResult] 
-    = new Join[T,S,TKey,TResult](this, outercol, FuncExp(outerKeySelector),FuncExp(innerKeySelector), FuncExp(resultSelector));
-  
+                           resultSelector: Exp[(T,S)] => Exp[TResult]): QueryReifier[TResult]
+    = new Join[T,S,TKey,TResult](this, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
+
   val indexes : mutable.Map[FuncExp[T,_],HashIndex[T,_]] = HashMap()
-  def addIndex[S](f: FuncExp[T,S]) : Unit = {
+  def addIndex[S](f: FuncExp[T,S]) {
     val nf = Optimization.normalize(f).asInstanceOf[FuncExp[T,S]]
     indexes += ((nf, new HashIndex(this,nf)))
   }
-  def addIndex[S](f: Exp[T] => Exp[S]) : Unit = addIndex(FuncExp(f))
+  def addIndex[S](f: Exp[T] => Exp[S]) {
+    addIndex(FuncExp(f))
+  }
 }
