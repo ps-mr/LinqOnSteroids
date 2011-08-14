@@ -15,6 +15,10 @@ import scala.math.Numeric
  * StringExp, and so on. However, it seems it does not quite work yet - see the
  * definition of c in main. It would work if toExpTempl were found by the Scala
  * compiler, which is not because of what I believe to be a bug.
+ *
+ * An alternative solution is to make the generic conversion toExp: T => Exp[T]
+ * have lower priority than the others, by defining toExp in a trait and the
+ * others in an object inheriting from that trait.
  * @author Paolo G. Giarrusso
  */
 object OpenEncoding {
