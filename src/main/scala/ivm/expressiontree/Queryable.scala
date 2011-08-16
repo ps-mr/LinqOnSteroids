@@ -1,7 +1,6 @@
 package ivm
 package expressiontree
 
-import collection.mutable.ArrayBuffer
 import collections.CollectionReifier
 
 /**
@@ -29,15 +28,18 @@ import collections.CollectionReifier
 //interfaces.
 //TODO: add notification interface!
 trait Queryable[T, Repr] extends ChildlessQueryReifier[T] /*with Publisher[Message[T]]*/ {
-  self : Traversable[T] with Repr =>
+  self: Traversable[T] with Repr =>
   //type Pub = Queryable[T, Repr] //XXX? Should this be defined here already? Or should Pub be even more specific?
   def asQueryable: QueryReifier[T] = this
   def asCollection: Repr = this
   override def exec(isLazy: Boolean) = this
   //This allows selecting early how the query is to be executed.
   // The alternative is to choose between exec(isLazy = true) and exec(isLazy = false).
-  // XXX: this returns another object!
-  def asQueryableLazy: QueryReifier[T] = new CollectionReifier[T](this.view)
+  //def asQueryableLazy: QueryReifier[T] = new CollectionReifier[T](this.view)
+  // XXX: this returns another object! So don't have it with this name, call it view - see below.
+  //def view: TraversableView[T] = new CollectionReifier[T](self.view)
+  //Can't have that type. Make it an overload - untested.
+  def view2: QueryReifier[T] = new CollectionReifier[T](self.view)
 }
 
 // vim: set ts=4 sw=4 et:
