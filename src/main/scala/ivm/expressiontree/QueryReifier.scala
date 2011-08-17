@@ -20,8 +20,8 @@ trait QueryReifier[T] extends Exp[QueryReifier[T]]  {
   //def withFilter(p: Exp[T]=>Exp[Boolean]) : QueryReifier[T] = new WithFilter[T](this.view, FuncExp(p)).force
   def flatMap[U](f: Exp[T] => Exp[QueryReifier[U]]): QueryReifier[U] = FlatMap[T,U](this, FuncExp(f))
 
-  //Compute fix point of f applied to this collection. Useful for static analyses
-  def fix(f: Exp[QueryReifier[T]] => Exp[QueryReifier[T]]): Exp[QueryReifier[T]] = null
+  //Compute fix point of f applied to this collection. Useful for static analyses. Totally untested.
+  def fix(f: Exp[QueryReifier[T]] => Exp[QueryReifier[T]]): Exp[QueryReifier[T]] = FixWithReifiers[T](this, FuncExp(f))
   /*
    * Alternative type:
    * trait ReifyingTraversableLike[T, Repr[_]]
