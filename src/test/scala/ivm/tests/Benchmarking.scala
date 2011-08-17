@@ -22,15 +22,13 @@ object Benchmarking {
     }
   }
 
-  //execLoops: repetitions to increase precisions.
-  def benchMark(name: String, execLoops: Int = 1)(toBench: => Unit) {
+  def benchMark(name: String, execLoops: Int = 1)(toBench: => Unit) : Double  = {
     //Iteration counts.
     //Warm up the VM - should be more
     val warmUpLoops = 10
 
     //Iterations to measure variance.
     val sampleLoops = 5
-
     for (i <- 1 to warmUpLoops)
       toBench
     println()
@@ -40,12 +38,13 @@ object Benchmarking {
       val before = System.nanoTime()
       for (i <- 1 to execLoops)
         toBench
-      println()
       stats.update((System.nanoTime() - before) / execLoops)
     }
-    println(">>> Name = %s, time = (%.3f +- %.3f) ms" format (name,
-      stats.avg / math.pow(10, 6),
+    val avg = stats.avg / math.pow(10,6)
+    println(">>> Name = %s, time = %.3f +- %.3f" format (name,
+      avg,
       math.sqrt(stats.variance) / math.pow(10, 6)))
+    avg
   }
 
   def printRes[T](v: Exp[T]) {
