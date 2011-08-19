@@ -40,12 +40,10 @@ trait Publisher2[Evt] {
   }
 
   def publish(evt: Evt) {
-    var v = ArrayBuffer[WeakReference[Sub]]()
     for (subWeakRef <- subscribers; sub <- subWeakRef.get) {
       sub.notify(self, evt)
-      v += subWeakRef
     }
-    subscribers = v.toSeq
+    subscribers = subscribers.filter(_.get.isDefined)
   }
 }
 
