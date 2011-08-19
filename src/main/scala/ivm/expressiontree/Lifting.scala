@@ -14,11 +14,16 @@ object Lifting {
     def plus(a: String, b: String) = a + b
     def plusNode(a: Exp[String], b: Exp[String]) = StringConcat(a, b)
   }
+
+  implicit val asBool = new AsBool[Boolean] {
+    def apply(e: Exp[Boolean]) = e
+  }
   case class PairHelper[A,B](p: Exp[(A,B)]) {
     val _1 = Proj1(p)
     val _2 = Proj2(p)
   }
   implicit def toPairHelper[A,B](e: Exp[(A,B)]) : PairHelper[A,B] = PairHelper(e)
+
 
   // these functions are explicitly not implicit :)
   def liftCall[Res](callfunc: () => Res) = Call0(callfunc)
@@ -36,7 +41,11 @@ object Lifting {
   implicit def liftBool(x: Boolean) : Exp[Boolean] = Const(x)
   implicit def liftString(x: String) : Exp[String] = Const(x)
   implicit def liftPair[A,B](pair: (Exp[A],Exp[B])) : Exp[(A,B)] = Pair[A,B](pair._1, pair._2)
-  
 
-  
 }
+
+trait AsBool[T] {
+  def apply(e: Exp[T]) : Exp[Boolean]
+}
+
+
