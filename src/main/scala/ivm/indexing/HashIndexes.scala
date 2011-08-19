@@ -60,15 +60,14 @@ class HashIndex4[T1,T2,T3,T4,S](it: QueryReifier[T1],
        groupBy( (p) => ( f.interpret()(p)))
 }
 
+// KO: hopefully all code above is subsumed by PathIndex. I leave it there until path index optimization is implemented.
 class PathIndex[T1,P,S](it: QueryReifier[T1], path: Path[(T1,P)], f: FuncExp[(T1,P),S])
    extends HashMap[S,Traversable[(T1,P)]]
    with Index[S,Traversable[(T1,P)]] {
    private def traversePath[T,R](c: Traversable[T], p: Path[(T,R)]) : Traversable[(T,R)] = {
         p match {
           case EmptyPath() => c.map( (x) => (x,()))
-          // next is the explicitly typed version, which looks worse than the uncommented one but was easier to write
-/*          case cp: ConsPath[_,t2,r] =>
-           c.flatMap( (x) => traversePath[t2,r](cp.f.interpret()(x).exec(), cp.p).map ( (y) => (x,y)) )*/
+          // Wow, Scala is smart enough to typecheck the second branch!
           case ConsPath(f,path) =>
            c.flatMap( (x) => traversePath(f.interpret()(x).exec(), path).map ( (y) => (x,y)) )
         }
