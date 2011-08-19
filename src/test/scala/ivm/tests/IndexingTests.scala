@@ -20,11 +20,6 @@ class IndexingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val q1 = for (c <- l if c._1 + c._2 + 7 is 12) yield c
     l.addIndex(p => p._2 + p._1 + 7)
     val q2 = optimizeIndexing(q1).asInstanceOf[QueryOp[_]]
-    println(q1)
-    println(q2)
-    benchMark("original query", 20)(q1.exec())
-    benchMark("optimized query", 20)(q2.exec())
-    // optimized query should be at least 100x faster
-   assert( benchMark("original query")(q1.exec().size) >  100* benchMark("optimized query")(q2.exec().size))
+    assert( silentBenchMark("original query")(q1.exec().size) >  100* silentBenchMark("optimized query")(q2.exec().size))
   }
 }

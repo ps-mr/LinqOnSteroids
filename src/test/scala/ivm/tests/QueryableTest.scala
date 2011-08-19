@@ -7,7 +7,7 @@ import expressiontree.{Queryable, QueryReifier, Lifting, ObservableBuffer}
 
 object QueryableTest {
   def vect[T] = {
-    //val res = new Vector[Int] with Queryable[Int, Vector[Int]] //Vector is final
+    //val res = new List[Int] with Queryable[Int, List[Int]] //List is final
     val res = new ArrayBuffer[Int] with Queryable[Int, ArrayBuffer[Int]] with ObservableBuffer[Int]
     res ++= Seq(1, 2, 3)
     res

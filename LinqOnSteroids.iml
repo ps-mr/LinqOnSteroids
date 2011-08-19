@@ -3,9 +3,14 @@
   <component name="FacetManager">
     <facet type="scala" name="Scala">
       <configuration>
-        <option name="compilerLibraryLevel" value="Global" />
-        <option name="compilerLibraryName" value="scala-compiler-2.9.0.1" />
+        <option name="compilerLibraryLevel" value="Project" />
+        <option name="compilerLibraryName" value="buildScalaLocal" />
         <option name="optimiseBytecode" value="true" />
+        <option name="pluginPaths">
+          <array>
+            <option value="C:\dev\scala\lib\scala-compiler.jar" />
+          </array>
+        </option>
       </configuration>
     </facet>
   </component>
@@ -68,6 +73,7 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="scala-library-2.9.0.1" level="application" />
+    <orderEntry type="library" name="buildScalaLocal" level="project" />
   </component>
 </module>
 
