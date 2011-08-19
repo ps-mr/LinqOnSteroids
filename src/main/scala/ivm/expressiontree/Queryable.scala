@@ -39,7 +39,9 @@ trait Queryable[T, Repr] extends ChildlessQueryReifier[T] /*with Publisher[Messa
   // XXX: this returns another object! So don't have it with this name, call it view - see below.
   //def view: TraversableView[T] = new CollectionReifier[T](self.view)
   //Can't have that type. Make it an overload - untested.
-  def view2: QueryReifier[T] = new CollectionReifier[T](self.view)
+
+  // commented out by KO - need to check back with PG
+  //def view2: QueryReifier[T] = new CollectionReifier[T](self.view)
 }
 
 // vim: set ts=4 sw=4 et:

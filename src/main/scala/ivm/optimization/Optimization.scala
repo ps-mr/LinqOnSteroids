@@ -52,8 +52,6 @@ class Optimization {
   private def hasIndex(idx: scala.collection.mutable.Map[FuncExp[Any,Any],HashIndex[Any,Any]], hx: Var[_], l: Exp[_]) : Boolean = {
     idx.contains(Optimization.normalize(FuncExp.makefun(l, hx)).asInstanceOf[FuncExp[Any,Any]])
   }
-  private def eqq(x: Set[Var[_]], y: Set[Var[_]]) = 
-    x == y
   val indexer : Exp[_] => Exp[_] =  (e) => e match {
        case WithFilter(col,h)  => h.f(h.x) match {
          case Eq(l,r) => if ((!(l.isOrContains(h.x))) && (r.freeVars == Seq(h.x)) 
@@ -61,7 +59,7 @@ class Optimization {
                          IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(r, h.x)).asInstanceOf[FuncExp[Any,Any]]).asInstanceOf[HashIndex[Any,Any]], l)
                          else 
                          if ((!(r.isOrContains(h.x))) 
-                             && (eqq(l.freeVars, Set(h.x))) 
+                             && (l.freeVars.equals(Set(h.x)))
                               && hasIndex(col.indexes.asInstanceOf[scala.collection.mutable.Map[FuncExp[Any,Any],HashIndex[Any,Any]]], h.x, l)) 
                          IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(l, h.x)).asInstanceOf[FuncExp[Any,Any]]).asInstanceOf[HashIndex[Any,Any]], r)
                          else e
