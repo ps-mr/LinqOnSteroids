@@ -1,6 +1,7 @@
 package ivm.expressiontree
 
-import collection.mutable.{HashMap, Subscriber, Publisher, Buffer, Set}
+import ref.WeakReference
+import collection.mutable.{ArrayBuffer, HashMap, Subscriber, Publisher, Buffer, Set}
 
 /**
  * Question: should we send updates before or after modifying the underlying collection? Here we do it before, so that
@@ -14,9 +15,40 @@ case class Include[T](t: T) extends Message[T]
 case class Remove[T](t: T) extends Message[T]
 case class Update[T](old: T, curr: T) extends Message[T]
 case class Reset() extends Message[Nothing]
+
+//Script nodes can be useful as a space optimization for Seq[Message[T]]; however, types become less perspicuous.
 //case class Script[T](changes: Message[T]*) extends Message[T]
 
-//Note: Publisher hangs onto the listeners directly, while in our scenario weak references are badly needed.
+// Publisher hangs onto the listeners directly, while in our scenario weak references are badly needed.
+// Here's a version of Publisher without this problem; the design is very similar to the original Publisher class, but
+// with weak references and without filters (since we currently don't need them).
+
+trait Publisher2[Evt] {
+  type Pub <: Publisher2[Evt]
+  type Sub = Subscriber[Evt, Pub]
+
+  protected val self: Pub = this.asInstanceOf[Pub]
+  //XXX: If Pub were a type parameter, then we could just write (I expect) self: Pub => at the beginning, instead of
+  //such an ugly cast
+
+  var subscribers: Seq[WeakReference[Sub]] = Seq()
+  def subscribe(sub: Sub) {
+    subscribers :+= new WeakReference(sub)
+  }
+  def removeSubscription(sub: Sub) {
+    subscribers :+= new WeakReference(sub)
+  }
+
+  def publish(evt: Evt) {
+    var v = ArrayBuffer[WeakReference[Sub]]()
+    for (subWeakRef <- subscribers; sub <- subWeakRef.get) {
+      sub.notify(self, evt)
+      v += subWeakRef
+    }
+    subscribers = v.toSeq
+  }
+}
+
 trait MsgSeqPublisher[T] extends Publisher[Seq[Message[T]]] {
   def publish(evt: Message[T]) {
     publish(Seq(evt))
