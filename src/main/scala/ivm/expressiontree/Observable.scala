@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
 import ref.WeakReference
-import collection.mutable.{ArrayBuffer, HashMap, Subscriber, Publisher, Buffer, Set}
+import collection.mutable.{HashMap, Subscriber, Buffer, Set}
 
 /**
  * Question: should we send updates before or after modifying the underlying collection? Here we do it before, so that
@@ -23,8 +23,8 @@ case class Reset() extends Message[Nothing]
 // Here's a version of Publisher without this problem; the design is very similar to the original Publisher class, but
 // with weak references and without filters (since we currently don't need them).
 
-trait Publisher2[Evt] {
-  type Pub <: Publisher2[Evt]
+trait Publisher[Evt] {
+  type Pub <: Publisher[Evt]
   type Sub = Subscriber[Evt, Pub]
 
   protected val self: Pub = this.asInstanceOf[Pub]
