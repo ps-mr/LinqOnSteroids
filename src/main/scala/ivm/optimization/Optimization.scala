@@ -7,7 +7,7 @@ import expressiontree.Lifting._
 import indexing.HashIndex
 
 class Optimization {
-  val opttransformer : Exp[_] => Exp[_] = 
+  val cartProdToJoin : Exp[_] => Exp[_] =
      (e) => e match {
        case FlatMap(fmcol,fmf) => fmf.f(fmf.x) match {
          case Map(mccol,mcf) => mccol match {
@@ -42,6 +42,18 @@ class Optimization {
        }
        case _ => e
      }
+
+  val mergeFilters : Exp[_] => Exp[_] =
+    (e) => e match {
+      case WithFilter(col,f) =>
+        col match {
+          case WithFilter(col2,f2) =>
+            mergeFilters(WithFilter(col2, FuncExp( (x:Exp[_]) => And(f2(x),f(x)))))
+          case _ => e
+        }
+      case _ => e
+    }
+
   val normalizer : Exp[_] => Exp[_] = 
      (e) => e match {
        case p@Plus(x,y) => Plus(Exp.min(x,y), Exp.max(x,y))(p.sum)
@@ -73,8 +85,9 @@ class Optimization {
 
 object Optimization {
   val opt = new Optimization()
-  def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(opt.opttransformer) 
+  def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(opt.cartProdToJoin)
   def optimize[T](exp: Exp[T]): Exp[T] = optimizeCartProdToJoin(exp)
   def optimizeIndexing[T](exp: Exp[T]) : Exp[T] = exp.transform(opt.indexer)
   def normalize[T](exp: Exp[T]) : Exp[T] = exp.transform(opt.normalizer)
+  def mergeFilters[T](exp: Exp[T]) : Exp[T] = exp.transform(opt.mergeFilters)
 }

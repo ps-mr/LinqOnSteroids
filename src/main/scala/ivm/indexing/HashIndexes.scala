@@ -66,8 +66,11 @@ class PathIndex[T1,P,S](it: QueryReifier[T1], path: Path[(T1,P)], f: FuncExp[(T1
    private def traversePath[T,R](c: Traversable[T], p: Path[(T,R)]) : Traversable[(T,R)] = {
         p match {
           case EmptyPath() => c.map( (x) => (x,()))
-          case cp: ConsPath[_,t2,r] =>
-           c.flatMap( (x) => traversePath[t2,r](cp.f.interpret()(x).exec(), cp.p).map ( (y) => (x,y)) )
+          // next is the explicitly typed version, which looks worse than the uncommented one but was easier to write
+/*          case cp: ConsPath[_,t2,r] =>
+           c.flatMap( (x) => traversePath[t2,r](cp.f.interpret()(x).exec(), cp.p).map ( (y) => (x,y)) )*/
+          case ConsPath(f,path) =>
+           c.flatMap( (x) => traversePath(f.interpret()(x).exec(), path).map ( (y) => (x,y)) )
         }
    }
 
