@@ -13,6 +13,10 @@ class IncHashSet[T] extends HashSet[T] with ObservableSet[T] with IncrementalSet
   override def companion = IncHashSet
 }
 
+// Next TODO: try to hide from the public interface of IncHashSet the methods from HashSet, so that people must call
+// asCollection. Not sure whether it's a good idea. A possibly more sensible alternative is to hide methods from
+// IncQueryReifier, so that people have to call asQueryable to get them.
+
 object IncHashSet extends MutableSetFactory[IncHashSet] {
   implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, IncHashSet[A]] = setCanBuildFrom[A]
   override def empty[A] = new IncHashSet[A]
