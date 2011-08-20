@@ -1,46 +1,14 @@
 package ivm
 package tests
 
-//import expressiontree.{ObservableSet, Queryable, QueryReifier, Lifting, ObservableBuffer}
 import expressiontree._
-import collection.mutable.{SetLike, HashSet, Builder, BufferLike, IndexedSeqOptimized, ArrayBuffer}
+
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test
-import collection.generic.{SeqFactory, CanBuildFrom, MutableSetFactory, GenericSetTemplate, GenericCompanion, GenericTraversableTemplate}
 
-/*
- * Just an experiment, don't use for real! We are going to support Sets first, not Buffers, as semantics and use cases
- * for them are unclear.
- */
-class IncArrayBuffer[T] extends ArrayBuffer[T] with
-    IncQueryable[T, ArrayBuffer[T]] with ObservableBuffer[T] with GenericTraversableTemplate[T, IncArrayBuffer] with
-    BufferLike[T, IncArrayBuffer[T]] with IndexedSeqOptimized[T, IncArrayBuffer[T]] with Builder[T, IncArrayBuffer[T]] {
-  type Pub <: IncArrayBuffer[T] //Two different definitions of Pub are inherited, this one is a common subtype.
-  override def companion = IncArrayBuffer
-  override def result() = this
-  override def newBuilder = new IncArrayBuffer[T]
-}
-
-object IncArrayBuffer extends SeqFactory[IncArrayBuffer] {
-  override def newBuilder[U] = new IncArrayBuffer[U]
-  implicit def canBuildFrom[U] = new GenericCanBuildFrom[U]
-}
-
-class IncHashSet[T] extends HashSet[T] with ObservableSet[T] with IncrementalSet[T]
-   with IncQueryable[T, HashSet[T]]
-   with /*extra templates:*/ GenericSetTemplate[T, IncHashSet] with SetLike[T, IncHashSet[T]] {
-  type Pub <: IncHashSet[T] //Two different definitions of Pub are inherited, this one is a common subtype.
-  override def companion = IncHashSet
-}
-
-object IncHashSet extends MutableSetFactory[IncHashSet] {
-  implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, IncHashSet[A]] = setCanBuildFrom[A]
-  override def empty[A] = new IncHashSet[A]
-  // XXX: without the above definition the code compiles, but empty is defined through newBuilder, and newBuilder
-  // through empty, because one of the two is supposed to be overriden; not doing so results in infinite recursion.
-  // TODO: write test for that.
-}
+import collections.{IncHashSet, IncArrayBuffer}
+import collection.mutable.{HashSet, ArrayBuffer}
 
 object QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
   import Lifting._
