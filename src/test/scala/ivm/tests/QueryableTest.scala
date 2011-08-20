@@ -8,11 +8,11 @@ import collection.generic.{MutableSetFactory, GenericSetTemplate, GenericCompani
 
 /*
  * Just an experiment, don't use for real! We are going to support Sets first, not Buffers, as semantics and use cases
- * for them are unclear
+ * for them are unclear.
  */
 class IncArrayBuffer[T] extends ArrayBuffer[T] with
-  Queryable[T, ArrayBuffer[T]] with ObservableBuffer[T] with GenericTraversableTemplate[T, IncArrayBuffer] with
-  BufferLike[T, IncArrayBuffer[T]] with IndexedSeqOptimized[T, IncArrayBuffer[T]] with Builder[T, IncArrayBuffer[T]] {
+    Queryable[T, ArrayBuffer[T]] with ObservableBuffer[T] with GenericTraversableTemplate[T, IncArrayBuffer] with
+    BufferLike[T, IncArrayBuffer[T]] with IndexedSeqOptimized[T, IncArrayBuffer[T]] with Builder[T, IncArrayBuffer[T]] {
   override def companion = new GenericCompanion[IncArrayBuffer] {
     override def newBuilder[U] = new IncArrayBuffer[U]
   }
@@ -23,26 +23,18 @@ class IncArrayBuffer[T] extends ArrayBuffer[T] with
 // The below usage of Queryable is broken! For that, I really need to have IncrementalSet be a mixin instead of a
 // decorator!
 
-class ConcObservableSet[T] extends HashSet[T] with ObservableSet[T] /*with Queryable[T, HashSet[T]]*/ with /*extra templates:*/
-  GenericSetTemplate[T, ConcObservableSet] with SetLike[T, ConcObservableSet[T]] {
-  override def companion = new MutableSetFactory[ConcObservableSet] {
-    override def empty[U] = new ConcObservableSet[U]
+
+class IncHashSet[T] extends HashSet[T] with ObservableSet[T] with IncrementalSet[T]
+   with Queryable[T, HashSet[T]]
+   with /*extra templates:*/ GenericSetTemplate[T, IncHashSet] with SetLike[T, IncHashSet[T]] {
+  type Pub <: IncHashSet[T] //Two different definitions of Pub are inherited, this one is a common subtype.
+  override def companion = new MutableSetFactory[IncHashSet] {
+    override def empty[U] = new IncHashSet[U]
     // XXX: without the above definition the code compiles, but empty is defined through newBuilder, and newBuilder
     // through empty, because one of the two is supposed to be overriden; not doing so results in infinite recursion.
     // TODO: write test for that.
   }
 }
-/*
-class ConcObservableSet[T] extends HashSet[T] with ObservableSet[T] with IncrementalSet[T] with Queryable[T, HashSet[T]] with /*extra templates:*/
-  GenericSetTemplate[T, ConcObservableSet] with SetLike[T, ConcObservableSet[T]] {
-  override def companion = new MutableSetFactory[ConcObservableSet] {
-    override def empty[U] = new ConcObservableSet[U]
-    // XXX: without the above definition the code compiles, but empty is defined through newBuilder, and newBuilder
-    // through empty, because one of the two is supposed to be overriden; not doing so results in infinite recursion.
-    // TODO: write test for that.
-  }
-}
-*/
 
 object QueryableTest {
   import Lifting._
@@ -71,37 +63,58 @@ object QueryableTest {
   }
 
   def testIncremental() {
-    val under = new ConcObservableSet[Int]
-    val v = new IncrementalSet[Int](under)
-    //v ++= Seq(1, 2, 3)
-    under ++= Seq(1, 2, 3) //XXX
+    val v = new IncHashSet[Int]
+    v ++= Seq(1, 2, 3)
+    //under ++= Seq(1, 2, 3) //XXX
 
     println("v: " + v)
-    println("under: " + under)
-    //val vPlusOne: ConcObservableSet[Int] = under.map(_ + 1)
-    val underPlusOne: HashSet[Int] = under.map(_ + 1) //XXX return type
-    
-    //val vQueryable: QueryReifier[Int] = v.asQueryable  //XXX support this
-    //assert(vQueryable == v)
-    //val vQueryablePlusOne2: ArrayBuffer[Int] = vQueryable.map((i: Int) => i + 1) //gives error
-    //val vQueryablePlusOne: QueryReifier[Int] = vQueryable.map(_ + 1)
-    //v ++= Seq(4, 5, 6) // Now, vPlusOne should be updated, shouldn't it?
-    under ++= Seq(4, 5, 6) //XXX
+    //val vPlusOne: IncHashSet[Int] = v.map(_ + 1) //Actually broken, we don't get IncHashSet here.
+    val vPlusOne: HashSet[Int] = v.map(_ + 1) //XXX return type
 
-    //println("vQueryable: " + vQueryable)
-    println("vPlusOne: " + underPlusOne)
-    /*println("vQueryablePlusOne: " + vQueryablePlusOne)
+    val vIncUpd = new IncrementalResult[Int](v)
+    val vQueryable: QueryReifier[Int] = v.asQueryable  //XXX support this
+    assert(vQueryable == v)
+    //val vQueryablePlusOne2: ArrayBuffer[Int] = vQueryable.map((i: Int) => i + 1) //gives error
+    val vQueryablePlusOne: QueryReifier[Int] = vQueryable.map(_ + 1)
+    println("vIncUpd: " + vIncUpd)
+
+    def out = {
+      println()
+      println("vIncUpd: " + vIncUpd)
+      println("vIncUpd.interpret.exec(): " + vIncUpd.interpret.exec())
+      println("vIncUpd.exec(): " + vIncUpd.exec())
+      println("vIncUpd.inner.exec(): " + vIncUpd.inner.exec())
+    }
+    v ++= Seq(4, 5, 6)
+    out
+
+    // Check that redundant updates are handled correctly.
+    // test actually - we need an union
+    // operation for a proper test.
+    v ++= Seq(4, 5, 6) //Now the inclusion count should be 1, not 2!
+    out
+    v --= Seq(4, 5, 6) //Now the elements should already be removed!
+    out
+    v --= Seq(4, 5, 6)
+    out
+
+    println("vQueryable: " + vQueryable)
+
+    println("vPlusOne: " + vPlusOne)
+    println("vQueryablePlusOne: " + vQueryablePlusOne)
     println("vQueryablePlusOne.interpret.exec(): " + vQueryablePlusOne.interpret.exec())
 
-    val vColl: ArrayBuffer[Int] = v.asCollection
+    val vColl: HashSet[Int] = v.asCollection
     println("vColl: " + vColl)
     assert(vColl == v)
-    val vCollPlusOne: ArrayBuffer[Int] = vColl.map(_ + 1)
-    println("vCollPlusOne: " + vCollPlusOne)*/
+    val vCollPlusOne: HashSet[Int] = vColl.map(_ + 1)
+    println("vCollPlusOne: " + vCollPlusOne)
   }
 
   def main(args: Array[String]) {
+    println("testQueryable")
     testQueryable()
+    println("testIncremental")
     testIncremental()
   }
 }

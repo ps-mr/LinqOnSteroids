@@ -12,9 +12,22 @@ import collection.mutable.{HashMap, Subscriber, Buffer, Set}
 
 sealed trait Message[+T]
 case class Include[T](t: T) extends Message[T]
+/*class Include[T](_t : => T) extends Message[T] {
+  lazy val t = _t
+}*/
 case class Remove[T](t: T) extends Message[T]
 case class Update[T](old: T, curr: T) extends Message[T]
 case class Reset() extends Message[Nothing]
+// XXX: A union class will have a hard time handling a Reset event. Maybe it's better to just batch Remove messages for
+// a Reset? That's a problem when reset is O(1); maybe that must be done by intermediate nodes, which don't have however
+// the elements anyway, because they have not been transformed.
+
+//XXX: We don't have (yet) a concept of Self-Maintenable View, which in databases saves IO and for us can allow
+// garbage-collecting the original collection. But they are problematic. Here's the problem and a potential solution.
+// Publishers hang onto their subscribers through weak references, hence each subscriber must keep the
+// previous one alive. We can allow only the original collection to be GC-ed, not the intermediate message transformers.
+// Hence the first-level intermediate nodes must use a weak reference to the original collection; other nodes have just
+// a strong reference.
 
 //Script nodes can be useful as a space optimization for Seq[Message[T]]; however, types become less perspicuous.
 //case class Script[T](changes: Message[T]*) extends Message[T]
@@ -23,6 +36,8 @@ case class Reset() extends Message[Nothing]
 // Here's a version of Publisher without this problem; the design is very similar to the original Publisher class, but
 // with weak references and without filters (since we currently don't need them).
 
+/* TODO Copyright: our Publisher class derives from the Scala library, which has a BSD license. Copying code is allowed
+ * and no problem, as long as we acknowledge it in the sources. */
 trait Publisher[Evt] {
   type Pub <: Publisher[Evt]
   type Sub = Subscriber[Evt, Pub]
@@ -157,11 +172,15 @@ trait ObservableSet[T] extends Set[T] with MsgSeqPublisher[T] {
     super.clear()
   }
   abstract override def += (el: T) = {
-    publish(Include(el))
+    // If we `Include` an element twice, we'll need to `Remove` it twice as well before e.g. the final IncrementalResult
+    // instance realizes that it should disappear.
+    if (!this(el))
+      publish(Include(el))
     super.+=(el)
   }
   abstract override def -= (el: T) = {
-    publish(Remove(el))
+    if (this(el))
+      publish(Remove(el))
     super.-=(el)
   }
 }
@@ -229,12 +248,12 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
     evt match {
       case Include(v) =>
         val fV = fInt(v)
-        //fV subscribe subCollListener
+        //fV subscribe subCollListener //XXX reenable
         fV.exec().toSeq map (Include(_))
       case Remove(v) =>
         //val fV = fInt(v) //fV will not always return the _same_ result. We need a map from v to the returned collection. Damn!
         val fV = cache(v)
-        //fV removeSubscription subCollListener
+        //fV removeSubscription subCollListener //XXX reenable
         fV.exec().toSeq map (Remove(_))
       case _ => defTransformedMessages(evt)
       /*case Reset() => publish(Reset())
@@ -302,22 +321,29 @@ trait IncQueryReifier[T] extends QueryReifier[T] with MsgSeqPublisher[T] {
 
 
 // The root of an incremental view maintenance chain.
-
-//XXX: we might later want to inherit from ObservableSet and some specific set, instead of being an event forwarder.
-// Especially because you must add elements to innercol, not to an instanc of this class, which is inconvenient!
-class IncrementalSet[T](val innercol: ObservableSet[T]) extends IncQueryReifier[T] with ChildlessQueryReifier[T] with MsgSeqSubscriber[T, ObservableSet[T]] {
+// Second version, in mixin rather than decorator form.
+trait IncrementalSet[T] extends IncQueryReifier[T] with ChildlessQueryReifier[T] {
+  self: ObservableSet[T] =>
   type Pub <: IncrementalSet[T]
-  innercol subscribe this
-  override def exec(isLazy: Boolean) = if (isLazy) innercol.view else innercol
-  override def notify(pub: ObservableSet[T], evts: Seq[Message[T]]) {
-    publish(evts)
-  }
+  override def exec(isLazy: Boolean) = if (isLazy) this.view else this
 }
 
-//A class representing an intermediate or final result of an incremental query.
-class IncrementalResult[T] extends ChildlessQueryReifier[T] with MsgSeqSubscriber[T, IncQueryReifier[T]] {
+//A class representing an intermediate or final result of an incremental query. Note: SetProxy is not entirely
+// satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
+// same type. OTOH, this methods allows accessing the underlying data at all.
+class IncrementalResult[T](val inner: IncQueryReifier[T]) extends ChildlessQueryReifier[T]
+  with MsgSeqSubscriber[T, IncQueryReifier[T]]
+  with collection.SetProxy[T] //I mean immutable.SetProxy[T], but that requires an underlying immutable Set.
+  // I'll probably end up with forwarding most basic methods manually, and implementing the others through SetLike.
+  // Or we'll just support incremental query update for all methods.
+{
   var set = new HashMap[T, Int]
-  override def exec(isLazy: Boolean) = set.keySet
+  inner subscribe this
+  // It is crucial to have this statement only here after construction
+  notify(inner, inner.exec().toSeq.map(Include(_)))
+
+  override def self = set.keySet
+  override def exec(isLazy: Boolean) = self
   private[this] def count(v: T) = set.getOrElse(v, 0)
   override def notify(pub: IncQueryReifier[T], evts: Seq[Message[T]]) {
     for (evt <- evts) {
@@ -339,4 +365,5 @@ class IncrementalResult[T] extends ChildlessQueryReifier[T] with MsgSeqSubscribe
       }
     }
   }
+  override def toString = "IncrementalResult(" + exec().toString + ")"
 }
