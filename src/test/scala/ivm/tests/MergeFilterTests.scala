@@ -5,6 +5,7 @@ import optimization.Optimization
 import collections.CollectionReifier
 import ivm.{expressiontree, collections, optimization}
 import collections.CollectionReifier
+import expressiontree.Exp
 import expressiontree.Lifting._
 import optimization.Optimization
 import org.scalatest.junit.JUnitSuite
@@ -16,9 +17,9 @@ class MergeFilterTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testMerging() {
-    val q1 = for (c <- l if c + 3 is 7; if c + 8 is 19 ) yield c
+    val q1 = for (c : Exp[Int] <- l if c + 3 is 7; if c + 8 is 19 ) yield c
     val mergedq1 = Optimization.mergeFilters(q1)
-    val desiredResult = for (c <- l if (c + 3 is 7) && (c + 8 is 19)) yield c
+    val desiredResult = for (c : Exp[Int] <- l if (c + 3 is 7) && (c + 8 is 19)) yield c
     assert(mergedq1.potentiallyEquals(desiredResult))
   }
 }

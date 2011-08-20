@@ -19,6 +19,7 @@ trait Exp[+T] {
   private[ivm] def containsExp[S](e: Exp[S]): Boolean = {
     var ac = allChildren
     ac.contains(e)
+
   }
   private[ivm] def isOrContains[S](e: Exp[S]): Boolean = if (this.equals(e)) true else containsExp(e)
   private[ivm] def allChildren: Seq[Exp[_]] = children ++ (for (c <- children; a <- c.allChildren) yield a)
@@ -53,6 +54,21 @@ trait Exp[+T] {
   def ||[S >: T](that: Exp[S])(implicit ab : AsBool[S]) = Or(ab(this),ab(that))
   def ![S >: T]()(implicit ab : AsBool[S]) = Not(ab(this))
 
+  def map[S,U](f: Exp[S] => Exp[U])(implicit at: AsTraversable[T,S]): Exp[Traversable[U]] =
+     MapOp[S,U](at(this), FuncExp(f))
+
+  def withFilter[S](p: Exp[S] => Exp[Boolean])(implicit at: AsTraversable[T,S]): Exp[Traversable[S]] =
+      WithFilter[S](at(this), FuncExp(p))
+
+  def flatMap[S,U](f: Exp[S] => Exp[Traversable[U]])(implicit at: AsTraversable[T,S]): Exp[Traversable[U]] =
+    FlatMap[S,U](at(this), FuncExp(f))
+
+  def join[T1,S,TKey,TResult](outercol: Exp[Traversable[S]],
+                           outerKeySelector: Exp[T1] => Exp[TKey],
+                           innerKeySelector: Exp[S]=>Exp[TKey],
+                           resultSelector: Exp[(T1,S)] => Exp[TResult])
+                         (implicit at: AsTraversable[T,T1]): Exp[Traversable[TResult]] =
+    new Join[T1,S,TKey,TResult](at(this), outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
 
   //def is(that: Exp[Int]): Exp[Boolean] = Eq(this, that)
 
@@ -78,4 +94,14 @@ trait ChildlessExp[T] extends Exp[T] {
   def children = Seq()
 }
 
-trait ChildlessQueryReifier[T] extends ChildlessExp[QueryReifier[T]] with QueryOp[T]
+trait ChildlessQueryReifier[T] extends ChildlessExp[Traversable[T]]
+
+
+trait AsBool[T] {
+  def apply(e: Exp[T]) : Exp[Boolean]
+}
+
+trait AsTraversable[-T,S] {
+  def apply(e: Exp[T]) : Exp[Traversable[S]]
+}
+

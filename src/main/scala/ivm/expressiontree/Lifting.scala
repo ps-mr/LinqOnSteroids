@@ -18,6 +18,13 @@ object Lifting {
   implicit val asBool = new AsBool[Boolean] {
     def apply(e: Exp[Boolean]) = e
   }
+
+  // using def instead of val to keep it polymorphic
+  // unfortunately Scala suffers from the monomorphism restriction, too
+  implicit def asTraversable[S] = new AsTraversable[Traversable[S],S] {
+    def apply(e: Exp[Traversable[S]]) =  e
+  }
+
   case class PairHelper[A,B](p: Exp[(A,B)]) {
     val _1 = Proj1(p)
     val _2 = Proj2(p)
@@ -67,9 +74,4 @@ object Lifting {
       (Exp[A0], Exp[A1], Exp[A2], Exp[A3], Exp[A4]) => Exp[Res]= Call5(f, _, _, _, _, _)
   }
 }
-
-trait AsBool[T] {
-  def apply(e: Exp[T]) : Exp[Boolean]
-}
-
 

@@ -137,12 +137,12 @@ trait ObservableBuffer[T] extends Buffer[T] with MsgSeqPublisher[T] {
   }
 }
 
-trait QueryableBuffer[T, Repr] extends Queryable[T, Repr] with ObservableBuffer[T] {
+trait QueryableBuffer[T, Repr] /* extends Queryable[T, Repr]  */ extends ObservableBuffer[T] {
   //We must propagate the bound on Traversable. While at it, we refine it.
   self: Buffer[T] with Repr =>
 }
 
-trait QueryableSet[T, Repr] extends Queryable[T, Repr] with ObservableSet[T] {
+trait QueryableSet[T, Repr] /* extends Queryable[T, Repr] */ extends ObservableSet[T] {
   //We must propagate the bound on Traversable. While at it, we refine it.
   self: Set[T] with Repr =>
 }
@@ -171,7 +171,7 @@ trait BufferObserver[T, U, Repr] extends MsgSeqSubscriber[T, Repr]/*QueryableBuf
 //case class MyBufferMap[T, U, Repr](f: T => U) extends ArrayBuffer[U] with BufferObserver[T, U, Repr]
 
 // Let us first implement incremental view maintenance for multisets.
-//Trait implementing incremental view maintenance for Map operations
+//Trait implementing incremental view maintenance for MapOp operations
 trait MapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   def fInt: T => U
   override def transformedMessages(evt: Message[T]) = {
@@ -222,20 +222,20 @@ trait WithFilterMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
 //Moreover, we need the passed function to return IncQueryReifiers.
 trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   self: IncQueryReifier[U] => //? [T]? That's needed for the subscribe.
-  def fInt: T => QueryReifier[U] //XXX: QR |-> IncQR
-  var cache = new HashMap[T, QueryReifier[U]] //XXX: QR |-> IncQR
+  def fInt: T => Exp[Traversable[U]] //XXX: QR |-> IncQR
+  var cache = new HashMap[T, Exp[Traversable[U]]] //XXX: QR |-> IncQR
   val subCollListener: MsgSeqSubscriber[U, IncQueryReifier[U]] = null
   override def transformedMessages(evt: Message[T]) = {
     evt match {
       case Include(v) =>
         val fV = fInt(v)
         //fV subscribe subCollListener
-        fV.exec().toSeq map (Include(_))
+        fV.interpret().toSeq map (Include(_))
       case Remove(v) =>
         //val fV = fInt(v) //fV will not always return the _same_ result. We need a map from v to the returned collection. Damn!
         val fV = cache(v)
         //fV removeSubscription subCollListener
-        fV.exec().toSeq map (Remove(_))
+        fV.interpret().toSeq map (Remove(_))
       case _ => defTransformedMessages(evt)
       /*case Reset() => publish(Reset())
       //Here we cannot implement an update by sending an update of the mapped element. But we should.
@@ -261,38 +261,38 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
 //Don't make Repr so specific as IncCollectionReifier. Making Repr any specific
 //is entirely optional - it just enables the listener to get a more specific
 //type for the pub param to notify(), if he cares.
-class MapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,U]) extends Map[T,U](col, f) with MapMaintainer[T, U, IncQueryReifier[T]] {
+class MapMaintainerExp[T,U](col: Exp[Traversable[T]], f: FuncExp[T,U]) extends MapOp[T,U](col, f) with MapMaintainer[T, U, IncQueryReifier[T]] {
   override def fInt = f.interpret()
 }
-class FlatMapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,/* XXX Inc */QueryReifier[U]]) extends FlatMap[T,U](col, f) with FlatMapMaintainer[T, U, IncQueryReifier[T]] with IncQueryReifier[U] {
+class FlatMapMaintainerExp[T,U](col: Exp[Traversable[T]], f: FuncExp[T,Traversable[U]]) extends FlatMap[T,U](col, f) with FlatMapMaintainer[T, U, IncQueryReifier[T]] with IncQueryReifier[U] {
   override def fInt = x => f.interpret()(x)
 }
-class WithFilterMaintainerExp[T](col: QueryReifier[T], p: FuncExp[T,Boolean]) extends WithFilter[T](col, p) with WithFilterMaintainer[T, IncQueryReifier[T]] {
+class WithFilterMaintainerExp[T](col: Exp[Traversable[T]], p: FuncExp[T,Boolean]) extends WithFilter[T](col, p) with WithFilterMaintainer[T, IncQueryReifier[T]] {
   override def pInt = p.interpret()
 }
 
 // Variant of CollectionReifier, which also sends event to derived collections. Note that this is not reified!
 // XXX: we forget to add mutation operations. But see Queryable and QueryableTest. So make this a trait which is mixed in
 // by Queryable.
-trait IncQueryReifier[T] extends QueryReifier[T] with MsgSeqPublisher[T] {
+trait IncQueryReifier[T] extends Exp[Traversable[T]] with MsgSeqPublisher[T] {
   type Pub <: IncQueryReifier[T]
-  override def map[U](f: Exp[T] => Exp[U]): QueryReifier[U] = {
+  override def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] = {
     val res = new MapMaintainerExp[T, U](this, FuncExp(f))
     this subscribe res
     res
-    //val sub = new AnyRef with res.Sub /*MsgSeqSubscriber[U, Map[T, U]]*/ {
+    //val sub = new AnyRef with res.Sub /*MsgSeqSubscriber[U, MapOp[T, U]]*/ {
       //override def notify(pub: res.Pub, evt: Message[U]) {
     //val sub = new MsgSeqSubscriber[U, MsgSeqPublisher[U] /*MapMaintainerExp[T, U]*/] {
     //}
   }
   /*override def notify[U](pub: MapMaintainerExp[Message[T], ], evt: Message[T]) {
   }*/
-  override def withFilter(p: Exp[T] => Exp[Boolean]): QueryReifier[T] = {
+  override def withFilter(p: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] = {
     val res = new WithFilterMaintainerExp[T](this, FuncExp(p))
     this subscribe res
     res
   }
-  override def flatMap[U](f: Exp[T] => Exp[QueryReifier[U]]): QueryReifier[U] = {
+  override def flatMap[U](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] = {
     val res = new FlatMapMaintainerExp[T, U](this, FuncExp(f))
     this subscribe res
     res
@@ -308,7 +308,7 @@ trait IncQueryReifier[T] extends QueryReifier[T] with MsgSeqPublisher[T] {
 class IncrementalSet[T](val innercol: ObservableSet[T]) extends IncQueryReifier[T] with ChildlessQueryReifier[T] with MsgSeqSubscriber[T, ObservableSet[T]] {
   type Pub <: IncrementalSet[T]
   innercol subscribe this
-  override def exec(isLazy: Boolean) = if (isLazy) innercol.view else innercol
+  override def interpret() = if (isLazy) innercol.view else innercol
   override def notify(pub: ObservableSet[T], evts: Seq[Message[T]]) {
     publish(evts)
   }
@@ -317,7 +317,7 @@ class IncrementalSet[T](val innercol: ObservableSet[T]) extends IncQueryReifier[
 //A class representing an intermediate or final result of an incremental query.
 class IncrementalResult[T] extends ChildlessQueryReifier[T] with MsgSeqSubscriber[T, IncQueryReifier[T]] {
   var set = new HashMap[T, Int]
-  override def exec(isLazy: Boolean) = set.keySet
+  override def interpret() = set.keySet
   private[this] def count(v: T) = set.getOrElse(v, 0)
   override def notify(pub: IncQueryReifier[T], evts: Seq[Message[T]]) {
     for (evt <- evts) {

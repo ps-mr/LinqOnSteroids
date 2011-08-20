@@ -1,9 +1,11 @@
 package ivm.expressiontree
 
 //Exploration into the design space.
-case class Fix[T](col: QueryReifier[T], f: FuncExp[Traversable[T],Traversable[T]]) extends QueryOp[T] {
+
+/* KO: commented out until needed and tested
+case class Fix[T](col: ListQuery[T], f: FuncExp[Traversable[T],Traversable[T]]) extends Exp[Traversable[T]] {
   def children = Seq(col,f)
-  def genericConstructor = (v) => Fix(v(0).asInstanceOf[QueryReifier[T]],
+  def genericConstructor = (v) => Fix(v(0).asInstanceOf[ListQuery[T]],
                                        v(1).asInstanceOf[FuncExp[Traversable[T],Traversable[T]]])
   override def exec(isLazy: Boolean) = {
     // XXX: very very basic implementation of fixpoint computation
@@ -17,10 +19,10 @@ case class Fix[T](col: QueryReifier[T], f: FuncExp[Traversable[T],Traversable[T]
   }
 }
 
-case class FixWithReifiers[T](col: QueryReifier[T], f: FuncExp[QueryReifier[T],QueryReifier[T]]) extends QueryOp[T] {
+case class FixWithReifiers[T](col: ListQuery[T], f: FuncExp[ListQuery[T],ListQuery[T]]) extends QueryOp[T] {
   def children = Seq(col,f)
-  def genericConstructor = (v) => FixWithReifiers(v(0).asInstanceOf[QueryReifier[T]],
-                                       v(1).asInstanceOf[FuncExp[QueryReifier[T],QueryReifier[T]]])
+  def genericConstructor = (v) => FixWithReifiers(v(0).asInstanceOf[ListQuery[T]],
+                                       v(1).asInstanceOf[FuncExp[ListQuery[T],ListQuery[T]]])
   override def exec(isLazy: Boolean) = {
     // XXX: another very very basic implementation. However, here we build QueryReifiers and compare their results. This might be potentially more efficient
     var newV = col
@@ -32,3 +34,4 @@ case class FixWithReifiers[T](col: QueryReifier[T], f: FuncExp[QueryReifier[T],Q
     newV.exec(isLazy)
   }
 }
+  */

@@ -4,13 +4,12 @@ package optimization
 
 import expressiontree._
 import expressiontree.Lifting._
-import indexing.{PathIndex, HashIndex,Path}
 
 class Optimization {
   val cartProdToJoin : Exp[_] => Exp[_] =
      (e) => e match {
        case FlatMap(fmcol,fmf) => fmf.f(fmf.x) match {
-         case Map(mccol,mcf) => mccol match {
+         case MapOp(mccol,mcf) => mccol match {
            case WithFilter(col3,h) => {
              if (col3.isOrContains(fmf.x)) e else 
              h.f(h.x) match {
@@ -26,7 +25,7 @@ class Optimization {
                                else if (!(r.isOrContains(h.x)) && !(l.isOrContains(fmf.x)))
                                    Join(fmcol, 
                                         col3, 
-                                        FuncExp.makefun[Any,Any](r, fmf.x), 
+                                        FuncExp.makefun[Any,Any](r, fmf.x),
                                         FuncExp.makefun[Any,Any](l, h.x),
                                         FuncExp.makepairfun[Any,Any,Any](
                                                 mcf.f(mcf.x), 
@@ -45,7 +44,7 @@ class Optimization {
 
   val removeIdentityMaps : Exp[_] => Exp[_] =
     (e) => e match {
-      case Map(col,f) =>
+      case MapOp(col,f) =>
         f.f(f.x) match {
           case f.x => col
           case x => println(x); e
@@ -70,12 +69,14 @@ class Optimization {
        case e@Eq(x,y) => Eq(Exp.min(x,y), Exp.max(x,y))
        case _ => e
      }
-     
+
+  /*
   private def hasIndex(idx: scala.collection.mutable.Map[FuncExp[Any,Any],HashIndex[Any,Any]], hx: Var[_], l: Exp[_]) : Boolean = {
     idx.contains(Optimization.normalize(FuncExp.makefun(l, hx)).asInstanceOf[FuncExp[Any,Any]])
   }
 
-  private def getPath[T,S](col: QueryReifier[T]) : Option[(Path[(S,_),T], Traversable[S]) /*forSome {type S}*/]  = {
+
+  private def getPath[T,S](col: ListQuery[T]) : Option[(Path[(S,_),T], Traversable[S]) /*forSome {type S}*/]  = {
     col match {
       case f: FlatMap[q,T] => {
         getPath[q,S](f.col) match {
@@ -103,7 +104,7 @@ class Optimization {
          case _ => e
        }
        case _ => e
-  }
+  }*/
 }
 
 
@@ -111,7 +112,7 @@ object Optimization {
   val opt = new Optimization()
   def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(opt.cartProdToJoin)
   def optimize[T](exp: Exp[T]): Exp[T] = optimizeCartProdToJoin(exp)
-  def optimizeIndexing[T](exp: Exp[T]) : Exp[T] = exp.transform(opt.indexer)
+  //def optimizeIndexing[T](exp: Exp[T]) : Exp[T] = exp.transform(opt.indexer)
   def normalize[T](exp: Exp[T]) : Exp[T] = exp.transform(opt.normalizer)
   def mergeFilters[T](exp: Exp[T]) : Exp[T] = exp.transform(opt.mergeFilters)
   def removeIdentityMaps[T](exp: Exp[T]) : Exp[T] = exp.transform(opt.removeIdentityMaps)
