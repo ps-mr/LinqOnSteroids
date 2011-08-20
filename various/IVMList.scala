@@ -58,13 +58,14 @@ class IVMList2[A] private (l: A) {
     }
 }
 
-/*object IVMList2 {
+//XXX?
+object IVMList2 {
     def buildList[A](l: List[A]) = reset(new IVMList2(l))
-    //def buildList(a: Int) = reset(new IVMList2(List(a)))
+    //def buildList2(a: Int) = reset(new IVMList2(List(a)))
     def main(args: Array[String]) {
         val l1 = buildList(List(1, 2, 3))
     }
-}*/
+}
 
 trait ObservableBuffer2[T] extends ObservableBuffer[T] {
     abstract override def insertAll(n: Int, iter: collection.Traversable[T]): Unit = {
