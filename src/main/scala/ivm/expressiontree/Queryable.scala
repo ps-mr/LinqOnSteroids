@@ -44,4 +44,9 @@ trait Queryable[T, Repr] extends ChildlessQueryReifier[T] /*with Publisher[Messa
   //def view2: QueryReifier[T] = new CollectionReifier[T](self.view)
 }
 
+trait IncQueryable[T, Repr] extends Queryable[T, Repr] with IncQueryReifier[T] {
+  self: Traversable[T] with Repr =>
+  override def asQueryable: IncQueryReifier[T] = this
+}
+
 // vim: set ts=4 sw=4 et:
