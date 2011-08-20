@@ -325,7 +325,6 @@ trait IncQueryReifier[T] extends QueryReifier[T] with MsgSeqPublisher[T] {
 trait IncrementalSet[T] extends IncQueryReifier[T] with ChildlessQueryReifier[T] {
   self: ObservableSet[T] =>
   type Pub <: IncrementalSet[T]
-  override def exec(isLazy: Boolean) = if (isLazy) this.view else this
 }
 
 //A class representing an intermediate or final result of an incremental query. Note: SetProxy is not entirely

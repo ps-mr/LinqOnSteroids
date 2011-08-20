@@ -32,7 +32,7 @@ trait Queryable[T, Repr] extends ChildlessQueryReifier[T] /*with Publisher[Messa
   //type Pub = Queryable[T, Repr] //XXX? Should this be defined here already? Or should Pub be even more specific?
   def asQueryable: QueryReifier[T] = this
   def asCollection: Repr = this
-  override def exec(isLazy: Boolean) = this
+  override def exec(isLazy: Boolean) = if (isLazy) this.view else this
   //This allows selecting early how the query is to be executed.
   // The alternative is to choose between exec(isLazy = true) and exec(isLazy = false).
   //def asQueryableLazy: QueryReifier[T] = new CollectionReifier[T](this.view)
