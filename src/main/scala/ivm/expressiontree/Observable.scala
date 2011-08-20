@@ -152,6 +152,7 @@ trait ObservableBuffer[T] extends Buffer[T] with MsgSeqPublisher[T] {
   }
 }
 
+/*
 trait QueryableBuffer[T, Repr] extends Queryable[T, Repr] with ObservableBuffer[T] {
   //We must propagate the bound on Traversable. While at it, we refine it.
   self: Buffer[T] with Repr =>
@@ -161,6 +162,7 @@ trait QueryableSet[T, Repr] extends Queryable[T, Repr] with ObservableSet[T] {
   //We must propagate the bound on Traversable. While at it, we refine it.
   self: Set[T] with Repr =>
 }
+*/
 
 // Here we don't get info about replaced elements. However, for observable elements, we should still register ourselves
 // to forward them.
@@ -185,7 +187,7 @@ trait ObservableSet[T] extends Set[T] with MsgSeqPublisher[T] {
   }
 }
 
-trait BufferObserver[T, U, Repr] extends MsgSeqSubscriber[T, Repr]/*QueryableBuffer[T, Repr]#Sub*/ with ObservableBuffer[U]
+//trait BufferObserver[T, U, Repr] extends MsgSeqSubscriber[T, Repr]/*QueryableBuffer[T, Repr]#Sub*/ with ObservableBuffer[U]
 
 //case class MyBufferMap[T, U, Repr](f: T => U) extends ArrayBuffer[U] with BufferObserver[T, U, Repr]
 
@@ -322,10 +324,10 @@ trait IncQueryReifier[T] extends QueryReifier[T] with MsgSeqPublisher[T] {
 
 // The root of an incremental view maintenance chain.
 // Second version, in mixin rather than decorator form.
-trait IncrementalSet[T] extends IncQueryReifier[T] with ChildlessQueryReifier[T] {
+/*trait IncrementalSet[T] extends IncQueryReifier[T] with ChildlessQueryReifier[T] {
   self: ObservableSet[T] =>
   type Pub <: IncrementalSet[T]
-}
+}*/
 
 //A class representing an intermediate or final result of an incremental query. Note: SetProxy is not entirely
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the

@@ -1,12 +1,12 @@
 package ivm
 package collections
 
-import expressiontree.{IncQueryable, IncrementalSet, ObservableSet}
+import expressiontree.{IncQueryable, ObservableSet}
 
 import collection.generic.{CanBuildFrom, MutableSetFactory, GenericSetTemplate}
 import collection.mutable.{SetLike, HashSet}
 
-class IncHashSet[T] extends HashSet[T] with ObservableSet[T] with IncrementalSet[T]
+class IncHashSet[T] extends HashSet[T] with ObservableSet[T]
    with IncQueryable[T, HashSet[T]]
    with /*extra templates:*/ GenericSetTemplate[T, IncHashSet] with SetLike[T, IncHashSet[T]] {
   type Pub <: IncHashSet[T] //Two different definitions of Pub are inherited, this one is a common subtype.
