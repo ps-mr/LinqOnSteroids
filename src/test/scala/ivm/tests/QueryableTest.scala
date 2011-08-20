@@ -4,7 +4,10 @@ package tests
 //import expressiontree.{ObservableSet, Queryable, QueryReifier, Lifting, ObservableBuffer}
 import expressiontree._
 import collection.mutable.{SetLike, HashSet, Builder, BufferLike, IndexedSeqOptimized, ArrayBuffer}
-import collection.generic.{SeqFactory, CanBuildFrom, MutableSetFactory, GenericSetTemplate, GenericTraversableTemplate}
+import org.scalatest.junit.JUnitSuite
+import org.scalatest.junit.ShouldMatchersForJUnit
+import org.junit.Test
+import collection.generic.{SeqFactory, CanBuildFrom, MutableSetFactory, GenericSetTemplate, GenericCompanion, GenericTraversableTemplate}
 
 /*
  * Just an experiment, don't use for real! We are going to support Sets first, not Buffers, as semantics and use cases
@@ -39,8 +42,10 @@ object IncHashSet extends MutableSetFactory[IncHashSet] {
   // TODO: write test for that.
 }
 
-object QueryableTest {
+object QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
   import Lifting._
+
+  @Test
   def testQueryable() {
     val v = new IncArrayBuffer[Int]
     v ++= Seq(1, 2, 3)
@@ -65,6 +70,7 @@ object QueryableTest {
     println("vCollPlusOne: " + vCollPlusOne)
   }
 
+  @Test
   def testIncremental() {
     val v = new IncHashSet[Int]
     v ++= Seq(1, 2, 3)
@@ -84,7 +90,7 @@ object QueryableTest {
     val vQueryablePlusOne: QueryReifier[Int] = vQueryable.map(_ + 1)
     println("vIncUpd: " + vIncUpd)
 
-    def out = {
+    def out {
       println()
       println("vIncUpd: " + vIncUpd)
       println("vIncUpd.interpret.exec(): " + vIncUpd.interpret.exec())
@@ -119,9 +125,9 @@ object QueryableTest {
   }
 
   def main(args: Array[String]) {
-    println("testQueryable")
+    println("==testQueryable:")
     testQueryable()
-    println("testIncremental")
+    println("\n\n==testIncremental:")
     testIncremental()
   }
 }
