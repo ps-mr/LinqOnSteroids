@@ -93,9 +93,11 @@ object QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     def out {
       println()
       println("vIncUpd: " + vIncUpd)
-      println("vIncUpd.interpret.exec(): " + vIncUpd.interpret.exec())
-      println("vIncUpd.exec(): " + vIncUpd.exec())
-      println("vIncUpd.inner.exec(): " + vIncUpd.inner.exec())
+      //println("vIncUpd.exec(): " + vIncUpd.exec())
+      //println("vIncUpd.interpret.exec(): " + vIncUpd.interpret.exec())
+      vIncUpd.exec() should be (vIncUpd.interpret.exec())
+      vIncUpd.exec() should be (vIncUpd.inner.exec())
+      //println("vIncUpd.inner.exec(): " + vIncUpd.inner.exec())
     }
     v ++= Seq(4, 5, 6)
     out
