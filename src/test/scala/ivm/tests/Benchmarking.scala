@@ -22,16 +22,16 @@ object Benchmarking {
     }
   }
 
-  def benchMark(name: String, execLoops: Int = 1)(toBench: => Unit) : Double  = {
-    //Iteration counts.
-    //Warm up the VM - should be more
-    val warmUpLoops = 10
-
-    //Iterations to measure variance.
-    val sampleLoops = 5
+  /**
+   * @param warmuUpLoops: Warm up the VM - should be more
+   * @param sampleLoops Iterations to measure variance.
+   */
+  def benchMark(name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true)
+               (toBench: => Unit): Double = {
     for (i <- 1 to warmUpLoops)
       toBench
-    println()
+    if (verbose)
+      println()
 
     val stats = new VarianceCalc
     for (i <- 1 to sampleLoops) {
@@ -41,32 +41,16 @@ object Benchmarking {
       stats.update((System.nanoTime() - before) / execLoops)
     }
     val avg = stats.avg / math.pow(10,6)
-    println(">>> Name = %s, time = %.3f +- %.3f" format (name,
-      avg,
-      math.sqrt(stats.variance) / math.pow(10, 6)))
+    if (verbose)
+      println(">>> Name = %s, time = %.3f +- %.3f" format (name,
+        avg,
+        math.sqrt(stats.variance) / math.pow(10, 6)))
     avg
   }
 
-  def silentBenchMark(name: String, execLoops: Int = 1)(toBench: => Unit) : Double  = {
-    //Iteration counts.
-    //Warm up the VM - should be more
-    val warmUpLoops = 3
-
-    //Iterations to measure variance.
-    val sampleLoops = 3
-    for (i <- 1 to warmUpLoops)
-      toBench
-
-    val stats = new VarianceCalc
-    for (i <- 1 to sampleLoops) {
-      val before = System.nanoTime()
-      for (i <- 1 to execLoops)
-        toBench
-      stats.update((System.nanoTime() - before) / execLoops)
-    }
-    val avg = stats.avg / math.pow(10,6)
-    avg
-  }
+  def silentBenchMark(name: String, execLoops: Int = 1, warmUpLoops: Int = 3, sampleLoops: Int = 3)
+                     (toBench: => Unit) =
+    benchMark(name, execLoops, warmUpLoops, sampleLoops, false)(toBench)
 
   def printRes[T](v: Exp[T]) {
     println("v:\t\t" + v)
