@@ -21,7 +21,8 @@ trait QueryReifier[T] extends Exp[QueryReifier[T]]  {
   def flatMap[U](f: Exp[T] => Exp[QueryReifier[U]]): QueryReifier[U] = FlatMap[T,U](this, FuncExp(f))
 
   //Compute fix point of f applied to this collection. Useful for static analyses. Totally untested.
-  def fix(f: Exp[QueryReifier[T]] => Exp[QueryReifier[T]]): Exp[QueryReifier[T]] = FixWithReifiers[T](this, FuncExp(f))
+  def fix(f: Exp[Traversable[T]] => Exp[Traversable[T]]): Exp[QueryReifier[T]] = Fix[T](this, FuncExp(f))
+  def fixWithReif(f: Exp[QueryReifier[T]] => Exp[QueryReifier[T]]): Exp[QueryReifier[T]] = FixWithReifiers[T](this, FuncExp(f))
   /*
    * Alternative type:
    * trait ReifyingTraversableLike[T, Repr[_]]
