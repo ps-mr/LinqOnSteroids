@@ -10,7 +10,6 @@ import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test
 
-//import org.junit.Test
 import Benchmarking._
  
 class IndexingTests extends JUnitSuite with ShouldMatchersForJUnit {
