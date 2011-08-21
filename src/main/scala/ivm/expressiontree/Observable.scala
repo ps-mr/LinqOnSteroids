@@ -282,13 +282,16 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
 //Don't make Repr so specific as IncCollectionReifier. Making Repr any specific
 //is entirely optional - it just enables the listener to get a more specific
 //type for the pub param to notify(), if he cares.
-class MapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,U]) extends Map[T,U](col, f) with MapMaintainer[T, U, IncQueryReifier[T]] {
+class MapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,U]) extends Map[T,U](col, f)
+with MapMaintainer[T, U, IncQueryReifier[T]] with IncQueryReifier[U] {
   override def fInt = f.interpret()
 }
-class FlatMapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,/* XXX Inc */QueryReifier[U]]) extends FlatMap[T,U](col, f) with FlatMapMaintainer[T, U, IncQueryReifier[T]] with IncQueryReifier[U] {
+class FlatMapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,/* XXX Inc */QueryReifier[U]]) extends FlatMap[T,U](col, f)
+with FlatMapMaintainer[T, U, IncQueryReifier[T]] with IncQueryReifier[U] {
   override def fInt = x => f.interpret()(x)
 }
-class WithFilterMaintainerExp[T](col: QueryReifier[T], p: FuncExp[T,Boolean]) extends WithFilter[T](col, p) with WithFilterMaintainer[T, IncQueryReifier[T]] {
+class WithFilterMaintainerExp[T](col: QueryReifier[T], p: FuncExp[T,Boolean]) extends WithFilter[T](col, p)
+with WithFilterMaintainer[T, IncQueryReifier[T]] with IncQueryReifier[T] {
   override def pInt = p.interpret()
 }
 
