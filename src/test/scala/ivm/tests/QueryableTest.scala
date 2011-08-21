@@ -10,7 +10,7 @@ import org.junit.Test
 import collections.{IncHashSet, IncArrayBuffer}
 import collection.mutable.{HashSet, ArrayBuffer}
 
-object QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
+class QueryableTests extends JUnitSuite with ShouldMatchersForJUnit {
   import Lifting._
 
   @Test
@@ -93,7 +93,9 @@ object QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     //Since vColl has a different static type, a different implicit is passed here.
     println("vCollPlusOne: " + vCollPlusOne)
   }
+}
 
+object QueryableTests extends QueryableTests {
   def main(args: Array[String]) {
     println("==testQueryable:")
     testQueryable()
