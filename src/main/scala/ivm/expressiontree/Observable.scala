@@ -152,18 +152,6 @@ trait ObservableBuffer[T] extends Buffer[T] with MsgSeqPublisher[T] {
   }
 }
 
-/*
-trait QueryableBuffer[T, Repr] extends Queryable[T, Repr] with ObservableBuffer[T] {
-  //We must propagate the bound on Traversable. While at it, we refine it.
-  self: Buffer[T] with Repr =>
-}
-
-trait QueryableSet[T, Repr] extends Queryable[T, Repr] with ObservableSet[T] {
-  //We must propagate the bound on Traversable. While at it, we refine it.
-  self: Set[T] with Repr =>
-}
-*/
-
 // Here we don't get info about replaced elements. However, for observable elements, we should still register ourselves
 // to forward them.
 trait ObservableSet[T] extends Set[T] with MsgSeqPublisher[T] {
@@ -187,10 +175,6 @@ trait ObservableSet[T] extends Set[T] with MsgSeqPublisher[T] {
   }
 }
 
-//trait BufferObserver[T, U, Repr] extends MsgSeqSubscriber[T, Repr]/*QueryableBuffer[T, Repr]#Sub*/ with ObservableBuffer[U]
-
-//case class MyBufferMap[T, U, Repr](f: T => U) extends ArrayBuffer[U] with BufferObserver[T, U, Repr]
-
 // Let us first implement incremental view maintenance for multisets.
 //Trait implementing incremental view maintenance for Map operations
 trait MapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
@@ -199,22 +183,14 @@ trait MapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
     evt match {
       case Include(v) => Seq(Include(fInt(v)))
       case Remove(v) => Seq(Remove(fInt(v)))
-      case _ => defTransformedMessages(evt)
 
-      /*case Reset() => Reset()
-      //Here we implement an update by sending an update of the mapped element.
+      //Optionally, we can preserve update events as such.
+      //case Update(old, curr) => publish(Update(fInt(old), fInt(curr)))
       //It's not clear whether this is any better. Moreover, what happens when we update a complex observable element?
       //If listeners also listen on the element itself, they are gonna get too many notifications.
       //Otherwise, they might ignore the notification from us... it's not clear.
-      case Update(old, curr) => publish(Update(fInt(old), fInt(curr)))
 
-      // These two cases are quite common: they basically mean that no special handling is provided for bulk events.
-      // Implement these in a superclass for these maintenance operations.
-      //case Update(old, curr) => publish(Script(Remove(f(old)), Include(f(curr))))
-      /*case Update(old, curr) =>
-        notify(pub, Remove(old))
-        notify(pub, Include(curr))*/
-      case Script(msgs @ _*) => msgs foreach (notify(pub, _))*/
+      case _ => defTransformedMessages(evt)
     }
   }
 }
@@ -258,26 +234,13 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
         //fV removeSubscription subCollListener //XXX reenable
         fV.exec().toSeq map (Remove(_))
       case _ => defTransformedMessages(evt)
-      /*case Reset() => publish(Reset())
+      /*
       //Here we cannot implement an update by sending an update of the mapped element. But we should.
-      //It's not clear whether this is any better. Moreover, what happens when we update a complex observable element?
-      //If listeners also listen on the element itself, they are gonna get too many notifications.
-      //Otherwise, they might ignore the notification from us... it's not clear.
       //case Update(old, curr) => publish(Update(f(old), f(curr)))
-      // These two cases are quite common: they basically mean that no special handling is provided for bulk events.
-      //case Update(old, curr) => publish(Script(Remove(f(old)), Include(f(curr))))
-      case Update(old, curr) =>
-        notify(pub, Remove(old))
-        notify(pub, Include(curr))
-      case Script(msgs @ _*) => msgs foreach (notify(pub, _))*/
+      */
     }
   }
 }
-
-// TODO: add a trait which materializes update, and one which implements maintainance of unification.
-// Probably they can be both implemented together. Look into the other implementation, use bags or sth.
-// There was a use-case I forget where other context information, other than a simple count, had to be stored.
-// Was it a path in a hierarchical index?
 
 //Don't make Repr so specific as IncCollectionReifier. Making Repr any specific
 //is entirely optional - it just enables the listener to get a more specific
@@ -295,7 +258,7 @@ with WithFilterMaintainer[T, IncQueryReifier[T]] with IncQueryReifier[T] {
   override def pInt = p.interpret()
 }
 
-// Variant of CollectionReifier, which also sends event to derived collections. Note that this is not reified!
+// Variant of QueryReifier, which also sends event to derived collections. Note that this is not reified!
 // XXX: we forget to add mutation operations. But see Queryable and QueryableTest. So make this a trait which is mixed in
 // by Queryable.
 trait IncQueryReifier[T] extends QueryReifier[T] with MsgSeqPublisher[T] {
@@ -304,13 +267,7 @@ trait IncQueryReifier[T] extends QueryReifier[T] with MsgSeqPublisher[T] {
     val res = new MapMaintainerExp[T, U](this, FuncExp(f))
     this subscribe res
     res
-    //val sub = new AnyRef with res.Sub /*MsgSeqSubscriber[U, Map[T, U]]*/ {
-      //override def notify(pub: res.Pub, evt: Message[U]) {
-    //val sub = new MsgSeqSubscriber[U, MsgSeqPublisher[U] /*MapMaintainerExp[T, U]*/] {
-    //}
   }
-  /*override def notify[U](pub: MapMaintainerExp[Message[T], ], evt: Message[T]) {
-  }*/
   override def withFilter(p: Exp[T] => Exp[Boolean]): QueryReifier[T] = {
     val res = new WithFilterMaintainerExp[T](this, FuncExp(p))
     this subscribe res
@@ -324,13 +281,10 @@ trait IncQueryReifier[T] extends QueryReifier[T] with MsgSeqPublisher[T] {
   //XXX add join, and add union
 }
 
-
-// The root of an incremental view maintenance chain.
-// Second version, in mixin rather than decorator form.
-/*trait IncrementalSet[T] extends IncQueryReifier[T] with ChildlessQueryReifier[T] {
-  self: ObservableSet[T] =>
-  type Pub <: IncrementalSet[T]
-}*/
+// TODO: add a trait which implements maintenance of unification.
+// Probably they can be both implemented together. Look into the other implementation, use bags or sth.
+// There was a use-case I forget where other context information, other than a simple count, had to be stored.
+// Was it a path in a hierarchical index?
 
 //A class representing an intermediate or final result of an incremental query. Note: SetProxy is not entirely
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
@@ -346,7 +300,9 @@ class IncrementalResult[T](val inner: IncQueryReifier[T]) extends ChildlessQuery
   // It is crucial to have this statement only here after construction
   notify(inner, inner.exec().toSeq.map(Include(_)))
 
+  //From SetProxy
   override def self = set.keySet
+
   override def exec(isLazy: Boolean) = self
   private[this] def count(v: T) = set.getOrElse(v, 0)
   override def notify(pub: IncQueryReifier[T], evts: Seq[Message[T]]) {
