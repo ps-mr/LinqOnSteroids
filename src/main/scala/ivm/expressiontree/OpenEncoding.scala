@@ -62,8 +62,9 @@ object OpenEncoding {
     object Exp {
       def app[T, U](f: T => U, t: Exp[T]): Exp[U] = App(f, t)
     }
-    case class FuncExp[-T, +U](f: Exp[T] => Exp[U]) extends Exp[T => U] {
-      def interpret = t => f(Const(t)).interpret
+    //T cannot be contravariant here. Damn!
+    case class FuncExp[T, +U, ExpT <: Exp[T]](f: ExpT => Exp[U])(implicit val cbeT: CanBuildExp[T, ExpT]) extends Exp[T => U] {
+      def interpret = t => f(cbeT(Const(t))).interpret
     }
   }
 
@@ -93,23 +94,23 @@ object OpenEncoding {
 
   trait TraversableExps {
     this: ExpressionTree =>
-    trait TraversableExp[T, ExpT] extends Exp[Traversable[T]] {
-      val cbeT: CanBuildExp[T, ExpT]
+    trait TraversableExp[T, ExpT <: Exp[T]] extends Exp[Traversable[T]] {
+      implicit val cbeT: CanBuildExp[T, ExpT]
       //XXX: Here I should use Map, FlatMap and WithFilter nodes, instead of generic application nodes. But that's beside the point I'm making for this encoding.
-      def map[U, That <: Exp[Traversable[U]]](f: Exp[T] => Exp[U])(implicit c: CanBuildExp[Traversable[U], That]): That =
-        c buildExp App((_: Traversable[T]) map FuncExp(f).interpret, this)
+      def map[U, That <: Exp[Traversable[U]]](f: ExpT => Exp[U])(implicit c: CanBuildExp[Traversable[U], That]): That =
+        c buildExp App((_: Traversable[T]) map (FuncExp[T, U, ExpT](f).interpret), this)
 
-      def flatMap[U, That <: Exp[Traversable[U]]](f: Exp[T] => Exp[Traversable[U]])(implicit c: CanBuildExp[Traversable[U], That]): That =
-        c buildExp App((_: Traversable[T]) flatMap FuncExp(f).interpret, this)
+      def flatMap[U, That <: Exp[Traversable[U]]](f: ExpT => Exp[Traversable[U]])(implicit c: CanBuildExp[Traversable[U], That]): That =
+        c buildExp App((_: Traversable[T]) flatMap FuncExp[T, Traversable[U], ExpT](f).interpret, this)
 
       //XXX: probably we could just return the same type as us... couldn't we? Probably yes, but we still need a CanBuildExp to actually do the creation.
-      def withFilter[That <: Exp[Traversable[T]]](f: Exp[T] => Exp[Boolean])(implicit c: CanBuildExp[Traversable[T], That]): That =
-        c buildExp App((_: Traversable[T]) filter FuncExp(f).interpret, this) //We can't use withFilter underneath.
+      def withFilter[That <: Exp[Traversable[T]]](f: ExpT => Exp[Boolean])(implicit c: CanBuildExp[Traversable[T], That]): That =
+        c buildExp App((_: Traversable[T]) filter FuncExp[T, Boolean, ExpT](f).interpret, this) //We can't use withFilter underneath.
 
       def union[U >: T, That <: Exp[Traversable[U]]](u: Exp[Traversable[U]])(implicit c: CanBuildExp[Traversable[U], That]): That =
         c buildExp App((_: Traversable[T]) ++ u.interpret, this) //Should use an App node with two params.
     }
-    case class TraversableExpWrap[T, ExpT](t: Exp[Traversable[T]])(implicit val cbeT: CanBuildExp[T, ExpT]) extends
+    case class TraversableExpWrap[T, ExpT <: Exp[T]](t: Exp[Traversable[T]])(implicit val cbeT: CanBuildExp[T, ExpT]) extends
       ExpWrapper[Traversable[T]](t) with TraversableExp[T, ExpT]
   }
   trait NumExpressionTree {
@@ -143,7 +144,7 @@ object OpenEncoding {
         def buildExp(e: Exp[T]) = NumExpWrap(e)
       }
     implicit def toExp[T](t: T): Exp[T] = toExpTempl(t)
-    implicit def canBuildExpTrav[T, ExpT](implicit c: CanBuildExp[T, ExpT]) =
+    implicit def canBuildExpTrav[T, ExpT <: Exp[T]](implicit c: CanBuildExp[T, ExpT]) =
       new CanBuildExp[Traversable[T], TraversableExp[T, ExpT]] {
         def buildExp(e: Exp[Traversable[T]]) = TraversableExpWrap(e)(c)
       }
@@ -154,7 +155,7 @@ object OpenEncoding {
     //to toExpTempl. The difference between these two methods is thus in the
     //implicitly passed parameter (canBuildExpNum vs canBuildExp)
     implicit def toNumExp[T : Numeric](t: T): NumExp[T] = toExpTempl(t)
-    implicit def toTraversableExp[T, ExpT](t: Traversable[T])(implicit c: CanBuildExp[T, ExpT]): TraversableExp[T, ExpT] = toExpTempl(t)
+    implicit def toTraversableExp[T, ExpT <: Exp[T]](t: Traversable[T])(implicit c: CanBuildExp[T, ExpT]): TraversableExp[T, ExpT] = toExpTempl(t)
 
     //Question: does implicit lookup find a most-specific solution just because
     //the target type is NumExp[T], and only passing canBuildExpNum gives that
@@ -162,10 +163,16 @@ object OpenEncoding {
     def _toNumExp2[T : Numeric](t: T): Exp[T] = toExpTempl(t)
 
     def testTraversable() {
-      val a: TraversableExp[Int, NumExp[Int]] = Seq(1)
-      //Neither of these work.
-      //val b = a.map(_ + 1)
-      //val b = a.map(1 + _)
+      val a1: TraversableExp[Int, NumExp[Int]] = Seq(1, 2, 3, 5)
+      val a2 = toExpTempl(Seq(1, 2, 3, 5).toTraversable) //Doesn't work well
+      val a = toTraversableExp(Seq(1, 2, 3, 5))
+      val b = a.map(_ + 1)
+      val b2 = a.map(1 + _)
+      //assert (b == b2) //fails!
+      println(b)
+      println(b.interpret)
+      println(b2)
+      println(b2.interpret)
     }
     def main(args: Array[String]) {
       val a: NumExp[Int] = 1
@@ -177,6 +184,9 @@ object OpenEncoding {
       println(b)
       testTraversable()
     }
+  }
+  def main(args: Array[String]) {
+    OpenEncoding.main(args)
   }
 }
 
