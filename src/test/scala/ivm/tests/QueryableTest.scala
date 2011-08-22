@@ -12,11 +12,7 @@ import collection.mutable.{HashSet, ArrayBuffer}
 
 class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
   import Lifting._
-  def testRest() {
-    emptyIncHashSet()
-    emptyIncArrayBuffer()
-  }
-  
+
   @Test
   def emptyIncHashSet() {
     val a = IncHashSet.empty
@@ -141,15 +137,3 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     println("vCollPlusOne: " + vCollPlusOne)
   }
 }
-
-object QueryableTest extends QueryableTest {
-  def main(args: Array[String]) {
-    println("==testQueryable:")
-    testQueryable()
-    println("\n\n==testIncremental:")
-    testIncremental()
-    println("\n\n==other tests:")
-    testRest()
-  }
-}
-
