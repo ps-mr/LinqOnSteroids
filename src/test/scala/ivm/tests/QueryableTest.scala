@@ -10,8 +10,55 @@ import org.junit.Test
 import collections.{IncHashSet, IncArrayBuffer}
 import collection.mutable.{HashSet, ArrayBuffer}
 
-class QueryableTests extends JUnitSuite with ShouldMatchersForJUnit {
+class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
   import Lifting._
+  def testRest() {
+    emptyIncHashSet()
+    emptyIncArrayBuffer()
+  }
+  
+  @Test
+  def emptyIncHashSet() {
+    val a = IncHashSet.empty
+    a should not be (null)
+    val b = IncHashSet()
+    b should not be (null)
+    b should be (a)
+  }
+
+  @Test
+  def builderIncHashSet() {
+    val c = IncHashSet.newBuilder[Int]
+    c ++= Seq(1, 2, 3)
+    val cRes: IncHashSet[Int] = c.result()
+    val cRes2 = c.result()
+    cRes should be (cRes2)
+    cRes.getClass() should be (cRes2.getClass())
+    cRes should be (Set(1, 2, 3))
+    val d = IncHashSet(1, 2, 3)
+    d should be (cRes)
+  }
+
+  @Test
+  def emptyIncArrayBuffer() {
+    val a = IncArrayBuffer.empty
+    a should not be (null)
+    val b = IncArrayBuffer()
+    b should not be (null)
+    b should be (a)
+  }
+
+  @Test
+  def builderIncArrayBuffer() {
+    val c = IncArrayBuffer.newBuilder[Int]
+    c ++= Seq(1, 2, 3)
+    val cRes: IncArrayBuffer[Int] = c.result()
+    val cRes2 = c.result()
+    cRes should be (cRes2)
+    cRes should be (Seq(1, 2, 3))
+    val d = IncArrayBuffer(1, 2, 3)
+    d should be (cRes)
+  }
 
   @Test
   def testQueryable() {
@@ -54,7 +101,7 @@ class QueryableTests extends JUnitSuite with ShouldMatchersForJUnit {
     println("v2.asCollection.map(_ + 1): " + v2.asCollection.map(_ + 1))
     val vQueryable: IncQueryReifier[Int] = v.asQueryable
     assert(vQueryable == v)
-    //val vQueryablePlusOne2: ArrayBuffer[Int] = vQueryable.map((i: Int) => i + 1) //gives error
+    //val vQueryablePlusOne2: HashSet[Int] = vQueryable.map((i: Int) => i + 1) //gives error
     val vQueryablePlusOne: QueryReifier[Int] = vQueryable.map(_ + 1) //XXX: we should get IncQueryReifier
     println("vIncUpd: " + vIncUpd)
 
@@ -84,7 +131,7 @@ class QueryableTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     println("vPlusOne: " + vPlusOne)
     println("vQueryablePlusOne: " + vQueryablePlusOne)
-    println("vQueryablePlusOne.interpret.exec(): " + vQueryablePlusOne.interpret.exec())
+    println("vQueryablePlusOne.interpret().exec(): " + vQueryablePlusOne.interpret().exec())
 
     val vColl: HashSet[Int] = v.asCollection //This is a simple upcast...
     println("vColl: " + vColl)
@@ -95,12 +142,14 @@ class QueryableTests extends JUnitSuite with ShouldMatchersForJUnit {
   }
 }
 
-object QueryableTests extends QueryableTests {
+object QueryableTest extends QueryableTest {
   def main(args: Array[String]) {
     println("==testQueryable:")
     testQueryable()
     println("\n\n==testIncremental:")
     testIncremental()
+    println("\n\n==other tests:")
+    testRest()
   }
 }
 
