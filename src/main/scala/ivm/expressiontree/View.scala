@@ -5,7 +5,7 @@ import collection.TraversableView
 //case class View[T](col: Exp[QueryReifier[T]]) extends Exp[TraversableView[T, Traversable[T]]] {
 //override def interpret = col.interpret().exec().view //XXX. The return value should be executed when exec() is called.
 case class View[T](col: QueryReifier[T]) extends ChildlessQueryReifier[T] {
-  override def exec(isLazy: Boolean) = col.exec(isLazy).view
+  override def exec() = col.exec().view
 }
 
 case class Force[T](col: QueryReifier[T]) extends ChildlessQueryReifier[T]  {
@@ -16,7 +16,7 @@ case class Force[T](col: QueryReifier[T]) extends ChildlessQueryReifier[T]  {
    * XXX asInstanceOf is needed because of erasure, and it's uglymost - especially because it means
    * constructing a collection (instead of whatever was originally constructed).
    */
-  override def exec(isLazy: Boolean) = col.exec(isLazy) match {
+  override def exec() = col.exec() match {
     case view: TraversableView[_, _] => view.asInstanceOf[TraversableView[T, Traversable[T]]].force
     case coll => coll
   }

@@ -303,7 +303,7 @@ class IncrementalResult[T](val inner: IncQueryReifier[T]) extends ChildlessQuery
   //From SetProxy
   override def self = set.keySet
 
-  override def exec(isLazy: Boolean) = self
+  override def exec() = self
   private[this] def count(v: T) = set.getOrElse(v, 0)
   override def notify(pub: IncQueryReifier[T], evts: Seq[Message[T]]) {
     for (evt <- evts) {

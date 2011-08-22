@@ -10,8 +10,8 @@ case class WithFilter[S](col: QueryReifier[S], f: FuncExp[S,Boolean]) extends Qu
   //I also assume that view on a view returns the same view
   //I leave in this call because runtime goes from ~5s to ~4s.
 
-  override def exec(isLazy: Boolean) = col.exec(isLazy).view.filter(f.interpret())
+  override def exec() = col.exec().view.filter(f.interpret())
   //Now the lazification is introduced by an explicit View node created by QueryReifier.withFilter.
   //Extra lazification-reification pairs can then be deleted (if wanted) by the optimizer.
-  //override def exec(isLazy: Boolean) = col.exec(isLazy).filter(f.interpret())
+  //override def exec() = col.exec().filter(f.interpret())
 }

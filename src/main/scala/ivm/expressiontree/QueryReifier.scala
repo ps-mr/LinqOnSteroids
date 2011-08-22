@@ -12,7 +12,7 @@ import optimization.Optimization
  * QueryReifier[U] by Exp[Traversable[U]]/Exp[TraversableView[U]]. How to make that extensible is not obvious.
  */
 trait QueryReifier[T] extends Exp[QueryReifier[T]]  {
-  def exec(isLazy: Boolean = false): Traversable[T]
+  def exec(): Traversable[T]
 
   def map[U](f: Exp[T] => Exp[U]): QueryReifier[U] = Map[T,U](this, FuncExp(f))
   def withFilter(p: Exp[T] => Exp[Boolean]): QueryReifier[T] = WithFilter[T](this, FuncExp(p))
