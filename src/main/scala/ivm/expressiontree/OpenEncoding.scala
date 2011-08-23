@@ -1,5 +1,6 @@
 package ivm.expressiontree
 import scala.math.Numeric
+import xml.Elem
 
 /**
  * Here I experiment with an alternative encoding of Expression, where methods
@@ -12,22 +13,18 @@ import scala.math.Numeric
  * not work because Scala never applies two implicit conversions on top of one
  * another.
  * The approach here is to convert directly Double to DoubleExp, String to
- * StringExp, and so on. However, it seems it does not quite work yet - see the
- * definition of c in main. It would work if toExpTempl were found by the Scala
- * compiler, which is not because of what I believe to be a bug.
- *
+ * StringExp, and so on.
  * An alternative solution is to make the generic conversion toExp: T => Exp[T]
  * have lower priority than the others, by defining toExp in a trait and the
  * others in an object inheriting from that trait.
+ * This extra step would not be needed if toExpTempl were found by the Scala
+ * compiler, which is not because of what I believe to be a bug.
  * @author Paolo G. Giarrusso
  */
 
 object OpenEncoding {
   trait Exp[+T] {
     def interpret: T
-    /*def map[U, That <: Exp[U]](f: T => U)(implicit c: CanBuildExp[U, That]): That =
-      c buildExp Exp.app(f, this)*/
-    //TODO add flatMap and withFilter.
   }
 
   //The other problem is constructing the right object, but I think that a
@@ -36,10 +33,9 @@ object OpenEncoding {
   //declaration does not compile because of variance problems - I should make
   //Elem invariant, which is not what I want:
   //trait CanBuildExp[-Elem, +To <: Exp[Elem]]
-  trait CanBuildExp[-Elem, +To] {
-    def buildExp(e: Exp[Elem]): To
+  trait CanBuildExp[-Elem, +To] extends (Exp[Elem] => To) {
+    def apply(e: Exp[Elem]): To
     //XXX: This naming is probably better - maybe instances would then work as implicit conversions themselves!
-    def apply(e: Exp[Elem]): To = buildExp(e)
   }
 
   class ExpWrapper[+T](t: Exp[T]) extends Exp[T] {
@@ -62,7 +58,8 @@ object OpenEncoding {
     object Exp {
       def app[T, U](f: T => U, t: Exp[T]): Exp[U] = App(f, t)
     }
-    //T cannot be contravariant here. Damn!
+    //T cannot be contravariant here. Also ExpT must be invariant. Damn!
+    //case class FuncExp[-T, +U, +ExpT2 <: ExpT, -ExpT <: Exp[T]](f: ExpT => Exp[U])(implicit val cbeT: CanBuildExp[T, ExpT2]) extends Exp[T => U]
     case class FuncExp[T, +U, ExpT <: Exp[T]](f: ExpT => Exp[U])(implicit val cbeT: CanBuildExp[T, ExpT]) extends Exp[T => U] {
       def interpret = t => f(cbeT(Const(t))).interpret
     }
@@ -98,17 +95,17 @@ object OpenEncoding {
       implicit val cbeT: CanBuildExp[T, ExpT]
       //XXX: Here I should use Map, FlatMap and WithFilter nodes, instead of generic application nodes. But that's beside the point I'm making for this encoding.
       def map[U, That <: Exp[Traversable[U]]](f: ExpT => Exp[U])(implicit c: CanBuildExp[Traversable[U], That]): That =
-        c buildExp App((_: Traversable[T]) map (FuncExp[T, U, ExpT](f).interpret), this)
+        App((_: Traversable[T]) map (FuncExp[T, U, ExpT](f).interpret), this)
 
       def flatMap[U, That <: Exp[Traversable[U]]](f: ExpT => Exp[Traversable[U]])(implicit c: CanBuildExp[Traversable[U], That]): That =
-        c buildExp App((_: Traversable[T]) flatMap FuncExp[T, Traversable[U], ExpT](f).interpret, this)
+        c apply App((_: Traversable[T]) flatMap FuncExp[T, Traversable[U], ExpT](f).interpret, this)
 
       //XXX: probably we could just return the same type as us... couldn't we? Probably yes, but we still need a CanBuildExp to actually do the creation.
       def withFilter[That <: Exp[Traversable[T]]](f: ExpT => Exp[Boolean])(implicit c: CanBuildExp[Traversable[T], That]): That =
-        c buildExp App((_: Traversable[T]) filter FuncExp[T, Boolean, ExpT](f).interpret, this) //We can't use withFilter underneath.
+        c apply App((_: Traversable[T]) filter FuncExp[T, Boolean, ExpT](f).interpret, this) //We can't use withFilter underneath.
 
       def union[U >: T, That <: Exp[Traversable[U]]](u: Exp[Traversable[U]])(implicit c: CanBuildExp[Traversable[U], That]): That =
-        c buildExp App((_: Traversable[T]) ++ u.interpret, this) //Should use an App node with two params.
+        c apply App((_: Traversable[T]) ++ u.interpret, this) //Should use an App node with two params.
     }
     case class TraversableExpWrap[T, ExpT <: Exp[T]](t: Exp[Traversable[T]])(implicit val cbeT: CanBuildExp[T, ExpT]) extends
       ExpWrapper[Traversable[T]](t) with TraversableExp[T, ExpT]
@@ -128,25 +125,25 @@ object OpenEncoding {
 
   trait OpenEncodingBase extends NumExps with TraversableExps with ExpressionTree with NumExpressionTree {
     //Use CanBuildExp for more precise automatic lifting. Problem: Scala seems
-    //to shy to apply this conversion automatically, because "That" does not
+    //too shy to apply this conversion automatically, because "That" does not
     //match so obviously with the target type. Therefore, specializations such
     //as toNumExp are needed.
-    //implicit def toExpTempl[T, That](t: T)(implicit c: CanBuildExp[T, That]): That = c buildExp toExp(t)
-    implicit def toExpTempl[T, That](t: T)(implicit c: CanBuildExp[T, That]): That = c buildExp Const(t)
+    //implicit def toExpTempl[T, That](t: T)(implicit c: CanBuildExp[T, That]): That = c apply toExp(t)
+    implicit def toExpTempl[T, That](t: T)(implicit c: CanBuildExp[T, That]): That = c apply Const(t)
 
     //Examples of CanBuildExp.
     implicit def canBuildExp[T] = new CanBuildExp[T, Exp[T]] {
-      def buildExp(e: Exp[T]) = e
+      def apply(e: Exp[T]) = e
     }
     //implicit object canBuildExpStr extends CanBuildExp[String, StringExp]
     implicit def canBuildExpNum[T](implicit numT: Numeric[T]) =
       new CanBuildExp[T, NumExp[T]] {
-        def buildExp(e: Exp[T]) = NumExpWrap(e)
+        def apply(e: Exp[T]) = NumExpWrap(e)
       }
     implicit def toExp[T](t: T): Exp[T] = toExpTempl(t)
     implicit def canBuildExpTrav[T, ExpT <: Exp[T]](implicit c: CanBuildExp[T, ExpT]) =
       new CanBuildExp[Traversable[T], TraversableExp[T, ExpT]] {
-        def buildExp(e: Exp[Traversable[T]]) = TraversableExpWrap(e)(c)
+        def apply(e: Exp[Traversable[T]]) = TraversableExpWrap(e)(c)
       }
   }
 
@@ -162,13 +159,29 @@ object OpenEncoding {
     //type? toNumExp2 shows that this is not the case.
     def _toNumExp2[T : Numeric](t: T): Exp[T] = toExpTempl(t)
 
+    def testBug() {
+      println("\ntestBug:")
+      val a2 = toExpTempl(Seq(1, 2, 3, 5)) //Doesn't work well
+      println("a2: " + a2)
+      println("toExpTempl(Seq(1, 2, 3, 5)): " + toExpTempl(Seq(1, 2, 3, 5)))
+
+      print("Try2: toExpTempl(Seq(1, 2, 3, 5)): ")
+      println(toExpTempl(Seq(1, 2, 3, 5)))
+      println()
+    }
+
     def testTraversable() {
+      testBug()
+      
       val a1: TraversableExp[Int, NumExp[Int]] = Seq(1, 2, 3, 5)
-      val a2 = toExpTempl(Seq(1, 2, 3, 5).toTraversable) //Doesn't work well
+      val a2 = toExpTempl(Seq(1, 2, 3, 5)) //XXX: Doesn't work well
       val a = toTraversableExp(Seq(1, 2, 3, 5))
       val b = a.map(_ + 1)
       val b2 = a.map(1 + _)
-      //assert (b == b2) //fails!
+      println("a1: " + a1)
+      println("a2: " + a2)
+      println("toExpTempl(Seq(1, 2, 3, 5)): " + toExpTempl(Seq(1, 2, 3, 5)))
+      println("toExpTempl(Seq(1, 2, 3, 5))(canBuildExpTrav): " + toExpTempl(Seq(1, 2, 3, 5))(canBuildExpTrav))
       println(b)
       println(b.interpret)
       println(b2)
@@ -178,10 +191,10 @@ object OpenEncoding {
       val a: NumExp[Int] = 1
       val b = a + 2
       val c = Exp.app((x: Int) => x + 1, 1)
-      //Does not work! Implicit conversion does not choose the most-specific one.
+      //Implicit conversion does not choose the most-specific one.
       //However, it does prefer to choose implicits defined in a subclass to implicits in a superclass.
-      val d = Exp.app((x: Int) => x + 1, 1) //This works.
       println(b)
+      println(c)
       testTraversable()
     }
   }
