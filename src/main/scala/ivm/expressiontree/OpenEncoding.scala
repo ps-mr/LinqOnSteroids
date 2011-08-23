@@ -1,6 +1,5 @@
 package ivm.expressiontree
 import scala.math.Numeric
-import xml.Elem
 
 /**
  * Here I experiment with an alternative encoding of Expression, where methods
@@ -27,16 +26,22 @@ object OpenEncoding {
     def interpret: T
   }
 
-  //The other problem is constructing the right object, but I think that a
+  //When building an expression, we need to construct the right object, but I think that a
   //trick like CanBuildFrom should work.
   //Note: To is supposed to be a subclass of Exp[Elem], but the following
   //declaration does not compile because of variance problems - I should make
   //Elem invariant, which is not what I want:
   //trait CanBuildExp[-Elem, +To <: Exp[Elem]]
+
+  //Instances work as implicit conversions themselves because this trait extends Function.
   trait CanBuildExp[-Elem, +To] extends (Exp[Elem] => To) {
     def apply(e: Exp[Elem]): To
-    //XXX: This naming is probably better - maybe instances would then work as implicit conversions themselves!
   }
+  //XXX: in comparison to Scala collection, we are less flexible - if you upcast a value, a different implicit might be selected, leading to different code being executed.
+  //In Scala, implicits are used just to have a finer static type, but the actual code to be executed is chosen at runtime - most instances of CanBuildFrom delegate construction to the original collection!
+  //However, having a precise static type determines which operations are available. So, even if we make our code more dynamic like for Scala collections, we still need to ensure the best static types are inferred.
+  //Moreover, in the current implementation I need to use wrapper nodes; while they probably cannot be avoided altogether, we should save a few of them - in particular, instead of App nodes we should
+  //use specialized Map, FlatMap and WithFilter nodes, extending TraversableExp.
 
   class ExpWrapper[+T](t: Exp[T]) extends Exp[T] {
     def interpret = t.interpret
@@ -95,7 +100,7 @@ object OpenEncoding {
       implicit val cbeT: CanBuildExp[T, ExpT]
       //XXX: Here I should use Map, FlatMap and WithFilter nodes, instead of generic application nodes. But that's beside the point I'm making for this encoding.
       def map[U, That <: Exp[Traversable[U]]](f: ExpT => Exp[U])(implicit c: CanBuildExp[Traversable[U], That]): That =
-        App((_: Traversable[T]) map (FuncExp[T, U, ExpT](f).interpret), this)
+        c apply App((_: Traversable[T]) map (FuncExp[T, U, ExpT](f).interpret), this) //c apply can be omitted, but that's less clear
 
       def flatMap[U, That <: Exp[Traversable[U]]](f: ExpT => Exp[Traversable[U]])(implicit c: CanBuildExp[Traversable[U], That]): That =
         c apply App((_: Traversable[T]) flatMap FuncExp[T, Traversable[U], ExpT](f).interpret, this)
@@ -128,11 +133,27 @@ object OpenEncoding {
     //too shy to apply this conversion automatically, because "That" does not
     //match so obviously with the target type. Therefore, specializations such
     //as toNumExp are needed.
-    //implicit def toExpTempl[T, That](t: T)(implicit c: CanBuildExp[T, That]): That = c apply toExp(t)
-    implicit def toExpTempl[T, That](t: T)(implicit c: CanBuildExp[T, That]): That = c apply Const(t)
+
+    //Proposal 1:
+    implicit def toExpTempl[T, That](t: T)(implicit c: CanBuildExp[T, That]): That =
+    //Problem: That can be too generic, say That = Any.
+
+    //Proposal 2:
+    //implicit def toExpTempl[T, That <: Exp[T]](t: T)(implicit c: CanBuildExp[T, That]): That =
+    //Problem: T is the exact static type of t, we might not have a specific CanBuildExp.
+    // E.g.: T = Seq[U] => That <: Exp[Seq[T]] => That == Exp[Seq[T]], as TraversableExp[T] and Exp[Seq[T]] are incomparable.
+
+    //Proposal 3:
+    //implicit def toExpTempl[T, U >: T, That <: Exp[U]](t: T)(implicit c: CanBuildExp[U, That]): That =
+    //Problem: canBuildExpTrav does not get picked unless you pass it explicitly, even if the right types are deduced for T and U.
+    //In those cases, That is decided too early; and T is never inferred to be different from U.
+    //Insight: different best solutions are possible for type inference, and any of them can be chosen (SLS 2.9, Sec. 6.26.4, Local Type Inference).
+
+      //c apply toExp(t)
+      c apply Const(t)
 
     //Examples of CanBuildExp.
-    implicit def canBuildExp[T] = new CanBuildExp[T, Exp[T]] {
+    implicit def canBuildExp[T]: CanBuildExp[T, Exp[T]] = new CanBuildExp[T, Exp[T]] {
       def apply(e: Exp[T]) = e
     }
     //implicit object canBuildExpStr extends CanBuildExp[String, StringExp]
@@ -141,10 +162,14 @@ object OpenEncoding {
         def apply(e: Exp[T]) = NumExpWrap(e)
       }
     implicit def toExp[T](t: T): Exp[T] = toExpTempl(t)
-    implicit def canBuildExpTrav[T, ExpT <: Exp[T]](implicit c: CanBuildExp[T, ExpT]) =
+    implicit def canBuildExpTrav[T, ExpT <: Exp[T]](implicit c: CanBuildExp[T, ExpT]): CanBuildExp[Traversable[T], TraversableExp[T, ExpT]] =
+      new CanBuildExp[Traversable[T], TraversableExp[T, ExpT]] {
+        def apply(e: Exp[Traversable[T]]) = TraversableExpWrap(e)//(c)
+      }
+    /*implicit def canBuildExpTrav[T, TravT <: Traversable[T], ExpT <: Exp[T]](implicit c: CanBuildExp[T, ExpT]): CanBuildExp[TravT, TraversableExp[T, ExpT]] =
       new CanBuildExp[Traversable[T], TraversableExp[T, ExpT]] {
         def apply(e: Exp[Traversable[T]]) = TraversableExpWrap(e)(c)
-      }
+      }*/
   }
 
   object OpenEncoding extends OpenEncodingBase {
@@ -160,28 +185,39 @@ object OpenEncoding {
     def _toNumExp2[T : Numeric](t: T): Exp[T] = toExpTempl(t)
 
     def testBug() {
-      println("\ntestBug:")
-      val a2 = toExpTempl(Seq(1, 2, 3, 5)) //Doesn't work well
-      println("a2: " + a2)
-      println("toExpTempl(Seq(1, 2, 3, 5)): " + toExpTempl(Seq(1, 2, 3, 5)))
+      println("testBug:")
 
-      print("Try2: toExpTempl(Seq(1, 2, 3, 5)): ")
-      println(toExpTempl(Seq(1, 2, 3, 5)))
+      def show(name: String, v: Any) {
+        print(name + ": ")
+        println(v)
+      }
+
+      val a1 = toExpTempl(Seq(1, 2, 3, 5)) //Doesn't work well - canBuildExp[Seq[Int]]: CanBuildExp[Seq[Int], Exp[Seq[Int]]] is preferred to canBuildExpTrav[Int, NumExp[Int]]: CanBuildExp[Traversable[Int], TraversableExp[Int]].
+      show("a1", a1)
+      val a2 = toExpTempl(Seq(1, 2, 3, 5).toTraversable) //Doesn't work well either
+      show("a2", a2)
+      val a3: Any = toExpTempl(Seq(1, 2, 3, 5)) //Works better
+      show("a3", a3)
+      val a4: Exp[Seq[Int]] = toExpTempl(Seq(1, 2, 3, 5)) //Doesn't work well - that's equivalent to a1
+      show("a4", a4)
+      val a5: Exp[Traversable[Int]] = toExpTempl(Seq(1, 2, 3, 5)) //Works well apparently.
+      show("a5", a5)
+      val a6: TraversableExp[Int, NumExp[Int]] = Seq(1, 2, 3, 5)
+      show("a6", a6)
+
+      show("(like a3) toExpTempl(Seq(1, 2, 3, 5))", toExpTempl(Seq(1, 2, 3, 5)))
+      //show("toExpTempl(Seq(1, 2, 3, 5))(canBuildExpTrav)", toExpTempl(Seq(1, 2, 3, 5))(canBuildExpTrav))
+      show("toExpTempl(Seq(1, 2, 3, 5).toTraversable)(canBuildExpTrav)", toExpTempl(Seq(1, 2, 3, 5).toTraversable)(canBuildExpTrav))
+
       println()
     }
 
     def testTraversable() {
       testBug()
       
-      val a1: TraversableExp[Int, NumExp[Int]] = Seq(1, 2, 3, 5)
-      val a2 = toExpTempl(Seq(1, 2, 3, 5)) //XXX: Doesn't work well
       val a = toTraversableExp(Seq(1, 2, 3, 5))
       val b = a.map(_ + 1)
       val b2 = a.map(1 + _)
-      println("a1: " + a1)
-      println("a2: " + a2)
-      println("toExpTempl(Seq(1, 2, 3, 5)): " + toExpTempl(Seq(1, 2, 3, 5)))
-      println("toExpTempl(Seq(1, 2, 3, 5))(canBuildExpTrav): " + toExpTempl(Seq(1, 2, 3, 5))(canBuildExpTrav))
       println(b)
       println(b.interpret)
       println(b2)
@@ -191,10 +227,10 @@ object OpenEncoding {
       val a: NumExp[Int] = 1
       val b = a + 2
       val c = Exp.app((x: Int) => x + 1, 1)
-      //Implicit conversion does not choose the most-specific one.
-      //However, it does prefer to choose implicits defined in a subclass to implicits in a superclass.
+
       println(b)
       println(c)
+      println()
       testTraversable()
     }
   }
