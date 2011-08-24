@@ -5,7 +5,7 @@ import collection.GenSet
 import collection.mutable.{SetLike, HashSet, Set}
 import collection.generic.{GenericCompanion, CanBuildFrom, MutableSetFactory, GenericSetTemplate}
 
-import expressiontree.{QueryReifier, IncQueryable, ObservableSet}
+import expressiontree.{Queryable, ObservableSet}
 
 /*
 //Failed attempt to make this trait typecheck
@@ -14,7 +14,7 @@ trait IncSetLike[T,
                  CC[X] <: IncSetLike[X, BaseRepr, CC] with BaseRepr with Set[X] /*with QueryReifier[X] with ObservableSet[X]*/
                 ]
    extends ObservableSet[T]
-   with IncQueryable[T, BaseRepr]
+   with Queryable[T, BaseRepr]
    with GenericSetTemplate[T, CC] with SetLike[T, CC[T]] {
   self: BaseRepr =>
   abstract override def companion: GenericCompanion[CC]
@@ -24,7 +24,7 @@ trait IncSetLike[T,
 
 //First attempt at definition - works, but IncHashSet has a long list of traits to implement.
 /*trait IncSetLike[T, BaseRepr]
-  extends ObservableSet[T] with IncQueryable[T, BaseRepr]
+  extends ObservableSet[T] with Queryable[T, BaseRepr]
 {
   this: BaseRepr =>
   type Pub <: IncSetLike[T, BaseRepr] //Two different definitions of Pub are inherited, this one is a common subtype.
@@ -44,7 +44,7 @@ class IncHashSet[T] extends HashSet[T] with IncSetLike[T, HashSet[T]]
 //hacky (see companion = null) and complex - see the parameter bounds, often there to satisfy the bounds from the
 //Scala library. Should the Scala library change a bit, tis code will be very fragile.
 trait IncSetLike[T, CCThis[X] <: Set[X] with SetLike[X, CCThis[X]] with GenSet[X], BaseRepr]
-  extends ObservableSet[T] with IncQueryable[T, BaseRepr] with SetLike[T, CCThis[T]]
+  extends ObservableSet[T] with Queryable[T, BaseRepr] with SetLike[T, CCThis[T]]
   with GenericSetTemplate[T, CCThis]
 {
   this: BaseRepr with CCThis[T] =>

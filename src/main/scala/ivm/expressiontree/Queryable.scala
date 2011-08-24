@@ -27,7 +27,7 @@ import collections.CollectionReifier
 //Probably Repr is also needed, especially if the produced Iterable must also offer stronger
 //interfaces.
 //TODO: add notification interface!
-trait Queryable[T, Repr] extends ChildlessQueryReifier[T] /*with Publisher[Message[T]]*/ {
+trait Queryable[T, Repr] extends ChildlessQueryReifier[T] {
   self: Traversable[T] with Repr =>
   //type Pub = Queryable[T, Repr] //XXX? Should this be defined here already? Or should Pub be even more specific?
   def asQueryable: QueryReifier[T] = this
@@ -42,12 +42,6 @@ trait Queryable[T, Repr] extends ChildlessQueryReifier[T] /*with Publisher[Messa
 
   // commented out by KO - need to check back with PG
   //def view2: QueryReifier[T] = new CollectionReifier[T](self.view)
-}
-
-//XXX: maybe no more needed.
-trait IncQueryable[T, Repr] extends Queryable[T, Repr] with QueryReifier[T] {
-  self: Traversable[T] with Repr =>
-  override def asQueryable: QueryReifier[T] = this
 }
 
 // vim: set ts=4 sw=4 et:

@@ -91,7 +91,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     val vPlusOne: IncHashSet[Int] = v.map(_ + 1) //canBuildFrom gives us the expected return type
 
     val vIncUpd = new IncrementalResult[Int](v)
-    val v2: IncQueryable[Int, HashSet[Int]] = v //IncQueryable does not inherit from Traversable!
+    val v2: Queryable[Int, HashSet[Int]] = v //Queryable does not inherit from Traversable!
     println("v2.map(_ + 1): " + v2.map(_ + 1))
     println("v2.asQueryable.map(_ + 1): " + v2.asQueryable.map(_ + 1))
     println("v2.asCollection.map(_ + 1): " + v2.asCollection.map(_ + 1))

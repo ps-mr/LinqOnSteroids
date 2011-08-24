@@ -1,6 +1,6 @@
 package ivm
 package collections
-import expressiontree.{IncQueryable, ObservableBuffer}
+import expressiontree.{Queryable, ObservableBuffer}
 
 import collection.mutable.{Builder, BufferLike, ArrayBuffer, IndexedSeqOptimized}
 import collection.generic.{SeqFactory, GenericTraversableTemplate}
@@ -10,7 +10,7 @@ import collection.generic.{SeqFactory, GenericTraversableTemplate}
  * for them are unclear.
  */
 class IncArrayBuffer[T] extends ArrayBuffer[T]
-  with IncQueryable[T, ArrayBuffer[T]] with ObservableBuffer[T]
+  with Queryable[T, ArrayBuffer[T]] with ObservableBuffer[T]
   with GenericTraversableTemplate[T, IncArrayBuffer]
   with BufferLike[T, IncArrayBuffer[T]]
   with IndexedSeqOptimized[T, IncArrayBuffer[T]]
