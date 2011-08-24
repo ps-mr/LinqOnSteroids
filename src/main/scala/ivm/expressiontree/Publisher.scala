@@ -42,8 +42,8 @@ trait Publisher[Evt] {
   type Pub <: Publisher[Evt]
   type Sub = Subscriber[Evt, Pub]
 
-  protected val self: Pub = this.asInstanceOf[Pub]
-  //XXX: If Pub were a type parameter, then we could just write (I expect) self: Pub => at the beginning, instead of
+  protected val selfAsPub: Pub = this.asInstanceOf[Pub]
+  //XXX: If Pub were a type parameter, then we could just write (I expect) selfAsPub: Pub => at the beginning, instead of
   //such an ugly cast
 
   var subscribers: Seq[WeakReference[Sub]] = Seq()
@@ -56,7 +56,7 @@ trait Publisher[Evt] {
 
   def publish(evt: Evt) {
     for (subWeakRef <- subscribers; sub <- subWeakRef.get) {
-      sub.notify(self, evt)
+      sub.notify(selfAsPub, evt)
     }
     subscribers = subscribers.filter(_.get.isDefined)
   }

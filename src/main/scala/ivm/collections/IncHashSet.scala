@@ -5,13 +5,13 @@ import collection.GenSet
 import collection.mutable.{SetLike, HashSet, Set}
 import collection.generic.{GenericCompanion, CanBuildFrom, MutableSetFactory, GenericSetTemplate}
 
-import expressiontree.{IncQueryReifier, IncQueryable, ObservableSet}
+import expressiontree.{QueryReifier, IncQueryable, ObservableSet}
 
 /*
 //Failed attempt to make this trait typecheck
 trait IncSetLike[T,
                  BaseRepr,
-                 CC[X] <: IncSetLike[X, BaseRepr, CC] with BaseRepr with Set[X] /*with IncQueryReifier[X] with ObservableSet[X]*/
+                 CC[X] <: IncSetLike[X, BaseRepr, CC] with BaseRepr with Set[X] /*with QueryReifier[X] with ObservableSet[X]*/
                 ]
    extends ObservableSet[T]
    with IncQueryable[T, BaseRepr]
@@ -64,7 +64,7 @@ class IncHashSet[T] extends HashSet[T]
 
 // Next TODO: try to hide from the public interface of IncHashSet the methods from HashSet, so that people must call
 // asCollection. Not sure whether it's a good idea. A possibly more sensible alternative is to hide methods from
-// IncQueryReifier, so that people have to call asQueryable to get them.
+// QueryReifier, so that people have to call asQueryable to get them.
 
 object IncHashSet extends MutableSetFactory[IncHashSet] {
   implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, IncHashSet[A]] = setCanBuildFrom[A]

@@ -129,10 +129,10 @@ trait WithFilterMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
 //XXX: we don't listen yet to the individual collections! To subscribe, this needs to become a member of IncQueryReifier.
 //Moreover, we need the passed function to return IncQueryReifiers.
 trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
-  self: IncQueryReifier[U] => //? [T]? That's needed for the subscribe.
+  self: QueryReifier[U] => //? [T]? That's needed for the subscribe.
   def fInt: T => QueryReifier[U] //XXX: QR |-> IncQR
   var cache = new HashMap[T, QueryReifier[U]] //XXX: QR |-> IncQR
-  val subCollListener: MsgSeqSubscriber[U, IncQueryReifier[U]] = null
+  val subCollListener: MsgSeqSubscriber[U, QueryReifier[U]] = null
   override def transformedMessages(evt: Message[T]) = {
     evt match {
       case Include(v) =>
@@ -157,23 +157,23 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
 //is entirely optional - it just enables the listener to get a more specific
 //type for the pub param to notify(), if he cares.
 class MapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,U]) extends Map[T,U](col, f)
-with MapMaintainer[T, U, IncQueryReifier[T]] with IncQueryReifier[U] {
+with MapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] {
   override def fInt = f.interpret()
 }
 class FlatMapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,/* XXX Inc */QueryReifier[U]]) extends FlatMap[T,U](col, f)
-with FlatMapMaintainer[T, U, IncQueryReifier[T]] with IncQueryReifier[U] {
+with FlatMapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] {
   override def fInt = x => f.interpret()(x)
 }
 class WithFilterMaintainerExp[T](col: QueryReifier[T], p: FuncExp[T,Boolean]) extends WithFilter[T](col, p)
-with WithFilterMaintainer[T, IncQueryReifier[T]] with IncQueryReifier[T] {
+with WithFilterMaintainer[T, QueryReifier[T]] with QueryReifier[T] {
   override def pInt = p.interpret()
 }
 
 // Variant of QueryReifier, which also sends event to derived collections. Note that this is not reified!
 // XXX: we forget to add mutation operations. But see Queryable and QueryableTest. So make this a trait which is mixed in
 // by Queryable.
-trait IncQueryReifier[T] extends QueryReifier[T] with MsgSeqPublisher[T] {
-  type Pub <: IncQueryReifier[T]
+trait QueryReifier[T] extends QueryReifierBase[T] with MsgSeqPublisher[T] with Exp[QueryReifier[T]] {
+  type Pub <: QueryReifier[T]
   override def map[U](f: Exp[T] => Exp[U]): QueryReifier[U] = {
     val res = new MapMaintainerExp[T, U](this, FuncExp(f))
     this subscribe res
@@ -200,8 +200,8 @@ trait IncQueryReifier[T] extends QueryReifier[T] with MsgSeqPublisher[T] {
 //A class representing an intermediate or final result of an incremental query. Note: SetProxy is not entirely
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
 // same type. OTOH, this methods allows accessing the underlying data at all.
-class IncrementalResult[T](val inner: IncQueryReifier[T]) extends ChildlessQueryReifier[T]
-  with MsgSeqSubscriber[T, IncQueryReifier[T]]
+class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryReifier[T]
+  with MsgSeqSubscriber[T, QueryReifier[T]]
   with collection.SetProxy[T] //I mean immutable.SetProxy[T], but that requires an underlying immutable Set.
   // I'll probably end up with forwarding most basic methods manually, and implementing the others through SetLike.
   // Or we'll just support incremental query update for all methods.
@@ -216,7 +216,7 @@ class IncrementalResult[T](val inner: IncQueryReifier[T]) extends ChildlessQuery
 
   override def exec() = self
   private[this] def count(v: T) = set.getOrElse(v, 0)
-  override def notify(pub: IncQueryReifier[T], evts: Seq[Message[T]]) {
+  override def notify(pub: QueryReifier[T], evts: Seq[Message[T]]) {
     for (evt <- evts) {
       evt match {
         case Include(v) => set(v) = count(v) + 1
