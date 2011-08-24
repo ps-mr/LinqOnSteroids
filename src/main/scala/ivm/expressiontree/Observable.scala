@@ -126,23 +126,39 @@ trait WithFilterMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
 }
 
 //Trait implementing incremental view maintenance for FlatMap operations.
-//XXX: we don't listen yet to the individual collections! To subscribe, this needs to become a member of IncQueryReifier.
-//Moreover, we need the passed function to return IncQueryReifiers.
 trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   self: QueryReifier[U] => //? [T]? That's needed for the subscribe.
-  def fInt: T => QueryReifier[U] //XXX: QR |-> IncQR
-  var cache = new HashMap[T, QueryReifier[U]] //XXX: QR |-> IncQR
-  val subCollListener: MsgSeqSubscriber[U, QueryReifier[U]] = null
+  def fInt: T => QueryReifier[U]
+  var cache = new HashMap[T, QueryReifier[U]]
+  val subCollListener: MsgSeqSubscriber[U, QueryReifier[U]] =
+    new MsgSeqSubscriber[U, QueryReifier[U]] {
+      override def notify(pub: QueryReifier[U], evts: Seq[Message[U]]) = {
+        //publish(evts flatMap (evt => evt match {
+        //evts foreach (evt => evt match {
+        for (evt <- evts) {
+          evt match {
+            case Include(_) => publish(evt)
+            case Remove(_) => publish(evt)
+            case Update(_, _) => publish(evt)
+            //XXX very important! This can only work because we send the
+            //modification before performing the update
+            case Reset() => publish(pub.exec().toSeq map (Remove(_)))
+          }
+        }
+      }
+    }
   override def transformedMessages(evt: Message[T]) = {
     evt match {
       case Include(v) =>
         val fV = fInt(v)
-        //fV subscribe subCollListener //XXX reenable
+        fV subscribe subCollListener
         fV.exec().toSeq map (Include(_))
       case Remove(v) =>
-        //val fV = fInt(v) //fV will not always return the _same_ result. We need a map from v to the returned collection. Damn!
+        //val fV = fInt(v) //fV will not always return the _same_ result. We
+        //need a map from v to the returned collection - as done in LiveLinq
+        //anyway.
         val fV = cache(v)
-        //fV removeSubscription subCollListener //XXX reenable
+        fV removeSubscription subCollListener
         fV.exec().toSeq map (Remove(_))
       case _ => defTransformedMessages(evt)
       /*
@@ -160,7 +176,7 @@ class MapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,U]) extends Map[T
 with MapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] {
   override def fInt = f.interpret()
 }
-class FlatMapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,/* XXX Inc */QueryReifier[U]]) extends FlatMap[T,U](col, f)
+class FlatMapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,QueryReifier[U]]) extends FlatMap[T,U](col, f)
 with FlatMapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] {
   override def fInt = x => f.interpret()(x)
 }
