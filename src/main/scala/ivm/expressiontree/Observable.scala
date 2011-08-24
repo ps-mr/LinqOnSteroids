@@ -169,7 +169,7 @@ with WithFilterMaintainer[T, QueryReifier[T]] with QueryReifier[T] {
   override def pInt = p.interpret()
 }
 
-// TODO: add a trait which implements maintenance of unification.
+// TODO: add a trait which implements maintenance of union.
 // Probably they can be both implemented together. Look into the other implementation, use bags or sth.
 // There was a use-case I forget where other context information, other than a simple count, had to be stored.
 // Was it a path in a hierarchical index?
