@@ -1,5 +1,3 @@
 *_managed
-linqonsteroids/LinqOnSteroids.iml
-linqonsteroids/.idea/misc.xml
-
-
+LinqOnSteroids.iml
+.idea/misc.xml
