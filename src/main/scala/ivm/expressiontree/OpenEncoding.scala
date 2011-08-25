@@ -95,8 +95,8 @@ object OpenEncoding {
     //trait NumExp[T](implicit isNum: Numeric[T]) extends Exp[T]
     trait NumExp[T] extends Exp[T] {
       //If this were not a mixin, this would be an implicit parameter:
-      def isNum: Numeric[T]
-      def +(that: NumExp[T]): NumExp[T] = Plus(this, that)(isNum)
+      implicit val isNum: Numeric[T]
+      def +(that: NumExp[T]): NumExp[T] = Plus(this, that)
     }
 
     case class NumExpWrap[T](t: Exp[T])(implicit val isNum: Numeric[T]) extends
@@ -171,7 +171,7 @@ object OpenEncoding {
         def apply(e: Exp[T]) = NumExpWrap(e)
       }
     implicit def toExp[T](t: T): Exp[T] = toExpTempl(t)
-    implicit def canBuildExpTrav[T, ExpT <: Exp[T]](implicit c: CanBuildExp[T, ExpT]): CanBuildExp[Traversable[T], TraversableExp[T, ExpT]] =
+    implicit def canBuildExpTrav[T, ExpT <: Exp[T]](implicit cCBET: CanBuildExp[T, ExpT]): CanBuildExp[Traversable[T], TraversableExp[T, ExpT]] =
       new CanBuildExp[Traversable[T], TraversableExp[T, ExpT]] {
         def apply(e: Exp[Traversable[T]]) = TraversableExpWrap(e)//(c)
       }
@@ -186,7 +186,7 @@ object OpenEncoding {
     //to toExpTempl. The difference between these two methods is thus in the
     //implicitly passed parameter (canBuildExpNum vs canBuildExp)
     implicit def toNumExp[T : Numeric](t: T): NumExp[T] = toExpTempl(t)
-    implicit def toTraversableExp[T, ExpT <: Exp[T]](t: Traversable[T])(implicit c: CanBuildExp[T, ExpT]): TraversableExp[T, ExpT] = toExpTempl(t)
+    implicit def toTraversableExp[T, ExpT <: Exp[T]](t: Traversable[T])(implicit cTTE: CanBuildExp[T, ExpT]): TraversableExp[T, ExpT] = toExpTempl(t)
 
     //Question: does implicit lookup find a most-specific solution just because
     //the target type is NumExp[T], and only passing canBuildExpNum gives that
@@ -211,7 +211,7 @@ object OpenEncoding {
       show("a4", a4)
       val a5: Exp[Traversable[Int]] = toExpTempl(Seq(1, 2, 3, 5)) //Works well apparently.
       show("a5", a5)
-      val a6: TraversableExp[Int, NumExp[Int]] = Seq(1, 2, 3, 5)
+      val a6: TraversableExp[Int, NumExp[Int]] = Seq(1, 2, 3, 5) //This one obviously works.
       show("a6", a6)
 
       show("(like a3) toExpTempl(Seq(1, 2, 3, 5))", toExpTempl(Seq(1, 2, 3, 5)))
