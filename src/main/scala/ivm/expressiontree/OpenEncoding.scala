@@ -13,11 +13,20 @@ import scala.math.Numeric
  * another.
  * The approach here is to convert directly Double to DoubleExp, String to
  * StringExp, and so on.
- * An alternative solution is to make the generic conversion toExp: T => Exp[T]
- * have lower priority than the others, by defining toExp in a trait and the
+ * We have a generic conversion toExp: T => Exp[T], but we ensure that it has
+ * lower priority than the others, by defining toExp in a trait and the
  * others in an object inheriting from that trait.
  * This extra step would not be needed if toExpTempl were found by the Scala
  * compiler, which is not because of what I believe to be a bug.
+ *
+ * Currently, we experience ambiguity when triggering the initial conversion - see testBug().
+ * The Scala spec explains that for Scala type inference there is no single best solution, and the compiler is free
+ * to choose any one. When inferring implicit parameters or conversions, it chooses always the most specific solution
+ * (where "most specific" is defined as in overload resolution) and gives an error if no single solution exists.
+ * However, the encoding we use is the same as for Scala collection libraries. Therefore, it's not clear at all what happens.
+ *
+ * Alternatively, if we avoid supporting polymorphic lifting like in the current
+ * encoding, I think we would solve all current problems would disappear. 
  * @author Paolo G. Giarrusso
  */
 
