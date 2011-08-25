@@ -200,6 +200,14 @@ object OpenEncoding {
         print(name + ": ")
         println(v)
       }
+      val i: Exp[Int] = 1
+      show("i", i)
+      val i1: Exp[Int] = toExpTempl(1)
+      show("i1", i1)
+      //One of the syntaxes we want to support - both ones just fail, with unable to "could not find implicit value for parameter c: ivm.expressiontree.OpenEncoding.CanBuildExp[Int,ExpT]"
+      //val a0: Exp[Traversable[Int]] = Seq(1, 2, 3, 5)
+      //val a0: Exp[Traversable[Int]] = Seq(1, 2, 3, 5).toTraversable
+      //show("a0", a0)
 
       val a1 = toExpTempl(Seq(1, 2, 3, 5)) //Doesn't work well - canBuildExp[Seq[Int]]: CanBuildExp[Seq[Int], Exp[Seq[Int]]] is preferred to canBuildExpTrav[Int, NumExp[Int]]: CanBuildExp[Traversable[Int], TraversableExp[Int]].
       show("a1", a1)
