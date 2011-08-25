@@ -58,7 +58,7 @@ class Optimization {
       case WithFilter(col,f) =>
         col match {
           case WithFilter(col2,f2) =>
-            mergeFilters(WithFilter(col2, FuncExp( (x:Exp[_]) => And(f2(x),f(x)))))
+            mergeFilters(new WithFilterMaintainerExp(col2, FuncExp( (x:Exp[_]) => And(f2(x),f(x)))))
           case _ => e
         }
       case _ => e
