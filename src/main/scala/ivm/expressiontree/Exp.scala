@@ -28,7 +28,7 @@ trait Exp[+T] {
       case Var(x) => if (x.equals(v)) e else exp
       case _ => exp
     })
-    
+
   private[ivm] def freeVars: Set[Var[_]] = {
     val mapper : (Exp[_], Seq[Set[Var[_]]]) => Set[Var[_]] = (e,c) => e match {
       case v@Var(_) => Set(v)
@@ -58,10 +58,9 @@ trait Exp[+T] {
 
   // method is used for testing. It is overriden in CallN to treat all calls as potentially equal
   private[ivm] def potentiallyEquals[S](other: Exp[S]) : Boolean = {
-    val c  = children.zip(other.children) 
+    val c  = children.zip(other.children)
     this.getClass().equals(other.getClass()) &&
       c.map({ case (a, b) => a.potentiallyEquals(b)}).forall(identity)
- 
   }
 }
 

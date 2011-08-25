@@ -19,7 +19,7 @@ class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test
   def testRemoveIdentityMaps() {
     val q1 = for (
-               x <- for (c <- l if c + 3 is 7; if c + 8 is 19 ) yield c
+               x <- for (c <- l if c + 3 is 7; if c + 8 is 19) yield c
                if x is 19)
              yield x
     val q2 = Optimization.removeIdentityMaps(q1)

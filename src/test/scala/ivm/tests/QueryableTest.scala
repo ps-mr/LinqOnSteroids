@@ -85,7 +85,6 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
   def testIncremental() {
     val v = new IncHashSet[Int]
     v ++= Seq(1, 2, 3)
-    //under ++= Seq(1, 2, 3) //XXX
 
     println("v: " + v)
     val vPlusOne: IncHashSet[Int] = v.map(_ + 1) //canBuildFrom gives us the expected return type
