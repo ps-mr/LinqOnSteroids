@@ -44,7 +44,7 @@ case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends Exp[S => T] {
 object FuncExp {
   private var varCounter : Int = 0;
   val varzero = gensym()
-  def gensym[T]() : Var[T] = { varCounter = varCounter + 1;  new Var("v"+varCounter) }
-  def makefun[S,T](e: Exp[T], v: Var[_]) : FuncExp[S,T] = FuncExp((x) => e.substVar(v.name,x))
-  def makepairfun[S1,S2,T](e: Exp[T], v1: Var[_], v2: Var[_]) : FuncExp[(S1,S2),T] = FuncExp(p => e.substVar(v1.name,Proj1(p)).substVar(v2.name,Proj2(p)))
+  def gensym() : Var = { varCounter = varCounter + 1;  new Var("v"+varCounter) }
+  def makefun[S,T](e: Exp[T], v: Var) : FuncExp[S,T] = FuncExp((x) => e.substVar(v.name,x))
+  def makepairfun[S1,S2,T](e: Exp[T], v1: Var, v2: Var) : FuncExp[(S1,S2),T] = FuncExp(p => e.substVar(v1.name,Proj1(p)).substVar(v2.name,Proj2(p)))
 }

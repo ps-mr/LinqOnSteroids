@@ -71,7 +71,7 @@ class Optimization {
        case _ => e
      }
 
-  private def hasIndex(idx: scala.collection.mutable.Map[FuncExp[Any,Any],HashIndex[Any,Any]], hx: Var[_], l: Exp[_]) : Boolean = {
+  private def hasIndex(idx: scala.collection.mutable.Map[FuncExp[Any,Any],HashIndex[Any,Any]], hx: Var, l: Exp[_]) : Boolean = {
     idx.contains(Optimization.normalize(FuncExp.makefun(l, hx)).asInstanceOf[FuncExp[Any,Any]])
   }
 
