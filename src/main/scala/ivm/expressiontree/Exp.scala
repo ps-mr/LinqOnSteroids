@@ -51,7 +51,7 @@ trait Exp[+T] {
 
   def &&[S >: T](that: Exp[S])(implicit ab : AsBool[S]) = And(ab(this),ab(that))
   def ||[S >: T](that: Exp[S])(implicit ab : AsBool[S]) = Or(ab(this),ab(that))
-  def ![S >: T]()(implicit ab : AsBool[S]) = Not(ab(this))
+  def unary_![S >: T]()(implicit ab : AsBool[S]) = Not(ab(this))
 
 
   //def is(that: Exp[Int]): Exp[Boolean] = Eq(this, that)
