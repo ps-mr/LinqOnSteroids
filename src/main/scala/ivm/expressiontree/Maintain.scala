@@ -90,14 +90,26 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
 class MapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,U]) extends Map[T,U](col, f)
 with MapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] {
   override def fInt = f.interpret()
+  //XXX: only the name of the constructed class changes
+  override def genericConstructor =
+      v => new MapMaintainerExp(v(0).asInstanceOf[QueryReifier[T]],
+          v(1).asInstanceOf[FuncExp[T, U]])
 }
 class FlatMapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,QueryReifier[U]]) extends FlatMap[T,U](col, f)
 with FlatMapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] {
   override def fInt = x => f.interpret()(x)
+  //XXX ditto
+  override def genericConstructor =
+      v => new FlatMapMaintainerExp(v(0).asInstanceOf[QueryReifier[T]],
+          v(1).asInstanceOf[FuncExp[T, QueryReifier[U]]])
 }
 class WithFilterMaintainerExp[T](col: QueryReifier[T], p: FuncExp[T,Boolean]) extends WithFilter[T](col, p)
 with WithFilterMaintainer[T, QueryReifier[T]] with QueryReifier[T] {
   override def pInt = p.interpret()
+  //XXX ditto
+  override def genericConstructor =
+      v => new WithFilterMaintainerExp(v(0).asInstanceOf[QueryReifier[T]],
+          v(1).asInstanceOf[FuncExp[T, Boolean]])
 }
 
 // TODO: add a trait which implements maintenance of union.
