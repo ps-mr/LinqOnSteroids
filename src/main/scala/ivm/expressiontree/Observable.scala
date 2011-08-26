@@ -108,15 +108,23 @@ class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryRei
   override def notify(pub: QueryReifier[T], evts: Seq[Message[T]]) {
     for (evt <- evts) {
       evt match {
-        case Include(v) => set(v) = count(v) + 1
+        case Include(v) =>
+          val vCount = count(v)
+          if (vCount == 0)
+            publish(evt)
+          set(v) = vCount + 1
         case Remove(v) =>
           val vCount = count(v) - 1
           if (vCount > 0)
             set(v) = vCount
-          else
+          else {
+            publish(evt)
             set -= v
-        case Reset() => set.clear()
+          }
 
+        case Reset() =>
+          publish(evt)
+          set.clear()
         // These two cases are quite common: they basically mean that no special handling is provided for bulk events.
         // The handling here is valid more in general, but no batching is done.
         case Update(old, curr) =>
