@@ -21,13 +21,9 @@ import collection.mutable.{HashMap, Subscriber, Buffer, Set}
 //case Script(msgs @ _*) => msgs foreach (notify(pub, _))
 //Moreover producedMessages is purely functional, unlike notify.
 //
-//XXX: mostly done up to here.
-//
-// Other point: this way, a pipeline of message transformers becomes simply a sequencing through >>= of monadic actions.
-// Plus we can use MonadPlus.mplus for composing observables.
-
-
-
+// This way, a pipeline of message transformers becomes simply a sequencing through >>= of monadic actions.
+// However, since some reifiers will not work this way, we cannot enforce this structure.
+// TODO: We could use MonadPlus.mplus for composing observables.
 
 // This is for a modifiable sequence. Actually, it's a problem since we don't preserve ordering, but we should.
 // On the one hand, this interface matches a relation in the closest way.

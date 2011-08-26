@@ -1,7 +1,8 @@
 package ivm.expressiontree
 
 import collection.mutable.{HashMap, Subscriber, Buffer, Set}
-// Let us first implement incremental view maintenance for multisets.
+// Let us first implement incremental view maintenance for sets.
+
 //Trait implementing incremental view maintenance for Map operations
 trait MapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   def fInt: T => U
