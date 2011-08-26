@@ -101,9 +101,9 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     //val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 * i) //XXX can't use *, not defined, nor asQueryable.
     val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 + i)
 
-    def show[T](name: String, v: IncrementalResult[T]) {
+    def show[T: Ordering](name: String, v: IncrementalResult[T]) {
       println()
-      println("%s: %s" format(name, v))
+      println("%s: after sorting\t\t%s, before\t\t%s" format(name, v.toSeq.sorted, v))
       //println("vIncUpd.exec(): " + vIncUpd.exec())
       //println("vIncUpd.interpret.exec(): " + vIncUpd.interpret.exec())
       v.exec() should be (v.interpret().exec())
