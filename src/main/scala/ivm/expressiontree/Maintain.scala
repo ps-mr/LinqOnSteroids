@@ -1,6 +1,30 @@
 package ivm.expressiontree
 
 import collection.mutable.HashMap
+
+// All the maintainer classes/traits (MapMaintener, WithFilterMaintainer, FlatMapMaintainer) have a common structure of
+// "message transformers". That can be probably abstracted away: they should have a method
+// producedMessages: Message[T] => Seq[Message[T]], we should remove Script[T], implement publish in term of it in type:
+// Forwarder[T, U, Repr] extends Subscriber[Seq[Message[T]], Repr] with Publisher[Seq[Message[U]]]
+// notify(evts: Seq[Message[T]]) = publish(evts flatMap producedMessages)
+// This should just be the default implementation though, because it doesn't use batching.
+// Moreover, we might want to have by-name values there (impossible) or sth. alike - otherwise the pipeline will always
+// execute the maintenance (say, apply the mapped function) before we get a chance to say "better not".
+// Maybe we just bind the transformers together and pass them upwards together with the input, so that the concrete node
+// decides whether to do the first application or not.
+//
+// Importantly, producedMessages can be recursive to reuse code - that's better than making notify recursive, because
+// that forces to split notifications:
+//case Update(old, curr) =>
+//  notify(pub, Remove(old))
+//  notify(pub, Include(curr))
+//case Script(msgs @ _*) => msgs foreach (notify(pub, _))
+//Moreover producedMessages is purely functional, unlike notify.
+//
+// This way, a pipeline of message transformers becomes simply a sequencing through >>= of monadic actions.
+// However, since some reifiers will not work this way, we cannot enforce this structure.
+// TODO: We could use MonadPlus.mplus for composing observables.
+
 // Let us first implement incremental view maintenance for sets.
 
 //Trait implementing incremental view maintenance for Map operations
