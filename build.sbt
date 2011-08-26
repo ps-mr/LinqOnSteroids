@@ -12,7 +12,7 @@ libraryDependencies += "org.scalatest" % "scalatest_2.9.0" % "1.6.1"
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.5" % "test->default"
 
-scalacOptions ++= Seq("-unchecked", "-deprecation")
+scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes")
 
 //addCompilerPlugin("org.scala-tools.sxr" %% "sxr" % "0.2.8-SNAPSHOT")
 
