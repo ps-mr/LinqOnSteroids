@@ -1,9 +1,6 @@
 package ivm
 package tests
 
-import optimization.Optimization
-import collections.CollectionReifier
-import ivm.{expressiontree, collections, optimization}
 import collections.CollectionReifier
 import expressiontree.Lifting._
 import expressiontree.{And, FuncExp, Exp, Plus, Eq, WithFilterMaintainerExp}

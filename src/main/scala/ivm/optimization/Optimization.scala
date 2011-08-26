@@ -4,7 +4,7 @@ package optimization
 
 import expressiontree._
 import expressiontree.Lifting._
-import indexing.{PathIndex, HashIndex,Path}
+import indexing.{HashIndex, Path}
 
 class Optimization {
   val cartProdToJoin : Exp[_] => Exp[_] =

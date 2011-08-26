@@ -1,8 +1,6 @@
 package ivm
 package expressiontree
 
-import collections.CollectionReifier
-
 /**
  * Trait to mix in with Scala collections to make them queryable.
  * An important point is that the original collection becomes queryable -

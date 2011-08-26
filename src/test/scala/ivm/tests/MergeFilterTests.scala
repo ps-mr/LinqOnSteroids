@@ -3,10 +3,7 @@ package tests
 
 import optimization.Optimization
 import collections.CollectionReifier
-import ivm.{expressiontree, collections, optimization}
-import collections.CollectionReifier
 import expressiontree.Lifting._
-import optimization.Optimization
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test

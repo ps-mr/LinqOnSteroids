@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
 import ref.WeakReference
-import collection.mutable.{HashMap, Subscriber, Buffer, Set}
+import collection.mutable.Subscriber
 
 /**
  * Question: should we send updates before or after modifying the underlying collection? Here we do it before, so that

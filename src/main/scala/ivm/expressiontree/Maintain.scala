@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-import collection.mutable.{HashMap, Subscriber, Buffer, Set}
+import collection.mutable.HashMap
 // Let us first implement incremental view maintenance for sets.
 
 //Trait implementing incremental view maintenance for Map operations

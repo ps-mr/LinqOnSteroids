@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-import collection.mutable.{HashMap, Subscriber, Buffer, Set}
+import collection.mutable.{HashMap, Buffer, Set}
 
 // All the maintainer classes/traits (MapMaintener, WithFilterMaintainer, FlatMapMaintainer) have a common structure of
 // "message transformers". That can be probably abstracted away: they should have a method

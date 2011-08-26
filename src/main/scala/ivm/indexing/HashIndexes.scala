@@ -1,7 +1,6 @@
 package ivm.indexing
 
 import ivm.expressiontree.{FuncExp, QueryReifier}
-import scala.collection.mutable.Map
 import scala.collection.mutable.HashMap
 
 /*
