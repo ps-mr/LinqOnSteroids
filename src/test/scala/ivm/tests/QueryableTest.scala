@@ -127,7 +127,11 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     out()
     v --= Seq(4, 5, 6)
     out()
-
+    v.clear()
+    out()
+    v ++= Seq(1, 5, 7)
+    out()
+    
     println("vQueryable: " + vQueryable)
 
     println("vPlusOne: " + vPlusOne)
