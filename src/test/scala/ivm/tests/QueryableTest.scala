@@ -98,29 +98,35 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     assert(vQueryable == v)
     //val vQueryablePlusOne2: HashSet[Int] = vQueryable.map((i: Int) => i + 1) //gives error
     val vQueryablePlusOne: QueryReifier[Int] = vQueryable.map(_ + 1)
-    println("vIncUpd: " + vIncUpd)
+    //val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 * i) //XXX can't use *, not defined, nor asQueryable.
+    val vIncUpdPlus2 = new IncrementalResult(for (i: Exp[Int] <- vIncUpd) yield 2 + i)
 
-    def out {
+    def show[T](name: String, v: IncrementalResult[T]) {
       println()
-      println("vIncUpd: " + vIncUpd)
+      println("%s: %s" format(name, v))
       //println("vIncUpd.exec(): " + vIncUpd.exec())
       //println("vIncUpd.interpret.exec(): " + vIncUpd.interpret.exec())
-      vIncUpd.exec() should be (vIncUpd.interpret.exec())
-      vIncUpd.exec() should be (vIncUpd.inner.exec())
+      v.exec() should be (v.interpret().exec())
+      v.exec() should be (v.inner.exec())
       //println("vIncUpd.inner.exec(): " + vIncUpd.inner.exec())
     }
+    def out() {
+      show("vIncUpd", vIncUpd)
+      show("vIncUpdPlus2", vIncUpdPlus2)
+    }
+    out()
     v ++= Seq(4, 5, 6)
-    out
+    out()
 
     // Check that redundant updates are handled correctly.
     // test actually - we need an union
     // operation for a proper test.
     v ++= Seq(4, 5, 6) //Now the inclusion count should be 1, not 2!
-    out
+    out()
     v --= Seq(4, 5, 6) //Now the elements should already be removed!
-    out
+    out()
     v --= Seq(4, 5, 6)
-    out
+    out()
 
     println("vQueryable: " + vQueryable)
 
@@ -133,6 +139,6 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     assert(vColl == v)
     val vCollPlusOne: HashSet[Int] = vColl.map(_ + 1) //Here, the resulting object has actually HashSet as dynamic type.
     //Since vColl has a different static type, a different implicit is passed here.
-    println("vCollPlusOne: " + vCollPlusOne)
+    println("vCollPlusOne: %s, type: %s" format (vCollPlusOne, vCollPlusOne.getClass.getName))
   }
 }
