@@ -91,6 +91,7 @@ trait ObservableSet[T] extends Set[T] with MsgSeqPublisher[T] {
 // same type. OTOH, this methods allows accessing the underlying data at all.
 class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryReifier[T]
   with MsgSeqSubscriber[T, QueryReifier[T]]
+  with Queryable[T, collection.SetProxy[T]]
   with collection.SetProxy[T] //I mean immutable.SetProxy[T], but that requires an underlying immutable Set.
   // I'll probably end up with forwarding most basic methods manually, and implementing the others through SetLike.
   // Or we'll just support incremental query update for all methods.
@@ -103,7 +104,6 @@ class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryRei
   //From SetProxy
   override def self = set.keySet
 
-  override def exec() = self
   private[this] def count(v: T) = set.getOrElse(v, 0)
   override def notify(pub: QueryReifier[T], evts: Seq[Message[T]]) {
     for (evt <- evts) {
@@ -125,5 +125,5 @@ class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryRei
       }
     }
   }
-  override def toString = "IncrementalResult(" + exec().toString + ")"
+  override def toString = "IncrementalResult(" + self.toString + ")"
 }

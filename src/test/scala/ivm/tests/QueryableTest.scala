@@ -99,7 +99,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     //val vQueryablePlusOne2: HashSet[Int] = vQueryable.map((i: Int) => i + 1) //gives error
     val vQueryablePlusOne: QueryReifier[Int] = vQueryable.map(_ + 1)
     //val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 * i) //XXX can't use *, not defined, nor asQueryable.
-    val vIncUpdPlus2 = new IncrementalResult(for (i: Exp[Int] <- vIncUpd) yield 2 + i)
+    val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 + i)
 
     def show[T](name: String, v: IncrementalResult[T]) {
       println()
