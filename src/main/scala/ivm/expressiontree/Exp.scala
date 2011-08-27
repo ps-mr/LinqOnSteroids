@@ -6,6 +6,19 @@ trait Exp[+T] {
   private[ivm] def children: Seq[Exp[_]]
   //The arity is not specified.
   private[ivm] def genericConstructor: Seq[Exp[_]] => Exp[T]
+
+  private[ivm] def visitPreorder(visitor: Exp[_] => Unit) {
+    for (c <- children) {
+      c.visitPreorder(visitor)
+    }
+    visitor(this)
+  }
+  private[ivm] def visitPostorder(visitor: Exp[_] => Unit) {
+    visitor(this)
+    for (c <- children) {
+      c.visitPostorder(visitor)
+    }
+  }
   // some child management auxiliary functions
   private[ivm] def transform(transformer: Exp[_] => Exp[_]): Exp[T] = {
     val transformedChilds = for (c <- children) yield c.transform(transformer)
