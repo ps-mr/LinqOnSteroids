@@ -9,6 +9,6 @@ package ivm.indexing
  */
 import scala.collection.Map
 
-trait Index[S,T] extends Map[S,T] {
+trait Index[S, +T] extends Map[S, T] {
   override def toString() = "Index"
 }
