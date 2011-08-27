@@ -1,7 +1,9 @@
-package ivm.indexing
+package ivm
+package indexing
 
-import ivm.expressiontree.{FuncExp, QueryReifier}
 import scala.collection.mutable.HashMap
+import expressiontree.{FuncExp, QueryReifier}
+
 
 /*
  * These indexes generalize path indexes as described in the following paper:
@@ -73,3 +75,53 @@ class PathIndex[T1, P, S, T](it: QueryReifier[T1], path: Path[(T1, P), T], fGrou
 
   this ++= traversePath(it.exec(), path).groupBy(p => fGroup.interpret()(p))
 }
+
+import expressiontree.Lifting._
+import expressiontree.Const
+
+/**
+ * As an experiment and example of using PathIndex, define (partial) adapters between the two kinds of
+ * interfaces given above. These adaptors are partial because they accept the same parameters, but
+ * extend Map and Index with different parameter types - nested tuples instead of flat ones.
+ */
+
+class PathIndex1[T, S](it: QueryReifier[T], f: FuncExp[T, S])
+  extends PathIndex[T, Unit, S, T](
+    it,
+    EmptyPath(),
+    FuncExp(x => Const(f.interpret()(x._1.interpret()))))
+
+class PathIndex1Unit[T, S](it: QueryReifier[T], path: Path[(T, Unit), T], fGroup: FuncExp[(T, Unit), S])
+  extends PathIndex(it, EmptyPath[T](), fGroup)
+
+class PathIndex2[T1, T2, S](it: QueryReifier[T1],
+                                     p1: FuncExp[T1, QueryReifier[T2]],
+                                     f: FuncExp[(T1, T2), S])
+  extends PathIndex[T1, (T2, Unit), S, T2](
+    it,
+    ConsPath(p1, EmptyPath()),
+    FuncExp(x => Const(f.interpret()((x._1.interpret(), x._2.interpret()._1)))))
+
+class PathIndex3[T1, T2, T3, S](it: QueryReifier[T1],
+                                     p1: FuncExp[T1, QueryReifier[T2]],
+                                     p2: FuncExp[T2, QueryReifier[T3]],
+                                     f: FuncExp[(T1, T2, T3), S])
+  extends PathIndex[T1, (T2, (T3, Unit)), S, T3](
+    it,
+    ConsPath(p1, ConsPath(p2, EmptyPath())),
+    //_1 and interpret() commute.
+    FuncExp(x => Const(f.interpret()((x.interpret()._1, x.interpret()._2._1, x.interpret()._2._2._1)))))
+
+class PathIndex4[T1, T2, T3, T4, S](it: QueryReifier[T1],
+                                     p1: FuncExp[T1, QueryReifier[T2]],
+                                     p2: FuncExp[T2, QueryReifier[T3]],
+                                     p3: FuncExp[T3, QueryReifier[T4]],
+                                     f: FuncExp[(T1, T2, T3, T4), S])
+  extends PathIndex[T1, (T2, (T3, (T4, Unit))), S, T4](
+    it,
+    ConsPath(p1, ConsPath(p2, ConsPath(p3, EmptyPath()))),
+    FuncExp(x => Const(f.interpret()((
+      x.interpret()._1,
+      x.interpret()._2._1,
+      x.interpret()._2._2._1,
+      x.interpret()._2._2._2._1)))))
