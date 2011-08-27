@@ -90,7 +90,7 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   override def transformedMessages(evt: Message[T]) = {
     evt match {
       case Include(v) =>
-        val fV = fInt(v)
+        val fV = cache.getOrElseUpdate(v, fInt(v))
         fV subscribe subCollListener
         fV.exec().toSeq map (Include(_))
       case Remove(v) =>
@@ -98,6 +98,7 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
         //need a map from v to the returned collection - as done in LiveLinq
         //anyway.
         val fV = cache(v)
+        //cache -= v //This might actually be incorrect, if v is included twice in the collection. This is a problem!
         fV removeSubscription subCollListener
         fV.exec().toSeq map (Remove(_))
       case _ => defTransformedMessages(evt)
