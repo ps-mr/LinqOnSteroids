@@ -146,4 +146,34 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     //Since vColl has a different static type, a different implicit is passed here.
     println("vCollPlusOne: %s, type: %s" format (vCollPlusOne, vCollPlusOne.getClass.getName))
   }
+
+  @Test
+  def testFlatMap() {
+    //val v = Seq(1, 2, 3)
+    val v = IncHashSet(10, 20, 30)
+    val v2 = IncHashSet(4, 5, 6)
+
+    val res = new IncrementalResult[Int](for (i <- v.asQueryable; j <- v2.asQueryable) yield i + j)
+    show("res", res)
+    v += 40
+    show("res", res)
+    v2 += 7
+    show("res", res)
+  }
+
+  @Test
+  def testFlatMap2() {
+    val v = new IncHashSet[Int]
+    v ++= Seq(0, 1, 2)
+    val vArr = Array(IncHashSet(40, 50, 60), IncHashSet(40, 50, 60), IncHashSet(40, 50, 60), IncHashSet(40, 50, 60))
+
+    val res = new IncrementalResult[Int](for (i <- v.asQueryable; j <- liftCall(((_: Array[IncHashSet[Int]]).apply(_: Int).asQueryable), Const(vArr), i).interpret()) yield i + j)
+    show("res", res)
+    v += 3
+    show("res", res)
+    for (i <- 0 until 3) {
+      vArr(i) += 70
+      show("res", res)
+    }
+  }
 }
