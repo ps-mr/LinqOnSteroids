@@ -23,6 +23,33 @@ class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryRei
   // It is crucial to have this statement only here after construction
   notify(inner, inner.exec().toSeq.map(Include(_)))
 
+  private[ivm] def startListeners(e: Exp[_]) {
+    def startSubListeners(e: Exp[_]) {
+      for (c <- e.children) {
+        startListeners(c)
+      }
+    }
+    e match {
+      case m: Maintainer[_] =>
+        m.startListening()
+        startSubListeners(e)
+      case f: FuncExp[_, _] =>
+        /*
+        //Must transform f, such that listeners are started on its result! Hmm...
+        //But again, that should not happen if we print the tree again. Doh!
+        f.f andThen {
+          e =>
+            startListeners(e)
+            e
+        }*/
+        f.interpretHook = Some(startListeners(_)) //Evil hack, I know.
+        //Here we must not visit f children, i.e. its body!
+      case _ =>
+        startSubListeners(e)
+    }
+  }
+  startListeners(inner)
+
   //From SetProxy
   override def self = set.keySet
 

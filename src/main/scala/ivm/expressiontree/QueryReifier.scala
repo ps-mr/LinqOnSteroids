@@ -58,19 +58,22 @@ trait QueryReifierBase[T] extends Exp[QueryReifierBase[T]]  {
 // by Queryable.
 trait QueryReifier[T] extends QueryReifierBase[T] with MsgSeqPublisher[T] with Exp[QueryReifier[T]] {
   type Pub <: QueryReifier[T]
+  //subscription is a side effect, but query composition requires the passed functions to be pure.
+  //In particular, when we pass Var inside a query, we execute these operations, but the results must just be inspected,
+  //they must not become listeners - especially because they contain Var nodes.
   override def map[U](f: Exp[T] => Exp[U]): QueryReifier[U] = {
     val res = new MapMaintainerExp[T, U](this, FuncExp(f))
-    this subscribe res
+    //this subscribe res
     res
   }
   override def withFilter(p: Exp[T] => Exp[Boolean]): QueryReifier[T] = {
     val res = new WithFilterMaintainerExp[T](this, FuncExp(p))
-    this subscribe res
+    //this subscribe res
     res
   }
   override def flatMap[U](f: Exp[T] => Exp[QueryReifier[U]]): QueryReifier[U] = {
     val res = new FlatMapMaintainerExp[T, U](this, FuncExp(f))
-    this subscribe res
+    //this subscribe res
     res
   }
   //XXX add join, and add union

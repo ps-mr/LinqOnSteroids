@@ -7,8 +7,15 @@ case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends Exp[S => T] {
   override def toString() = {
     "(" + x.name + ") => " + body
   }
-  def interpret() = z => f(Const(z)).interpret()
   //def apply(z: Exp[S]): Exp[T] = f(z) // or rather create App node here?
+  //XXX: Uglymost hack. Paolo
+  private[ivm] var interpretHook: Option[Exp[Any] => Unit] = None
+  def interpret(): S => T =
+    z => {
+      val res = f(Const(z))
+      interpretHook.map(_(res))
+      res.interpret()
+    }
   def children = Seq(body)
   def genericConstructor = v => makefun(v(0).asInstanceOf[Exp[T]], x)
 
