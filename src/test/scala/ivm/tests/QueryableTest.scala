@@ -147,18 +147,32 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     println("vCollPlusOne: %s, type: %s" format (vCollPlusOne, vCollPlusOne.getClass.getName))
   }
 
-  @Test
-  def testFlatMap() {
+  def testFlatMap(working: Boolean) {
     //val v = Seq(1, 2, 3)
-    val v = IncHashSet(10, 20, 30)
+    val v = IncHashSet[Int]()
+    if (!working)
+      v ++= Seq(10, 20, 30)
     val v2 = IncHashSet(4, 5, 6)
 
     val res = new IncrementalResult[Int](for (i <- v.asQueryable; j <- v2.asQueryable) yield i + j)
+    show("res", res)
+    if (working)
+      v ++= Seq(10, 20, 30)
     show("res", res)
     v += 40
     show("res", res)
     v2 += 7
     show("res", res)
+  }
+
+  @Test
+  def testFlatMapWorking() = {
+    testFlatMap(working = true)
+  }
+
+  @Test
+  def testFlatMapNotWorking() = {
+    testFlatMap(working = false)
   }
 
   @Test
