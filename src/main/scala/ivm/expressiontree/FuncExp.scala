@@ -3,12 +3,13 @@ package ivm.expressiontree
 case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends Exp[S => T] {
   import FuncExp._
   val x = gensym()
+  lazy val body = f(x)
   override def toString() = {
-    "(" + x.name + ") => " + f(x)
+    "(" + x.name + ") => " + body
   }
   def interpret() = z => f(Const(z)).interpret()
   def apply(z: Exp[S]): Exp[T] = f(z) // or rather create App node here?
-  def children = Seq(f(x))
+  def children = Seq(body)
   def genericConstructor = v => makefun(v(0).asInstanceOf[Exp[T]], x)
 
   // alpha equivalence for functions! (modulo calls to scala functions)

@@ -9,18 +9,18 @@ import indexing.{HashIndex, Path}
 class Optimization {
   val cartProdToJoin : Exp[_] => Exp[_] =
      (e) => e match {
-       case FlatMap(fmcol,fmf) => fmf.f(fmf.x) match {
+       case FlatMap(fmcol,fmf) => fmf.body match {
          case Map(mccol,mcf) => mccol match {
            case WithFilter(col3,h) => {
              if (col3.isOrContains(fmf.x)) e else
-             h.f(h.x) match {
+             h.body match {
                case Eq(l,r) => if (!(l.isOrContains(h.x)) && !(r.isOrContains(fmf.x)))
                                    Join(fmcol,
                                         col3,
                                         FuncExp.makefun[Any,Any](l, fmf.x),  // no idea why the [Any,Any] stuff passes the typechecker
                                         FuncExp.makefun[Any,Any](r, h.x),
                                         FuncExp.makepairfun[Any,Any,Any](
-                                                mcf.f(mcf.x),
+                                                mcf.body,
                                                 fmf.x,
                                                 mcf.x))
                                else if (!(r.isOrContains(h.x)) && !(l.isOrContains(fmf.x)))
@@ -29,7 +29,7 @@ class Optimization {
                                         FuncExp.makefun[Any,Any](r, fmf.x),
                                         FuncExp.makefun[Any,Any](l, h.x),
                                         FuncExp.makepairfun[Any,Any,Any](
-                                                mcf.f(mcf.x),
+                                                mcf.body,
                                                 fmf.x,
                                                 mcf.x))
                                else e
@@ -46,7 +46,7 @@ class Optimization {
   val removeIdentityMaps : Exp[_] => Exp[_] =
     (e) => e match {
       case Map(col,f) =>
-        f.f(f.x) match {
+        f.body match {
           case f.x => col
           case x => println(x); e
         }
@@ -89,7 +89,7 @@ class Optimization {
   }
 
   val indexer : Exp[_] => Exp[_] =  (e) => e match {
-       case WithFilter(col,h)  => h.f(h.x) match {
+       case WithFilter(col,h)  => h.body match {
          case Eq(l,r) => if ((!(l.isOrContains(h.x))) && (r.freeVars == Seq(h.x))
                               && hasIndex(col.indexes.asInstanceOf[scala.collection.mutable.Map[FuncExp[Any,Any],HashIndex[Any,Any]]], h.x, r))
                          IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(r, h.x)).asInstanceOf[FuncExp[Any,Any]]).asInstanceOf[HashIndex[Any,Any]], l)
