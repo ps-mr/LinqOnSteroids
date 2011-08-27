@@ -81,6 +81,16 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     println("vCollPlusOne: " + vCollPlusOne)
   }
 
+  def show[T: Ordering](name: String, v: IncrementalResult[T]) {
+    println()
+    println("%s: after sorting\t\t%s, before\t\t%s" format(name, v.toSeq.sorted, v))
+    //println("vIncUpd.exec(): " + vIncUpd.exec())
+    //println("vIncUpd.interpret.exec(): " + vIncUpd.interpret.exec())
+    v.exec() should be (v.interpret().exec())
+    v.exec() should be (v.inner.exec())
+    //println("vIncUpd.inner.exec(): " + vIncUpd.inner.exec())
+  }
+
   @Test
   def testIncremental() {
     val v = new IncHashSet[Int]
@@ -101,15 +111,6 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     //val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 * i) //XXX can't use *, not defined, nor asQueryable.
     val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 + i)
 
-    def show[T: Ordering](name: String, v: IncrementalResult[T]) {
-      println()
-      println("%s: after sorting\t\t%s, before\t\t%s" format(name, v.toSeq.sorted, v))
-      //println("vIncUpd.exec(): " + vIncUpd.exec())
-      //println("vIncUpd.interpret.exec(): " + vIncUpd.interpret.exec())
-      v.exec() should be (v.interpret().exec())
-      v.exec() should be (v.inner.exec())
-      //println("vIncUpd.inner.exec(): " + vIncUpd.inner.exec())
-    }
     def out() {
       show("vIncUpd", vIncUpd)
       show("vIncUpdPlus2", vIncUpdPlus2)
@@ -131,7 +132,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     out()
     v ++= Seq(1, 5, 7)
     out()
-    
+
     println("vQueryable: " + vQueryable)
 
     println("vPlusOne: " + vPlusOne)
