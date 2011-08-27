@@ -77,7 +77,7 @@ class Optimization {
 
   private def getPath[T,S](col: QueryReifier[T]) : Option[(Path[(S,_),T], Traversable[S]) /*forSome {type S}*/]  = {
     col match {
-      case f: FlatMap[q,T] => {
+      case f: FlatMap[q, _ /*T*/] => {
         getPath[q,S](f.col) match {
           case Some((a,b)) => None
           case _ => None
