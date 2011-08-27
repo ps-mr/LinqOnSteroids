@@ -135,12 +135,8 @@ trait Maintainer[T] {
   this: MsgSeqSubscriber[T, QueryReifier[T]] =>
   val col: QueryReifier[T]
 
-  private var isListening = false
   def startListening() {
-    if (!isListening) {
-      col subscribe this
-      isListening = true
-    }
+    col subscribe this
   }
 }
 

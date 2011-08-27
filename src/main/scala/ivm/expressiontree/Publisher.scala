@@ -2,6 +2,7 @@ package ivm.expressiontree
 
 import ref.WeakReference
 import collection.mutable.Subscriber
+import collection.immutable.HashSet
 
 /**
  * Question: should we send updates before or after modifying the underlying collection? Here we do it before, so that
@@ -38,20 +39,36 @@ case class Reset() extends Message[Nothing]
 
 /* TODO Copyright: our Publisher class derives from the Scala library, which has a BSD license. Copying code is allowed
  * and no problem, as long as we acknowledge it in the sources. */
+
+/**
+ * Extends WeakReference with working equality comparison
+ */
+class EqWeakReference[+T <: AnyRef](t: T) extends WeakReference[T](t: T) {
+  override def equals(that: Any) = {
+    that match {
+      case x: AnyRef if x == this => true
+      case x: EqWeakReference[_] => get eq (x get)
+      //XXX: use eq or equals? equals makes more sense in general, but eq makes more sense for our use case.
+      case _ => super.equals(that)
+    }
+  }
+}
+
 trait Publisher[Evt] {
   type Pub <: Publisher[Evt]
   type Sub = Subscriber[Evt, Pub]
 
   protected def selfAsPub: Pub = this.asInstanceOf[Pub]
-  //XXX: If Pub were a type parameter, then we could just write (I expect) selfAsPub: Pub => at the beginning, instead of
+  //XXX: If Pub were a (covariant) type parameter, then we could just write (I expect) selfAsPub: Pub => at the beginning, instead of
   //such an ugly cast
 
-  var subscribers: Seq[WeakReference[Sub]] = Seq()
+  //XXX: I believe that we need to filter out duplicate elements - I'd need to extend We
+  var subscribers: Set[EqWeakReference[Sub]] = HashSet()
   def subscribe(sub: Sub) {
-    subscribers :+= new WeakReference(sub)
+    subscribers += new EqWeakReference(sub)
   }
   def removeSubscription(sub: Sub) {
-    subscribers = subscribers filter (_.get == sub)
+    subscribers -= new EqWeakReference(sub)
   }
 
   def publish(evt: Evt) {
