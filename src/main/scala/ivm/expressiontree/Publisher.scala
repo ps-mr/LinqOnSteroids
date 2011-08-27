@@ -88,8 +88,15 @@ trait EvtTransformer[-T, U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeq
     }
   }
 
-  override def notify(pub: Repr, evts: Seq[Message[T]]) = publish(evts flatMap transformedMessages)
+  override def notify(pub: Repr, evts: Seq[Message[T]]) = {
+    val res = evts flatMap transformedMessages
+    if (Debug.verbose)
+      println("%s notify(\n  pub = %s,\n  evts = %s\n) = %s" format (this, pub, evts, res))
+    publish(res)
+  }
 }
 
-
+object Debug {
+  val verbose = true
+}
 // vim: set ts=4 sw=4 et:

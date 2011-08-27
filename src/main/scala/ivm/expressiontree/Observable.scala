@@ -77,25 +77,33 @@ class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryRei
   override def self = set.keySet
 
   private[this] def count(v: T) = set.getOrElse(v, 0)
+  private[this] def logPublish(evt: Message[T]) {
+    if (Debug.verbose)
+      println("publish(%s)" format evt)
+    publish(evt)
+  }
+
   override def notify(pub: QueryReifier[T], evts: Seq[Message[T]]) {
+    if (Debug.verbose)
+      println("%s notify(\n  pub = %s,\n  evts = %s\n)" format (this, pub, evts))
     for (evt <- evts) {
       evt match {
         case Include(v) =>
           val vCount = count(v)
           if (vCount == 0)
-            publish(evt)
+            logPublish(evt)
           set(v) = vCount + 1
         case Remove(v) =>
           val vCount = count(v) - 1
           if (vCount > 0)
             set(v) = vCount
           else {
-            publish(evt)
+            logPublish(evt)
             set -= v
           }
 
         case Reset() =>
-          publish(evt)
+          logPublish(evt)
           set.clear()
         // These two cases are quite common: they basically mean that no special handling is provided for bulk events.
         // The handling here is valid more in general, but no batching is done.
@@ -105,5 +113,5 @@ class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryRei
       }
     }
   }
-  override def toString = "IncrementalResult(" + self.toString + ")"
+  override def toString() = "IncrementalResult(" + self.toString + ")"
 }
