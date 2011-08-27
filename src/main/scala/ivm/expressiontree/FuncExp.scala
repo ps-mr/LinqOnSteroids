@@ -8,7 +8,7 @@ case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends Exp[S => T] {
     "(" + x.name + ") => " + body
   }
   def interpret() = z => f(Const(z)).interpret()
-  def apply(z: Exp[S]): Exp[T] = f(z) // or rather create App node here?
+  //def apply(z: Exp[S]): Exp[T] = f(z) // or rather create App node here?
   def children = Seq(body)
   def genericConstructor = v => makefun(v(0).asInstanceOf[Exp[T]], x)
 
