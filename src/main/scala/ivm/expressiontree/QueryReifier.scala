@@ -13,6 +13,7 @@ import optimization.Optimization
  */
 trait QueryReifierBase[T] extends Exp[QueryReifierBase[T]]  {
   this: QueryReifier[T] =>
+  override def interpret() = this
   def exec(): Traversable[T]
 
   def map[U](f: Exp[T] => Exp[U]): QueryReifierBase[U] = Map[T,U](this, FuncExp(f))
