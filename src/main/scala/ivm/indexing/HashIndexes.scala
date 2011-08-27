@@ -60,7 +60,7 @@ class HashIndex4[T1,T2,T3,T4,S](it: QueryReifier[T1],
 }
 
 // KO: hopefully all code above is subsumed by PathIndex. I leave it there until path index optimization is implemented.
-class PathIndex[T1, P, S, T](it: QueryReifier[T1], path: Path[(T1, P), T], fGroup: FuncExp[(T1, P), S])
+class PathIndex[T1, P, S, +T](it: QueryReifier[T1], path: Path[(T1, P), T], fGroup: FuncExp[(T1, P), S])
    extends HashMap[S, Traversable[(T1, P)]]
    with Index[S, Traversable[(T1, P)]] {
   private def traversePath[T, R, Q](c: Traversable[T], p: Path[(T, R), Q]): Traversable[(T, R)] = {
