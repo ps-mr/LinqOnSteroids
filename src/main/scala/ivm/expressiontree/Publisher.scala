@@ -42,7 +42,7 @@ trait Publisher[Evt] {
   type Pub <: Publisher[Evt]
   type Sub = Subscriber[Evt, Pub]
 
-  protected val selfAsPub: Pub = this.asInstanceOf[Pub]
+  protected def selfAsPub: Pub = this.asInstanceOf[Pub]
   //XXX: If Pub were a type parameter, then we could just write (I expect) selfAsPub: Pub => at the beginning, instead of
   //such an ugly cast
 
