@@ -110,11 +110,45 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   }
 }
 
+/*trait Maintainer[T, Repr <: QueryReifier[T]] extends MsgSeqSubscriber[T, Repr] {
+  this: QueryReifier[T]#Sub =>
+  val col: QueryReifier[T]
+
+  //def uglyCast(v: Subscriber[Seq[Message[T]], QueryReifier[T]#Pub]): Subscriber[Seq[Message[T]], col.Pub] =
+  //Equivalent to:
+  //def uglyCast(v: Subscriber[Seq[Message[T]], QueryReifier[T]]): Subscriber[Seq[Message[T]], col.Pub] =
+  //Which is wrong. Instead we need:
+  def uglyCast(v: Subscriber[Seq[Message[T]], Repr]): Subscriber[Seq[Message[T]], col.Pub] =
+    v.asInstanceOf[Subscriber[Seq[Message[T]], col.Pub]]
+  /*
+   * Why is that cast needed? Repr <: QueryReifier[T], col.Pub <: QueryReifier[T], but col.Pub and Repr are incomparable.
+   * The cast would be unneeded if Subscriber[..., col.Pub] >: Subscriber[..., Repr], i.e. col.Pub <: Repr.
+   * Therefore, let's set Repr = QueryReifier[T]
+   */
+
+  def startListening() {
+    //col subscribe this.asInstanceOf[col.Sub]
+    col subscribe uglyCast(this)
+  }
+}*/
+trait Maintainer[T] {
+  this: MsgSeqSubscriber[T, QueryReifier[T]] =>
+  val col: QueryReifier[T]
+
+  private var isListening = false
+  def startListening() {
+    if (!isListening) {
+      col subscribe this
+      isListening = true
+    }
+  }
+}
+
 //Don't make Repr so specific as IncCollectionReifier. Making Repr any specific
 //is entirely optional - it just enables the listener to get a more specific
 //type for the pub param to notify(), if he cares.
 class MapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,U]) extends Map[T,U](col, f)
-with MapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] {
+    with MapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] with Maintainer[T] {
   override def fInt = f.interpret()
   //XXX: only the name of the constructed class changes
   override def genericConstructor =
@@ -122,7 +156,7 @@ with MapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] {
           v(1).asInstanceOf[FuncExp[T, U]])
 }
 class FlatMapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,QueryReifier[U]]) extends FlatMap[T,U](col, f)
-with FlatMapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] {
+    with FlatMapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] with Maintainer[T] {
   override def fInt = x => f.interpret()(x)
   //XXX ditto
   override def genericConstructor =
@@ -130,7 +164,7 @@ with FlatMapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] {
           v(1).asInstanceOf[FuncExp[T, QueryReifier[U]]])
 }
 class WithFilterMaintainerExp[T](col: QueryReifier[T], p: FuncExp[T,Boolean]) extends WithFilter[T](col, p)
-with WithFilterMaintainer[T, QueryReifier[T]] with QueryReifier[T] {
+    with WithFilterMaintainer[T, QueryReifier[T]] with QueryReifier[T] with Maintainer[T] {
   override def pInt = p.interpret()
   //XXX ditto
   override def genericConstructor =
