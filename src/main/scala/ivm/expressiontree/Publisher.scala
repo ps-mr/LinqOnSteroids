@@ -51,7 +51,7 @@ trait Publisher[Evt] {
     subscribers :+= new WeakReference(sub)
   }
   def removeSubscription(sub: Sub) {
-    subscribers :+= new WeakReference(sub)
+    subscribers = subscribers filter (_.get == sub)
   }
 
   def publish(evt: Evt) {
