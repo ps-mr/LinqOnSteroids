@@ -22,14 +22,9 @@ class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryRei
   inner subscribe this
   // It is crucial to have this statement only here after construction
   notify(inner, inner.exec().toSeq.map(Include(_)))
+  startListeners(inner)
 
-  private[ivm] def startListeners(e: Exp[_]) {
-    def startSubListeners(e: Exp[_]) {
-      //We must not visit childrens of FuncExp, i.e. its body, because it's an open term.
-      for (c <- e.closedTermChildren) {
-        startListeners(c)
-      }
-    }
+  private[this] def startListener(e: Exp[_]) {
     e match {
       case m: Maintainer[_] =>
         m.startListening()
@@ -37,9 +32,11 @@ class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryRei
         f.interpretHook = Some(startListeners(_)) //Evil hack, I know.
       case _ =>
     }
-    startSubListeners(e)
   }
-  startListeners(inner)
+
+  def startListeners(e: Exp[_]) {
+    e visitPreorderClosedChildren startListener
+  }
 
   //From SetProxy
   override def self = set.keySet

@@ -8,6 +8,14 @@ trait Exp[+T] {
   //The arity is not specified.
   private[ivm] def genericConstructor: Seq[Exp[_]] => Exp[T]
   // some child management auxiliary functions
+
+  //Many visitors might not want to visit childrens of FuncExp, i.e. function bodies, because they are open terms.
+  private[ivm] def visitPreorderClosedChildren(visitor: Exp[_] => Unit) {
+    visitor(this)
+    for (c <- closedTermChildren) {
+      c.visitPreorderClosedChildren(visitor)
+    }
+  }
   private[ivm] def transform(transformer: Exp[_] => Exp[_]): Exp[T] = {
     val transformedChilds = for (c <- children) yield c.transform(transformer)
     val newself = genericConstructor(transformedChilds)
