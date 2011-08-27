@@ -17,6 +17,7 @@ case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends Exp[S => T] {
       res.interpret()
     }
   def children = Seq(body)
+  private[ivm] override def closedTermChildren: Seq[Exp[_]] = Seq()
   def genericConstructor = v => makefun(v(0).asInstanceOf[Exp[T]], x)
 
   // alpha equivalence for functions! (modulo calls to scala functions)

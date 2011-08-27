@@ -25,28 +25,19 @@ class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryRei
 
   private[ivm] def startListeners(e: Exp[_]) {
     def startSubListeners(e: Exp[_]) {
-      for (c <- e.children) {
+      //We must not visit childrens of FuncExp, i.e. its body, because it's an open term.
+      for (c <- e.closedTermChildren) {
         startListeners(c)
       }
     }
     e match {
       case m: Maintainer[_] =>
         m.startListening()
-        startSubListeners(e)
       case f: FuncExp[_, _] =>
-        /*
-        //Must transform f, such that listeners are started on its result! Hmm...
-        //But again, that should not happen if we print the tree again. Doh!
-        f.f andThen {
-          e =>
-            startListeners(e)
-            e
-        }*/
         f.interpretHook = Some(startListeners(_)) //Evil hack, I know.
-        //Here we must not visit f children, i.e. its body!
       case _ =>
-        startSubListeners(e)
     }
+    startSubListeners(e)
   }
   startListeners(inner)
 

@@ -4,6 +4,7 @@ trait Exp[+T] {
 
   def interpret(): T
   private[ivm] def children: Seq[Exp[_]]
+  private[ivm] def closedTermChildren: Seq[Exp[_]] = children
   //The arity is not specified.
   private[ivm] def genericConstructor: Seq[Exp[_]] => Exp[T]
   // some child management auxiliary functions
