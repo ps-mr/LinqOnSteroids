@@ -17,7 +17,7 @@ trait Exp[+T] {
     mapper(this, mappedChilds)
   }
   private[ivm] def containsExp[S](e: Exp[S]): Boolean = {
-    var ac = allChildren
+    var ac = allChildren //XXX slow, allChildren computes an eager sequence!
     ac.contains(e)
   }
   private[ivm] def isOrContains[S](e: Exp[S]): Boolean = if (this.equals(e)) true else containsExp(e)
