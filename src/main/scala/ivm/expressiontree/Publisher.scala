@@ -114,6 +114,6 @@ trait EvtTransformer[-T, U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeq
 }
 
 object Debug {
-  val verbose = true
+  val verbose = false
 }
 // vim: set ts=4 sw=4 et:
