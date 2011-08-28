@@ -8,7 +8,10 @@ import collection.mutable.HashMap
  * Date: 27/8/2011
  */
 
-//A class representing an intermediate or final result of an incremental query. Note: SetProxy is not entirely
+/**
+ * A class representing an intermediate or final result of an incremental query.
+ */
+// XXX: SetProxy is not entirely
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
 // same type. OTOH, this methods allows accessing the underlying data at all.
 class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryReifier[T]
