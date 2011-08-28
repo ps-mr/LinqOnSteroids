@@ -5,10 +5,9 @@ import expressiontree._
 
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
-import org.junit.Test
-
 import collections.{IncHashSet, IncArrayBuffer}
 import collection.mutable.{HashSet, ArrayBuffer}
+import org.junit.{Ignore, Test}
 
 class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
   import Lifting._
@@ -166,22 +165,28 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
   }
 
   @Test
-  def testFlatMapWorking() = {
+  def testFlatMapWorking() {
     testFlatMap(working = true)
   }
 
   @Test
-  def testFlatMapNotWorking() = {
+  def testFlatMapNotWorking() {
     testFlatMap(working = false)
   }
 
+  @Ignore
   @Test
   def testFlatMap2() {
     val v = new IncHashSet[Int]
     v ++= Seq(0, 1, 2)
     val vArr = Array(IncHashSet(40, 50, 60), IncHashSet(40, 50, 60), IncHashSet(40, 50, 60), IncHashSet(40, 50, 60))
 
-    val res = new IncrementalResult[Int](for (i <- v.asQueryable; j <- liftCall(((_: Array[IncHashSet[Int]]).apply(_: Int).asQueryable), Const(vArr), i).interpret()) yield i + j)
+    //This term is invalid because of its use of interpret.
+    val res = new IncrementalResult[Int](for (i <- v.asQueryable;
+                                              j <- liftCall(
+                                                ((_: Array[IncHashSet[Int]]).apply(_: Int).asQueryable),
+                                                Const(vArr),
+                                                i).interpret()) yield i + j)
     show("res", res)
     v += 3
     show("res", res)
