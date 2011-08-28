@@ -20,9 +20,13 @@ class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryRei
 {
   var set = new HashMap[T, Int]
   inner subscribe this
+  startListeners(inner)
+  //XXX: I now believe this is a hack, in essence. I should not rely on exec();
+  // I should rather trigger updates starting from the root collection.
+  // See FlatMapMaintainer.initListening() for the hack currently compensating this problem.
+
   // It is crucial to have this statement only here after construction
   notify(inner, inner.exec().toSeq.map(Include(_)))
-  startListeners(inner)
 
   private[this] def startListener(e: Exp[_]) {
     e match {
