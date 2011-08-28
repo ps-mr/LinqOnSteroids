@@ -87,6 +87,19 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
         }
       }
     }
+  //To be invoked by the constructor with the initial elements.
+  protected def initListening(values: Traversable[T]) {
+    for (v <- values) {
+      //XXX copied from transformedMessages. Could I really reuse that as-is? I believe I cannot!
+      //Basically, it doesn't make sense to generate the new events and then to drop them!
+      //Plus, here I still need to call startListening.
+      val fV = cache.getOrElseUpdate(v, fInt(v))
+      fV subscribe subCollListener
+      fV match {
+        case m: Maintainer[_] => m.startListening()
+      }
+    }
+  }
   override def transformedMessages(evt: Message[T]) = {
     evt match {
       case Include(v) =>
@@ -161,6 +174,10 @@ class FlatMapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,QueryReifier[
   override def genericConstructor =
       v => new FlatMapMaintainerExp(v(0).asInstanceOf[QueryReifier[T]],
           v(1).asInstanceOf[FuncExp[T, QueryReifier[U]]])
+
+  //XXX this ensures that we listen on the results corresponding to the elements already present in col.
+  //However, it is a hack - see IncrementalResult for discussion.
+  initListening(col.exec())
 }
 class WithFilterMaintainerExp[T](col: QueryReifier[T], p: FuncExp[T,Boolean]) extends WithFilter[T](col, p)
     with WithFilterMaintainer[T, QueryReifier[T]] with QueryReifier[T] with Maintainer[T] {
