@@ -136,6 +136,9 @@ trait Maintainer[T] {
   val col: QueryReifier[T]
 
   def startListening() {
+    if (Debug.verbose)
+      //println("Maintainer(col = %s) startListening" format col)
+      println("%s startListening" format this)
     col subscribe this
   }
 }
