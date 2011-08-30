@@ -41,22 +41,7 @@ object OpenEncoding {
   //declaration does not compile because of variance problems - I should make
   //Elem invariant, which is not what I want:
   //trait CanBuildExp[-Elem, +To <: Exp[Elem]]
-
-  //Instances work as implicit conversions themselves because this trait extends Function.
-  trait CanBuildExp[-Elem, +To] extends (Exp[Elem] => To) {
-    def apply(e: Exp[Elem]): To
-  }
-  //XXX: in comparison to Scala collection, we are less flexible - if you upcast a value, a different implicit might be selected, leading to different code being executed.
-  //In Scala, implicits are used just to have a finer static type, but the actual code to be executed is chosen at runtime - most instances of CanBuildFrom delegate construction to the original collection!
-  //However, having a precise static type determines which operations are available. So, even if we make our code more dynamic like for Scala collections, we still need to ensure the best static types are inferred.
-  //Moreover, in the current implementation I need to use wrapper nodes; while they probably cannot be avoided altogether, we should save a few of them - in particular, instead of App nodes we should
-  //use specialized Map, FlatMap and WithFilter nodes, extending TraversableExp.
-
-  class ExpWrapper[+T](t: Exp[T]) extends Exp[T] {
-    def interpret = t.interpret
-  }
-
-  trait ExpressionTree {
+  trait BaseExprTree {
     //A few nodes for expression trees.
     case class Const[T](t: T) extends Exp[T] {
       def interpret = t
@@ -65,13 +50,36 @@ object OpenEncoding {
     case class App[T, U](f: T => U, t: Exp[T]) extends Exp[U] {
       def interpret = f(t.interpret)
     }
+    object Exp {
+      def app[T, U](f: T => U, t: Exp[T]): Exp[U] = App(f, t)
+    }
+  }
+
+  trait OpsExpressionTree extends BaseExprTree {
+    case class FuncExp[-T, +U](f: Exp[T] => Exp[U]) extends Exp[T => U] {
+      def interpret = t => f(Const(t)).interpret
+    }
+  }
+
+  trait CanBuildExpExpressionTree extends BaseExprTree {
+    //Instances work as implicit conversions themselves because this trait extends Function.
+    trait CanBuildExp[-Elem, +To] extends (Exp[Elem] => To) {
+      def apply(e: Exp[Elem]): To
+    }
+    //XXX: in comparison to Scala collection, we are less flexible - if you upcast a value, a different implicit might be selected, leading to different code being executed.
+    //In Scala, implicits are used just to have a finer static type, but the actual code to be executed is chosen at runtime - most instances of CanBuildFrom delegate construction to the original collection!
+    //However, having a precise static type determines which operations are available. So, even if we make our code more dynamic like for Scala collections, we still need to ensure the best static types are inferred.
+    //Moreover, in the current implementation I need to use wrapper nodes; while they probably cannot be avoided altogether, we should save a few of them - in particular, instead of App nodes we should
+    //use specialized Map, FlatMap and WithFilter nodes, extending TraversableExp.
+
+    class ExpWrapper[+T](t: Exp[T]) extends Exp[T] {
+      def interpret = t.interpret
+    }
+
     /*case class App2[T, U](f: Exp[T] => Exp[U], t: Exp[T]) extends Exp[U] {
       def interpret = f(t).interpret
     }*/
 
-    object Exp {
-      def app[T, U](f: T => U, t: Exp[T]): Exp[U] = App(f, t)
-    }
     //T cannot be contravariant here. Also ExpT must be invariant. Damn!
     //case class FuncExp[-T, +U, +ExpT2 <: ExpT, -ExpT <: Exp[T]](f: ExpT => Exp[U])(implicit val cbeT: CanBuildExp[T, ExpT2]) extends Exp[T => U]
     case class FuncExp[T, +U, ExpT <: Exp[T]](f: ExpT => Exp[U])(implicit val cbeT: CanBuildExp[T, ExpT]) extends Exp[T => U] {
@@ -80,7 +88,7 @@ object OpenEncoding {
   }
 
   trait NumExps {
-    this: ExpressionTree with NumExpressionTree =>
+    this: CanBuildExpExpressionTree with NumExpressionTree =>
     //Alternative encoding of operations which are not available for every Exp[T]
     //but only for e.g. Exp[String], Exp[T <% Numeric] and so on.
     //Idea: instead of having all those methods in Exp[T], and instead of having to
@@ -104,7 +112,7 @@ object OpenEncoding {
   }
 
   trait TraversableExps {
-    this: ExpressionTree =>
+    this: CanBuildExpExpressionTree =>
     trait TraversableExp[T, ExpT <: Exp[T]] extends Exp[Traversable[T]] {
       implicit val cbeT: CanBuildExp[T, ExpT]
       //XXX: Here I should use Map, FlatMap and WithFilter nodes, instead of generic application nodes. But that's beside the point I'm making for this encoding.
@@ -137,7 +145,7 @@ object OpenEncoding {
     }
   }
 
-  trait OpenEncodingBase extends NumExps with TraversableExps with ExpressionTree with NumExpressionTree {
+  trait OpenEncodingBase extends CanBuildExpExpressionTree with NumExps with TraversableExps with NumExpressionTree {
     //Use CanBuildExp for more precise automatic lifting. Problem: Scala seems
     //too shy to apply this conversion automatically, because "That" does not
     //match so obviously with the target type. Therefore, specializations such
@@ -260,8 +268,138 @@ object OpenEncoding {
       testTraversable()
     }
   }
+
+  /**
+   * Now we start with a much simpler encoding. We don't use CanBuildExp to get most specific types as result types, as
+   * that implies that the type is obtained through type inference. Instead, we use conversions from T => Exp[T], and
+   * then specific ones Pi T: Numeric. Exp[T] => NumExp[T]; Pi T. Exp[Traversable[T]] => TraversableExp[T]
+   */
+
+  trait NumOpsExps {
+    this: NumOpsExpressionTree =>
+    class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T])
+      //extends ExpWrapper[T](t) //this line is optional!
+    {
+      def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
+    }
+  }
+
+  trait NumOpsExpressionTree {
+    this: NumOpsExps =>
+    //Root node for all binary, associative and commutative operations. The
+    //intuition is that many operations (including optimizations) might apply
+    //for all of those - e.g. expression normalization.
+    abstract class CommutativeOp[T](a: Exp[T], b: Exp[T]) extends Exp[T]
+
+    case class Plus[T](a: Exp[T], b: Exp[T])(implicit val isNum: Numeric[T]) extends CommutativeOp(a, b) {
+      def interpret =
+        isNum.plus(a.interpret, b.interpret)
+    }
+  }
+  trait TraversableOpsExps {
+    //this:
+    this: OpsExpressionTree =>
+    class TraversableOps[T](val t: Exp[Traversable[T]]) /*extends Exp[Traversable[T]]*/ {
+      //XXX: Here I should use Map, FlatMap and WithFilter nodes, instead of generic application nodes. But that's beside the point I'm making for this encoding.
+      def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
+        App((_: Traversable[T]) map (FuncExp(f).interpret), this.t)
+
+      def flatMap[U, That <: Exp[Traversable[U]]](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] =
+        App((_: Traversable[T]) flatMap FuncExp(f).interpret, this.t)
+
+      //XXX: probably we could just return the same type as us... couldn't we? Probably yes, but we still need a CanBuildExp to actually do the creation.
+      def withFilter[That <: Exp[Traversable[T]]](f: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] =
+        App((_: Traversable[T]) filter FuncExp(f).interpret, this.t) //We can't use withFilter underneath.
+
+      def union[U >: T, That <: Exp[Traversable[U]]](u: Exp[Traversable[U]]): Exp[Traversable[U]] =
+        App((_: Traversable[T]) ++ u.interpret, this.t) //Should use an App node with two params.
+    }
+  }
+
+  trait SimpleOpenEncodingBase extends OpsExpressionTree with NumOpsExps with NumOpsExpressionTree with TraversableOpsExps {
+    implicit def toExp[T](t: T): Exp[T] = Const(t)
+
+    implicit def expToNumExp[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
+    implicit def tToNumExp[T : Numeric](t: T): NumOps[T] = {
+      //toExp(t)
+      expToNumExp(t) //Doesn't work, unless we make NumOps not extends Exp. It should expand to:
+      //expToNumExp(toExp(t)) //but it does not, because also the next expansion typechecks:
+      //expToNumExp(tToNumExp(t))
+    }
+
+    implicit def expToTravExp[T](t: Exp[Traversable[T]]): TraversableOps[T] = new TraversableOps(t)
+    implicit def tToTravExp[T](t: Traversable[T]): TraversableOps[T] = {
+      //toExp(t)
+      expToTravExp(t)
+    }
+  }
+
+  object SimpleOpenEncoding extends SimpleOpenEncodingBase {
+    def testBug() {
+      println("testBug:")
+
+      def show(name: String, v: Any) {
+        print(name + ": ")
+        println(v)
+      }
+      val i: Exp[Int] = 1
+      show("i", i)
+      val i1: Exp[Int] = 1
+      show("i1", i1)
+      //One of the syntaxes we want to support - both ones just fail, with "could not find implicit value for parameter cTTE: ivm.expressiontree.OpenEncoding.CanBuildExp[Int,ExpT]"
+      //val a0: Exp[Traversable[Int]] = Seq(1, 2, 3, 5)
+      //val a0: Exp[Traversable[Int]] = Seq(1, 2, 3, 5).toTraversable
+      val a0: Exp[Traversable[Int]] = Seq(1, 2, 3, 5)
+      show("a0", a0)
+
+      /*val a1 = toExpTempl(Seq(1, 2, 3, 5)) //Doesn't work well - canBuildExp[Seq[Int]]: CanBuildExp[Seq[Int], Exp[Seq[Int]]] is preferred to canBuildExpTrav[Int, NumExp[Int]]: CanBuildExp[Traversable[Int], TraversableExp[Int]].
+      show("a1", a1)
+      val a2 = toExpTempl(Seq(1, 2, 3, 5).toTraversable) //Doesn't work well either
+      show("a2", a2)
+      val a3: Any = toExpTempl(Seq(1, 2, 3, 5)) //Works better
+      show("a3", a3)
+      val a4: Exp[Seq[Int]] = toExpTempl(Seq(1, 2, 3, 5)) //Doesn't work well - that's equivalent to a1
+      show("a4", a4)
+      val a5: Exp[Traversable[Int]] = toExpTempl(Seq(1, 2, 3, 5)) //Works well apparently.
+      show("a5", a5)
+      val a6: TraversableExp[Int, NumExp[Int]] = Seq(1, 2, 3, 5) //This one obviously works.
+      show("a6", a6)
+
+      show("(like a3) toExpTempl(Seq(1, 2, 3, 5))", toExpTempl(Seq(1, 2, 3, 5)))
+      //show("toExpTempl(Seq(1, 2, 3, 5))(canBuildExpTrav)", toExpTempl(Seq(1, 2, 3, 5))(canBuildExpTrav))
+      show("toExpTempl(Seq(1, 2, 3, 5).toTraversable)(canBuildExpTrav)", toExpTempl(Seq(1, 2, 3, 5).toTraversable)(canBuildExpTrav))*/
+
+      println()
+    }
+
+    def testTraversable() {
+      testBug()
+
+      val a: Exp[Traversable[Int]] = Seq(1, 2, 3, 5)
+      val b = a.map(_ + 1)
+      val b2 = a.map(1 + _)
+      println(b)
+      println(b.interpret)
+      println(b2)
+      println(b2.interpret)
+    }
+
+    def main(args: Array[String]) {
+      val a: Exp[Int] = 1
+      val b = a + 2
+      val c = Exp.app((x: Int) => x + 1, 1)
+
+      println(b)
+      println(c)
+      println()
+      testTraversable()
+    }
+  }
+
   def main(args: Array[String]) {
     OpenEncoding.main(args)
+    println("SimpleOpenEncoding.main")
+    SimpleOpenEncoding.main(args)
   }
 }
 
