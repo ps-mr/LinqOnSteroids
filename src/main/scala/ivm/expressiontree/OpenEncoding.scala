@@ -335,13 +335,13 @@ object OpenEncoding {
   }
 
   object SimpleOpenEncoding extends SimpleOpenEncodingBase {
-    def testBug() {
+    def show(name: String, v: Any) {
+      print(name + ": ")
+      println(v)
+    }
+    def moreTests() {
       println("testBug:")
 
-      def show(name: String, v: Any) {
-        print(name + ": ")
-        println(v)
-      }
       val i: Exp[Int] = 1
       show("i", i)
       val i1: Exp[Int] = 1
@@ -373,25 +373,38 @@ object OpenEncoding {
     }
 
     def testTraversable() {
-      testBug()
+      moreTests()
 
       val a: Exp[Traversable[Int]] = Seq(1, 2, 3, 5)
-      val b = a.map(_ + 1)
+      val b1 = a.map(_ + 1)
       val b2 = a.map(1 + _)
-      println(b)
-      println(b.interpret)
-      println(b2)
-      println(b2.interpret)
+      val b3 = b1.map(2 + _)
+      show("b1", b1)
+      show("b1.interpret", b1.interpret)
+      show("b2", b2)
+      show("b2.interpret", b2.interpret)
+      show("b3", b3)
+      show("b3.interpret", b3.interpret)
     }
+
+    //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
+    def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = App(f, t)
+    def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
 
     def main(args: Array[String]) {
       val a: Exp[Int] = 1
       val b = a + 2
+      //Here we type inference fails:
       val c = Exp.app((x: Int) => x + 1, 1)
+      //With smarter signatures, it works:
+      val c2 = withExp(1)(_ + 1)
+      val c3 = withExpFunc(1)(_ + 1)
 
+      println(a)
       println(b)
       println(c)
-      println()
+      println(c2)
+      println(c3)
       testTraversable()
     }
   }
