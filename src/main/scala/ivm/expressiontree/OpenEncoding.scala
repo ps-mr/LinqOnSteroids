@@ -297,21 +297,19 @@ object OpenEncoding {
     }
   }
   trait TraversableOpsExps {
-    //this:
     this: OpsExpressionTree =>
     class TraversableOps[T](val t: Exp[Traversable[T]]) /*extends Exp[Traversable[T]]*/ {
       //XXX: Here I should use Map, FlatMap and WithFilter nodes, instead of generic application nodes. But that's beside the point I'm making for this encoding.
       def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
         App((_: Traversable[T]) map (FuncExp(f).interpret), this.t)
 
-      def flatMap[U, That <: Exp[Traversable[U]]](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] =
+      def flatMap[U](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] =
         App((_: Traversable[T]) flatMap FuncExp(f).interpret, this.t)
 
-      //XXX: probably we could just return the same type as us... couldn't we? Probably yes, but we still need a CanBuildExp to actually do the creation.
-      def withFilter[That <: Exp[Traversable[T]]](f: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] =
+      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] =
         App((_: Traversable[T]) filter FuncExp(f).interpret, this.t) //We can't use withFilter underneath.
 
-      def union[U >: T, That <: Exp[Traversable[U]]](u: Exp[Traversable[U]]): Exp[Traversable[U]] =
+      def union[U >: T](u: Exp[Traversable[U]]): Exp[Traversable[U]] =
         App((_: Traversable[T]) ++ u.interpret, this.t) //Should use an App node with two params.
     }
   }
