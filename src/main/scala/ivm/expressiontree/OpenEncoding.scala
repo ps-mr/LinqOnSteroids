@@ -333,6 +333,11 @@ object OpenEncoding {
   }
 
   object SimpleOpenEncoding extends SimpleOpenEncodingBase {
+    class ToQueryable[T](t: Traversable[T]) {
+      def asQueryable = Const(t)
+    }
+    implicit def toQueryable[T](t: Traversable[T]) = new ToQueryable(t)
+
     def show(name: String, v: Any) {
       print(name + ": ")
       println(v)
@@ -374,8 +379,9 @@ object OpenEncoding {
       moreTests()
 
       val a: Exp[Traversable[Int]] = Seq(1, 2, 3, 5)
+      val a2 = Seq(1, 2, 3, 5).asQueryable
       val b1 = a.map(_ + 1)
-      val b2 = a.map(1 + _)
+      val b2 = a2.map(1 + _)
       val b3 = b1.map(2 + _)
       show("b1", b1)
       show("b1.interpret", b1.interpret)
