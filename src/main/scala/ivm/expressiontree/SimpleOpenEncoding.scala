@@ -19,8 +19,16 @@ object SimpleOpenEncoding {
   import OpenEncoding.{ExpModule, BaseExprTree}
 
   trait OpsExpressionTree extends BaseExprTree with ExpModule {
+    case class Var(x: String) extends Exp[Nothing] {
+      def interpret = throw new RuntimeException("interpret on var")
+    }
+
     case class FuncExp[-T, +U](f: Exp[T] => Exp[U]) extends Exp[T => U] {
-      def interpret = t => f(Const(t)).interpret
+      override def interpret = t => f(Const(t)).interpret
+      override def toString = {
+        val name = "x" //XXX
+        "%s => (%s)" format (name, f(Var(name)))
+      }
     }
   }
 
@@ -205,7 +213,6 @@ object SimpleOpenEncoding {
   }
 
   def main(args: Array[String]) {
-    OpenEncoding.main(args)
     SimpleOpenEncoding.main(args)
   }
 }
