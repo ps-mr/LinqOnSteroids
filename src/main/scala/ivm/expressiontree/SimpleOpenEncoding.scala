@@ -1,5 +1,7 @@
 package ivm.expressiontree
 
+import collection.TraversableView
+
 /**
  * Here I show yet another encoding of expression trees, where methods
  * like +, &lt;= and so on can be added by other classes, rather than having to
@@ -49,25 +51,61 @@ object SimpleOpenEncoding {
         isNum.plus(a.interpret, b.interpret)
     }
   }
-  trait TraversableOpsExps {
+
+  trait TraversableOpsExpressionTree {
     this: OpsExpressionTree =>
-    class TraversableOps[T](val t: Exp[Traversable[T]]) /*extends Exp[Traversable[T]]*/ {
-      //XXX: Here I should use Map, FlatMap and WithFilter nodes, instead of generic application nodes. But that's beside the point I'm making for this encoding.
-      def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
-        App((_: Traversable[T]) map (FuncExp(f).interpret), this.t)
+    case class Map[T, +U](base: Exp[Traversable[T]], f: Exp[T => U]) extends Exp[Traversable[U]] {
+      override def interpret = base.interpret map f.interpret
+    }
+    case class FlatMap[T, +U](base: Exp[Traversable[T]], f: Exp[T => Traversable[U]]) extends Exp[Traversable[U]] {
+      override def interpret = base.interpret flatMap f.interpret
+    }
+    case class WithFilter[T](base: Exp[Traversable[T]], f: Exp[T => Boolean]) extends Exp[Traversable[T]] {
+      //XXX: Again the same problem with filtering - we cannot call withFilter.
+      override def interpret = base.interpret.view filter f.interpret
+    }
+    //Alternative approach:
+    case class View[T](base: Exp[Traversable[T]]) extends Exp[TraversableView[T, Traversable[T]]] {
+      override def interpret = base.interpret.view
+    }
 
-      def flatMap[U](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] =
-        App((_: Traversable[T]) flatMap FuncExp(f).interpret, this.t)
+    case class WithFilter2[T](base: Exp[TraversableView[T, Traversable[T]]], f: Exp[T => Boolean]) extends Exp[Traversable[T]] {
+      override def interpret = base.interpret filter f.interpret
+    }
 
-      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] =
-        App((_: Traversable[T]) filter FuncExp(f).interpret, this.t) //We can't use withFilter underneath.
+    case class Force[T](base: Exp[TraversableView[T, Traversable[T]]]) extends Exp[Traversable[T]] {
+      override def interpret = base.interpret.force
+    }
 
-      def union[U >: T](u: Exp[Traversable[U]]): Exp[Traversable[U]] =
-        App((_: Traversable[T]) ++ u.interpret, this.t) //Should use an App node with two params.
+    case class Union[T](base: Exp[Traversable[T]], that: Exp[Traversable[T]]) extends Exp[Traversable[T]] {
+      override def interpret = base.interpret ++ that.interpret
     }
   }
 
-  trait SimpleOpenEncodingBase extends OpsExpressionTree with NumOpsExps with NumOpsExpressionTree with TraversableOpsExps {
+  trait TraversableOpsExps {
+    this: OpsExpressionTree with TraversableOpsExpressionTree =>
+    class TraversableOps[T](val t: Exp[Traversable[T]]) /*extends Exp[Traversable[T]]*/ {
+      //XXX: Here I should use Map, FlatMap and WithFilter nodes, instead of generic application nodes. But that's beside the point I'm making for this encoding.
+      def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
+        Map(this.t, FuncExp(f))
+        //App((_: Traversable[T]) map (FuncExp(f).interpret), this.t)
+
+      def flatMap[U](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] =
+        FlatMap(this.t, FuncExp(f))
+        //App((_: Traversable[T]) flatMap FuncExp(f).interpret, this.t)
+
+      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] =
+        WithFilter2(View(this.t), FuncExp(f))
+        //WithFilter(this.t, FuncExp(f))
+        //App((_: Traversable[T]) filter FuncExp(f).interpret, this.t) //We can't use withFilter underneath.
+
+      def union[U >: T](that: Exp[Traversable[U]]): Exp[Traversable[U]] =
+        Union(this.t, that)
+        //App((_: Traversable[T]) ++ u.interpret, this.t) //Should use an App node with two params.
+    }
+  }
+
+  trait SimpleOpenEncodingBase extends OpsExpressionTree with NumOpsExps with NumOpsExpressionTree with TraversableOpsExps with TraversableOpsExpressionTree {
     implicit def toExp[T](t: T): Exp[T] = Const(t)
 
     implicit def expToNumExp[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
