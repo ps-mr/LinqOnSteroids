@@ -31,17 +31,14 @@ import scala.math.Numeric
  */
 
 object OpenEncoding {
-  trait Exp[+T] {
-    def interpret: T
+  trait ExpModule {
+    trait Exp[+T] {
+      def interpret: T
+    }
   }
 
-  //When building an expression, we need to construct the right object, but I think that a
-  //trick like CanBuildFrom should work.
-  //Note: To is supposed to be a subclass of Exp[Elem], but the following
-  //declaration does not compile because of variance problems - I should make
-  //Elem invariant, which is not what I want:
-  //trait CanBuildExp[-Elem, +To <: Exp[Elem]]
   trait BaseExprTree {
+    this: ExpModule =>
     //A few nodes for expression trees.
     case class Const[T](t: T) extends Exp[T] {
       def interpret = t
@@ -55,13 +52,20 @@ object OpenEncoding {
     }
   }
 
-  trait OpsExpressionTree extends BaseExprTree {
+  trait OpsExpressionTree extends BaseExprTree with ExpModule {
     case class FuncExp[-T, +U](f: Exp[T] => Exp[U]) extends Exp[T => U] {
       def interpret = t => f(Const(t)).interpret
     }
   }
 
-  trait CanBuildExpExpressionTree extends BaseExprTree {
+  trait CanBuildExpExpressionTree extends BaseExprTree with ExpModule {
+    //When building an expression, we need to construct the right object, but I think that a
+    //trick like CanBuildFrom should work.
+    //Note: To is supposed to be a subclass of Exp[Elem], but the following
+    //declaration does not compile because of variance problems - I should make
+    //Elem invariant, which is not what I want:
+    //trait CanBuildExp[-Elem, +To <: Exp[Elem]]
+
     //Instances work as implicit conversions themselves because this trait extends Function.
     trait CanBuildExp[-Elem, +To] extends (Exp[Elem] => To) {
       def apply(e: Exp[Elem]): To
@@ -276,7 +280,7 @@ object OpenEncoding {
    */
 
   trait NumOpsExps {
-    this: NumOpsExpressionTree =>
+    this: NumOpsExpressionTree with ExpModule =>
     class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T])
       //extends ExpWrapper[T](t) //this line is optional!
     {
@@ -285,7 +289,7 @@ object OpenEncoding {
   }
 
   trait NumOpsExpressionTree {
-    this: NumOpsExps =>
+    this: NumOpsExps with ExpModule =>
     //Root node for all binary, associative and commutative operations. The
     //intuition is that many operations (including optimizations) might apply
     //for all of those - e.g. expression normalization.
