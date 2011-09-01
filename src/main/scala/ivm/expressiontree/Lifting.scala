@@ -1,12 +1,6 @@
 package ivm.expressiontree
 
-import ivm.expressiontree.Lifting.NumOps
-
-
 object Lifting {
-  implicit val asBool = new AsBool[Boolean] {
-    def apply(e: Exp[Boolean]) = e
-  }
   case class PairHelper[A,B](p: Exp[(A,B)]) {
     val _1 = Proj1(p)
     val _2 = Proj2(p)
@@ -39,11 +33,19 @@ object Lifting {
     def +(that: Exp[String]) = StringConcat(t, that)
   }
 
-  implicit def toNumOps[T: Numeric](t: Exp[T]) = new NumOps(t)
-  implicit def toStringOps(t: Exp[String]) = new StringOps(t)
+  class BooleanOps(b: Exp[Boolean]) {
+    def &&(that: Exp[Boolean]) = And(b, that)
+    def ||(that: Exp[Boolean]) = Or(b, that)
+    def unary_! = Not(b)
+  }
 
-  implicit def toNumOpsT[T: Numeric](t: T): NumOps[T] = Const(t)
-  implicit def toStringOpsT(t: String): StringOps = Const(t)
+  implicit def expToNumOps[T: Numeric](t: Exp[T]) = new NumOps(t)
+  implicit def expToStringOps(t: Exp[String]) = new StringOps(t)
+  implicit def expToBooleanOps(t: Exp[Boolean]) = new BooleanOps(t)
+
+  implicit def toNumOps[T: Numeric](t: T) = expToNumOps(t)
+  implicit def toStringOps(t: String) = expToStringOps(t)
+  implicit def toBooleanOps(t: Boolean) = expToBooleanOps(t)
 
   // Some experimental implicit conversions.
   // With the current Scala compiler, given (f_ )(x), the compiler will try to use implicit conversion on (f _), because
