@@ -94,6 +94,9 @@ object Lifting {
   }
 
   object TravLifter {
+    implicit def expToTraversableOps[T](t: Exp[Traversable[T]]) = new TraversableOps(t)
+    implicit def toTraversableOps[T](t: Traversable[T]) = expToTraversableOps(t)
+
     case class Map[T, U](base: Exp[Traversable[T]], f: Exp[T => U]) extends BinaryOpExp[Traversable[T], T => U, Traversable[U]](base, f) {
       def copy(base: Exp[Traversable[T]], f: Exp[T => U]) = Map(base, f)
       override def interpret = base.interpret map f.interpret()
