@@ -54,7 +54,6 @@ trait Exp[+T] {
   //XXX: a problem is that in this encoding they all have to be defined within
   //Exp, if infix syntax is desired. An alternative encoding addressing this
   //problem is proposed in OpenEncoding.scala - PG
-  def +[S >: T, Sum](that: Exp[S])(implicit sumT: Summable[S, Sum]) = sumT.plusNode(this, that)
   def <=[S >: T](that: Exp[S])(implicit ord: Ordering[S]) = LEq(this, that)
   def is[S >: T](that: Exp[S]): Exp[Boolean] = Eq(this, that)
 

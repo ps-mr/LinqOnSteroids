@@ -1,20 +1,9 @@
 package ivm.expressiontree
 
+import ivm.expressiontree.Lifting.NumOps
+
 
 object Lifting {
-
-  //In Haskell:
-  //instance Numeric a => Summable a (Plus a) where...
-  implicit def sumNum[T](implicit num: Numeric[T]) = new Summable[T, Plus[T]] {
-    def plus(a: T, b: T) = num.plus(a, b)
-    def plusNode(a: Exp[T], b: Exp[T]): Plus[T] = Plus(a, b)(this)
-  }
-
-  implicit val concatString = new Summable[String, StringConcat] {
-    def plus(a: String, b: String) = a + b
-    def plusNode(a: Exp[String], b: Exp[String]) = StringConcat(a, b)
-  }
-
   implicit val asBool = new AsBool[Boolean] {
     def apply(e: Exp[Boolean]) = e
   }
@@ -35,11 +24,26 @@ object Lifting {
 
 
   def liftFunc[S,T](f: Exp[S] => Exp[T]) : Exp[S => T] = FuncExp(f)
-  implicit def liftDouble(x: Double) : Exp[Double] = Const(x)
-  implicit def liftInt(x: Int) : Exp[Int] = Const(x)
+
+  implicit def liftNum[T: Numeric](x: T) = Const(x)
+
   implicit def liftBool(x: Boolean) : Exp[Boolean] = Const(x)
   implicit def liftString(x: String) : Exp[String] = Const(x)
   implicit def liftPair[A,B](pair: (Exp[A],Exp[B])) : Exp[(A,B)] = Pair[A,B](pair._1, pair._2)
+
+  class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
+    def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
+  }
+
+  class StringOps(t: Exp[String]) {
+    def +(that: Exp[String]) = StringConcat(t, that)
+  }
+
+  implicit def toNumOps[T: Numeric](t: Exp[T]) = new NumOps(t)
+  implicit def toStringOps(t: Exp[String]) = new StringOps(t)
+
+  implicit def toNumOpsT[T: Numeric](t: T): NumOps[T] = Const(t)
+  implicit def toStringOpsT(t: String): StringOps = Const(t)
 
   // Some experimental implicit conversions.
   // With the current Scala compiler, given (f_ )(x), the compiler will try to use implicit conversion on (f _), because

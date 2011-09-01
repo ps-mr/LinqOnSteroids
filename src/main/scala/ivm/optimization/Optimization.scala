@@ -66,7 +66,7 @@ class Optimization {
 
   val normalizer : Exp[_] => Exp[_] =
      (e) => e match {
-       case p@Plus(x,y) => Plus(Exp.min(x,y), Exp.max(x,y))(p.sum)
+       case p@Plus(x,y) => Plus(Exp.min(x,y), Exp.max(x,y))(p.isNum)
        case e@Eq(x,y) => Eq(Exp.min(x,y), Exp.max(x,y))
        case _ => e
      }
