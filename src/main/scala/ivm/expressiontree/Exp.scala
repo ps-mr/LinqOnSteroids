@@ -49,14 +49,8 @@ trait Exp[+T] {
 
   //Methods for the clients of the library, rather than for the implementations.
   //They simply produce the appropriate expression tree nodes.
-  //The implicits which are passed allow restricting the availability of these
-  //methods only to appropriate T.
-  //XXX: a problem is that in this encoding they all have to be defined within
-  //Exp, if infix syntax is desired. An alternative encoding addressing this
-  //problem is proposed in OpenEncoding.scala - PG
-  def <=[S >: T](that: Exp[S])(implicit ord: Ordering[S]) = LEq(this, that)
   def is[S >: T](that: Exp[S]): Exp[Boolean] = Eq(this, that)
-  //def is(that: Exp[Int]): Exp[Boolean] = Eq(this, that)
+  //def is(that: Exp[T]): Exp[Boolean] = Eq(this, that)
 
   // method is used for testing. It is overriden in CallN to treat all calls as potentially equal
   private[ivm] def potentiallyEquals[S](other: Exp[S]) : Boolean = {

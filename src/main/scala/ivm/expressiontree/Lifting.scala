@@ -19,14 +19,21 @@ object Lifting {
 
   def liftFunc[S,T](f: Exp[S] => Exp[T]) : Exp[S => T] = FuncExp(f)
 
+  implicit def liftT[T](x: T) = Const(x)
+  /*implicit def liftOrd[T: Ordering](x: T) = Const(x)
   implicit def liftNum[T: Numeric](x: T) = Const(x)
 
   implicit def liftBool(x: Boolean) : Exp[Boolean] = Const(x)
-  implicit def liftString(x: String) : Exp[String] = Const(x)
+  implicit def liftString(x: String) : Exp[String] = Const(x)*/
+
   implicit def liftPair[A,B](pair: (Exp[A],Exp[B])) : Exp[(A,B)] = Pair[A,B](pair._1, pair._2)
 
   class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
+  }
+
+  class OrderingOps[T: Ordering](t: Exp[T]) {
+    def <=(that: Exp[T]) = LEq(t, that)
   }
 
   class StringOps(t: Exp[String]) {
@@ -40,10 +47,21 @@ object Lifting {
   }
 
   implicit def expToNumOps[T: Numeric](t: Exp[T]) = new NumOps(t)
+  implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
   implicit def expToStringOps(t: Exp[String]) = new StringOps(t)
   implicit def expToBooleanOps(t: Exp[Boolean]) = new BooleanOps(t)
 
+  /*
+   * In these definitions of toNumOps and toOrderingOps, implicit resolution fails because of ambiguity between liftOrd
+   * and liftNum, if they are both declared - even if the ambiguity could easily be solved. The problem can be solved by
+   * just having a polymorphic lift conversion. Other solutions are possible here but don't remove this ambiguity that
+   * affects client code then.
+   */
   implicit def toNumOps[T: Numeric](t: T) = expToNumOps(t)
+  implicit def toOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
+  // These definitions work even if both liftOrd and liftNum are declared.
+  /*implicit def toNumOps[T: Numeric](t: T): NumOps[T] = Const(t)
+  implicit def toOrderingOps[T: Ordering](t: T): OrderingOps[T] = Const(t)*/
   implicit def toStringOps(t: String) = expToStringOps(t)
   implicit def toBooleanOps(t: Boolean) = expToBooleanOps(t)
 
@@ -73,9 +91,3 @@ object Lifting {
       (Exp[A0], Exp[A1], Exp[A2], Exp[A3], Exp[A4]) => Exp[Res]= Call5(f, _, _, _, _, _)
   }
 }
-
-trait AsBool[T] {
-  def apply(e: Exp[T]) : Exp[Boolean]
-}
-
-
