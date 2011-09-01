@@ -7,7 +7,7 @@ package ivm.expressiontree
  * Date: 1/9/2011
  */
 
-trait ChildlessExp[R] extends Exp[R] {
+trait NullaryExp[R] extends Exp[R] {
   def children = Seq()
   def genericConstructor = _ => this
 }

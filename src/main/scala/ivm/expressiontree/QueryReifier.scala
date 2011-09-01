@@ -79,4 +79,4 @@ trait QueryReifier[T] extends QueryReifierBase[T] with MsgSeqPublisher[T] with E
   //XXX add join, and add union
 }
 
-trait ChildlessQueryReifier[T] extends ChildlessExp[QueryReifier[T]] with QueryOp[T]
+trait ChildlessQueryReifier[T] extends NullaryExp[QueryReifier[T]] with QueryOp[T]

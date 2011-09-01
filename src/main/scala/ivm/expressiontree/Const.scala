@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-case class Const[T](x: T) extends ChildlessExp[T] {
+case class Const[T](x: T) extends NullaryExp[T] {
   override def interpret() = x
   override def potentiallyEquals[S](other: Exp[S]) = other match {
     case Const(y) => y.equals(x)
