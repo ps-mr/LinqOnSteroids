@@ -1,5 +1,7 @@
 package ivm.expressiontree
 
+import collection.TraversableView
+
 object Lifting {
   case class PairHelper[A,B](p: Exp[(A,B)]) {
     val _1 = Proj1(p)
@@ -89,5 +91,50 @@ object Lifting {
       (Exp[A0], Exp[A1], Exp[A2], Exp[A3]) => Exp[Res] = Call4(f, _, _, _, _)
     implicit def liftCall5[A0, A1, A2, A3, A4, Res](f: (A0, A1, A2, A3, A4) => Res):
       (Exp[A0], Exp[A1], Exp[A2], Exp[A3], Exp[A4]) => Exp[Res]= Call5(f, _, _, _, _, _)
+  }
+
+  object TravLifter {
+    case class Map[T, U](base: Exp[Traversable[T]], f: Exp[T => U]) extends BinaryOpExp[Traversable[T], T => U, Traversable[U]](base, f) {
+      def copy(base: Exp[Traversable[T]], f: Exp[T => U]) = Map(base, f)
+      override def interpret = base.interpret map f.interpret()
+    }
+
+    case class FlatMap[T, U](base: Exp[Traversable[T]], f: Exp[T => Traversable[U]]) extends BinaryOpExp[Traversable[T], T => Traversable[U], Traversable[U]](base, f) {
+      def copy(base: Exp[Traversable[T]], f: Exp[T => Traversable[U]]) = FlatMap(base, f)
+      override def interpret = base.interpret flatMap f.interpret()
+    }
+
+    /*case class WithFilter[T](base: Exp[Traversable[T]], f: Exp[T => Boolean]) extends Exp[Traversable[T]] {
+      //XXX: Again the same problem with filtering - we cannot call withFilter.
+      override def interpret = base.interpret.view filter f.interpret
+    }*/
+    case class Union[T](lhs: Exp[Traversable[T]], rhs: Exp[Traversable[T]]) extends BinaryOpSymmExp[Traversable[T], Traversable[T]](lhs, rhs) {
+      def copy(base: Exp[Traversable[T]], that: Exp[Traversable[T]]) = Union(base, that)
+      override def interpret = lhs.interpret ++ rhs.interpret
+    }
+
+    case class View[T](base: Exp[Traversable[T]]) extends UnaryOpExp[Traversable[T], TraversableView[T, Traversable[T]]](base) {
+      override def copy(base: Exp[Traversable[T]]) = View(base)
+      override def interpret = base.interpret.view
+    }
+
+    case class WithFilter2[T](base: Exp[TraversableView[T, Traversable[T]]], f: Exp[T => Boolean]) extends BinaryOpExp[TraversableView[T, Traversable[T]], T => Boolean, Traversable[T]](base, f) {
+      override def copy(base: Exp[TraversableView[T, Traversable[T]]], f: Exp[T => Boolean]) = WithFilter2(base, f)
+      override def interpret = base.interpret filter f.interpret()
+    }
+
+    class TraversableOps[T](val t: Exp[Traversable[T]]) /*extends Exp[Traversable[T]]*/ {
+      def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
+        Map(this.t, FuncExp(f))
+
+      def flatMap[U](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] =
+        FlatMap(this.t, FuncExp(f))
+
+      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] =
+        WithFilter2(View(this.t), FuncExp(f))
+
+      def union[U >: T](that: Exp[Traversable[U]]): Exp[Traversable[U]] =
+        Union(this.t, that)
+    }
   }
 }
