@@ -1,20 +1,17 @@
 package ivm.expressiontree
 
 
-case class And(x: Exp[Boolean], y: Exp[Boolean]) extends Exp[Boolean] {
-  def children = Seq(x,y)
-  def genericConstructor = v => And(v(0).asInstanceOf[Exp[Boolean]], v(1).asInstanceOf[Exp[Boolean]])
+case class And(x: Exp[Boolean], y: Exp[Boolean]) extends BinaryOpSymmExp[Boolean, Boolean](x, y) {
+  def copy(x: Exp[Boolean], y: Exp[Boolean]) = And(x, y)
   def interpret() = x.interpret() && y.interpret()
 }
 
-case class Or(x: Exp[Boolean], y: Exp[Boolean]) extends Exp[Boolean] {
-  def children = Seq(x,y)
-  def genericConstructor = v => Or(v(0).asInstanceOf[Exp[Boolean]], v(1).asInstanceOf[Exp[Boolean]])
+case class Or(x: Exp[Boolean], y: Exp[Boolean]) extends BinaryOpSymmExp[Boolean, Boolean](x, y) {
+  def copy(x: Exp[Boolean], y: Exp[Boolean]) = Or(x, y)
   def interpret() = x.interpret() || y.interpret()
 }
 
-case class Not(x: Exp[Boolean]) extends Exp[Boolean] {
-  def children = Seq(x)
-  def genericConstructor = v => Not(v(0).asInstanceOf[Exp[Boolean]])
+case class Not(x: Exp[Boolean]) extends UnaryOpExp[Boolean, Boolean](x) {
+  def copy(x: Exp[Boolean]) = Not(x)
   def interpret() = !x.interpret()
 }

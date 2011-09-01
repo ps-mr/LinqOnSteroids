@@ -1,9 +1,7 @@
 package ivm.expressiontree
 
-case class Pair[A, B](a: Exp[A], b: Exp[B]) extends Exp[(A, B)] {
+case class Pair[A, B](a: Exp[A], b: Exp[B]) extends BinaryOpExp[A, B, (A, B)](a, b) {
+  def copy(a: Exp[A], b: Exp[B]) = Pair(a, b)
   def interpret() = (a.interpret(), b.interpret())
-  def children = Seq(a,b)
-  def genericConstructor = (v) => Pair(v(0).asInstanceOf[Exp[A]], 
-                                       v(1).asInstanceOf[Exp[B]])
 }
 
