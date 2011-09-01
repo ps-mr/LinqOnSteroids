@@ -41,8 +41,7 @@ object SimpleOpenEncoding {
 
   trait NumOpsExps {
     this: NumOpsExpressionTree with ExpModule =>
-    class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T])
-    {
+    class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
       def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
     }
   }
