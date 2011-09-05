@@ -99,12 +99,12 @@ object Lifting {
 
     case class Map[T, U](base: Exp[Traversable[T]], f: Exp[T => U]) extends BinaryOpExp[Traversable[T], T => U, Traversable[U]](base, f) {
       def copy(base: Exp[Traversable[T]], f: Exp[T => U]) = Map(base, f)
-      override def interpret = base.interpret map f.interpret()
+      override def interpret() = base.interpret map f.interpret()
     }
 
     case class FlatMap[T, U](base: Exp[Traversable[T]], f: Exp[T => Traversable[U]]) extends BinaryOpExp[Traversable[T], T => Traversable[U], Traversable[U]](base, f) {
       def copy(base: Exp[Traversable[T]], f: Exp[T => Traversable[U]]) = FlatMap(base, f)
-      override def interpret = base.interpret flatMap f.interpret()
+      override def interpret() = base.interpret flatMap f.interpret()
     }
 
     /*case class WithFilter[T](base: Exp[Traversable[T]], f: Exp[T => Boolean]) extends Exp[Traversable[T]] {
@@ -113,17 +113,17 @@ object Lifting {
     }*/
     case class Union[T](lhs: Exp[Traversable[T]], rhs: Exp[Traversable[T]]) extends BinaryOpSymmExp[Traversable[T], Traversable[T]](lhs, rhs) {
       def copy(base: Exp[Traversable[T]], that: Exp[Traversable[T]]) = Union(base, that)
-      override def interpret = lhs.interpret ++ rhs.interpret
+      override def interpret() = lhs.interpret ++ rhs.interpret
     }
 
     case class View[T](base: Exp[Traversable[T]]) extends UnaryOpExp[Traversable[T], TraversableView[T, Traversable[T]]](base) {
       override def copy(base: Exp[Traversable[T]]) = View(base)
-      override def interpret = base.interpret.view
+      override def interpret() = base.interpret().view
     }
 
     case class WithFilter2[T](base: Exp[TraversableView[T, Traversable[T]]], f: Exp[T => Boolean]) extends BinaryOpExp[TraversableView[T, Traversable[T]], T => Boolean, Traversable[T]](base, f) {
       override def copy(base: Exp[TraversableView[T, Traversable[T]]], f: Exp[T => Boolean]) = WithFilter2(base, f)
-      override def interpret = base.interpret filter f.interpret()
+      override def interpret() = base.interpret filter f.interpret()
     }
 
     class TraversableOps[T](val t: Exp[Traversable[T]]) /*extends Exp[Traversable[T]]*/ {
