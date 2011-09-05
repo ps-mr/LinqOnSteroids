@@ -126,6 +126,32 @@ object Lifting {
       override def interpret() = base.interpret filter f.interpret()
     }
 
+    case class Join[T, S, TKey, TResult](colouter: Exp[Traversable[T]],
+      colinner: Exp[Traversable[S]],
+      outerKeySelector: FuncExp[T, TKey],
+      innerKeySelector: FuncExp[S, TKey],
+      resultSelector: FuncExp[(T, S), TResult]) extends Exp[Traversable[TResult]] {
+
+      def children = Seq(colouter,colinner,outerKeySelector, innerKeySelector, resultSelector)
+      def genericConstructor = (v) => Join(v(0).asInstanceOf[Exp[Traversable[T]]],
+                                           v(1).asInstanceOf[Exp[Traversable[S]]],
+                                           v(2).asInstanceOf[FuncExp[T, TKey]],
+                                           v(3).asInstanceOf[FuncExp[S, TKey]],
+                                           v(4).asInstanceOf[FuncExp[(T, S), TResult]])
+      override def interpret() = {
+        // naive hash join algorithm
+        val ci: Traversable[S] = colinner.interpret()
+        val co: Traversable[T] = colouter.interpret()
+        if (ci.size > co.size) {
+          val map  = ci.groupBy(innerKeySelector.interpret())
+          for (c <- co; d <- map(outerKeySelector.interpret()(c))) yield resultSelector.interpret()(c,d)
+        } else {
+          val map  = co.groupBy(outerKeySelector.interpret())
+          for (c <- ci; d <- map(innerKeySelector.interpret()(c))) yield resultSelector.interpret()(d,c)
+        }
+      }
+    }
+
     class TraversableOps[T](val t: Exp[Traversable[T]]) /*extends Exp[Traversable[T]]*/ {
       def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
         Map(this.t, FuncExp(f))
@@ -138,6 +164,12 @@ object Lifting {
 
       def union[U >: T](that: Exp[Traversable[U]]): Exp[Traversable[U]] =
         Union(this.t, that)
+
+      def join[S,TKey,TResult](outercol: Exp[Traversable[S]],
+                               outerKeySelector: Exp[T] => Exp[TKey],
+                               innerKeySelector: Exp[S] => Exp[TKey],
+                               resultSelector: Exp[(T, S)] => Exp[TResult]): Exp[Traversable[TResult]]
+        = Join[T,S,TKey,TResult](this.t, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
     }
   }
 }
