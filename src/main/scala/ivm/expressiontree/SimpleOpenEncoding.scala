@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
-import collection.TraversableView
 import collection.generic.CanBuildFrom
+import collection.{IterableView, TraversableLike, TraversableView}
 
 /**
  * Here I show yet another encoding of expression trees, where methods
@@ -30,6 +30,18 @@ object SimpleOpenEncoding {
         val name = "x" //XXX
         "%s => (%s)" format (name, f(Var(name)))
       }
+    }
+
+    case class Pair[A, B](a: Exp[A], b: Exp[B]) extends Exp[(A, B)] {
+      def interpret = (a.interpret, b.interpret)
+    }
+
+    case class Proj1[A, B](p: Exp[(A, B)]) extends Exp[A] {
+      def interpret = p.interpret._1
+    }
+
+    case class Proj2[A, B](p: Exp[(A, B)]) extends Exp[B] {
+      def interpret = p.interpret._2
     }
   }
 
@@ -90,6 +102,25 @@ object SimpleOpenEncoding {
     }
   }
 
+  // This is an attempt to abstract over TraversableOpsExpressionTree.MapOp and MapOpsExpressionTree.MapOpForMap.
+  // However, it requires Coll[X] to be a total unary type function, while Map[K, V] is a binary type function.
+  // Given a cooler version of Tuple, say TupleT, for X = TupleT[K, V] one could write a type function equivalent to
+  // X => Map[X#Fst, X#Snd]; however, this function is not total! Hence this encoding cannot work.
+  trait TraversableOpsExpressionTreeV2[
+    Coll[X] <: TraversableLike[X, Coll[X]]
+    //Coll[X] <: Traversable[X] //This bound is not correct - map would then require an instance of
+    // CanBuildFrom[Traversable[A], B, That], not of the more specific CanBuildFrom[Coll[A], B, That]
+    ] {
+    this: OpsExpressionTree =>
+    case class MapOpV2[A, +B, That](base: Exp[Coll[A]], f: Exp[A => B])(implicit c: CanBuildFrom[Coll[A], B, That]) extends Exp[That] {
+      override def interpret = base.interpret.map(f.interpret)(c)
+    }
+  }
+
+  /*trait Bla extends TraversableOpsExpressionTreeV2[Map] with OpsExpressionTree {
+    
+  }*/
+
   trait TraversableOpsExps {
     this: OpsExpressionTree with TraversableOpsExpressionTree =>
     class TraversableOps[T](val t: Exp[Traversable[T]]) {
@@ -109,6 +140,74 @@ object SimpleOpenEncoding {
       def union[U >: T](that: Exp[Traversable[U]]): Exp[Traversable[U]] =
         Union(this.t, that)
         //App((_: Traversable[T]) ++ u.interpret, this.t) //Should use an App node with two params.
+    }
+  }
+
+  trait TraversableOps {
+    this: OpsExpressionTree =>
+    trait TraversableOpsLike[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] {
+      val t: Exp[Repr]
+      case class MapOp[+U, That](base: Exp[Repr], f: Exp[T => U])(implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
+        override def interpret = base.interpret.map(f.interpret)(c)
+      }
+      case class FlatMap[+U, That](base: Exp[Repr], f: Exp[T => Traversable[U]])
+                                  (implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
+        override def interpret = base.interpret flatMap f.interpret
+      }
+
+      /*
+      //XXX: can't be fully defined here, this must be defined in children classes.
+      case class WithFilter(base: Exp[Repr], f: Exp[T => Boolean]) extends Exp[Repr] {
+        //XXX: Again the same problem with filtering - we cannot call withFilter.
+        //override def interpret = base.interpret.view filter f.interpret
+        override def interpret = base.interpret filter f.interpret
+      }
+      */
+
+      case class Union[U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
+                                    (implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
+        override def interpret = base.interpret ++ that.interpret
+      }
+
+      def map[U, That](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+        MapOp(this.t, FuncExp(f))
+
+      def flatMap[U, That](f: Exp[T] => Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+        FlatMap(this.t, FuncExp(f))
+
+      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Repr]
+
+      def union[U >: T, That](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+        Union(this.t, that)
+    }
+
+    class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableOpsLike[T, Traversable[T]] {
+      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] =
+        WithFilter(this.t, FuncExp(f))
+
+      case class WithFilter(base: Exp[Traversable[T]], f: Exp[T => Boolean]) extends Exp[Traversable[T]] {
+        //XXX: Again the same problem with filtering - we cannot call withFilter.
+        override def interpret = base.interpret.view filter f.interpret
+      }
+
+      //Do we need this specialization? No we don't, I think.
+      /*def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
+        super.map(f)*/
+    }
+  }
+  trait MapOps {
+    this: OpsExpressionTree with TraversableOps =>
+    class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableOpsLike[(K, V), Map[K, V]] {
+      def withFilter(f: Exp[(K, V)] => Exp[Boolean]): Exp[Map[K, V]] =
+        Filter(this.t, FuncExp(f))
+
+      case class Filter(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[Map[K, V]] {
+        //XXX: We cannot call withFilter nor view.filter, because MapView does not exist; see below
+        override def interpret = base.interpret filter f.interpret
+      }
+      case class WithFilterWeirdType(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[IterableView[(K, V), Map[K, V]]] {
+        override def interpret = base.interpret.view filter f.interpret
+      }
     }
   }
 
@@ -136,7 +235,7 @@ object SimpleOpenEncoding {
   }
 
 
-  trait SimpleOpenEncodingBase extends OpsExpressionTree with NumOpsExps with NumOpsExpressionTree with TraversableOpsExps with TraversableOpsExpressionTree {
+  trait SimpleOpenEncodingBase extends OpsExpressionTree with NumOpsExps with NumOpsExpressionTree with TraversableOps with MapOps /*with TraversableOpsExps with TraversableOpsExpressionTree*/ {
     implicit def toExp[T](t: T): Exp[T] = Const(t)
 
     implicit def expToNumExp[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
@@ -152,6 +251,15 @@ object SimpleOpenEncoding {
       //toExp(t)
       expToTravExp(t)
     }
+    implicit def expToMapExp[K, V](t: Exp[Map[K, V]]): MapOps[K, V] = new MapOps(t)
+    implicit def tToMapExp[K, V](t: Map[K, V]): MapOps[K, V] =
+      expToMapExp(t)
+
+    implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A,B](pair._1, pair._2)
+    implicit def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
+    //Unfortunately this conversion is not redundant; we may want to have a special node to support this.
+    implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): Pair[A, B] =
+      (Pair[A,B] _).tupled(unliftPair(pair))
   }
 
   object SimpleOpenEncoding extends SimpleOpenEncodingBase {
@@ -197,6 +305,8 @@ object SimpleOpenEncoding {
       println()
     }
 
+    def assertType[T](t: T) {}
+
     def testTraversable() {
       moreTests()
 
@@ -211,6 +321,34 @@ object SimpleOpenEncoding {
       show("b2.interpret", b2.interpret)
       show("b3", b3)
       show("b3.interpret", b3.interpret)
+
+      val c: Exp[Map[Int, Int]] = Map(1 -> 2, 3 -> 4)
+      show("c", c)
+      show("c.interpret", c.interpret)
+      //Type annotations on the results of map below are not needed to get the correct result, they just check that the
+      // result has the correct type.
+      //XXX: Implicit conversions are not used by the Scala compiler to fix pattern match errors.
+      val d = c map (unliftPair(_) match {
+        case (a, b) => (a, b + 1)
+      })
+      assertType[Exp[Map[Int, Int]]](d)
+      show("d", d)
+      show("d.interpret", d.interpret)
+      val d2 = c map (ab => (ab._1, ab._2 + 1))
+      assertType[Exp[Map[Int, Int]]](d2)
+      show("d2", d2)
+      show("d2.interpret", d2.interpret)
+      val d3 = c map (ab => (ab._1 + ab._2))
+      //assertType[Exp[Seq[Int]]](d3) //XXX broken
+      assertType[Exp[Iterable[Int]]](d3)
+      show("d3", d3)
+      show("d3.interpret", d3.interpret)
+      val e: Exp[Map[Int, Int]] = c map (_ match {
+        case Pair(a, b) => (a, b + 1) //Inadequate term, even if it's the first I wrote; it causes a crash
+      })
+      assertType[Exp[Map[Int, Int]]](e)
+      show("e", e)
+      show("e.interpret", e.interpret)
     }
 
     //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
