@@ -1,7 +1,12 @@
-package ivm.expressiontree
+package ivm
+package expressiontree
 
-import collection.TraversableView
 import Lifting._
+import optimization.Optimization
+
+import collection.{mutable, TraversableView}
+import mutable.HashMap
+import indexing.Index
 
 /**
  * User: pgiarrusso
@@ -9,7 +14,7 @@ import Lifting._
  */
 
 object TravLifter {
-  implicit def expToTraversableOps[T](t: Exp[Traversable[T]]) = new TraversableOps(t)
+  implicit def expToTraversableOps[T](t: Exp[Traversable[T]]) = new TraversableWrapper(t)
   implicit def toTraversableOps[T](t: Traversable[T]) = expToTraversableOps(t)
 
   case class Map[T, U](base: Exp[Traversable[T]], f: Exp[T => U]) extends BinaryOpExp[Traversable[T], T => U, Traversable[U]](base, f) {
@@ -67,23 +72,50 @@ object TravLifter {
     }
   }
 
-  class TraversableOps[T](val t: Exp[Traversable[T]]) /*extends Exp[Traversable[T]]*/ {
+  trait TraversableOps[T] {
+    val underlying: Exp[Traversable[T]]
     def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
-      Map(this.t, FuncExp(f))
+      Map(this.underlying, FuncExp(f))
 
     def flatMap[U](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] =
-      FlatMap(this.t, FuncExp(f))
+      FlatMap(this.underlying, FuncExp(f))
 
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] =
-      WithFilter2(View(this.t), FuncExp(f))
+      WithFilter2(View(this.underlying), FuncExp(f))
 
     def union[U >: T](that: Exp[Traversable[U]]): Exp[Traversable[U]] =
-      Union(this.t, that)
+      Union(this.underlying, that)
 
     def join[S,TKey,TResult](outercol: Exp[Traversable[S]],
                              outerKeySelector: Exp[T] => Exp[TKey],
                              innerKeySelector: Exp[S] => Exp[TKey],
                              resultSelector: Exp[(T, S)] => Exp[TResult]): Exp[Traversable[TResult]]
-    = Join[T,S,TKey,TResult](this.t, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
+    = Join[T,S,TKey,TResult](this.underlying, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
+  }
+  
+  class TraversableWrapper[T](val underlying: Exp[Traversable[T]]) extends TraversableOps[T] {
+    def asIndexable = new QueryReifier[T](underlying)
+  }
+
+  class HashIndex[T,S](it: Exp[Traversable[T]], f: FuncExp[T, S]) extends HashMap[S, Traversable[T]] with Index[S, Traversable[T]] {
+    this ++= it.interpret().groupBy(f.interpret())
+  }
+
+  //XXX better define the usage.
+  class QueryReifier[T](val t: Exp[Traversable[T]]) extends UnaryOpExp[Traversable[T], Traversable[T]](t) with TraversableOps[T] {
+    //Bad idea - the QueryReifier node needs to be part of the expression tree.
+    //override val underlying = t
+    override val underlying = this
+    override def copy(t: Exp[Traversable[T]]) = new QueryReifier(t)
+    override def interpret() = t.interpret()
+
+    val indexes: mutable.Map[FuncExp[T,_],HashIndex[T,_]] = HashMap()
+    def addIndex[S](f: FuncExp[T,S]) {
+      val nf = Optimization.normalize(f).asInstanceOf[FuncExp[T,S]]
+      indexes += ((nf, new HashIndex(this,nf)))
+    }
+    def addIndex[S](f: Exp[T] => Exp[S]) {
+      addIndex(FuncExp(f))
+    }
   }
 }
