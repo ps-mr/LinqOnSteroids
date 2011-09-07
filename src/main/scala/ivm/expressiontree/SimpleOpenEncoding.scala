@@ -119,34 +119,19 @@ object SimpleOpenEncoding {
    */
   trait MapOpsExpressionTree {
     this: OpsExpressionTree =>
-    case class MapOpForMap[K, V, K2, V2](base: Exp[Map[K, V]], f: Exp[((K, V)) => (K2, V2)]) extends Exp[Map[K2, V2]] {
+
+    // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
+    case class MapOpForMap[K, V, U, That](base: Exp[Map[K, V]], f: Exp[((K, V)) => U])(implicit c: CanBuildFrom[Map[K, V], U, That]) extends Exp[That] {
       override def interpret = base.interpret map f.interpret
     }
   }
 
   trait MapOpsExps {
-    this: OpsExpressionTree with TraversableOpsExpressionTree with MapOpsExpressionTree =>
-    class MapOps[K, V](val t: Exp[Map[K, V]]) {
-      def map[U, That](f: Exp[(K, V)] => Exp[U]): Exp[Traversable[U]] =
-        MapOp(this.t, FuncExp(f))
-      /*
-      //Defining this overload is even impossible - it has the same erasure as the above one.
-      def map[K2, V2, That](f: Exp[(K, V)] => Exp[(K2, V2)]): Exp[Map[K2, V2]] =
-        MapOpForMap(this.t, FuncExp(f))
-      */
-    }
-  }
-  trait MapOpsExpsV2 {
-    this: OpsExpressionTree with TraversableOpsExpressionTree =>
-    // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
-    case class MapOpForMapV2[K, V, U, That](base: Exp[Map[K, V]], f: Exp[((K, V)) => U])(implicit c: CanBuildFrom[Map[K, V], U, That]) extends Exp[That] {
-      override def interpret = base.interpret map f.interpret
-    }
-
+    this: OpsExpressionTree with MapOpsExpressionTree with TraversableOpsExpressionTree =>
 
     class MapOps[K, V](val t: Exp[Map[K, V]]) {
       def map[U, That](f: Exp[(K, V)] => Exp[U])(implicit c: CanBuildFrom[Map[K, V], U, That]): Exp[That] =
-        MapOpForMapV2(this.t, FuncExp(f))
+        MapOpForMap(this.t, FuncExp(f))
     }
   }
 
