@@ -68,7 +68,7 @@ object OpenEncoding {
     //In Scala, implicits are used just to have a finer static type, but the actual code to be executed is chosen at runtime - most instances of CanBuildFrom delegate construction to the original collection!
     //However, having a precise static type determines which operations are available. So, even if we make our code more dynamic like for Scala collections, we still need to ensure the best static types are inferred.
     //Moreover, in the current implementation I need to use wrapper nodes; while they probably cannot be avoided altogether, we should save a few of them - in particular, instead of App nodes we should
-    //use specialized Map, FlatMap and WithFilter nodes, extending TraversableExp.
+    //use specialized MapOp, FlatMap and WithFilter nodes, extending TraversableExp.
 
     class ExpWrapper[+T](t: Exp[T]) extends Exp[T] {
       def interpret = t.interpret
@@ -113,7 +113,7 @@ object OpenEncoding {
     this: CanBuildExpExpressionTree =>
     trait TraversableExp[T, ExpT <: Exp[T]] extends Exp[Traversable[T]] {
       implicit val cbeT: CanBuildExp[T, ExpT]
-      //XXX: Here I should use Map, FlatMap and WithFilter nodes, instead of generic application nodes. But that's beside the point I'm making for this encoding.
+      //XXX: Here I should use MapOp, FlatMap and WithFilter nodes, instead of generic application nodes. But that's beside the point I'm making for this encoding.
       def map[U, That <: Exp[Traversable[U]]](f: ExpT => Exp[U])(implicit c: CanBuildExp[Traversable[U], That]): That =
         c apply App((_: Traversable[T]) map (FuncExp[T, U, ExpT](f).interpret), this) //c apply can be omitted, but that's less clear
 

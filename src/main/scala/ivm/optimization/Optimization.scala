@@ -10,7 +10,7 @@ class Optimization {
   val cartProdToJoin : Exp[_] => Exp[_] =
      (e) => e match {
        case FlatMap(fmcol,fmf) => fmf.body match {
-         case Map(mccol,mcf) => mccol match {
+         case MapOp(mccol,mcf) => mccol match {
            case WithFilter(col3,h) => {
              if (col3.isOrContains(fmf.x)) e else
              h.body match {
@@ -45,7 +45,7 @@ class Optimization {
 
   val removeIdentityMaps : Exp[_] => Exp[_] =
     (e) => e match {
-      case Map(col,f) =>
+      case MapOp(col,f) =>
         f.body match {
           case f.x => col
           case x => println(x); e

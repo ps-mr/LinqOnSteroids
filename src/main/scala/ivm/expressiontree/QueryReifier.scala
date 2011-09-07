@@ -16,7 +16,7 @@ trait QueryReifierBase[T] extends Exp[QueryReifierBase[T]]  {
   override def interpret() = this
   def exec(): Traversable[T]
 
-  def map[U](f: Exp[T] => Exp[U]): QueryReifierBase[U] = Map[T,U](this, FuncExp(f))
+  def map[U](f: Exp[T] => Exp[U]): QueryReifierBase[U] = MapOp[T,U](this, FuncExp(f))
   def withFilter(p: Exp[T] => Exp[Boolean]): QueryReifierBase[T] = WithFilter[T](this, FuncExp(p))
   //Causes test failures - the optimizer must still be adapted! But seemingly produces the same speedup
   //def withFilter(p: Exp[T]=>Exp[Boolean]) : QueryReifierBase[T] = new WithFilter[T](this.view, FuncExp(p)).force
@@ -62,7 +62,7 @@ trait QueryReifier[T] extends QueryReifierBase[T] with MsgSeqPublisher[T] with E
   //In particular, when we pass Var inside a query, we execute these operations, but the results must just be inspected,
   //they must not become listeners - especially because they contain Var nodes.
   override def map[U](f: Exp[T] => Exp[U]): QueryReifier[U] = {
-    val res = new MapMaintainerExp[T, U](this, FuncExp(f))
+    val res = new MapOpMaintainerExp[T, U](this, FuncExp(f))
     //this subscribe res
     res
   }

@@ -61,7 +61,7 @@ object SimpleOpenEncoding {
 
   trait TraversableOpsExpressionTree {
     this: OpsExpressionTree =>
-    case class Map[T, +U](base: Exp[Traversable[T]], f: Exp[T => U]) extends Exp[Traversable[U]] {
+    case class MapOp[T, +U](base: Exp[Traversable[T]], f: Exp[T => U]) extends Exp[Traversable[U]] {
       override def interpret = base.interpret map f.interpret
     }
     case class FlatMap[T, +U](base: Exp[Traversable[T]], f: Exp[T => Traversable[U]]) extends Exp[Traversable[U]] {
@@ -93,7 +93,7 @@ object SimpleOpenEncoding {
     this: OpsExpressionTree with TraversableOpsExpressionTree =>
     class TraversableOps[T](val t: Exp[Traversable[T]]) {
       def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
-        Map(this.t, FuncExp(f))
+        MapOp(this.t, FuncExp(f))
         //App((_: Traversable[T]) map (FuncExp(f).interpret), this.t)
 
       def flatMap[U](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] =

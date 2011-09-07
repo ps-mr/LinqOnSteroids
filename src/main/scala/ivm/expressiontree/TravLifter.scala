@@ -17,8 +17,8 @@ object TravLifter {
   implicit def expToTraversableOps[T](t: Exp[Traversable[T]]) = new TraversableWrapper(t)
   implicit def toTraversableOps[T](t: Traversable[T]) = expToTraversableOps(t)
 
-  case class Map[T, U](base: Exp[Traversable[T]], f: Exp[T => U]) extends BinaryOpExp[Traversable[T], T => U, Traversable[U]](base, f) {
-    def copy(base: Exp[Traversable[T]], f: Exp[T => U]) = Map(base, f)
+  case class MapOp[T, U](base: Exp[Traversable[T]], f: Exp[T => U]) extends BinaryOpExp[Traversable[T], T => U, Traversable[U]](base, f) {
+    def copy(base: Exp[Traversable[T]], f: Exp[T => U]) = MapOp(base, f)
     override def interpret() = base.interpret map f.interpret()
   }
 
@@ -80,7 +80,7 @@ object TravLifter {
   trait TraversableOps[T] {
     val underlying: Exp[Traversable[T]]
     def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
-      Map(this.underlying, FuncExp(f))
+      MapOp(this.underlying, FuncExp(f))
 
     def flatMap[U](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] =
       FlatMap(this.underlying, FuncExp(f))

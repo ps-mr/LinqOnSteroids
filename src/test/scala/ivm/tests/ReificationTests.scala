@@ -48,12 +48,12 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   @Test 
   def testfreeVars() {
     q.freeVars should be (Set.empty)
-    Map(l,FuncExp( (x: Exp[Int]) => x + Var("y"))).freeVars should be (Set(Var("y")))
+    MapOp(l,FuncExp( (x: Exp[Int]) => x + Var("y"))).freeVars should be (Set(Var("y")))
   }
 
   @Test
   def testReification() {
-    q should be (Map(WithFilter(l,FuncExp((v2 : Exp[Int]) => LEq(v2,5))),FuncExp((v3: Exp[Int]) => Plus(v3,3))))
+    q should be (MapOp(WithFilter(l,FuncExp((v2 : Exp[Int]) => LEq(v2,5))),FuncExp((v3: Exp[Int]) => Plus(v3,3))))
     /*println(q.exec())
     println(optimize(q).interpret().exec())
     //val r = l.flatMap( (k) => j.withFilter( (k2 ) => k is k2).map( (k2:Exp[Int]) => k+k2))

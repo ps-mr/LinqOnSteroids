@@ -27,7 +27,7 @@ import collection.mutable.HashMap
 
 // Let us first implement incremental view maintenance for sets.
 
-//Trait implementing incremental view maintenance for Map operations
+//Trait implementing incremental view maintenance for MapOp operations
 trait MapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   def fInt: T => U
   override def transformedMessages(evt: Message[T]) = {
@@ -159,12 +159,12 @@ trait Maintainer[T] {
 //Don't make Repr so specific as IncCollectionReifier. Making Repr any specific
 //is entirely optional - it just enables the listener to get a more specific
 //type for the pub param to notify(), if he cares.
-class MapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,U]) extends Map[T,U](col, f)
+class MapOpMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,U]) extends MapOp[T,U](col, f)
     with MapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] with Maintainer[T] {
   override def fInt = f.interpret()
   //XXX: only the name of the constructed class changes
   override def genericConstructor =
-      v => new MapMaintainerExp(v(0).asInstanceOf[QueryReifier[T]],
+      v => new MapOpMaintainerExp(v(0).asInstanceOf[QueryReifier[T]],
           v(1).asInstanceOf[FuncExp[T, U]])
 }
 class FlatMapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,QueryReifier[U]]) extends FlatMap[T,U](col, f)
