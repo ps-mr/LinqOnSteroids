@@ -108,7 +108,7 @@ object TravLifter {
   }
 
   //XXX better define the usage.
-  class QueryReifier[T](val t: Exp[Traversable[T]]) extends UnaryOpExp[Traversable[T], Traversable[T]](t) with TraversableOps[T] {
+  case class QueryReifier[T](t: Exp[Traversable[T]]) extends UnaryOpExp[Traversable[T], Traversable[T]](t) with TraversableOps[T] {
     //Bad idea - the QueryReifier node needs to be part of the expression tree.
     //override val underlying = t
     override val underlying = this
