@@ -27,10 +27,12 @@ object TravLifter {
     override def interpret() = base.interpret flatMap f.interpret()
   }
 
-  /*case class WithFilter[T](base: Exp[Traversable[T]], f: Exp[T => Boolean]) extends Exp[Traversable[T]] {
-    //XXX: Again the same problem with filtering - we cannot call withFilter.
-    override def interpret = base.interpret.view filter f.interpret
-  }*/
+  case class WithFilter[T](base: Exp[Traversable[T]], f: Exp[T => Boolean]) extends BinaryOpExp[Traversable[T], T => Boolean, Traversable[T]](base, f) {
+    override def copy(base: Exp[Traversable[T]], f: Exp[T => Boolean]) = WithFilter(base, f)
+    //XXX: Again the same problem with filtering - we cannot call withFilter because of its very generic result type.
+    override def interpret = base.interpret.view filter f.interpret()
+  }
+
   case class Union[T](lhs: Exp[Traversable[T]], rhs: Exp[Traversable[T]]) extends BinaryOpSymmExp[Traversable[T], Traversable[T]](lhs, rhs) {
     def copy(base: Exp[Traversable[T]], that: Exp[Traversable[T]]) = Union(base, that)
     override def interpret() = lhs.interpret ++ rhs.interpret
@@ -84,7 +86,8 @@ object TravLifter {
       FlatMap(this.underlying, FuncExp(f))
 
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] =
-      WithFilter2(View(this.underlying), FuncExp(f))
+      WithFilter(this.underlying, FuncExp(f))
+      //WithFilter2(View(this.underlying), FuncExp(f))
 
     def union[U >: T](that: Exp[Traversable[U]]): Exp[Traversable[U]] =
       Union(this.underlying, that)
