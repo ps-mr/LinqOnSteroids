@@ -50,14 +50,17 @@ object TravLifter {
                                        colinner: Exp[Traversable[S]],
                                        outerKeySelector: FuncExp[T, TKey],
                                        innerKeySelector: FuncExp[S, TKey],
-                                       resultSelector: FuncExp[(T, S), TResult]) extends Exp[Traversable[TResult]] {
+                                       resultSelector: FuncExp[(T, S), TResult]) extends
+                                       QuinaryOp[Exp[Traversable[T]],
+                                         Exp[Traversable[S]],
+                                         FuncExp[T, TKey], FuncExp[S, TKey], FuncExp[(T, S), TResult],
+                                         Traversable[TResult]](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
+    override def copy(colouter: Exp[Traversable[T]],
+                                       colinner: Exp[Traversable[S]],
+                                       outerKeySelector: FuncExp[T, TKey],
+                                       innerKeySelector: FuncExp[S, TKey],
+                                       resultSelector: FuncExp[(T, S), TResult]) = Join(colouter, colinner, outerKeySelector, innerKeySelector, resultSelector)
 
-    def children = Seq(colouter,colinner,outerKeySelector, innerKeySelector, resultSelector)
-    def genericConstructor = (v) => Join(v(0).asInstanceOf[Exp[Traversable[T]]],
-      v(1).asInstanceOf[Exp[Traversable[S]]],
-      v(2).asInstanceOf[FuncExp[T, TKey]],
-      v(3).asInstanceOf[FuncExp[S, TKey]],
-      v(4).asInstanceOf[FuncExp[(T, S), TResult]])
     override def interpret() = {
       // naive hash join algorithm
       val ci: Traversable[S] = colinner.interpret()
