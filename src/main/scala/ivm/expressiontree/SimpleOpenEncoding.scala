@@ -91,8 +91,7 @@ object SimpleOpenEncoding {
 
   trait TraversableOpsExps {
     this: OpsExpressionTree with TraversableOpsExpressionTree =>
-    class TraversableOps[T](val t: Exp[Traversable[T]]) /*extends Exp[Traversable[T]]*/ {
-      //XXX: Here I should use Map, FlatMap and WithFilter nodes, instead of generic application nodes. But that's beside the point I'm making for this encoding.
+    class TraversableOps[T](val t: Exp[Traversable[T]]) {
       def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
         Map(this.t, FuncExp(f))
         //App((_: Traversable[T]) map (FuncExp(f).interpret), this.t)
