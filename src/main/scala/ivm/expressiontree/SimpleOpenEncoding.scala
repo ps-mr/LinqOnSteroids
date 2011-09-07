@@ -1,6 +1,7 @@
 package ivm.expressiontree
 
 import collection.TraversableView
+import collection.generic.CanBuildFrom
 
 /**
  * Here I show yet another encoding of expression trees, where methods
@@ -110,6 +111,45 @@ object SimpleOpenEncoding {
         //App((_: Traversable[T]) ++ u.interpret, this.t) //Should use an App node with two params.
     }
   }
+
+  /**
+   * A goal of this new encoding is to be able to build expression trees (in particular, query trees) producing
+   * different collections; once we can represent query trees producing maps and maintain them incrementally, view
+   * maintenance can subsume index update.
+   */
+  trait MapOpsExpressionTree {
+    this: OpsExpressionTree =>
+    case class MapOpForMap[K, V, K2, V2](base: Exp[Map[K, V]], f: Exp[((K, V)) => (K2, V2)]) extends Exp[Map[K2, V2]] {
+      override def interpret = base.interpret map f.interpret
+    }
+  }
+
+  trait MapOpsExps {
+    this: OpsExpressionTree with TraversableOpsExpressionTree with MapOpsExpressionTree =>
+    class MapOps[K, V](val t: Exp[Map[K, V]]) {
+      def map[U, That](f: Exp[(K, V)] => Exp[U]): Exp[Traversable[U]] =
+        MapOp(this.t, FuncExp(f))
+      /*
+      //Defining this overload is even impossible - it has the same erasure as the above one.
+      def map[K2, V2, That](f: Exp[(K, V)] => Exp[(K2, V2)]): Exp[Map[K2, V2]] =
+        MapOpForMap(this.t, FuncExp(f))
+      */
+    }
+  }
+  trait MapOpsExpsV2 {
+    this: OpsExpressionTree with TraversableOpsExpressionTree =>
+    // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
+    case class MapOpForMapV2[K, V, U, That](base: Exp[Map[K, V]], f: Exp[((K, V)) => U])(implicit c: CanBuildFrom[Map[K, V], U, That]) extends Exp[That] {
+      override def interpret = base.interpret map f.interpret
+    }
+
+
+    class MapOps[K, V](val t: Exp[Map[K, V]]) {
+      def map[U, That](f: Exp[(K, V)] => Exp[U])(implicit c: CanBuildFrom[Map[K, V], U, That]): Exp[That] =
+        MapOpForMapV2(this.t, FuncExp(f))
+    }
+  }
+
 
   trait SimpleOpenEncodingBase extends OpsExpressionTree with NumOpsExps with NumOpsExpressionTree with TraversableOpsExps with TraversableOpsExpressionTree {
     implicit def toExp[T](t: T): Exp[T] = Const(t)
