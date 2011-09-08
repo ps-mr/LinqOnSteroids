@@ -1,7 +1,5 @@
 package ivm.expressiontree
 
-import collection.TraversableView
-
 object Lifting {
   case class PairHelper[A,B](p: Exp[(A,B)]) {
     val _1 = Proj1(p)
