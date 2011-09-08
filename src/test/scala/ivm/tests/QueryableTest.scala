@@ -181,12 +181,12 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     v ++= Seq(0, 1, 2)
     val vArr = Array(IncHashSet(40, 50, 60), IncHashSet(40, 50, 60), IncHashSet(40, 50, 60), IncHashSet(40, 50, 60))
 
-    //This term is invalid because of its use of interpret.
+    // This term is invalid because of its use of interpret (which could be avoided if map were available on Exp[Traversable[T]],
+    // rather than only on QueryReifier).
     val res = new IncrementalResult[Int](for (i <- v.asQueryable;
                                               j <- liftCall(
                                                 ((_: Array[IncHashSet[Int]]).apply(_: Int).asQueryable),
-                                                Const(vArr),
-                                                i).interpret()) yield i + j)
+                                                vArr, i).interpret()) yield i + j)
     show("res", res)
     v += 3
     show("res", res)
