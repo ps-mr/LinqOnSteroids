@@ -83,13 +83,15 @@ import expressiontree.Const
  * As an experiment and example of using PathIndex, define (partial) adapters between the two kinds of
  * interfaces given above. These adaptors are partial because they accept the same parameters, but
  * extend Map and Index with different parameter types - nested tuples instead of flat ones.
+ * XXX: many of these encodings are not adequate, because they rely on interpret(). Moreover, extracting f from FuncExp
+ * is not elegant; FuncExp should have an apply method constructing App nodes.
  */
 
 class PathIndex1[T, S](it: QueryReifier[T], f: FuncExp[T, S])
   extends PathIndex[T, Unit, S, T](
     it,
     EmptyPath(),
-    FuncExp(x => Const(f.interpret()(x._1.interpret()))))
+    FuncExp(x => f.f(x._1)))
 
 class PathIndex1Unit[T, S](it: QueryReifier[T], path: Path[(T, Unit), T], fGroup: FuncExp[(T, Unit), S])
   extends PathIndex(it, EmptyPath[T](), fGroup)
@@ -100,7 +102,7 @@ class PathIndex2[T1, T2, S](it: QueryReifier[T1],
   extends PathIndex[T1, (T2, Unit), S, T2](
     it,
     ConsPath(p1, EmptyPath()),
-    FuncExp(x => Const(f.interpret()((x._1.interpret(), x._2.interpret()._1)))))
+    FuncExp(x => f.f((x._1, x._2._1))))
 
 class PathIndex3[T1, T2, T3, S](it: QueryReifier[T1],
                                      p1: FuncExp[T1, QueryReifier[T2]],
@@ -111,6 +113,9 @@ class PathIndex3[T1, T2, T3, S](it: QueryReifier[T1],
     ConsPath(p1, ConsPath(p2, EmptyPath())),
     //_1 and interpret() commute.
     FuncExp(x => Const(f.interpret()((x.interpret()._1, x.interpret()._2._1, x.interpret()._2._2._1)))))
+    //The correct term is (probably) this:
+    //FuncExp(x => f.f((x._1, x._2._1, x._2._2._1))))
+    //But it requires lifting for triples.
 
 class PathIndex4[T1, T2, T3, T4, S](it: QueryReifier[T1],
                                      p1: FuncExp[T1, QueryReifier[T2]],
@@ -125,3 +130,10 @@ class PathIndex4[T1, T2, T3, T4, S](it: QueryReifier[T1],
       x.interpret()._2._1,
       x.interpret()._2._2._1,
       x.interpret()._2._2._2._1)))))
+    //The correct term is (probably) this:
+    /*FuncExp(x => f.f((
+      x._1,
+      x._2._1,
+      x._2._2._1,
+      x._2._2._2._1))))*/
+    //But it requires lifting for quadruples.
