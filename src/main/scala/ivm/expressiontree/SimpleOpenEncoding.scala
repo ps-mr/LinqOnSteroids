@@ -256,10 +256,25 @@ object SimpleOpenEncoding {
       expToMapExp(t)
 
     implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A,B](pair._1, pair._2)
-    implicit def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
+
+    //To "unlift" a pair, here's my first solution:
+    /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
+    /*
     //Unfortunately this conversion is not redundant; we may want to have a special node to support this.
     implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): Pair[A, B] =
       (Pair[A,B] _).tupled(unliftPair(pair))
+    */
+
+    //Here's the second one, adapted from Klaus code. It represents but does not build a tuple (once one adds lazy vals).
+    //However, one cannot do pattern matching against the result, not with the existing pattern.
+    //Lesson: Scala does not allow to define additional extractors for a given pattern type, and syntax shortcuts such
+    //as tuples or => are simply built-in in the language.
+    case class PairHelper[A,B](p: Exp[(A,B)]) {
+      lazy val _1 = Proj1(p)
+      lazy val _2 = Proj2(p)
+    }
+
+    implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
   }
 
   object SimpleOpenEncoding extends SimpleOpenEncodingBase {
