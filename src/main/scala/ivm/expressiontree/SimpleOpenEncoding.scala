@@ -57,6 +57,9 @@ object SimpleOpenEncoding {
     class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
       def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
     }
+    class OrderingOps[T: Ordering](t: Exp[T]) {
+      def <=(that: Exp[T]) = LEq(t, that)
+    }
   }
 
   trait NumOpsExpressionTree {
@@ -69,6 +72,9 @@ object SimpleOpenEncoding {
     case class Plus[T](a: Exp[T], b: Exp[T])(implicit val isNum: Numeric[T]) extends CommutativeOp(a, b) {
       def interpret =
         isNum.plus(a.interpret, b.interpret)
+    }
+    case class LEq[T](x: Exp[T], y: Exp[T])(implicit val ord: Ordering[T]) extends Exp[Boolean] {
+      def interpret = ord.lteq(x.interpret, y.interpret)
     }
   }
 
@@ -239,12 +245,14 @@ object SimpleOpenEncoding {
     implicit def toExp[T](t: T): Exp[T] = Const(t)
 
     implicit def expToNumExp[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
+    implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
     implicit def tToNumExp[T : Numeric](t: T): NumOps[T] = {
       //toExp(t)
       expToNumExp(t) //Doesn't work, unless we make NumOps not extends Exp. It should expand to:
       //expToNumExp(toExp(t)) //but it does not, because also the next expansion typechecks:
       //expToNumExp(tToNumExp(t))
     }
+    implicit def tToOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
 
     implicit def expToTravExp[T](t: Exp[Traversable[T]]): TraversableOps[T] = new TraversableOps(t)
     implicit def tToTravExp[T](t: Traversable[T]): TraversableOps[T] = {
@@ -260,7 +268,8 @@ object SimpleOpenEncoding {
     //To "unlift" a pair, here's my first solution:
     /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
     /*
-    //Unfortunately this conversion is not redundant; we may want to have a special node to support this.
+    //Unfortunately this conversion is not redundant; we may want to have a special node to support this, or to
+    //remove Pair constructors applied on top of other pair constructors.
     implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): Pair[A, B] =
       (Pair[A,B] _).tupled(unliftPair(pair))
     */
@@ -279,7 +288,7 @@ object SimpleOpenEncoding {
 
   object SimpleOpenEncoding extends SimpleOpenEncodingBase {
     class ToQueryable[T](t: Traversable[T]) {
-      def asQueryable = Const(t)
+      def asQueryable: Exp[Traversable[T]] = Const(t)
     }
     implicit def toQueryable[T](t: Traversable[T]) = new ToQueryable(t)
 
@@ -287,6 +296,12 @@ object SimpleOpenEncoding {
       print(name + ": ")
       println(v)
     }
+
+    def showInterp(name: String, v: Exp[_]) {
+      show(name, v)
+      show(name + ".interpret", v.interpret)
+    }
+
     def moreTests() {
       println("testBug:")
 
@@ -322,48 +337,45 @@ object SimpleOpenEncoding {
 
     def assertType[T](t: T) {}
 
+    def testInadequate(c: Exp[Map[Int, Int]]) {
+      val e: Exp[Map[Int, Int]] = c map (_ match {
+        case Pair(a, b) => (a, b + 1) //Inadequate term, even if it's the first I wrote; it causes a crash
+      })
+      assertType[Exp[Map[Int, Int]]](e)
+      showInterp("e", e)
+    }
+
     def testTraversable() {
       moreTests()
 
       val a: Exp[Traversable[Int]] = Seq(1, 2, 3, 5)
       val a2 = Seq(1, 2, 3, 5).asQueryable
+      assertType[Exp[Traversable[Int]]](a2)
       val b1 = a.map(_ + 1)
       val b2 = a2.map(1 + _)
       val b3 = b1.map(2 + _)
-      show("b1", b1)
-      show("b1.interpret", b1.interpret)
-      show("b2", b2)
-      show("b2.interpret", b2.interpret)
-      show("b3", b3)
-      show("b3.interpret", b3.interpret)
+      showInterp("b1", b1)
+      showInterp("b2", b2)
+      showInterp("b3", b3)
 
       val c: Exp[Map[Int, Int]] = Map(1 -> 2, 3 -> 4)
-      show("c", c)
-      show("c.interpret", c.interpret)
-      //Type annotations on the results of map below are not needed to get the correct result, they just check that the
+      showInterp("c", c)
+      // Type annotations on the results of map below are not needed to get the correct result, they just check that the
       // result has the correct type.
       //XXX: Implicit conversions are not used by the Scala compiler to fix pattern match errors.
       val d = c map (unliftPair(_) match {
         case (a, b) => (a, b + 1)
       })
       assertType[Exp[Map[Int, Int]]](d)
-      show("d", d)
-      show("d.interpret", d.interpret)
+      showInterp("d", d)
       val d2 = c map (ab => (ab._1, ab._2 + 1))
       assertType[Exp[Map[Int, Int]]](d2)
-      show("d2", d2)
-      show("d2.interpret", d2.interpret)
+      showInterp("d2", d2)
       val d3 = c map (ab => (ab._1 + ab._2))
       //assertType[Exp[Seq[Int]]](d3) //XXX broken
       assertType[Exp[Iterable[Int]]](d3)
-      show("d3", d3)
-      show("d3.interpret", d3.interpret)
-      val e: Exp[Map[Int, Int]] = c map (_ match {
-        case Pair(a, b) => (a, b + 1) //Inadequate term, even if it's the first I wrote; it causes a crash
-      })
-      assertType[Exp[Map[Int, Int]]](e)
-      show("e", e)
-      show("e.interpret", e.interpret)
+      showInterp("d3", d3)
+      testInadequate(c)
     }
 
     //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
