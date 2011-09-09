@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
 import collection.generic.CanBuildFrom
-import collection.{IterableView, TraversableLike, TraversableView}
+import collection.{TraversableViewLike, IterableView, TraversableLike, TraversableView}
 
 /**
  * Here I show yet another encoding of expression trees, where methods
@@ -78,77 +78,6 @@ object SimpleOpenEncoding {
     }
   }
 
-  trait TraversableOpsExpressionTree {
-    this: OpsExpressionTree =>
-    case class MapOp[T, +U](base: Exp[Traversable[T]], f: Exp[T => U]) extends Exp[Traversable[U]] {
-      override def interpret = base.interpret map f.interpret
-    }
-    case class FlatMap[T, +U](base: Exp[Traversable[T]], f: Exp[T => Traversable[U]]) extends Exp[Traversable[U]] {
-      override def interpret = base.interpret flatMap f.interpret
-    }
-    case class WithFilter[T](base: Exp[Traversable[T]], f: Exp[T => Boolean]) extends Exp[Traversable[T]] {
-      //XXX: Again the same problem with filtering - we cannot call withFilter.
-      override def interpret = base.interpret.view filter f.interpret
-    }
-    //Alternative approach:
-    case class View[T](base: Exp[Traversable[T]]) extends Exp[TraversableView[T, Traversable[T]]] {
-      override def interpret = base.interpret.view
-    }
-
-    case class WithFilter2[T](base: Exp[TraversableView[T, Traversable[T]]], f: Exp[T => Boolean]) extends Exp[Traversable[T]] {
-      override def interpret = base.interpret filter f.interpret
-    }
-
-    case class Force[T](base: Exp[TraversableView[T, Traversable[T]]]) extends Exp[Traversable[T]] {
-      override def interpret = base.interpret.force
-    }
-
-    case class Union[T](base: Exp[Traversable[T]], that: Exp[Traversable[T]]) extends Exp[Traversable[T]] {
-      override def interpret = base.interpret ++ that.interpret
-    }
-  }
-
-  // This is an attempt to abstract over TraversableOpsExpressionTree.MapOp and MapOpsExpressionTree.MapOpForMap.
-  // However, it requires Coll[X] to be a total unary type function, while Map[K, V] is a binary type function.
-  // Given a cooler version of Tuple, say TupleT, for X = TupleT[K, V] one could write a type function equivalent to
-  // X => Map[X#Fst, X#Snd]; however, this function is not total! Hence this encoding cannot work.
-  trait TraversableOpsExpressionTreeV2[
-    Coll[X] <: TraversableLike[X, Coll[X]]
-    //Coll[X] <: Traversable[X] //This bound is not correct - map would then require an instance of
-    // CanBuildFrom[Traversable[A], B, That], not of the more specific CanBuildFrom[Coll[A], B, That]
-    ] {
-    this: OpsExpressionTree =>
-    case class MapOpV2[A, +B, That](base: Exp[Coll[A]], f: Exp[A => B])(implicit c: CanBuildFrom[Coll[A], B, That]) extends Exp[That] {
-      override def interpret = base.interpret.map(f.interpret)(c)
-    }
-  }
-
-  /*trait Bla extends TraversableOpsExpressionTreeV2[Map] with OpsExpressionTree {
-    
-  }*/
-
-  trait TraversableOpsExps {
-    this: OpsExpressionTree with TraversableOpsExpressionTree =>
-    class TraversableOps[T](val t: Exp[Traversable[T]]) {
-      def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
-        MapOp(this.t, FuncExp(f))
-        //App((_: Traversable[T]) map (FuncExp(f).interpret), this.t)
-
-      def flatMap[U](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] =
-        FlatMap(this.t, FuncExp(f))
-        //App((_: Traversable[T]) flatMap FuncExp(f).interpret, this.t)
-
-      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] =
-        WithFilter2(View(this.t), FuncExp(f))
-        //WithFilter(this.t, FuncExp(f))
-        //App((_: Traversable[T]) filter FuncExp(f).interpret, this.t) //We can't use withFilter underneath.
-
-      def union[U >: T](that: Exp[Traversable[U]]): Exp[Traversable[U]] =
-        Union(this.t, that)
-        //App((_: Traversable[T]) ++ u.interpret, this.t) //Should use an App node with two params.
-    }
-  }
-
   trait TraversableOps {
     this: OpsExpressionTree =>
     trait TraversableOpsLike[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] {
@@ -161,18 +90,18 @@ object SimpleOpenEncoding {
         override def interpret = base.interpret flatMap f.interpret
       }
 
-      /*
-      //XXX: can't be fully defined here, this must be defined in children classes.
-      case class WithFilter(base: Exp[Repr], f: Exp[T => Boolean]) extends Exp[Repr] {
-        //XXX: Again the same problem with filtering - we cannot call withFilter.
-        //override def interpret = base.interpret.view filter f.interpret
+      //XXX: here we can only define filter nodes, not withFilter ones.
+      case class Filter(base: Exp[Repr], f: Exp[T => Boolean]) extends Exp[Repr] {
         override def interpret = base.interpret filter f.interpret
       }
-      */
 
       case class Union[U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
                                     (implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
         override def interpret = base.interpret ++ that.interpret
+      }
+
+      case class View(base: Exp[Repr]) extends Exp[TraversableView[T, Repr]] {
+        override def interpret = base.interpret.view
       }
 
       def map[U, That](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
@@ -181,37 +110,71 @@ object SimpleOpenEncoding {
       def flatMap[U, That](f: Exp[T] => Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         FlatMap(this.t, FuncExp(f))
 
-      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Repr]
+      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
+        Filter(this.t, FuncExp(f))
 
       def union[U >: T, That](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         Union(this.t, that)
+      def view: Exp[TraversableView[T, Repr]] = View(this.t)
+    }
+
+    trait TraversableViewOpsLike[
+        T,
+        Repr <: TraversableLike[T, Repr] with Traversable[T],
+        ViewColl <: Repr with TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
+      extends TraversableOpsLike[T, ViewColl]
+    {
+      case class Force(base: Exp[ViewColl]) extends Exp[Traversable[T]] {
+        override def interpret = base.interpret.force
+      }
+
+      def force = Force(this.t)
+
+      override def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
+        WithFilter(this.t, FuncExp(f))
+
+      case class WithFilter(base: Exp[ViewColl], f: Exp[T => Boolean]) extends Exp[ViewColl] {
+        override def interpret = base.interpret filter f.interpret
+      }
     }
 
     class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableOpsLike[T, Traversable[T]] {
-      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] =
+      override def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] =
         WithFilter(this.t, FuncExp(f))
 
       case class WithFilter(base: Exp[Traversable[T]], f: Exp[T => Boolean]) extends Exp[Traversable[T]] {
         //XXX: Again the same problem with filtering - we cannot call withFilter.
         override def interpret = base.interpret.view filter f.interpret
       }
-
-      //Do we need this specialization? No we don't, I think.
-      /*def map[U](f: Exp[T] => Exp[U]): Exp[Traversable[U]] =
-        super.map(f)*/
     }
+
+    class TraversableViewOps[T](val t: Exp[TraversableView[T, Traversable[T]]])
+      extends TraversableViewOpsLike[T, Traversable[T], TraversableView[T, Traversable[T]]]
+      /* {
+      //XXX: these definitions are redundant with the ones from TraversableViewOpsLike.
+      override def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Traversable[T]]] =
+        WithFilter(this.t, FuncExp(f))
+
+      class WithFilter(base: Exp[TraversableView[T, Traversable[T]]], f: Exp[T => Boolean]) extends Exp[TraversableView[T, Traversable[T]]] {
+        override def interpret = base.interpret filter f.interpret
+      }
+    }*/
+
   }
   trait MapOps {
     this: OpsExpressionTree with TraversableOps =>
     class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableOpsLike[(K, V), Map[K, V]] {
-      def withFilter(f: Exp[(K, V)] => Exp[Boolean]): Exp[Map[K, V]] =
-        Filter(this.t, FuncExp(f))
+      //XXX: we cannot use WithFilter here.
+      override def withFilter(f: Exp[(K, V)] => Exp[Boolean]): Exp[Map[K, V]] =
+        new Filter(this.t, FuncExp(f))
 
-      case class Filter(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[Map[K, V]] {
+      //We cannot override case classes.
+      class Filter(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[Map[K, V]] {
         //XXX: We cannot call withFilter nor view.filter, because MapView does not exist; see below
         override def interpret = base.interpret filter f.interpret
       }
-      case class WithFilterWeirdType(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[IterableView[(K, V), Map[K, V]]] {
+      //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
+      case class WithFilter(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[IterableView[(K, V), Map[K, V]]] {
         override def interpret = base.interpret.view filter f.interpret
       }
     }
@@ -231,16 +194,6 @@ object SimpleOpenEncoding {
     }
   }
 
-  trait MapOpsExps {
-    this: OpsExpressionTree with MapOpsExpressionTree with TraversableOpsExpressionTree =>
-
-    class MapOps[K, V](val t: Exp[Map[K, V]]) {
-      def map[U, That](f: Exp[(K, V)] => Exp[U])(implicit c: CanBuildFrom[Map[K, V], U, That]): Exp[That] =
-        MapOpForMap(this.t, FuncExp(f))
-    }
-  }
-
-
   trait SimpleOpenEncodingBase extends OpsExpressionTree with NumOpsExps with NumOpsExpressionTree with TraversableOps with MapOps /*with TraversableOpsExps with TraversableOpsExpressionTree*/ {
     implicit def toExp[T](t: T): Exp[T] = Const(t)
 
@@ -259,6 +212,14 @@ object SimpleOpenEncoding {
       //toExp(t)
       expToTravExp(t)
     }
+
+    implicit def expToTravViewExp[T](t: Exp[TraversableView[T, Traversable[T]]]): TraversableViewOps[T] = new TraversableViewOps(t)
+    implicit def tToTravViewExp[T](t: TraversableView[T, Traversable[T]]): TraversableViewOps[T] = expToTravViewExp(t)
+
+    implicit def expToTravViewExp2[T](t: Exp[TraversableView[T, Traversable[_]]]): TraversableViewOps[T] = expToTravViewExp(
+      t.asInstanceOf[Exp[TraversableView[T, Traversable[T]]]])
+    implicit def tToTravViewExp2[T](t: TraversableView[T, Traversable[_]]): TraversableViewOps[T] = expToTravViewExp2(t)
+
     implicit def expToMapExp[K, V](t: Exp[Map[K, V]]): MapOps[K, V] = new MapOps(t)
     implicit def tToMapExp[K, V](t: Map[K, V]): MapOps[K, V] =
       expToMapExp(t)
@@ -345,6 +306,32 @@ object SimpleOpenEncoding {
       showInterp("e", e)
     }
 
+    def testTraversableView(exp: Exp[Traversable[Int]]) {
+      val a = exp.view
+      showInterp("a", a)
+      assertType[Exp[Traversable[Int]]](a)
+      assertType[Exp[TraversableView[Int, Traversable[Int]]]](a)
+      val b = a.map(_ + 1)
+      assertType[Exp[Traversable[Int]]](b)
+      // The underscore is due to the type of TraversableView.canBuildFrom. However, it doesn't really matter - see the
+      // type of forcedB 
+      assertType[Exp[TraversableView[Int, Traversable[_]]]](b)
+      //assertType[Exp[TraversableView[Int, Traversable[Int]]]](b)
+      showInterp("b", b)
+      val forcedB = b.force
+      showInterp("forcedB", forcedB)
+      assertType[Exp[Traversable[Int]]](forcedB)
+      
+      val c = a.withFilter(_ <= 3)
+      assertType[Exp[Traversable[Int]]](c)
+      assertType[Exp[TraversableView[Int, Traversable[Int]]]](c)
+      showInterp("c", c)
+
+      val forcedC = c.force
+      showInterp("forcedC", forcedC)
+      assertType[Exp[Traversable[Int]]](forcedC)
+    }
+
     def testTraversable() {
       moreTests()
 
@@ -375,6 +362,7 @@ object SimpleOpenEncoding {
       //assertType[Exp[Seq[Int]]](d3) //XXX broken
       assertType[Exp[Iterable[Int]]](d3)
       showInterp("d3", d3)
+      testTraversableView(a)
       testInadequate(c)
     }
 
