@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
-import collection.generic.CanBuildFrom
 import collection.{TraversableViewLike, IterableView, TraversableLike, TraversableView}
+import collection.generic.{FilterMonadic, CanBuildFrom}
 
 /**
  * Here I show yet another encoding of expression trees, where methods
@@ -80,6 +80,34 @@ object SimpleOpenEncoding {
 
   trait TraversableOps {
     this: OpsExpressionTree =>
+
+    /* Lift (almost) faithfully the complete functional part of the FilterMonadic trait - i.e. all methods excluding foreach. */
+    //XXX: split this into FilterMonadicOpsLike, where part of TraversableOpsLike is moved after adapting.
+    trait FilterMonadicOps[T, Repr] {
+      type This = FilterMonadic[T, Repr]
+      val t: Exp[This]
+      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[This] =
+        WithFilter(this.t, FuncExp(f))
+      def map[U, That](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+        MapOp(this.t, FuncExp(f))
+      //XXX: we should require here Exp[TraversableOnce[U]], or Exp[GenTraversableOnce[U]].
+      def flatMap[U, That](f: Exp[T] => Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+        FlatMap(this.t, FuncExp(f))
+
+      case class FlatMap[+U, That](base: Exp[This], f: Exp[T => Traversable[U]])
+                                  (implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
+        override def interpret = base.interpret flatMap f.interpret
+      }
+
+      case class MapOp[+U, That](base: Exp[This], f: Exp[T => U])(implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
+        override def interpret = base.interpret map f.interpret
+      }
+
+      case class WithFilter(base: Exp[This], f: Exp[T => Boolean]) extends Exp[This] {
+        override def interpret = base.interpret withFilter f.interpret
+      }
+    }
+
     trait TraversableOpsLike[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] {
       val t: Exp[Repr]
       case class MapOp[+U, That](base: Exp[Repr], f: Exp[T => U])(implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
