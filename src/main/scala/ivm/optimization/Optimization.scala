@@ -58,7 +58,11 @@ class Optimization {
     (e) => e match {
       case MapOp(col, f) =>
         f.body match {
-          case f.x => col
+          case f.x =>
+            // XXX: the cast in the line below is only needed because of a compiler bug (yet to report), which only
+            // shows up when recompiling this class but not MapOp. Another (now fixed) bug with separate compilation
+            // is described here: https://issues.scala-lang.org/browse/SI-4757
+            col.asInstanceOf[Exp[_]]
           case x => println(x); e
         }
       case _ => e
