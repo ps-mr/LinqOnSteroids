@@ -10,15 +10,15 @@ class Optimization {
   private def buildJoinTyped[T, S, TKey, TResult](fmColl: QueryReifier[T], wfColl: QueryReifier[S],
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
                                                   moFun: FuncExp[_ /*U*/, TResult], fmFun: FuncExp[_ /*T*/, _ /*QueryReifier[U]*/],
-                                                  wfFun: FuncExp[_ /*S*/, _/*Boolean*/]): Join[T, S, TKey, TResult] =
-    Join(fmColl,
+                                                  wfFun: FuncExp[_ /*S*/, _/*Boolean*/]): QueryReifierBase[TResult] /*Join[T, S, TKey, TResult]*/ =
+    fmColl.join(
       wfColl,
-      FuncExp.makefun[T, TKey](lhs, fmFun.x),
-      FuncExp.makefun[S, TKey](rhs, wfFun.x),
+      FuncExp.makefun[T, TKey](lhs, fmFun.x).f,
+      FuncExp.makefun[S, TKey](rhs, wfFun.x).f,
       FuncExp.makepairfun[T, S, TResult](
         moFun.body,
         fmFun.x,
-        moFun.x))
+        moFun.x).f)
 
   /*
    * Optimizes expressions of the form:
@@ -69,7 +69,7 @@ class Optimization {
       case WithFilter(col, f) =>
         col match {
           case WithFilter(col2, f2) =>
-            mergeFilters(new WithFilterMaintainerExp(col2, FuncExp((x: Exp[_]) => And(f2.f(x), f.f(x)))))
+            mergeFilters(col2.withFilter(FuncExp((x: Exp[_]) => And(f2.f(x), f.f(x))).f))
           case _ => e
         }
       case _ => e
