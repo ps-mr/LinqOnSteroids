@@ -6,31 +6,43 @@ import expressiontree._
 import indexing.{HashIndex, Path}
 
 class Optimization {
-  private def buildJoin(fmcol: QueryReifier[Any], col3: QueryReifier[Any], l: Exp[Any], r: Exp[Any],
-                        mcf: FuncExp[Any, Any], fmf: FuncExp[Any, Any],
-                        h: FuncExp[Any, Boolean]): Join[Any, Any, Any, Any] =
+  //Note on the type signature: I commented out type parameters which the type checker does not check.
+  private def buildJoinTyped[T, S, TKey, TResult](fmcol: QueryReifier[T], col3: QueryReifier[S],
+                                                  l: Exp[TKey], r: Exp[TKey],
+                                                  mcf: FuncExp[_ /*U*/, TResult], fmf: FuncExp[_ /*T*/, _ /*QueryReifier[U]*/],
+                                                  h: FuncExp[_ /*S*/, _/*Boolean*/]): Join[T, S, TKey, TResult] =
     Join(fmcol,
       col3,
-      FuncExp.makefun[Any, Any](l, fmf.x),
-      FuncExp.makefun[Any, Any](r, h.x),
-      FuncExp.makepairfun[Any, Any, Any](
+      FuncExp.makefun[T, TKey](l, fmf.x),
+      FuncExp.makefun[S, TKey](r, h.x),
+      FuncExp.makepairfun[T, S, TResult](
         mcf.body,
         fmf.x,
         mcf.x))
 
+  /*
+   * Optimizes expressions of the form:
+   *   for (k <- l; k2 <- j if l(k) is r(k2)) yield mcf(k, k2)
+   * that is:
+   *   l.flatMap(k => j.withFilter(l(k) is r(_)).map(mcf(k, _)))
+   * into:
+   *   l.join(j, l, r, (p: Exp[(Int, Int)]) => mcf(p._1, p._2))
+   */
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
-      case FlatMap(fmcol, fmf) => fmf.body match {
-        case MapOp(mccol, mcf) => mccol match {
-          case WithFilter(col3, h) => {
+      case FlatMap(fmcol: QueryReifier[t], fmf: FuncExp[_ /*t*/, QueryReifier[u]]) => fmf.body match {
+        case MapOp(mccol: QueryReifier[u2 /* u */], mcf: FuncExp[_ /* u2 */, tResult]) => mccol match {
+          case WithFilter(col3: QueryReifier[s], h: FuncExp[_ /*s*/, _ /*Boolean*/]) => {
             if (col3.isOrContains(fmf.x)) e
             else
               h.body match {
-                case Eq(l, r) =>
+                case eq: Eq[tKey] =>
+                  //val Eq(l: Exp[tKey], r /*: Exp[tKey] */) = eq
+                  val Eq(l, r) = eq
                   if (!(l.isOrContains(h.x)) && !(r.isOrContains(fmf.x)))
-                    buildJoin(fmcol, col3, l, r, mcf, fmf, h)
+                    buildJoinTyped[t, s, tKey, tResult](fmcol, col3, l.asInstanceOf[Exp[tKey]], r.asInstanceOf[Exp[tKey]], mcf, fmf, h)
                   else if (!(r.isOrContains(h.x)) && !(l.isOrContains(fmf.x)))
-                    buildJoin(fmcol, col3, r, l, mcf, fmf, h)
+                    buildJoinTyped[t, s, tKey, tResult](fmcol, col3, r.asInstanceOf[Exp[tKey]], l.asInstanceOf[Exp[tKey]], mcf, fmf, h)
                   else e
                 case _ => e
               }
