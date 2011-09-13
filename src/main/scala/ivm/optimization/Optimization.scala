@@ -3,7 +3,6 @@ package optimization
 
 
 import expressiontree._
-import expressiontree.Lifting._
 import indexing.{HashIndex, Path}
 
 class Optimization {
