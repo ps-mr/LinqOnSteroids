@@ -7,18 +7,18 @@ import indexing.{HashIndex, Path}
 
 class Optimization {
   //Note on the type signature: I commented out type parameters which the type checker does not check.
-  private def buildJoinTyped[T, S, TKey, TResult](fmcol: QueryReifier[T], col3: QueryReifier[S],
-                                                  l: Exp[TKey], r: Exp[TKey],
-                                                  mcf: FuncExp[_ /*U*/, TResult], fmf: FuncExp[_ /*T*/, _ /*QueryReifier[U]*/],
-                                                  h: FuncExp[_ /*S*/, _/*Boolean*/]): Join[T, S, TKey, TResult] =
-    Join(fmcol,
-      col3,
-      FuncExp.makefun[T, TKey](l, fmf.x),
-      FuncExp.makefun[S, TKey](r, h.x),
+  private def buildJoinTyped[T, S, TKey, TResult](fmColl: QueryReifier[T], wfColl: QueryReifier[S],
+                                                  lhs: Exp[TKey], rhs: Exp[TKey],
+                                                  moFun: FuncExp[_ /*U*/, TResult], fmFun: FuncExp[_ /*T*/, _ /*QueryReifier[U]*/],
+                                                  wfFun: FuncExp[_ /*S*/, _/*Boolean*/]): Join[T, S, TKey, TResult] =
+    Join(fmColl,
+      wfColl,
+      FuncExp.makefun[T, TKey](lhs, fmFun.x),
+      FuncExp.makefun[S, TKey](rhs, wfFun.x),
       FuncExp.makepairfun[T, S, TResult](
-        mcf.body,
-        fmf.x,
-        mcf.x))
+        moFun.body,
+        fmFun.x,
+        moFun.x))
 
   /*
    * Optimizes expressions of the form:
@@ -30,19 +30,19 @@ class Optimization {
    */
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
-      case FlatMap(fmcol: QueryReifier[t], fmf: FuncExp[_ /*t*/, QueryReifier[u]]) => fmf.body match {
-        case MapOp(mccol: QueryReifier[u2 /* u */], mcf: FuncExp[_ /* u2 */, tResult]) => mccol match {
-          case WithFilter(col3: QueryReifier[s], h: FuncExp[_ /*s*/, _ /*Boolean*/]) => {
-            if (col3.isOrContains(fmf.x)) e
+      case FlatMap(fmColl: QueryReifier[t], fmFun: FuncExp[_ /*t*/, QueryReifier[u]]) => fmFun.body match {
+        case MapOp(moColl: QueryReifier[u2 /* u */], moFun: FuncExp[_ /* u2 */, tResult]) => moColl match {
+          case WithFilter(wfColl: QueryReifier[s], wfFun: FuncExp[_ /*s*/, _ /*Boolean*/]) => {
+            if (wfColl.isOrContains(fmFun.x)) e
             else
-              h.body match {
+              wfFun.body match {
                 case eq: Eq[tKey] =>
                   //val Eq(l: Exp[tKey], r /*: Exp[tKey] */) = eq
-                  val Eq(l, r) = eq
-                  if (!(l.isOrContains(h.x)) && !(r.isOrContains(fmf.x)))
-                    buildJoinTyped[t, s, tKey, tResult](fmcol, col3, l.asInstanceOf[Exp[tKey]], r.asInstanceOf[Exp[tKey]], mcf, fmf, h)
-                  else if (!(r.isOrContains(h.x)) && !(l.isOrContains(fmf.x)))
-                    buildJoinTyped[t, s, tKey, tResult](fmcol, col3, r.asInstanceOf[Exp[tKey]], l.asInstanceOf[Exp[tKey]], mcf, fmf, h)
+                  val Eq(lhs, rhs) = eq
+                  if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
+                    buildJoinTyped[t, s, tKey, tResult](fmColl, wfColl, lhs.asInstanceOf[Exp[tKey]], rhs.asInstanceOf[Exp[tKey]], moFun, fmFun, wfFun)
+                  else if (!(rhs.isOrContains(wfFun.x)) && !(lhs.isOrContains(fmFun.x)))
+                    buildJoinTyped[t, s, tKey, tResult](fmColl, wfColl, rhs.asInstanceOf[Exp[tKey]], lhs.asInstanceOf[Exp[tKey]], moFun, fmFun, wfFun)
                   else e
                 case _ => e
               }
