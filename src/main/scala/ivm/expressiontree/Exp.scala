@@ -29,7 +29,7 @@ trait Exp[+T] {
     var ac = allChildren //XXX slow, allChildren computes an eager sequence!
     ac.contains(e)
   }
-  private[ivm] def isOrContains[S](e: Exp[S]): Boolean = if (this.equals(e)) true else containsExp(e)
+  private[ivm] def isOrContains(e: Exp[_]): Boolean = if (this.equals(e)) true else containsExp(e)
   private[ivm] def allChildren: Seq[Exp[_]] = children ++ (for (c <- children; a <- c.allChildren) yield a)
 
   private[ivm] def substVar[S](v: String, e: Exp[S]) =

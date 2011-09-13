@@ -19,7 +19,7 @@ object Lifting {
 
   def liftFunc[S,T](f: Exp[S] => Exp[T]) : Exp[S => T] = FuncExp(f)
 
-  implicit def liftT[T](x: T) = Const(x)
+  implicit def liftT[T](x: T): Exp[T] = Const(x)
   /*implicit def liftOrd[T: Ordering](x: T) = Const(x)
   implicit def liftNum[T: Numeric](x: T) = Const(x)
 
