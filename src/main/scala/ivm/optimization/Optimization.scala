@@ -6,6 +6,18 @@ import expressiontree._
 import indexing.{HashIndex, Path}
 
 class Optimization {
+  private def buildJoin(fmcol: QueryReifier[Any], col3: QueryReifier[Any], l: Exp[Any], r: Exp[Any],
+                        mcf: FuncExp[Any, Any], fmf: FuncExp[Any, Any],
+                        h: FuncExp[Any, Boolean]): Join[Any, Any, Any, Any] =
+    Join(fmcol,
+      col3,
+      FuncExp.makefun[Any, Any](l, fmf.x),
+      FuncExp.makefun[Any, Any](r, h.x),
+      FuncExp.makepairfun[Any, Any, Any](
+        mcf.body,
+        fmf.x,
+        mcf.x))
+
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
       case FlatMap(fmcol, fmf) => fmf.body match {
@@ -16,23 +28,9 @@ class Optimization {
               h.body match {
                 case Eq(l, r) =>
                   if (!(l.isOrContains(h.x)) && !(r.isOrContains(fmf.x)))
-                    Join(fmcol,
-                      col3,
-                      FuncExp.makefun[Any, Any](l, fmf.x), // no idea why the [Any,Any] stuff passes the typechecker
-                      FuncExp.makefun[Any, Any](r, h.x),
-                      FuncExp.makepairfun[Any, Any, Any](
-                        mcf.body,
-                        fmf.x,
-                        mcf.x))
+                    buildJoin(fmcol, col3, l, r, mcf, fmf, h)
                   else if (!(r.isOrContains(h.x)) && !(l.isOrContains(fmf.x)))
-                    Join(fmcol,
-                      col3,
-                      FuncExp.makefun[Any, Any](r, fmf.x),
-                      FuncExp.makefun[Any, Any](l, h.x),
-                      FuncExp.makepairfun[Any, Any, Any](
-                        mcf.body,
-                        fmf.x,
-                        mcf.x))
+                    buildJoin(fmcol, col3, r, l, mcf, fmf, h)
                   else e
                 case _ => e
               }
