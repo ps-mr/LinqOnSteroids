@@ -53,33 +53,35 @@ class Optimization {
       case _ => e
     }
 
+  object FuncExpBody {
+    def unapply[S, T](f: FuncExp[S, T]): Option[Exp[T]] = Some(f.body)
+  }
+
+  object FuncExpIdentity {
+    def unapply[S, T](f: FuncExp[S, T]): Boolean = f.body == f.x
+  }
+
   val removeIdentityMaps: Exp[_] => Exp[_] =
-    (e) => e match {
-      case MapOp(col, f) =>
-        f.body match {
-          case f.x =>
-            // XXX: the cast in the line below is only needed because of a compiler bug (yet to report), which only
-            // shows up when recompiling this class but not MapOp. Another (now fixed) bug with separate compilation
-            // is described here: https://issues.scala-lang.org/browse/SI-4757
-            col.asInstanceOf[Exp[_]]
-          case x => println(x); e
-        }
+    e => e match {
+      case MapOp(col, FuncExpIdentity()) =>
+        // XXX: the cast in the line below is only needed because of a compiler bug (yet to report), which only
+        // shows up when recompiling this class but not MapOp. Another (now fixed) bug with separate compilation
+        // is described here: https://issues.scala-lang.org/browse/SI-4757
+        col.asInstanceOf[Exp[_]]
+      case MapOp(col, FuncExpBody(x)) =>
+        println(x); e
       case _ => e
     }
 
   val mergeFilters: Exp[_] => Exp[_] =
-    (e) => e match {
-      case WithFilter(col, f) =>
-        col match {
-          case WithFilter(col2, f2) =>
-            mergeFilters(col2.withFilter(FuncExp((x: Exp[_]) => And(f2.f(x), f.f(x))).f))
-          case _ => e
-        }
+    e => e match {
+      case WithFilter(WithFilter(col2, f2), f) =>
+        mergeFilters(col2.withFilter(FuncExp((x: Exp[_]) => And(f2.f(x), f.f(x))).f))
       case _ => e
     }
 
   val normalizer: Exp[_] => Exp[_] =
-    (e) => e match {
+    e => e match {
       case p@Plus(x, y) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum)
       case e@Eq(x, y) => Eq(Exp.min(x, y), Exp.max(x, y))
       case _ => e
@@ -103,8 +105,7 @@ class Optimization {
   }
 
   val indexer: Exp[_] => Exp[_] = (e) => e match {
-    case WithFilter(col, h) => h.body match {
-      case Eq(l, r) =>
+    case WithFilter(col, h @ FuncExpBody(Eq(l, r))) =>
         if ((!(l.isOrContains(h.x))) && (r.freeVars == Seq(h.x))
           && hasIndex(col.indexes.asInstanceOf[scala.collection.mutable.Map[FuncExp[Any, Any], HashIndex[Any, Any]]], h.x, r))
           IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(r, h.x)).asInstanceOf[FuncExp[Any, Any]]).asInstanceOf[HashIndex[Any, Any]], l)
@@ -113,8 +114,6 @@ class Optimization {
           && hasIndex(col.indexes.asInstanceOf[scala.collection.mutable.Map[FuncExp[Any, Any], HashIndex[Any, Any]]], h.x, l))
           IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(l, h.x)).asInstanceOf[FuncExp[Any, Any]]).asInstanceOf[HashIndex[Any, Any]], r)
         else e
-      case _ => e
-    }
     case _ => e
   }
 }
