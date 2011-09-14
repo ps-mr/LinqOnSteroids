@@ -30,26 +30,16 @@ class Optimization {
    */
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
-      case fm: FlatMap[t, tResult] => val FlatMap(fmColl, fmFun) = fm; fmFun.body match {
-        case mo: MapOp[s, `tResult`] => val MapOp(moColl, moFun) = mo; moColl match {
-          case wf: WithFilter[`s`] => val WithFilter(wfColl, wfFun) = wf; {
-            if (wfColl.isOrContains(fmFun.x)) e
-            else
-              wfFun.body match {
-                case eq: Eq[tKey] =>
-                  val Eq(lhs, rhs) = eq
-                  if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
-                    buildJoinTyped[Any /*t*/, s, tKey, tResult](fmColl, wfColl, lhs, rhs, moFun, fmFun, wfFun)
-                  else if (!(rhs.isOrContains(wfFun.x)) && !(lhs.isOrContains(fmFun.x)))
-                    buildJoinTyped[Any /*t*/, s, tKey, tResult](fmColl, wfColl, rhs, lhs, moFun, fmFun, wfFun)
-                  else e
-                case _ => e
-              }
-          }
-          case _ => e
-        }
-        case _ => e
-      }
+      case FlatMap(fmColl,
+        fmFun @ FuncExpBody(MapOp(WithFilter(wfColl, wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
+        if (!wfColl.isOrContains(fmFun.x))
+      =>
+        if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
+          buildJoinTyped(fmColl, wfColl, lhs, rhs, moFun, fmFun, wfFun)
+        else if (!(rhs.isOrContains(wfFun.x)) && !(lhs.isOrContains(fmFun.x)))
+          buildJoinTyped(fmColl, wfColl, rhs, lhs, moFun, fmFun, wfFun)
+        else
+          e
       case _ => e
     }
 
