@@ -9,7 +9,7 @@ class Optimization {
   //Note on the type signature: I commented out type parameters which the type checker does not check.
   private def buildJoinTyped[T, S, TKey, TResult](fmColl: QueryReifier[T], wfColl: QueryReifier[S],
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
-                                                  moFun: FuncExp[_ /*U*/, TResult], fmFun: FuncExp[_ /*T*/, _ /*QueryReifier[U]*/],
+                                                  moFun: FuncExp[S, TResult], fmFun: FuncExp[T, QueryReifier[TResult]],
                                                   wfFun: FuncExp[_ /*S*/, _/*Boolean*/]): QueryReifierBase[TResult] /*Join[T, S, TKey, TResult]*/ =
     fmColl.join(
       wfColl,
@@ -30,18 +30,18 @@ class Optimization {
    */
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
-      case FlatMap(fmColl: QueryReifier[t], fmFun: FuncExp[_ /*t*/, QueryReifier[u]]) => fmFun.body match {
-        case MapOp(moColl: QueryReifier[_], moFun: FuncExp[_, tResult]) => moColl match {
-          case WithFilter(wfColl: QueryReifier[s], wfFun: FuncExp[_ /*s*/, _]) => {
+      case FlatMap(fmColl: QueryReifier[_ /*t*/], fmFun: FuncExp[t, QueryReifier[tResult]]) => fmFun.body match {
+        case MapOp(moColl: QueryReifier[_ /*s*/], moFun: FuncExp[s, `tResult`]) => moColl match {
+          case WithFilter(wfColl: QueryReifier[`s`], wfFun: FuncExp[`s`, Boolean]) => {
             if (wfColl.isOrContains(fmFun.x)) e
             else
               wfFun.body match {
                 case eq: Eq[tKey] =>
                   val Eq(lhs, rhs) = eq
                   if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
-                    buildJoinTyped[t, s, Any /*tKey*/, tResult](fmColl, wfColl, lhs, rhs, moFun, fmFun, wfFun)
+                    buildJoinTyped[Any /*t*/, s, tKey, tResult](fmColl, wfColl, lhs, rhs, moFun, fmFun, wfFun)
                   else if (!(rhs.isOrContains(wfFun.x)) && !(lhs.isOrContains(fmFun.x)))
-                    buildJoinTyped[t, s, Any /*tKey*/, tResult](fmColl, wfColl, rhs, lhs, moFun, fmFun, wfFun)
+                    buildJoinTyped[t, Any /*s*/, tKey, tResult](fmColl, wfColl, rhs, lhs, moFun, fmFun, wfFun)
                   else e
                 case _ => e
               }
