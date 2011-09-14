@@ -104,16 +104,15 @@ class Optimization {
 
   val indexer: Exp[_] => Exp[_] = (e) => e match {
     case WithFilter(col, h) => h.body match {
-      case Eq(l, r) => if ((!(l.isOrContains(h.x))) && (r.freeVars == Seq(h.x))
-        && hasIndex(col.indexes.asInstanceOf[scala.collection.mutable.Map[FuncExp[Any, Any], HashIndex[Any, Any]]], h.x, r))
-        IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(r, h.x)).asInstanceOf[FuncExp[Any, Any]]).asInstanceOf[HashIndex[Any, Any]], l)
-      else
-      if ((!(r.isOrContains(h.x)))
-        && (l.freeVars.equals(Set(h.x)))
-        && hasIndex(col.indexes.asInstanceOf[scala.collection.mutable.Map[FuncExp[Any, Any], HashIndex[Any, Any]]], h.x, l))
-        IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(l, h.x)).asInstanceOf[FuncExp[Any, Any]]).asInstanceOf[HashIndex[Any, Any]], r)
-      else e
-
+      case Eq(l, r) =>
+        if ((!(l.isOrContains(h.x))) && (r.freeVars == Seq(h.x))
+          && hasIndex(col.indexes.asInstanceOf[scala.collection.mutable.Map[FuncExp[Any, Any], HashIndex[Any, Any]]], h.x, r))
+          IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(r, h.x)).asInstanceOf[FuncExp[Any, Any]]).asInstanceOf[HashIndex[Any, Any]], l)
+        else if ((!(r.isOrContains(h.x)))
+          && (l.freeVars.equals(Set(h.x)))
+          && hasIndex(col.indexes.asInstanceOf[scala.collection.mutable.Map[FuncExp[Any, Any], HashIndex[Any, Any]]], h.x, l))
+          IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(l, h.x)).asInstanceOf[FuncExp[Any, Any]]).asInstanceOf[HashIndex[Any, Any]], r)
+        else e
       case _ => e
     }
     case _ => e
