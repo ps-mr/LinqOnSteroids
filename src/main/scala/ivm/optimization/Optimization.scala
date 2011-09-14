@@ -10,7 +10,7 @@ class Optimization {
   private def buildJoinTyped[T, S, TKey, TResult](fmColl: QueryReifier[T], wfColl: QueryReifier[S],
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
                                                   moFun: FuncExp[S, TResult], fmFun: FuncExp[T, QueryReifier[TResult]],
-                                                  wfFun: FuncExp[_ /*S*/, _/*Boolean*/]): QueryReifierBase[TResult] /*Join[T, S, TKey, TResult]*/ =
+                                                  wfFun: FuncExp[S, Boolean]): QueryReifierBase[TResult] /*Join[T, S, TKey, TResult]*/ =
     fmColl.join(
       wfColl,
       FuncExp.makefun[T, TKey](lhs, fmFun.x).f,
@@ -30,9 +30,9 @@ class Optimization {
    */
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
-      case FlatMap(fmColl: QueryReifier[_ /*t*/], fmFun: FuncExp[t, QueryReifier[tResult]]) => fmFun.body match {
-        case MapOp(moColl: QueryReifier[_ /*s*/], moFun: FuncExp[s, `tResult`]) => moColl match {
-          case WithFilter(wfColl: QueryReifier[`s`], wfFun: FuncExp[`s`, Boolean]) => {
+      case fm: FlatMap[t, tResult] => val FlatMap(fmColl, fmFun) = fm; fmFun.body match {
+        case mo: MapOp[s, `tResult`] => val MapOp(moColl, moFun) = mo; moColl match {
+          case wf: WithFilter[`s`] => val WithFilter(wfColl, wfFun) = wf; {
             if (wfColl.isOrContains(fmFun.x)) e
             else
               wfFun.body match {
@@ -41,7 +41,7 @@ class Optimization {
                   if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
                     buildJoinTyped[Any /*t*/, s, tKey, tResult](fmColl, wfColl, lhs, rhs, moFun, fmFun, wfFun)
                   else if (!(rhs.isOrContains(wfFun.x)) && !(lhs.isOrContains(fmFun.x)))
-                    buildJoinTyped[t, Any /*s*/, tKey, tResult](fmColl, wfColl, rhs, lhs, moFun, fmFun, wfFun)
+                    buildJoinTyped[Any /*t*/, s, tKey, tResult](fmColl, wfColl, rhs, lhs, moFun, fmFun, wfFun)
                   else e
                 case _ => e
               }
