@@ -5,6 +5,14 @@ package optimization
 import expressiontree._
 import indexing.{HashIndex, Path}
 
+object FuncExpBody {
+  def unapply[S, T](f: FuncExp[S, T]): Option[Exp[T]] = Some(f.body)
+}
+
+object FuncExpIdentity {
+  def unapply[S, T](f: FuncExp[S, T]): Boolean = f.body == f.x
+}
+
 class Optimization {
   //Note on the type signature: I commented out type parameters which the type checker does not check.
   private def buildJoinTyped[T, S, TKey, TResult](fmColl: QueryReifier[T], wfColl: QueryReifier[S],
@@ -42,14 +50,6 @@ class Optimization {
           e
       case _ => e
     }
-
-  object FuncExpBody {
-    def unapply[S, T](f: FuncExp[S, T]): Option[Exp[T]] = Some(f.body)
-  }
-
-  object FuncExpIdentity {
-    def unapply[S, T](f: FuncExp[S, T]): Boolean = f.body == f.x
-  }
 
   val removeIdentityMaps: Exp[_] => Exp[_] =
     e => e match {
