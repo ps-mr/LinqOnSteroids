@@ -51,10 +51,10 @@ class EqWeakReference[+T >: Null <: AnyRef](t: T) extends WeakReference[T](t: T)
     other match {
       case that: AnyRef if that eq this => true
       case that: EqWeakReference[_] =>
-        def getO[S >: Null <: AnyRef](x: WeakReference[S]): S = x.get.orNull
+        def getOrNull[S >: Null <: AnyRef](x: WeakReference[S]): S = x.get.orNull
         (that canEqual this) &&
           //XXX: use eq or equals? equals makes more sense in general, but eq makes more sense for our use case.
-          (getO(this) eq getO(that))
+          (getOrNull(this) eq getOrNull(that))
       case _ =>
         false
         // There is a definition coming from Proxy; however Proxy is used around java.lang.ref.WeakReference, which
