@@ -125,12 +125,20 @@ object SimpleOpenEncoding {
         override def interpret = base.interpret.view
       }
 
+      case class GroupBy[K](base: Exp[Repr], f: FuncExp[T, K]) extends Exp[Map[K, Repr]] {
+        override def interpret = base.interpret groupBy f.interpret
+      }
+
       def filter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
         Filter(this.t, FuncExp(f))
 
       def union[U >: T, That](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         Union(this.t, that)
+
       def view: Exp[TraversableView[T, Repr]] = View(this.t)
+
+      def groupBy[K](f: Exp[T] => Exp[K]): Exp[Map[K, Repr]] =
+        GroupBy(this.t, FuncExp(f))
     }
 
     trait TraversableViewLikeOps[
@@ -325,8 +333,9 @@ object SimpleOpenEncoding {
     def testTraversable() {
       moreTests()
 
-      val a: Exp[Traversable[Int]] = Seq(1, 2, 3, 5)
-      val a2 = Seq(1, 2, 3, 5).asQueryable
+      val data = Seq(1, 2, 2, 3, 5, 5, 3)
+      val a: Exp[Traversable[Int]] = data
+      val a2 = data.asQueryable
       assertType[Exp[Traversable[Int]]](a2)
       val b1 = a.map(_ + 1)
       val b2 = a2.map(1 + _)
@@ -334,8 +343,11 @@ object SimpleOpenEncoding {
       showInterp("b1", b1)
       showInterp("b2", b2)
       showInterp("b3", b3)
+      val b4 = a groupBy identity
+      assertType[Exp[Map[Int, Traversable[Int]]]](b4)
+      showInterp("b4", b4)
 
-      val c: Exp[Map[Int, Int]] = Map(1 -> 2, 3 -> 4)
+      val c: Exp[Map[Int, Int]] = Map(1 -> 2, 2 -> 4, 3 -> 4)
       showInterp("c", c)
       // Type annotations on the results of map below are not needed to get the correct result, they just check that the
       // result has the correct type.
@@ -364,6 +376,10 @@ object SimpleOpenEncoding {
       val d6 = d5 withFilter (ab => (ab._1 + ab._2 <= 4))
       assertType[Exp[FilterMonadic[(Int, Int), Map[Int, Int]]]](d6)
       showInterp("d6", d6)
+
+      val d7 = c groupBy (ab => ab._2)
+      assertType[Exp[Map[Int, Map[Int, Int]]]](d7)
+      showInterp("d7", d7)
 
       testTraversableView(a)
       testInadequate(c)
