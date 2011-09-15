@@ -158,6 +158,13 @@ object SimpleOpenEncoding {
     class TraversableViewOps[T](val t: Exp[TraversableView[T, Traversable[T]]])
       extends TraversableViewLikeOps[T, Traversable[T], TraversableView[T, Traversable[T]]]
   }
+
+  /**
+   * A goal of this new encoding is to be able to build expression trees (in particular, query trees) producing
+   * different collections; once we can represent query trees producing maps and maintain them incrementally, view
+   * maintenance can subsume index update.
+   */
+
   trait MapOps {
     this: OpsExpressionTree with TraversableOps =>
     class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Map[K, V]] {
@@ -170,26 +177,12 @@ object SimpleOpenEncoding {
     }
   }
 
-  /**
-   * A goal of this new encoding is to be able to build expression trees (in particular, query trees) producing
-   * different collections; once we can represent query trees producing maps and maintain them incrementally, view
-   * maintenance can subsume index update.
-   */
-  trait MapOpsExpressionTree {
-    this: OpsExpressionTree =>
-
-    // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
-    case class MapOpForMap[K, V, U, That](base: Exp[Map[K, V]], f: Exp[((K, V)) => U])(implicit c: CanBuildFrom[Map[K, V], U, That]) extends Exp[That] {
-      override def interpret = base.interpret map f.interpret
-    }
-  }
-
   trait SimpleOpenEncodingBase extends OpsExpressionTree with NumOpsExps with NumOpsExpressionTree with TraversableOps with MapOps /*with TraversableOpsExps with TraversableOpsExpressionTree*/ {
     implicit def toExp[T](t: T): Exp[T] = Const(t)
 
     implicit def expToNumExp[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
     implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
-    implicit def tToNumExp[T : Numeric](t: T): NumOps[T] = {
+    implicit def tToNumExp[T: Numeric](t: T): NumOps[T] = {
       //toExp(t)
       expToNumExp(t) //Doesn't work, unless we make NumOps not extends Exp. It should expand to:
       //expToNumExp(toExp(t)) //but it does not, because also the next expansion typechecks:

@@ -29,6 +29,8 @@ case class Reset() extends Message[Nothing]
 // previous one alive. We can allow only the original collection to be GC-ed, not the intermediate message transformers.
 // Hence the first-level intermediate nodes must use a weak reference to the original collection; other nodes have just
 // a strong reference.
+// XXX: a further problem is that if the original collection is GC-ed, it makes no more sense to keep the intermediate
+// nodes in memory. We need to listen with a referencequeue on the original collection.
 
 //Script nodes can be useful as a space optimization for Seq[Message[T]]; however, types become less perspicuous.
 //case class Script[T](changes: Message[T]*) extends Message[T]
@@ -62,9 +64,9 @@ trait Publisher[Evt] {
 
   protected def selfAsPub: Pub = this.asInstanceOf[Pub]
   //XXX: If Pub were a (covariant) type parameter, then we could just write (I expect) selfAsPub: Pub => at the beginning, instead of
-  //such an ugly cast
+  //such an ugly cast. However, Pub appears in Subscriber in a contravariant position, so that's not so easily possible.
 
-  //XXX: I believe that we need to filter out duplicate elements - I'd need to extend We
+  //XXX: I believe that we need to filter out duplicate elements - I'd need a WeakHashSet.
   var subscribers: Set[EqWeakReference[Sub]] = HashSet()
   def subscribe(sub: Sub) {
     subscribers += new EqWeakReference(sub)

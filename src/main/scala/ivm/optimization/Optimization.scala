@@ -14,7 +14,6 @@ object FuncExpIdentity {
 }
 
 class Optimization {
-  //Note on the type signature: I commented out type parameters which the type checker does not check.
   private def buildJoinTyped[T, S, TKey, TResult](fmColl: QueryReifier[T], wfColl: QueryReifier[S],
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
                                                   moFun: FuncExp[S, TResult], fmFun: FuncExp[T, QueryReifier[TResult]],
