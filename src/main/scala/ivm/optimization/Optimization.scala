@@ -81,6 +81,7 @@ class Optimization {
     idx.contains(Optimization.normalize(FuncExp.makefun(l, hx)).asInstanceOf[FuncExp[Any, Any]])
   }
 
+  //XXX: still always returns None.
   private def getPath[T, S](col: QueryReifier[T]): Option[(Path[(S, _), T], Traversable[S]) /*forSome {type S}*/ ] = {
     col match {
       case f: FlatMap[q, _ /*T*/ ] => {
