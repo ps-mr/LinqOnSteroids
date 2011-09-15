@@ -361,7 +361,7 @@ object SimpleOpenEncoding {
       assertType[Exp[FilterMonadic[(Int, Int), Map[Int, Int]]]](d5)
       showInterp("d5", d5)
 
-      val d6 = expToFilterMonExp(d5) withFilter (ab => (ab._1 + ab._2 <= 4))
+      val d6 = d5 withFilter (ab => (ab._1 + ab._2 <= 4))
       assertType[Exp[FilterMonadic[(Int, Int), Map[Int, Int]]]](d6)
       showInterp("d6", d6)
 
