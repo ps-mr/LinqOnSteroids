@@ -81,9 +81,12 @@ object SimpleOpenEncoding {
   trait TraversableOps {
     this: OpsExpressionTree =>
 
-    /* Lift faithfully the complete functional part of the FilterMonadic trait - i.e. all methods excluding foreach. */
-    trait FilterMonadicOps[T, Repr <: FilterMonadic[T, Repr]] {
-      val t: Exp[Repr]
+    /* Lift faithfully the complete functional part of the FilterMonadic trait - i.e. all methods excluding foreach.
+     * This trait is used both for concrete collections of type Repr <: FilterMonadic[T, Repr] (This = Repr), but also for results
+     * of withFilter, which have type <: FilterMonadic[T, Repr] but not <: Repr (This = FilterMonadic[T, Repr]).
+     */
+    trait FilterMonadicOpsLike[T, Repr <: FilterMonadic[T, Repr], This <: FilterMonadic[T, Repr]] {
+      val t: Exp[This]
       def withFilter(f: Exp[T] => Exp[Boolean]): Exp[FilterMonadic[T, Repr]] =
         WithFilter(this.t, FuncExp(f))
       def map[U, That](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
@@ -91,21 +94,24 @@ object SimpleOpenEncoding {
       def flatMap[U, That](f: Exp[T] => Exp[GenTraversableOnce[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         FlatMap(this.t, FuncExp(f))
 
-      case class FlatMap[+U, That](base: Exp[Repr], f: Exp[T => GenTraversableOnce[U]])
+      // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
+      case class FlatMap[+U, That](base: Exp[This], f: Exp[T => GenTraversableOnce[U]])
                                   (implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
         override def interpret = base.interpret flatMap f.interpret
       }
 
-      case class MapOp[+U, That](base: Exp[Repr], f: Exp[T => U])(implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
+      case class MapOp[+U, That](base: Exp[This], f: Exp[T => U])(implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
         override def interpret = base.interpret map f.interpret
       }
 
-      case class WithFilter(base: Exp[Repr], f: Exp[T => Boolean]) extends Exp[FilterMonadic[T, Repr]] {
+      case class WithFilter(base: Exp[This], f: Exp[T => Boolean]) extends Exp[FilterMonadic[T, Repr]] {
         override def interpret = base.interpret withFilter f.interpret
       }
     }
+    class FilterMonadicOps[T, Repr <: FilterMonadic[T, Repr]](val t: Exp[FilterMonadic[T, Repr]])
+      extends FilterMonadicOpsLike[T, Repr, FilterMonadic[T, Repr]]
 
-    trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOps[T, Repr] {
+    trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOpsLike[T, Repr, Repr] {
       case class Filter(base: Exp[Repr], f: Exp[T => Boolean]) extends Exp[Repr] {
         override def interpret = base.interpret filter f.interpret
       }
@@ -202,7 +208,14 @@ object SimpleOpenEncoding {
 
     implicit def expToTravViewExp2[T](t: Exp[TraversableView[T, Traversable[_]]]): TraversableViewOps[T] = expToTravViewExp(
       t.asInstanceOf[Exp[TraversableView[T, Traversable[T]]]])
+    //XXX
     implicit def tToTravViewExp2[T](t: TraversableView[T, Traversable[_]]): TraversableViewOps[T] = expToTravViewExp2(t)
+
+    implicit def expToFilterMonExp[T, Repr <: FilterMonadic[T, Repr]](t: Exp[FilterMonadic[T, Repr]]):
+      FilterMonadicOps[T, Repr] = new FilterMonadicOps(t)
+    implicit def tToFilterMonExp[T, Repr <: FilterMonadic[T, Repr]](t: FilterMonadic[T, Repr]):
+      FilterMonadicOps[T, Repr] = expToFilterMonExp(t)
+    //implicit def expToFilterMonExp[Repr <: FilterMonadic[T, Repr], T](t: Exp[Repr]): FilterMonadicOpsLike[T, Repr] = new FilterMonadicOps(t)
 
     implicit def expToMapExp[K, V](t: Exp[Map[K, V]]): MapOps[K, V] = new MapOps(t)
     implicit def tToMapExp[K, V](t: Map[K, V]): MapOps[K, V] =
@@ -350,6 +363,14 @@ object SimpleOpenEncoding {
       val d4 = c filter (ab => (ab._1 + ab._2 <= 4))
       assertType[Exp[Map[Int, Int]]](d4)
       showInterp("d4", d4)
+
+      val d5 = c withFilter (ab => (ab._1 + ab._2 <= 4))
+      assertType[Exp[FilterMonadic[(Int, Int), Map[Int, Int]]]](d5)
+      showInterp("d5", d5)
+
+      val d6 = expToFilterMonExp(d5) withFilter (ab => (ab._1 + ab._2 <= 4))
+      assertType[Exp[FilterMonadic[(Int, Int), Map[Int, Int]]]](d6)
+      showInterp("d6", d6)
 
       testTraversableView(a)
       testInadequate(c)
