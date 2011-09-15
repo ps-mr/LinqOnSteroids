@@ -43,11 +43,13 @@ case class Reset() extends Message[Nothing]
 /**
  * Extends WeakReference with working equality comparison
  */
-class EqWeakReference[+T <: AnyRef](t: T) extends WeakReference[T](t: T) {
+class EqWeakReference[+T >: Null <: AnyRef](t: T) extends WeakReference[T](t: T) {
   override def equals(that: Any) = {
     that match {
-      case x: AnyRef if x == this => true
-      case x: EqWeakReference[_] => get eq (x get)
+      case x: AnyRef if x eq this => true
+      case x: EqWeakReference[_] =>
+        def getO[S >: Null <: AnyRef](x: WeakReference[S]): S = x.get.orNull
+        getO(this) eq getO(x)
       //XXX: use eq or equals? equals makes more sense in general, but eq makes more sense for our use case.
       case _ => super.equals(that)
     }
