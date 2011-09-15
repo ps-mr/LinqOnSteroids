@@ -2,6 +2,7 @@ package ivm.expressiontree
 
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import org.junit.Test
+import ref.WeakReference
 
 /**
 * User: pgiarrusso
@@ -20,5 +21,8 @@ class EqWeakReferenceTests extends JUnitSuite with ShouldMatchersForJUnit {
     nullRef should (not (be === a))
     val d = new EqWeakReference(null)
     nullRef should (be === d)
+    val e = new WeakReference(o)
+    a should (not (be === e))
+    e should (not (be === a))
   }
 }

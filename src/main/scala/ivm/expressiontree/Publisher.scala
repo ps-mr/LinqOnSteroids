@@ -45,17 +45,22 @@ case class Reset() extends Message[Nothing]
 /**
  * Extends WeakReference with working equality comparison
  */
-class EqWeakReference[+T >: Null <: AnyRef](t: T) extends WeakReference[T](t: T) {
-  override def equals(that: Any) = {
-    that match {
-      case x: AnyRef if x eq this => true
-      case x: EqWeakReference[_] =>
+class EqWeakReference[+T >: Null <: AnyRef](t: T) extends WeakReference[T](t: T) with Equals {
+  override def canEqual(that: Any) = that.isInstanceOf[EqWeakReference[_]]
+  override def equals(other: Any) =
+    other match {
+      case that: AnyRef if that eq this => true
+      case that: EqWeakReference[_] =>
         def getO[S >: Null <: AnyRef](x: WeakReference[S]): S = x.get.orNull
-        getO(this) eq getO(x)
-      //XXX: use eq or equals? equals makes more sense in general, but eq makes more sense for our use case.
-      case _ => super.equals(that)
+        (that canEqual this) &&
+          //XXX: use eq or equals? equals makes more sense in general, but eq makes more sense for our use case.
+          (getO(this) eq getO(that))
+      case _ =>
+        false
+        // There is a definition coming from Proxy; however Proxy is used around java.lang.ref.WeakReference, which
+        // uses identity comparison.
+        //super.equals(other)
     }
-  }
 }
 
 trait Publisher[Evt] {
