@@ -94,17 +94,21 @@ class Optimization {
     }
   }
 
+  def canUseIndex[T, U](col: QueryReifier[T], h: FuncExp[T, Boolean], l: Exp[U], r: Exp[U]) =
+    !l.isOrContains(h.x) && r.freeVars == Set(h.x) &&
+      hasIndex(col.indexes.asInstanceOf[scala.collection.mutable.Map[FuncExp[Any, Any], HashIndex[Any, Any]]], h.x, r)
+
+  def buildIndexAt[T, U](col: QueryReifier[T], h: FuncExp[T, Boolean], l: Exp[U], r: Exp[U]) =
+    IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(r, h.x)).asInstanceOf[FuncExp[Any, Any]]).asInstanceOf[HashIndex[Any, Any]], l)
+
   val indexer: Exp[_] => Exp[_] = (e) => e match {
     case WithFilter(col, h @ FuncExpBody(Eq(l, r))) =>
-        if ((!(l.isOrContains(h.x)))
-          && (r.freeVars == Set(h.x))
-          && hasIndex(col.indexes.asInstanceOf[scala.collection.mutable.Map[FuncExp[Any, Any], HashIndex[Any, Any]]], h.x, r))
-          IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(r, h.x)).asInstanceOf[FuncExp[Any, Any]]).asInstanceOf[HashIndex[Any, Any]], l)
-        else if ((!(r.isOrContains(h.x)))
-          && (l.freeVars == Set(h.x))
-          && hasIndex(col.indexes.asInstanceOf[scala.collection.mutable.Map[FuncExp[Any, Any], HashIndex[Any, Any]]], h.x, l))
-          IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(l, h.x)).asInstanceOf[FuncExp[Any, Any]]).asInstanceOf[HashIndex[Any, Any]], r)
-        else e
+      if (canUseIndex(col, h, l, r))
+        buildIndexAt(col, h, l, r)
+      else if (canUseIndex(col, h, r, l))
+        buildIndexAt(col, h, r, l)
+      else
+        e
     case _ => e
   }
 }
