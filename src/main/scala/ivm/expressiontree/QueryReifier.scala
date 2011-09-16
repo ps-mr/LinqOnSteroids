@@ -3,7 +3,6 @@ package expressiontree
 
 import scala.collection.mutable.HashMap
 import scala.collection.mutable
-import indexing.HashIndex
 import optimization.Optimization
 
 /*
@@ -42,7 +41,10 @@ trait QueryReifierBase[T] extends Exp[QueryReifierBase[T]]  {
                            innerKeySelector: Exp[S]=>Exp[TKey],
                            resultSelector: Exp[(T,S)] => Exp[TResult]): QueryReifierBase[TResult]
     = Join[T,S,TKey,TResult](this, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
+
+  def groupBy[S](f: Exp[T] => Exp[S]) : MapReifier[S,T] = GroupBy(this,FuncExp(f))
 }
+
 
 // Variant of QueryReifier, which also sends event to derived collections. Note that this is not reified!
 // XXX: we forget to add mutation operations. But see Queryable and QueryableTest. So make this a trait which is mixed in
