@@ -27,9 +27,6 @@ object SimpleOpenEncoding {
       def interpret = f.interpret()(t.interpret)
       override def copy(f: Exp[T => U], t: Exp[T]) = App(f, t)
     }
-    object Exp {
-      def app[T, U](f: T => U, t: Exp[T]): Exp[U] = App(Const(f), t)
-    }
 
     implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A,B](pair._1, pair._2)
 
@@ -376,15 +373,12 @@ object SimpleOpenEncoding {
     def main(args: Array[String]) {
       val a: Exp[Int] = 1
       val b = a + 2
-      //Here we type inference fails:
-      val c = Exp.app((x: Int) => x + 1, 1)
-      //With smarter signatures, it works:
+      //With a smart signatures, type inference works:
       val c2 = withExp(1)(_ + 1)
       val c3 = withExpFunc(1)(_ + 1)
 
       println(a)
       println(b)
-      println(c)
       println(c2)
       println(c3)
       testTraversable()
