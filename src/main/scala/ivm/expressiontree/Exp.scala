@@ -21,8 +21,8 @@ trait Exp[+T] {
     val newself = genericConstructor(transformedChilds)
     transformer(newself).asInstanceOf[Exp[T]]
   }
-  private[ivm] def map[S](mapper: (Exp[_], Seq[S]) => S): S = {
-    val mappedChilds = for (c <- children) yield c.map(mapper)
+  private[ivm] def treeMap[S](mapper: (Exp[_], Seq[S]) => S): S = {
+    val mappedChilds = for (c <- children) yield c.treeMap(mapper)
     mapper(this, mappedChilds)
   }
   private[ivm] def containsExp[S](e: Exp[S]): Boolean = {
@@ -44,7 +44,7 @@ trait Exp[+T] {
       case fe@FuncExp(_) => c.fold(Set.empty)(_ union _).filter(!_.equals(fe.x))
       case _ => c.fold(Set.empty)(_ union _)
     }
-    map(mapper)
+    treeMap(mapper)
   }
 
   //Methods for the clients of the library, rather than for the implementations.
