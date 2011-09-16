@@ -61,6 +61,7 @@ class EqWeakReference[+T >: Null <: AnyRef](t: T) extends WeakReference[T](t: T)
         // uses identity comparison.
         //super.equals(other)
     }
+  override def hashCode() = get.hashCode
 }
 
 trait Publisher[Evt] {
