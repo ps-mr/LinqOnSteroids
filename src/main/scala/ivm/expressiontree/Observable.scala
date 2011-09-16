@@ -40,21 +40,54 @@ trait ObservableBuffer[T] extends Buffer[T] with MsgSeqPublisher[T] {
 // to forward them.
 trait ObservableSet[T] extends Set[T] with MsgSeqPublisher[T] {
   type Pub <: ObservableSet[T]
+  //XXX: we might want to make this less ad-hoc
+  private[this] var silenceNotifications = false
   abstract override def clear() = {
     //publish(Script(this.map(Remove(_))))
-    publish(Reset())
+    if (!silenceNotifications)
+      publish(Reset())
     super.clear()
   }
   abstract override def += (el: T) = {
     // If we `Include` an element twice, we'll need to `Remove` it twice as well before e.g. the final IncrementalResult
     // instance realizes that it should disappear.
-    if (!this(el))
+    if (!silenceNotifications && !this(el))
       publish(Include(el))
     super.+=(el)
   }
+
+  //To get bulk updates, we want to override ++= as well.
+  abstract override def ++= (xs: TraversableOnce[T]) = {
+    //We need to prefilter elements, to avoid Include'ing elements which are
+    //already there.
+    val newEls = (for (x <- xs; if !(this contains x)) yield x).toSeq
+    publish(newEls map (Include(_)))
+    assert(silenceNotifications == false)
+    //super.++= is defined in terms of +=, so we want to prevent += from
+    //publishing updates.
+    silenceNotifications = true
+    val res = super.++=(newEls)
+    silenceNotifications = false
+    res
+  }
+  
   abstract override def -= (el: T) = {
-    if (this(el))
+    if (!silenceNotifications && this(el))
       publish(Remove(el))
     super.-=(el)
+  }
+
+  abstract override def --= (xs: TraversableOnce[T]) = {
+    //We need to prefilter elements, to avoid Remove'ing elements which are
+    //already there.
+    val newEls = (for (x <- xs; if this contains x) yield x).toSeq
+    publish(newEls map (Remove(_)))
+    assert(silenceNotifications == false)
+    //super.--= is defined in terms of -=, so we want to prevent -= from
+    //publishing updates.
+    silenceNotifications = true
+    val res = super.--=(newEls)
+    silenceNotifications = false
+    res
   }
 }
