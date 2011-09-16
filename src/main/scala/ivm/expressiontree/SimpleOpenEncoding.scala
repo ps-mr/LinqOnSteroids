@@ -17,31 +17,16 @@ import collection.{GenTraversableOnce, TraversableViewLike, IterableView, Traver
  * we show here.
  */
 object SimpleOpenEncoding {
-  import OpenEncoding.{ExpModule, BaseExprTree}
-
-  trait OpsExpressionTree extends BaseExprTree with ExpModule {
-    case class Var(x: String) extends Exp[Nothing] {
-      def interpret = throw new RuntimeException("interpret on var")
+  trait OpsExpressionTree {
+    //Not exactly sure what I should use to represent applications.
+    //Having explicit App nodes for application, however, can be useful to represent application instead of computing it,
+    //since computing it means inlining and can replicate terms.
+    case class App[T, U](f: Exp[T => U], t: Exp[T]) extends BinaryOpExp[T => U, T, U](f, t) {
+      def interpret = f.interpret()(t.interpret)
+      override def copy(f: Exp[T => U], t: Exp[T]) = App(f, t)
     }
-
-    case class FuncExp[-T, +U](f: Exp[T] => Exp[U]) extends Exp[T => U] {
-      override def interpret = t => f(Const(t)).interpret
-      override def toString = {
-        val name = "x" //XXX
-        "%s => (%s)" format (name, f(Var(name)))
-      }
-    }
-
-    case class Pair[A, B](a: Exp[A], b: Exp[B]) extends Exp[(A, B)] {
-      def interpret = (a.interpret, b.interpret)
-    }
-
-    case class Proj1[A, B](p: Exp[(A, B)]) extends Exp[A] {
-      def interpret = p.interpret._1
-    }
-
-    case class Proj2[A, B](p: Exp[(A, B)]) extends Exp[B] {
-      def interpret = p.interpret._2
+    object Exp {
+      def app[T, U](f: T => U, t: Exp[T]): Exp[U] = App(Const(f), t)
     }
   }
 
@@ -53,7 +38,6 @@ object SimpleOpenEncoding {
    */
 
   trait NumOpsExps {
-    this: NumOpsExpressionTree with ExpModule =>
     class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
       def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
     }
@@ -62,43 +46,30 @@ object SimpleOpenEncoding {
     }
   }
 
-  trait NumOpsExpressionTree {
-    this: NumOpsExps with ExpModule =>
-    //Root node for all binary, associative and commutative operations. The
-    //intuition is that many operations (including optimizations) might apply
-    //for all of those - e.g. expression normalization.
-    abstract class CommutativeOp[T](a: Exp[T], b: Exp[T]) extends Exp[T]
-
-    case class Plus[T](a: Exp[T], b: Exp[T])(implicit val isNum: Numeric[T]) extends CommutativeOp(a, b) {
-      def interpret =
-        isNum.plus(a.interpret, b.interpret)
-    }
-    case class LEq[T](x: Exp[T], y: Exp[T])(implicit val ord: Ordering[T]) extends Exp[Boolean] {
-      def interpret = ord.lteq(x.interpret, y.interpret)
-    }
-  }
-
   trait TraversableOps {
     this: OpsExpressionTree =>
     // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
     case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
                        This <: FilterMonadic[T, Repr],
-                       +U, That](base: Exp[This], f: Exp[T => GenTraversableOnce[U]])
-                                (implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
-      override def interpret = base.interpret flatMap f.interpret
+                       U, That](base: Exp[This], f: Exp[T => GenTraversableOnce[U]])
+                                (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOpExp[This, T => GenTraversableOnce[U], That](base, f) {
+      override def interpret = base.interpret flatMap f.interpret()
+      override def copy(base: Exp[This], f: Exp[T => GenTraversableOnce[U]]) = FlatMap[T, Repr, This, U, That](base, f)
     }
 
     case class MapOp[T, Repr <: FilterMonadic[T, Repr],
                      This <: FilterMonadic[T, Repr],
-                     +U, That](base: Exp[This], f: Exp[T => U])
-                              (implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
-      override def interpret = base.interpret map f.interpret
+                     U, That](base: Exp[This], f: Exp[T => U])
+                              (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOpExp[This, T => U, That](base, f) {
+      override def interpret = base.interpret map f.interpret()
+      override def copy(base: Exp[This], f: Exp[T => U]) = MapOp[T, Repr, This, U, That](base, f)
     }
 
     case class WithFilter[T, Repr <: FilterMonadic[T, Repr],
                           This <: FilterMonadic[T, Repr]](base: Exp[This],
-                                                          f: Exp[T => Boolean]) extends Exp[FilterMonadic[T, Repr]] {
-      override def interpret = base.interpret withFilter f.interpret
+                                                          f: Exp[T => Boolean]) extends BinaryOpExp[This, T => Boolean, FilterMonadic[T, Repr]](base, f) {
+      override def interpret = base.interpret withFilter f.interpret()
+      override def copy(base: Exp[This], f: Exp[T => Boolean]) = WithFilter[T, Repr, This](base, f)
     }
 
     /* Lift faithfully the complete functional part of the FilterMonadic trait - i.e. all methods excluding foreach.
@@ -118,21 +89,25 @@ object SimpleOpenEncoding {
       extends FilterMonadicOpsLike[T, Repr, FilterMonadic[T, Repr]]
 
     trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOpsLike[T, Repr, Repr] {
-      case class Filter(base: Exp[Repr], f: Exp[T => Boolean]) extends Exp[Repr] {
-        override def interpret = base.interpret filter f.interpret
+      case class Filter(base: Exp[Repr], f: Exp[T => Boolean]) extends BinaryOpExp[Repr, T => Boolean, Repr](base, f) {
+        override def interpret = base.interpret filter f.interpret()
+        override def copy(base: Exp[Repr], f: Exp[T => Boolean]) = Filter(base, f)
       }
 
       case class Union[U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
-                                    (implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
+                                    (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOpExp[Repr, Traversable[U], That](base, that) {
         override def interpret = base.interpret ++ that.interpret
+        override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union(base, that)
       }
 
-      case class View(base: Exp[Repr]) extends Exp[TraversableView[T, Repr]] {
+      case class View(base: Exp[Repr]) extends UnaryOpExp[Repr, TraversableView[T, Repr]](base) {
         override def interpret = base.interpret.view
+        override def copy(base: Exp[Repr]) = View(base)
       }
 
-      case class GroupBy[K](base: Exp[Repr], f: FuncExp[T, K]) extends Exp[Map[K, Repr]] {
-        override def interpret = base.interpret groupBy f.interpret
+      case class GroupBy[K](base: Exp[Repr], f: Exp[T => K]) extends BinaryOpExp[Repr, T => K, Map[K, Repr]](base, f) {
+        override def interpret = base.interpret groupBy f.interpret()
+        override def copy(base: Exp[Repr], f: Exp[T => K]) = GroupBy(base, f)
       }
 
       def filter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
@@ -153,8 +128,9 @@ object SimpleOpenEncoding {
         ViewColl <: Repr with TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
       extends TraversableLikeOps[T, ViewColl]
     {
-      case class Force(base: Exp[ViewColl]) extends Exp[Traversable[T]] {
+      case class Force(base: Exp[ViewColl]) extends UnaryOpExp[ViewColl, Traversable[T]](base) {
         override def interpret = base.interpret.force
+        override def copy(base: Exp[ViewColl]) = Force(base)
       }
 
       def force = Force(this.t)
@@ -162,8 +138,10 @@ object SimpleOpenEncoding {
       override def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
         new WithFilterView(this.t, FuncExp(f))
 
-      class WithFilterView(base: Exp[ViewColl], f: Exp[T => Boolean]) extends WithFilter[T, ViewColl, ViewColl](base, f) with Exp[ViewColl] {
-        override def interpret = base.interpret filter f.interpret
+      class WithFilterView(base: Exp[ViewColl], f: Exp[T => Boolean]) extends WithFilter[T,
+        ViewColl, ViewColl](base, f) with BinaryOpExpTrait[ViewColl, T => Boolean, ViewColl] {
+        override def interpret = base.interpret filter f.interpret()
+        override def copy(base: Exp[ViewColl], f: Exp[T => Boolean]) = new WithFilterView(base, f)
       }
     }
 
@@ -191,7 +169,7 @@ object SimpleOpenEncoding {
     }
   }
 
-  trait SimpleOpenEncodingBase extends OpsExpressionTree with NumOpsExps with NumOpsExpressionTree with TraversableOps with MapOps /*with TraversableOpsExps with TraversableOpsExpressionTree*/ {
+  trait SimpleOpenEncodingBase extends OpsExpressionTree with NumOpsExps with TraversableOps with MapOps {
     implicit def toExp[T](t: T): Exp[T] = Const(t)
 
     implicit def expToNumExp[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
