@@ -174,12 +174,7 @@ object SimpleOpenEncoding {
 
     implicit def expToNumExp[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
     implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
-    implicit def tToNumExp[T: Numeric](t: T): NumOps[T] = {
-      //toExp(t)
-      expToNumExp(t) //Doesn't work, unless we make NumOps not extends Exp. It should expand to:
-      //expToNumExp(toExp(t)) //but it does not, because also the next expansion typechecks:
-      //expToNumExp(tToNumExp(t))
-    }
+    implicit def tToNumExp[T: Numeric](t: T): NumOps[T] = expToNumExp(t)
     implicit def tToOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
 
     implicit def expToTravExp[T](t: Exp[Traversable[T]]): TraversableOps[T] = new TraversableOps(t)
