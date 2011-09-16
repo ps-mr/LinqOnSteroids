@@ -6,7 +6,6 @@ import optimization.Optimization
 
 import collection.{mutable, TraversableView}
 import mutable.HashMap
-import indexing.Index
 
 /**
  * User: pgiarrusso
@@ -103,10 +102,6 @@ object TravLifter {
     def asIndexable = new QueryReifier[T](underlying)
   }
 
-  class HashIndex[T,S](it: Exp[Traversable[T]], f: FuncExp[T, S]) extends HashMap[S, Traversable[T]] with Index[S, Traversable[T]] {
-    this ++= it.interpret().groupBy(f.interpret())
-  }
-
   //XXX better define the usage.
   case class QueryReifier[T](t: Exp[Traversable[T]]) extends UnaryOpExp[Traversable[T], Traversable[T]](t) with TraversableOps[T] {
     //Bad idea - the QueryReifier node needs to be part of the expression tree.
@@ -114,14 +109,5 @@ object TravLifter {
     override val underlying = this
     override def copy(t: Exp[Traversable[T]]) = new QueryReifier(t)
     override def interpret() = t.interpret()
-
-    val indexes: mutable.Map[FuncExp[T,_],HashIndex[T,_]] = HashMap()
-    def addIndex[S](f: FuncExp[T,S]) {
-      val nf = Optimization.normalize(f).asInstanceOf[FuncExp[T,S]]
-      indexes += ((nf, new HashIndex(this,nf)))
-    }
-    def addIndex[S](f: Exp[T] => Exp[S]) {
-      addIndex(FuncExp(f))
-    }
   }
 }

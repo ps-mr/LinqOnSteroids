@@ -42,15 +42,6 @@ trait QueryReifierBase[T] extends Exp[QueryReifierBase[T]]  {
                            innerKeySelector: Exp[S]=>Exp[TKey],
                            resultSelector: Exp[(T,S)] => Exp[TResult]): QueryReifierBase[TResult]
     = Join[T,S,TKey,TResult](this, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
-
-  val indexes : mutable.Map[FuncExp[T,_],HashIndex[T,_]] = HashMap()
-  def addIndex[S](f: FuncExp[T,S]) {
-    val nf = Optimization.normalize(f).asInstanceOf[FuncExp[T,S]]
-    indexes += ((nf, new HashIndex(this,nf)))
-  }
-  def addIndex[S](f: Exp[T] => Exp[S]) {
-    addIndex(FuncExp(f))
-  }
 }
 
 // Variant of QueryReifier, which also sends event to derived collections. Note that this is not reified!

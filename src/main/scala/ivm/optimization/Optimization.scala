@@ -76,41 +76,6 @@ class Optimization {
       case _ => e
     }
 
-  private def hasIndex(idx: scala.collection.mutable.Map[FuncExp[Any, Any], HashIndex[Any, Any]], hx: Var, l: Exp[_]): Boolean = {
-    idx.contains(Optimization.normalize(FuncExp.makefun(l, hx)).asInstanceOf[FuncExp[Any, Any]])
-  }
-
-  //XXX: still always returns None.
-  private def getPath[T, S](col: QueryReifier[T]): Option[(Path[(S, _), T], Traversable[S]) /*forSome {type S}*/ ] = {
-    col match {
-      case f: FlatMap[q, _ /*T*/ ] => {
-        getPath[q, S](f.col) match {
-          case Some((a, b)) => None
-          case _ => None
-        }
-      }
-
-      case _ => None
-    }
-  }
-
-  def canUseIndex[T, U](col: QueryReifier[T], h: FuncExp[T, Boolean], l: Exp[U], r: Exp[U]) =
-    !l.isOrContains(h.x) && r.freeVars == Set(h.x) &&
-      hasIndex(col.indexes.asInstanceOf[scala.collection.mutable.Map[FuncExp[Any, Any], HashIndex[Any, Any]]], h.x, r)
-
-  def buildIndexAt[T, U](col: QueryReifier[T], h: FuncExp[T, Boolean], l: Exp[U], r: Exp[U]) =
-    IndexAt(col.indexes(Optimization.normalize(FuncExp.makefun(r, h.x)).asInstanceOf[FuncExp[Any, Any]]).asInstanceOf[HashIndex[Any, Any]], l)
-
-  val indexer: Exp[_] => Exp[_] = (e) => e match {
-    case WithFilter(col, h @ FuncExpBody(Eq(l, r))) =>
-      if (canUseIndex(col, h, l, r))
-        buildIndexAt(col, h, l, r)
-      else if (canUseIndex(col, h, r, l))
-        buildIndexAt(col, h, r, l)
-      else
-        e
-    case _ => e
-  }
 }
 
 
@@ -120,8 +85,6 @@ object Optimization {
   def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(opt.cartProdToJoin)
 
   def optimize[T](exp: Exp[T]): Exp[T] = optimizeCartProdToJoin(exp)
-
-  def optimizeIndexing[T](exp: Exp[T]): Exp[T] = exp.transform(opt.indexer)
 
   def normalize[T](exp: Exp[T]): Exp[T] = exp.transform(opt.normalizer)
 
