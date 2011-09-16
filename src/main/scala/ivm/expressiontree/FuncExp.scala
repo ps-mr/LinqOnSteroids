@@ -1,5 +1,14 @@
 package ivm.expressiontree
 
+// Not exactly sure what I should use to represent applications, but this is the standard App node, well known from
+// encodings of the STLC (simply typed lambda calculus).
+//Having explicit App nodes for application can be useful to represent application instead of computing it,
+//since computing it means inlining and can replicate terms.
+case class App[T, U](f: Exp[T => U], t: Exp[T]) extends BinaryOpExp[T => U, T, U](f, t) {
+  def interpret = f.interpret()(t.interpret)
+  override def copy(f: Exp[T => U], t: Exp[T]) = App(f, t)
+}
+
 case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends Exp[S => T] {
   import FuncExp._
   val x = gensym()

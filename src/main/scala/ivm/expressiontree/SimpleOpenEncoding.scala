@@ -20,14 +20,6 @@ object SimpleOpenEncoding {
   object OpsExpressionTree {
     implicit def toExp[T](t: T): Exp[T] = Const(t)
 
-    //Not exactly sure what I should use to represent applications.
-    //Having explicit App nodes for application, however, can be useful to represent application instead of computing it,
-    //since computing it means inlining and can replicate terms.
-    case class App[T, U](f: Exp[T => U], t: Exp[T]) extends BinaryOpExp[T => U, T, U](f, t) {
-      def interpret = f.interpret()(t.interpret)
-      override def copy(f: Exp[T => U], t: Exp[T]) = App(f, t)
-    }
-
     implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A,B](pair._1, pair._2)
 
     //To "unlift" a pair, here's my first solution:
