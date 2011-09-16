@@ -17,7 +17,7 @@ import collection.{GenTraversableOnce, TraversableViewLike, IterableView, Traver
  * we show here.
  */
 object SimpleOpenEncoding {
-  trait OpsExpressionTree {
+  object OpsExpressionTree {
     implicit def toExp[T](t: T): Exp[T] = Const(t)
 
     //Not exactly sure what I should use to represent applications.
@@ -61,8 +61,8 @@ object SimpleOpenEncoding {
    * then specific ones Pi T: Numeric. Exp[T] => NumExp[T]; Pi T. Exp[Traversable[T]] => TraversableExp[T]
    */
 
-  trait NumOpsExps {
-    this: OpsExpressionTree =>
+  object NumOpsExps {
+    import OpsExpressionTree._
     class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
       def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
     }
@@ -76,8 +76,8 @@ object SimpleOpenEncoding {
     implicit def tToOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
   }
 
-  trait TraversableOps {
-    this: OpsExpressionTree =>
+  object TraversableOps {
+    import OpsExpressionTree._
     // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
     case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
                        This <: FilterMonadic[T, Repr],
@@ -207,8 +207,9 @@ object SimpleOpenEncoding {
    * maintenance can subsume index update.
    */
 
-  trait MapOps {
-    this: OpsExpressionTree with TraversableOps =>
+  object MapOps {
+    import OpsExpressionTree._
+    import TraversableOps._
     class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Map[K, V]] {
       /*
       //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
@@ -223,7 +224,12 @@ object SimpleOpenEncoding {
       expToMapExp(t)
   }
 
-  object SimpleOpenEncoding extends OpsExpressionTree with NumOpsExps with TraversableOps with MapOps {
+  object SimpleOpenEncoding {
+    import OpsExpressionTree._
+    import NumOpsExps._
+    import TraversableOps._
+    import MapOps._
+
     class ToQueryable[T](t: Traversable[T]) {
       def asQueryable: Exp[Traversable[T]] = Const(t)
     }
