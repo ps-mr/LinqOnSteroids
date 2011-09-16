@@ -18,6 +18,8 @@ import collection.{GenTraversableOnce, TraversableViewLike, IterableView, Traver
  */
 object SimpleOpenEncoding {
   trait OpsExpressionTree {
+    implicit def toExp[T](t: T): Exp[T] = Const(t)
+
     //Not exactly sure what I should use to represent applications.
     //Having explicit App nodes for application, however, can be useful to represent application instead of computing it,
     //since computing it means inlining and can replicate terms.
@@ -28,6 +30,28 @@ object SimpleOpenEncoding {
     object Exp {
       def app[T, U](f: T => U, t: Exp[T]): Exp[U] = App(Const(f), t)
     }
+
+    implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A,B](pair._1, pair._2)
+
+    //To "unlift" a pair, here's my first solution:
+    /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
+    /*
+    //Unfortunately this conversion is not redundant; we may want to have a special node to support this, or to
+    //remove Pair constructors applied on top of other pair constructors.
+    implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): Pair[A, B] =
+      (Pair[A,B] _).tupled(unliftPair(pair))
+    */
+
+    //Here's the second one, adapted from Klaus code. It represents but does not build a tuple (once one adds lazy vals).
+    //However, one cannot do pattern matching against the result, not with the existing pattern.
+    //Lesson: Scala does not allow to define additional extractors for a given pattern type, and syntax shortcuts such
+    //as tuples or => are simply built-in in the language.
+    case class PairHelper[A,B](p: Exp[(A,B)]) {
+      lazy val _1 = Proj1(p)
+      lazy val _2 = Proj2(p)
+    }
+
+    implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
   }
 
   /**
@@ -38,12 +62,18 @@ object SimpleOpenEncoding {
    */
 
   trait NumOpsExps {
+    this: OpsExpressionTree =>
     class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
       def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
     }
     class OrderingOps[T: Ordering](t: Exp[T]) {
       def <=(that: Exp[T]) = LEq(t, that)
     }
+
+    implicit def expToNumExp[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
+    implicit def tToNumExp[T: Numeric](t: T): NumOps[T] = expToNumExp(t)
+    implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
+    implicit def tToOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
   }
 
   trait TraversableOps {
@@ -149,33 +179,6 @@ object SimpleOpenEncoding {
 
     class TraversableViewOps[T](val t: Exp[TraversableView[T, Traversable[T]]])
       extends TraversableViewLikeOps[T, Traversable[T], TraversableView[T, Traversable[T]]]
-  }
-
-  /**
-   * A goal of this new encoding is to be able to build expression trees (in particular, query trees) producing
-   * different collections; once we can represent query trees producing maps and maintain them incrementally, view
-   * maintenance can subsume index update.
-   */
-
-  trait MapOps {
-    this: OpsExpressionTree with TraversableOps =>
-    class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Map[K, V]] {
-      /*
-      //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
-      case class WithFilter(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[IterableView[(K, V), Map[K, V]]] {
-        override def interpret = base.interpret.view filter f.interpret
-      }
-      */
-    }
-  }
-
-  trait SimpleOpenEncodingBase extends OpsExpressionTree with NumOpsExps with TraversableOps with MapOps {
-    implicit def toExp[T](t: T): Exp[T] = Const(t)
-
-    implicit def expToNumExp[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
-    implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
-    implicit def tToNumExp[T: Numeric](t: T): NumOps[T] = expToNumExp(t)
-    implicit def tToOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
 
     implicit def expToTravExp[T](t: Exp[Traversable[T]]): TraversableOps[T] = new TraversableOps(t)
     implicit def tToTravExp[T](t: Traversable[T]): TraversableOps[T] = {
@@ -196,35 +199,31 @@ object SimpleOpenEncoding {
     implicit def tToFilterMonExp[T, Repr <: FilterMonadic[T, Repr]](t: FilterMonadic[T, Repr]):
       FilterMonadicOps[T, Repr] = expToFilterMonExp(t)
     //implicit def expToFilterMonExp[Repr <: FilterMonadic[T, Repr], T](t: Exp[Repr]): FilterMonadicOpsLike[T, Repr] = new FilterMonadicOps(t)
+  }
+
+  /**
+   * A goal of this new encoding is to be able to build expression trees (in particular, query trees) producing
+   * different collections; once we can represent query trees producing maps and maintain them incrementally, view
+   * maintenance can subsume index update.
+   */
+
+  trait MapOps {
+    this: OpsExpressionTree with TraversableOps =>
+    class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Map[K, V]] {
+      /*
+      //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
+      case class WithFilter(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[IterableView[(K, V), Map[K, V]]] {
+        override def interpret = base.interpret.view filter f.interpret
+      }
+      */
+    }
 
     implicit def expToMapExp[K, V](t: Exp[Map[K, V]]): MapOps[K, V] = new MapOps(t)
     implicit def tToMapExp[K, V](t: Map[K, V]): MapOps[K, V] =
       expToMapExp(t)
-
-    implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A,B](pair._1, pair._2)
-
-    //To "unlift" a pair, here's my first solution:
-    /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
-    /*
-    //Unfortunately this conversion is not redundant; we may want to have a special node to support this, or to
-    //remove Pair constructors applied on top of other pair constructors.
-    implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): Pair[A, B] =
-      (Pair[A,B] _).tupled(unliftPair(pair))
-    */
-
-    //Here's the second one, adapted from Klaus code. It represents but does not build a tuple (once one adds lazy vals).
-    //However, one cannot do pattern matching against the result, not with the existing pattern.
-    //Lesson: Scala does not allow to define additional extractors for a given pattern type, and syntax shortcuts such
-    //as tuples or => are simply built-in in the language.
-    case class PairHelper[A,B](p: Exp[(A,B)]) {
-      lazy val _1 = Proj1(p)
-      lazy val _2 = Proj2(p)
-    }
-
-    implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
   }
 
-  object SimpleOpenEncoding extends SimpleOpenEncodingBase {
+  object SimpleOpenEncoding extends OpsExpressionTree with NumOpsExps with TraversableOps with MapOps {
     class ToQueryable[T](t: Traversable[T]) {
       def asQueryable: Exp[Traversable[T]] = Const(t)
     }
