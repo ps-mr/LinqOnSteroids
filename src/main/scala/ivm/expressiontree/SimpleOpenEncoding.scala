@@ -80,6 +80,26 @@ object SimpleOpenEncoding {
 
   trait TraversableOps {
     this: OpsExpressionTree =>
+    // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
+    case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
+                       This <: FilterMonadic[T, Repr],
+                       +U, That](base: Exp[This], f: Exp[T => GenTraversableOnce[U]])
+                                (implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
+      override def interpret = base.interpret flatMap f.interpret
+    }
+
+    case class MapOp[T, Repr <: FilterMonadic[T, Repr],
+                     This <: FilterMonadic[T, Repr],
+                     +U, That](base: Exp[This], f: Exp[T => U])
+                              (implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
+      override def interpret = base.interpret map f.interpret
+    }
+
+    case class WithFilter[T, Repr <: FilterMonadic[T, Repr],
+                          This <: FilterMonadic[T, Repr]](base: Exp[This],
+                                                          f: Exp[T => Boolean]) extends Exp[FilterMonadic[T, Repr]] {
+      override def interpret = base.interpret withFilter f.interpret
+    }
 
     /* Lift faithfully the complete functional part of the FilterMonadic trait - i.e. all methods excluding foreach.
      * This trait is used both for concrete collections of type Repr <: FilterMonadic[T, Repr] (This = Repr), but also for results
@@ -88,25 +108,11 @@ object SimpleOpenEncoding {
     trait FilterMonadicOpsLike[T, Repr <: FilterMonadic[T, Repr], This <: FilterMonadic[T, Repr]] {
       val t: Exp[This]
       def withFilter(f: Exp[T] => Exp[Boolean]): Exp[FilterMonadic[T, Repr]] =
-        WithFilter(this.t, FuncExp(f))
+        WithFilter[T, Repr, This](this.t, FuncExp(f))
       def map[U, That](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-        MapOp(this.t, FuncExp(f))
+        MapOp[T, Repr, This, U, That](this.t, FuncExp(f))
       def flatMap[U, That](f: Exp[T] => Exp[GenTraversableOnce[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-        FlatMap(this.t, FuncExp(f))
-
-      // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
-      case class FlatMap[+U, That](base: Exp[This], f: Exp[T => GenTraversableOnce[U]])
-                                  (implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
-        override def interpret = base.interpret flatMap f.interpret
-      }
-
-      case class MapOp[+U, That](base: Exp[This], f: Exp[T => U])(implicit c: CanBuildFrom[Repr, U, That]) extends Exp[That] {
-        override def interpret = base.interpret map f.interpret
-      }
-
-      case class WithFilter(base: Exp[This], f: Exp[T => Boolean]) extends Exp[FilterMonadic[T, Repr]] {
-        override def interpret = base.interpret withFilter f.interpret
-      }
+        FlatMap[T, Repr, This, U, That](this.t, FuncExp(f))
     }
     class FilterMonadicOps[T, Repr <: FilterMonadic[T, Repr]](val t: Exp[FilterMonadic[T, Repr]])
       extends FilterMonadicOpsLike[T, Repr, FilterMonadic[T, Repr]]
@@ -156,7 +162,7 @@ object SimpleOpenEncoding {
       override def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
         new WithFilterView(this.t, FuncExp(f))
 
-      class WithFilterView(base: Exp[ViewColl], f: Exp[T => Boolean]) extends WithFilter(base, f) with Exp[ViewColl] {
+      class WithFilterView(base: Exp[ViewColl], f: Exp[T => Boolean]) extends WithFilter[T, ViewColl, ViewColl](base, f) with Exp[ViewColl] {
         override def interpret = base.interpret filter f.interpret
       }
     }
