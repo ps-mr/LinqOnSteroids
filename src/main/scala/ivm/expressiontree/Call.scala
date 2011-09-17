@@ -11,10 +11,10 @@ package ivm.expressiontree
    The point of the id field is to have a non-trivial equality relation on calls, see
    also definition of equals
  */
-abstract class Call[Res](val id: String) extends Exp[Res] {
+abstract class Call[Res](val id: Symbol) extends Exp[Res] {
   override def equals(other: Any) = other match {
       case that: Call[_] =>
-        this.id.equals(that.id) &&
+        this.id == that.id &&
         (this.children equals that.children)
       case _ =>
         false
