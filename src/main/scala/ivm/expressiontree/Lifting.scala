@@ -9,12 +9,16 @@ object Lifting {
   implicit def toPairHelper[A,B](e: Exp[(A,B)]) : PairHelper[A,B] = PairHelper(e)
 
   // these functions are explicitly not implicit :)
-  def liftCall[Res](callfunc: () => Res) = Call0(callfunc)
-  def liftCall[A0, Res](callfunc: A0 => Res, arg0: Exp[A0]) = Call1(callfunc, arg0)
-  def liftCall[A0, A1, Res](callfunc: (A0, A1) => Res, arg0: Exp[A0], arg1: Exp[A1]) = Call2(callfunc, arg0, arg1)
-  def liftCall[A0, A1, A2, Res](callfunc: (A0, A1, A2) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2]) = Call3(callfunc, arg0, arg1, arg2)
-  def liftCall[A0, A1, A2, A3, Res](callfunc: (A0, A1, A2, A3) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3]) = Call4(callfunc, arg0, arg1, arg2, arg3)
-  def liftCall[A0, A1, A2, A3, A4, Res](callfunc: (A0, A1, A2, A3, A4) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3], arg4: Exp[A4]) = Call5(callfunc, arg0, arg1, arg2, arg3, arg4)
+  def liftCall[Res](id: String, callfunc: () => Res) = new Call0(id,callfunc)
+  def liftCall[A0, Res](id: String, callfunc: A0 => Res, arg0: Exp[A0]) = new Call1(id,callfunc, arg0)
+  def liftCall[A0, A1, Res](id: String, callfunc: (A0, A1) => Res, arg0: Exp[A0], arg1: Exp[A1]) =
+     new Call2(id,callfunc, arg0, arg1)
+  def liftCall[A0, A1, A2, Res](id: String, callfunc: (A0, A1, A2) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2]) =
+     new Call3(id,callfunc, arg0, arg1, arg2)
+  def liftCall[A0, A1, A2, A3, Res](id: String, callfunc: (A0, A1, A2, A3) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3]) =
+     new Call4(id,callfunc, arg0, arg1, arg2, arg3)
+  def liftCall[A0, A1, A2, A3, A4, Res](id: String, callfunc: (A0, A1, A2, A3, A4) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3], arg4: Exp[A4]) =
+     new Call5(id,callfunc, arg0, arg1, arg2, arg3, arg4)
 
 
   def liftFunc[S,T](f: Exp[S] => Exp[T]) : Exp[S => T] = FuncExp(f)
@@ -79,15 +83,15 @@ object Lifting {
 
     //implicit def liftCall0[Res](f: () => Res) = Call0(f)
 
-    implicit def liftCall1[A0, Res](f: A0 => Res):
-      Exp[A0] => Exp[Res] = Call1(f, _)
-    implicit def liftCall2[A0, A1, Res](f: (A0, A1) => Res):
-      (Exp[A0], Exp[A1]) => Exp[Res] = Call2(f, _, _)
-    implicit def liftCall3[A0, A1, A2, Res](f: (A0, A1, A2) => Res):
-      (Exp[A0], Exp[A1], Exp[A2]) => Exp[Res] = Call3(f, _, _, _)
-    implicit def liftCall4[A0, A1, A2, A3, Res](f: (A0, A1, A2, A3) => Res):
-      (Exp[A0], Exp[A1], Exp[A2], Exp[A3]) => Exp[Res] = Call4(f, _, _, _, _)
-    implicit def liftCall5[A0, A1, A2, A3, A4, Res](f: (A0, A1, A2, A3, A4) => Res):
-      (Exp[A0], Exp[A1], Exp[A2], Exp[A3], Exp[A4]) => Exp[Res]= Call5(f, _, _, _, _, _)
+    implicit def liftCall1[A0, Res](id: String, f: A0 => Res):
+      Exp[A0] => Exp[Res] = new Call1(id,f, _)
+    implicit def liftCall2[A0, A1, Res](id: String, f: (A0, A1) => Res):
+      (Exp[A0], Exp[A1]) => Exp[Res] = new Call2(id,f, _, _)
+    implicit def liftCall3[A0, A1, A2, Res](id: String, f: (A0, A1, A2) => Res):
+      (Exp[A0], Exp[A1], Exp[A2]) => Exp[Res] = new Call3(id,f, _, _, _)
+    implicit def liftCall4[A0, A1, A2, A3, Res](id: String, f: (A0, A1, A2, A3) => Res):
+      (Exp[A0], Exp[A1], Exp[A2], Exp[A3]) => Exp[Res] = new Call4(id,f, _, _, _, _)
+    implicit def liftCall5[A0, A1, A2, A3, A4, Res](id: String, f: (A0, A1, A2, A3, A4) => Res):
+      (Exp[A0], Exp[A1], Exp[A2], Exp[A3], Exp[A4]) => Exp[Res]= new Call5(id,f, _, _, _, _, _)
   }
 }

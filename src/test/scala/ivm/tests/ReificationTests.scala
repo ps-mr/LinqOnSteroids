@@ -19,8 +19,8 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   val q = for (k  <- l if k <= 5 ) yield k+3
   val r = for (k  <- l; k2  <- j if k is k2) yield k+k2
   val r1 = for (k <- l; k2 <- j if k + k2 is k2 + k) yield k+k2
-  val r2 = for (k <- l; k2 <- j if liftCall(test, k,k2)) yield k+k2
-  val r3 = for (k <- l; k2 <- j if liftCall(foo,k) is liftCall(bar,k2)) yield (k,k2)
+  val r2 = for (k <- l; k2 <- j if liftCall("test(Int,Int)",test, k,k2)) yield k+k2
+  val r3 = for (k <- l; k2 <- j if liftCall("foo(Int)",foo,k) is liftCall("bar(Int)", bar,k2)) yield (k,k2)
   @Test
   def testq() {
     optimize(q) should be (q)
@@ -42,7 +42,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   
   @Test
   def testr3() {
-    assert(optimize(r3).potentiallyEquals( (l.join(j,(x) => liftCall(foo,x),(y:Exp[Int]) => liftCall(bar,y),(p: Exp[(Int,Int)]) => (p._1,p._2)))))
+    assert(optimize(r3).potentiallyEquals( (l.join(j,(x) => liftCall("foo(Int)",foo,x),(y:Exp[Int]) => liftCall("bar(Int)",bar,y),(p: Exp[(Int,Int)]) => (p._1,p._2)))))
   }
   
   @Test 
