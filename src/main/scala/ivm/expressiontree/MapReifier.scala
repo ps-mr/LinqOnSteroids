@@ -15,7 +15,14 @@ trait MapReifier[S,T] extends Exp[MapReifier[S,T]] {
  * However, this requires to solve the problem that all "QueryReifier" functions (map, flatMap etc.)
  * are available on Exp[Traversable[T]] and not only on QueryReifier[T]
  * Hopefully this will be possible once Paolo is done with the "major surgery" he promised ;)
-*/
+ *
+ * PG:
+ * Since Map[A, B] extends A => B, MapApply is actually an instance of the
+ * lambda-calculus App node.
+ * One can pimpl the apply method for all Exp[A => B], including Exp[Map[A, B]].
+ * As said, GroupBy[T, S] should extend Exp[Map[T, Traversable[S]] and thus also
+ * have this apply method available.
+ */
 case class MapApply[S,T](map: MapReifier[S,T], key: Exp[S]) extends QueryReifier[T] {
   override def children = Seq(map,key)
   override def genericConstructor = (v) => MapApply(v(0).asInstanceOf[MapReifier[S,T]], v(1).asInstanceOf[Exp[S]])
