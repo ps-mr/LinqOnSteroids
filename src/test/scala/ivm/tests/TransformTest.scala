@@ -21,7 +21,7 @@ class TransformTest extends JUnitSuite with ShouldMatchersForJUnit {
 
   def testRebuild[T](t: Exp[T]) {
     val tTransf = t transform identity
-    assert(tTransf potentiallyEquals t)
+    tTransf should equal (t)
     assert(tTransf equals t)
   }
   def testTransforms[T](t: Exp[T]) {

@@ -52,12 +52,6 @@ trait Exp[+T] {
   def is[S >: T](that: Exp[S]): Exp[Boolean] = Eq(this, that)
   //def is(that: Exp[T]): Exp[Boolean] = Eq(this, that)
 
-  // method is used for testing. It is overriden in CallN to treat all calls as potentially equal
-  private[ivm] def potentiallyEquals[S](other: Exp[S]) : Boolean = {
-    val c  = children.zip(other.children)
-    this.getClass().equals(other.getClass()) &&
-      c.map({ case (a, b) => a.potentiallyEquals(b)}).forall(identity)
-  }
 }
 
 private[ivm] object Exp {

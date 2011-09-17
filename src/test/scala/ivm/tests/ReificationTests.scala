@@ -19,30 +19,30 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   val q = for (k  <- l if k <= 5 ) yield k+3
   val r = for (k  <- l; k2  <- j if k is k2) yield k+k2
   val r1 = for (k <- l; k2 <- j if k + k2 is k2 + k) yield k+k2
-  val r2 = for (k <- l; k2 <- j if liftCall("test(Int,Int)",test, k,k2)) yield k+k2
-  val r3 = for (k <- l; k2 <- j if liftCall("foo(Int)",foo,k) is liftCall("bar(Int)", bar,k2)) yield (k,k2)
+  val r2 = for (k <- l; k2 <- j if liftCall('test$Int$Int,test, k,k2)) yield k+k2
+  val r3 = for (k <- l; k2 <- j if liftCall('foo$Int,foo,k) is liftCall('bar$Int, bar,k2)) yield (k,k2)
   @Test
   def testq() {
-    optimize(q) should be (q)
+    optimize(q) should equal (q)
   }
   @Test
   def testr() {
-    assert(optimize(r).potentiallyEquals( (l.join(j, (x) => x, (y: Exp[Int]) => y, (p: Exp[(Int,Int)]) => (p._1 + p._2)))))
+    optimize(r) should equal (l.join(j, (x) => x, (y: Exp[Int]) => y, (p: Exp[(Int,Int)]) => (p._1 + p._2)))
   }
 
   @Test
   def testr1() {
-    optimize(r1) should be (r1)
+    optimize(r1) should equal (r1)
   }
   
   @Test
   def testr2() {
-    assert(optimize(r2).potentiallyEquals(r2))
+    optimize(r2) should equal (r2)
   }
   
   @Test
   def testr3() {
-    assert(optimize(r3).potentiallyEquals( (l.join(j,(x) => liftCall("foo(Int)",foo,x),(y:Exp[Int]) => liftCall("bar(Int)",bar,y),(p: Exp[(Int,Int)]) => (p._1,p._2)))))
+    optimize(r3) should equal (l.join(j,(x) => liftCall('foo$Int,foo,x),(y:Exp[Int]) => liftCall('bar$Int,bar,y),(p: Exp[(Int,Int)]) => (p._1,p._2)))
   }
   
   @Test 
@@ -53,7 +53,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
 
   @Test
   def testReification() {
-    q should be (MapOp(WithFilter(l,FuncExp((v2 : Exp[Int]) => LEq(v2,5))),FuncExp((v3: Exp[Int]) => Plus(v3,3))))
+    q should equal (MapOp(WithFilter(l,FuncExp((v2 : Exp[Int]) => LEq(v2,5))),FuncExp((v3: Exp[Int]) => Plus(v3,3))))
     /*println(q.exec())
     println(optimize(q).interpret().exec())
     //val r = l.flatMap( (k) => j.withFilter( (k2 ) => k is k2).map( (k2:Exp[Int]) => k+k2))

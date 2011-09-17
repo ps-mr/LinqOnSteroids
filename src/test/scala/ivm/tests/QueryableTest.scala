@@ -184,7 +184,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     // This term is invalid because of its use of interpret (which could be avoided if map were available on Exp[Traversable[T]],
     // rather than only on QueryReifier).
     val res = new IncrementalResult[Int](for (i <- v.asQueryable;
-                                              j <- liftCall("don't know",
+                                              j <- liftCall('dontknow,
                                                 ((_: Array[IncHashSet[Int]]).apply(_: Int).asQueryable),
                                                 vArr, i).interpret()) yield i + j)
     show("res", res)

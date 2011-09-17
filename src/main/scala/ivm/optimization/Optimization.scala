@@ -61,6 +61,7 @@ class Optimization {
       case _ => e
     }
 
+
   val mergeFilters: Exp[_] => Exp[_] =
     e => e match {
       case WithFilter(WithFilter(col2, f2), f) =>

@@ -37,12 +37,6 @@ case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends Exp[S => T] {
      case _ => false
   }
   override def canEqual(other: Any): Boolean = other.isInstanceOf[FuncExp[_,_]]
-  override def potentiallyEquals[S](other: Exp[S]) = other match {
-     case that: FuncExp[_,_] =>
-       val s = gensym()
-       that.canEqual(this) && f(s).potentiallyEquals(that.f(s))
-     case _ => false
-  }
 
   // by using varzero, this definition makes sure that alpha-equivalent functions have the same hashcode
   // some non-alpha-equivalent functions will also have the same hash code, such as
