@@ -65,13 +65,13 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     val vQueryable: QueryReifier[Int] = v.asQueryable
     assert(vQueryable == v)
     //val vQueryablePlusOne2: ArrayBuffer[Int] = vQueryable.map((i: Int) => i + 1) //gives error
-    val vQueryablePlusOne: QueryReifier[Int] = vQueryable.map(_ + 1)
+    val vQueryablePlusOne: Exp[Traversable[Int]] = vQueryable.map(_ + 1)
     v ++= Seq(4, 5, 6) // Now, vPlusOne should be updated, shouldn't it?
 
     println("vQueryable: " + vQueryable)
     println("vPlusOne: " + vPlusOne)
     println("vQueryablePlusOne: " + vQueryablePlusOne)
-    println("vQueryablePlusOne.interpret.exec(): " + vQueryablePlusOne.interpret.exec())
+    println("vQueryablePlusOne.interpret: " + vQueryablePlusOne.interpret)
 
     val vColl: ArrayBuffer[Int] = v.asCollection
     println("vColl: " + vColl)
@@ -85,8 +85,8 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     println("%s: after sorting\t\t%s, before\t\t%s" format(name, v.toSeq.sorted, v))
     //println("vIncUpd.exec(): " + vIncUpd.exec())
     //println("vIncUpd.interpret.exec(): " + vIncUpd.interpret.exec())
-    v.exec() should be (v.interpret().exec())
-    v.exec() should be (v.inner.exec())
+    //v.interpret() should be (v.interpret().exec())
+    v.interpret() should be (v.inner.interpret())
     //println("vIncUpd.inner.exec(): " + vIncUpd.inner.exec())
   }
 
@@ -106,7 +106,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     val vQueryable: QueryReifier[Int] = v.asQueryable
     assert(vQueryable == v)
     //val vQueryablePlusOne2: HashSet[Int] = vQueryable.map((i: Int) => i + 1) //gives error
-    val vQueryablePlusOne: QueryReifier[Int] = vQueryable.map(_ + 1)
+    val vQueryablePlusOne: Exp[Traversable[Int]] = vQueryable.map(_ + 1)
     //val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 * i) //XXX can't use *, not defined, nor asQueryable.
     val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 + i)
 
@@ -136,7 +136,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
 
     println("vPlusOne: " + vPlusOne)
     println("vQueryablePlusOne: " + vQueryablePlusOne)
-    println("vQueryablePlusOne.interpret().exec(): " + vQueryablePlusOne.interpret().exec())
+    println("vQueryablePlusOne.interpret(): " + vQueryablePlusOne.interpret())
 
     val vColl: HashSet[Int] = v.asCollection //This is a simple upcast...
     println("vColl: " + vColl)

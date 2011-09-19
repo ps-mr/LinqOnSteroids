@@ -1,8 +1,9 @@
 package ivm
 package optimization
 
-
 import expressiontree._
+import Lifting._
+import collection.generic.FilterMonadic
 
 object FuncExpBody {
   def unapply[S, T](f: FuncExp[S, T]): Option[Exp[T]] = Some(f.body)
@@ -13,7 +14,9 @@ object FuncExpIdentity {
 }
 
 class Optimization {
-  private def buildJoinTyped[T, S, TKey, TResult](fmColl: QueryReifier[T], wfColl: QueryReifier[S],
+  /*
+  private def buildJoinTyped[T, ReprT, S, ReprS, TKey, TResult](fmColl: Exp[FilterMonadic[T, ReprT]],
+                                                                wfColl: Exp[FilterMonadic[S, ReprS]],
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
                                                   moFun: FuncExp[S, TResult], fmFun: FuncExp[T, QueryReifier[TResult]],
                                                   wfFun: FuncExp[S, Boolean]): QueryReifierBase[TResult] /*Join[T, S, TKey, TResult]*/ =
@@ -48,7 +51,7 @@ class Optimization {
           e
       case _ => e
     }
-
+  */
   val removeIdentityMaps: Exp[_] => Exp[_] =
     e => e match {
       case MapOp(col, FuncExpIdentity()) =>
@@ -64,8 +67,8 @@ class Optimization {
 
   val mergeFilters: Exp[_] => Exp[_] =
     e => e match {
-      case WithFilter(WithFilter(col2, f2), f) =>
-        mergeFilters(col2.withFilter(FuncExp((x: Exp[_]) => And(f2.f(x), f.f(x))).f))
+      case WithFilter(WithFilter(col2: Exp[FilterMonadic[t, _]], f2), f) =>
+        mergeFilters(expToFilterMonExp(col2.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]]).withFilter((x: Exp[_]) => And(f2(x), f(x))))
       case _ => e
     }
 
@@ -82,9 +85,9 @@ class Optimization {
 object Optimization {
   val opt = new Optimization()
 
-  def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(opt.cartProdToJoin)
+  //def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(opt.cartProdToJoin)
 
-  def optimize[T](exp: Exp[T]): Exp[T] = optimizeCartProdToJoin(exp)
+  def optimize[T](exp: Exp[T]): Exp[T] = exp //optimizeCartProdToJoin(exp)
 
   def normalize[T](exp: Exp[T]): Exp[T] = exp.transform(opt.normalizer)
 

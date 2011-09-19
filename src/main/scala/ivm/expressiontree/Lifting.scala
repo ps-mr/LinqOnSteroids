@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-object Lifting {
+object Lifting extends SimpleOpenEncoding.MapOps {
   implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A,B](pair._1, pair._2)
 
   //To "unlift" a pair, here's my first solution:
@@ -24,7 +24,10 @@ object Lifting {
   implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
 
   implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
-    x => App(f, x)
+    x => f match {
+      case FuncExp(fe) => fe(x) //This line should be dropped, but then we'll need to introduce a beta-reducer.
+      case _ => App(f, x)
+    }
 
   // these functions are explicitly not implicit :)
   def liftCall[Res](id: Symbol, callfunc: () => Res) = new Call0(id,callfunc)

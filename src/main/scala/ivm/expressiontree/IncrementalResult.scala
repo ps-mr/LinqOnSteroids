@@ -14,7 +14,7 @@ import collection.mutable.HashMap
 // XXX: SetProxy is not entirely
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
 // same type. OTOH, this methods allows accessing the underlying data at all.
-class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryReifier[T]
+class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends ChildlessQueryReifier[T]
   with MsgSeqSubscriber[T, QueryReifier[T]]
   with Queryable[T, collection.SetProxy[T]]
   with collection.SetProxy[T] //I mean immutable.SetProxy[T], but that requires an underlying immutable Set.
@@ -22,14 +22,14 @@ class IncrementalResult[T](val inner: QueryReifier[T]) extends ChildlessQueryRei
   // Or we'll just support incremental query update for all methods.
 {
   var set = new HashMap[T, Int]
-  inner subscribe this
+  //inner subscribe this
   startListeners(inner)
-  //XXX: I now believe this is a hack, in essence. I should not rely on exec();
+  //XXX: I now believe this is a hack, in essence. I should not rely on interpret();
   // I should rather trigger updates starting from the root collection.
   // See FlatMapMaintainer.initListening() for the hack currently compensating this problem.
 
   // It is crucial to have this statement only here after construction
-  notify(inner, inner.exec().toSeq.map(Include(_)))
+  //notify(inner, inner.interpret().toSeq.map(Include(_)))
 
   private[this] def startListener(e: Exp[_]) {
     e match {

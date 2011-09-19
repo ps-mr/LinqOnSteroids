@@ -68,43 +68,12 @@ object SimpleOpenEncoding {
     implicit def tToOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
   }
 
-  object TraversableOps {
+  trait TraversableOps {
     import OpsExpressionTree._
-    // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
-    case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
-                       This <: FilterMonadic[T, Repr],
-                       U, That](base: Exp[This], f: Exp[T => GenTraversableOnce[U]])
-                                (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOpExp[This, T => GenTraversableOnce[U], That](base, f) {
-      override def interpret = base.interpret flatMap f.interpret()
-      override def copy(base: Exp[This], f: Exp[T => GenTraversableOnce[U]]) = FlatMap[T, Repr, This, U, That](base, f)
-    }
-
-    case class MapOp[T, Repr <: FilterMonadic[T, Repr],
-                     This <: FilterMonadic[T, Repr],
-                     U, That](base: Exp[This], f: Exp[T => U])
-                              (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOpExp[This, T => U, That](base, f) {
-      override def interpret = base.interpret map f.interpret()
-      override def copy(base: Exp[This], f: Exp[T => U]) = MapOp[T, Repr, This, U, That](base, f)
-    }
-
-    case class WithFilter[T, Repr <: FilterMonadic[T, Repr],
-                          This <: FilterMonadic[T, Repr]](base: Exp[This],
-                                                          f: Exp[T => Boolean]) extends BinaryOpExp[This, T => Boolean, FilterMonadic[T, Repr]](base, f) {
-      override def interpret = base.interpret withFilter f.interpret()
-      override def copy(base: Exp[This], f: Exp[T => Boolean]) = WithFilter[T, Repr, This](base, f)
-    }
-
-    case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr]) extends UnaryOpExp[Repr, TraversableView[T, Repr]](base) {
-      override def interpret = base.interpret.view
-      override def copy(base: Exp[Repr]) = View[T, Repr](base)
-    }
-
-    case class Force[T, Repr <: TraversableLike[T, Repr] with Traversable[T],
-                     ViewColl <: Repr with TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
-                    (base: Exp[ViewColl]) extends UnaryOpExp[ViewColl, Traversable[T]](base) {
-      override def interpret = base.interpret.force
-      override def copy(base: Exp[ViewColl]) = Force[T, Repr, ViewColl](base)
-    }
+    def newWithFilter[T, Repr <: FilterMonadic[T, Repr]](base: Exp[Repr],
+                                                        f: Exp[T => Boolean]) = new WithFilter[T, Repr, Repr](base, f)
+    def newMapOp[T, Repr <: FilterMonadic[T, Repr], U, That](base: Exp[FilterMonadic[T, Repr]], f: Exp[T => U])(implicit c: CanBuildFrom[Repr, U, That]) =
+      new MapOp[T, Repr, FilterMonadic[T, Repr], U, That](base, f)(c)
 
     /* Lift faithfully the complete functional part of the FilterMonadic trait - i.e. all methods excluding foreach.
      * This trait is used both for concrete collections of type Repr <: FilterMonadic[T, Repr] (This = Repr), but also for results
@@ -240,9 +209,8 @@ object SimpleOpenEncoding {
    * maintenance can subsume index update.
    */
 
-  object MapOps {
+  trait MapOps extends TraversableOps {
     import OpsExpressionTree._
-    import TraversableOps._
     class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Map[K, V]] {
       /*
       //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
@@ -257,11 +225,9 @@ object SimpleOpenEncoding {
       expToMapExp(t)
   }
 
-  object SimpleOpenEncoding {
+  object SimpleOpenEncoding extends MapOps {
     import OpsExpressionTree._
     import NumOpsExps._
-    import TraversableOps._
-    import MapOps._
 
     class ToQueryable[T](t: Traversable[T]) {
       def asQueryable: Exp[Traversable[T]] = Const(t)

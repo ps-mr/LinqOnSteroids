@@ -82,7 +82,7 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
             case Update(_, _) => publish(evt)
             //XXX very important! This can only work because we send the
             //modification before performing the update
-            case Reset() => publish(pub.exec().toSeq map (Remove(_)))
+            case Reset() => publish(pub.interpret().toSeq map (Remove(_)))
           }
         }
       }
@@ -105,7 +105,7 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
       case Include(v) =>
         val fV = cache.getOrElseUpdate(v, fInt(v))
         fV subscribe subCollListener
-        fV.exec().toSeq map (Include(_))
+        fV.interpret().toSeq map (Include(_))
       case Remove(v) =>
         //val fV = fInt(v) //fV will not always return the _same_ result. We
         //need a map from v to the returned collection - as done in LiveLinq
@@ -113,7 +113,7 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
         val fV = cache(v)
         //cache -= v //This might actually be incorrect, if v is included twice in the collection. This is a problem!
         fV removeSubscription subCollListener
-        fV.exec().toSeq map (Remove(_))
+        fV.interpret().toSeq map (Remove(_))
       case _ => defTransformedMessages(evt)
       /*
       //Here we cannot implement an update by sending an update of the mapped element. But we should.
@@ -156,6 +156,7 @@ trait Maintainer[T] {
   }
 }
 
+/*
 //Don't make Repr so specific as IncCollectionReifier. Making Repr any specific
 //is entirely optional - it just enables the listener to get a more specific
 //type for the pub param to notify(), if he cares.
@@ -177,7 +178,7 @@ class FlatMapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,QueryReifier[
 
   //XXX this ensures that we listen on the results corresponding to the elements already present in col.
   //However, it is a hack - see IncrementalResult for discussion.
-  initListening(col.exec())
+  initListening(col.interpret())
 }
 class WithFilterMaintainerExp[T](col: QueryReifier[T], p: FuncExp[T,Boolean]) extends WithFilter[T](col, p)
     with WithFilterMaintainer[T, QueryReifier[T]] with QueryReifier[T] with Maintainer[T] {
@@ -187,7 +188,7 @@ class WithFilterMaintainerExp[T](col: QueryReifier[T], p: FuncExp[T,Boolean]) ex
       v => new WithFilterMaintainerExp(v(0).asInstanceOf[QueryReifier[T]],
           v(1).asInstanceOf[FuncExp[T, Boolean]])
 }
-
+*/
 // TODO: add a trait which implements maintenance of union.
 // Probably they can be both implemented together. Look into the other implementation, use bags or sth.
 // There was a use-case I forget where other context information, other than a simple count, had to be stored.

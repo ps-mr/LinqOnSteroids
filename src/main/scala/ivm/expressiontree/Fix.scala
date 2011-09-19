@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
 //Exploration into the design space.
-case class Fix[T](col: QueryReifier[T], f: FuncExp[Traversable[T],Traversable[T]]) extends QueryOp[T] {
+/*case class Fix[T](col: QueryReifier[T], f: FuncExp[Traversable[T],Traversable[T]]) extends QueryOp[T] {
   def children = Seq(col,f)
   def genericConstructor = (v) => Fix(v(0).asInstanceOf[QueryReifier[T]],
                                        v(1).asInstanceOf[FuncExp[Traversable[T],Traversable[T]]])
@@ -31,4 +31,4 @@ case class FixWithReifiers[T](col: QueryReifier[T], f: FuncExp[QueryReifier[T],Q
     } while (newV.interpret() != curr.interpret())
     newV.exec()
   }
-}
+}*/

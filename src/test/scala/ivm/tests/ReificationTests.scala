@@ -9,6 +9,7 @@ import expressiontree._
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test
+import collection.generic.FilterMonadic
 
 class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   def test(x: Int, y: Int) : Boolean = x+y == 12
@@ -48,12 +49,12 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   @Test 
   def testfreeVars() {
     q.freeVars should be (Set.empty)
-    MapOp(l,FuncExp( (x: Exp[Int]) => x + Var("y"))).freeVars should be (Set(Var("y")))
+    newMapOp(l,FuncExp( (x: Exp[Int]) => x + Var("y"))).freeVars should be (Set(Var("y")))
   }
 
   @Test
   def testReification() {
-    q should equal (MapOp(WithFilter(l,FuncExp((v2 : Exp[Int]) => LEq(v2,5))),FuncExp((v3: Exp[Int]) => Plus(v3,3))))
+    q should equal (newMapOp[Int, Traversable[Int], Int, Traversable[Int]](newWithFilter(l,FuncExp((v2 : Exp[Int]) => LEq(v2,5))),FuncExp((v3: Exp[Int]) => Plus(v3,3))))
     /*println(q.exec())
     println(optimize(q).interpret().exec())
     //val r = l.flatMap( (k) => j.withFilter( (k2 ) => k is k2).map( (k2:Exp[Int]) => k+k2))
@@ -96,8 +97,8 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
     // RE: In my tests, I seldom get a difference, it is not significant, and seems to disappear
     // by enabling the Scala optimizer.
     assert(
-      silentBenchMark("Non optimized")(notoptimized.exec().size)
-      > (2 * silentBenchMark("Optimized")(optimize(notoptimized).interpret().exec().size)))
+      silentBenchMark("Non optimized")(notoptimized.interpret().size)
+      > (2 * silentBenchMark("Optimized")(optimize(notoptimized).interpret().interpret().size)))
   }
 
  
