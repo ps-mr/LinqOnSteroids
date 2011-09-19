@@ -4,6 +4,7 @@ package optimization
 import expressiontree._
 import Lifting._
 import collection.generic.FilterMonadic
+import collection.GenTraversableOnce
 
 object FuncExpBody {
   def unapply[S, T](f: FuncExp[S, T]): Option[Exp[T]] = Some(f.body)
@@ -14,12 +15,11 @@ object FuncExpIdentity {
 }
 
 class Optimization {
-  /*
-  private def buildJoinTyped[T, ReprT, S, ReprS, TKey, TResult](fmColl: Exp[FilterMonadic[T, ReprT]],
-                                                                wfColl: Exp[FilterMonadic[S, ReprS]],
+  private def buildJoinTyped[T, S, TKey, TResult](fmColl: Exp[Traversable[T]],
+                                                  wfColl: Exp[Traversable[S]],
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
-                                                  moFun: FuncExp[S, TResult], fmFun: FuncExp[T, QueryReifier[TResult]],
-                                                  wfFun: FuncExp[S, Boolean]): QueryReifierBase[TResult] /*Join[T, S, TKey, TResult]*/ =
+                                                  moFun: FuncExp[S, TResult], fmFun: FuncExp[T, GenTraversableOnce[TResult]],
+                                                  wfFun: FuncExp[S, Boolean]): Exp[Traversable[TResult]] /*Join[T, S, TKey, TResult]*/ =
     fmColl.join(
       wfColl,
       FuncExp.makefun[T, TKey](lhs, fmFun.x).f,
@@ -36,11 +36,13 @@ class Optimization {
    *   l.flatMap(k => j.withFilter(l(k) is r(_)).map(mcf(k, _)))
    * into:
    *   l.join(j, l, r, (p: Exp[(Int, Int)]) => mcf(p._1, p._2))
+   * A problem appears if l or j is only FilterMonadic but not Traversable - and that won't be detected by the pattern
+   * match.
    */
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
-      case FlatMap(fmColl,
-        fmFun @ FuncExpBody(MapOp(WithFilter(wfColl, wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
+      case FlatMap(fmColl: Exp[Traversable[_]],
+        fmFun @ FuncExpBody(MapOp(WithFilter(wfColl: Exp[Traversable[_]], wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
         if (!wfColl.isOrContains(fmFun.x))
       =>
         if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
@@ -51,7 +53,6 @@ class Optimization {
           e
       case _ => e
     }
-  */
   val removeIdentityMaps: Exp[_] => Exp[_] =
     e => e match {
       case MapOp(col, FuncExpIdentity()) =>
@@ -85,9 +86,9 @@ class Optimization {
 object Optimization {
   val opt = new Optimization()
 
-  //def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(opt.cartProdToJoin)
+  def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(opt.cartProdToJoin)
 
-  def optimize[T](exp: Exp[T]): Exp[T] = exp //optimizeCartProdToJoin(exp)
+  def optimize[T](exp: Exp[T]): Exp[T] = optimizeCartProdToJoin(exp)
 
   def normalize[T](exp: Exp[T]): Exp[T] = exp.transform(opt.normalizer)
 

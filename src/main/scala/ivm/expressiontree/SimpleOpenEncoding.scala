@@ -150,6 +150,11 @@ object SimpleOpenEncoding {
           }
           builder.result()
         }
+        override def equals(other: Any) = other match {
+            //XXX: the type here is a hack, but passes tests. We need to move the Join class to the top-level.
+          case that: TraversableOps[_]#Join[_, _, _, _] => this.children == that.children
+          case _ => false
+        }
       }
       def join[S, TKey, TResult, That](outercol: Exp[Traversable[S]],
                                        outerKeySelector: Exp[T] => Exp[TKey],
