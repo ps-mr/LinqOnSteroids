@@ -140,15 +140,15 @@ object SimpleOpenEncoding {
       def groupBy[K](f: Exp[T] => Exp[K]): Exp[Map[K, Repr]] =
         GroupBy(this.t, FuncExp(f))
 
-      case class Join[S, TKey, TResult](colouter: Exp[Repr],
+      case class Join[S, TKey, TResult, That](colouter: Exp[Repr],
                                            colinner: Exp[Traversable[S]],
                                            outerKeySelector: FuncExp[T, TKey],
                                            innerKeySelector: FuncExp[S, TKey],
-                                           resultSelector: FuncExp[(T, S), TResult]) extends
+                                           resultSelector: FuncExp[(T, S), TResult])(implicit cbf: CanBuildFrom[Repr, TResult, That]) extends
                                            QuinaryOp[Exp[Repr],
                                              Exp[Traversable[S]],
                                              FuncExp[T, TKey], FuncExp[S, TKey], FuncExp[(T, S), TResult],
-                                             Traversable[TResult]](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
+                                             That](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
         override def copy(colouter: Exp[Repr],
                                            colinner: Exp[Traversable[S]],
                                            outerKeySelector: FuncExp[T, TKey],
@@ -159,20 +159,25 @@ object SimpleOpenEncoding {
           // naive hash join algorithm
           val ci: Traversable[S] = colinner.interpret()
           val co: Repr = colouter.interpret()
+          val builder = cbf(co)
           if (ci.size > co.size) {
             val map  = ci.groupBy(innerKeySelector.interpret())
-            for (c <- co; d <- map(outerKeySelector.interpret()(c))) yield resultSelector.interpret()(c,d)
+            for (c <- co; d <- map(outerKeySelector.interpret()(c)))
+              builder += resultSelector.interpret()(c,d)
           } else {
             val map  = co.groupBy(outerKeySelector.interpret())
-            for (c <- ci; d <- map(innerKeySelector.interpret()(c))) yield resultSelector.interpret()(d,c)
+            for (c <- ci; d <- map(innerKeySelector.interpret()(c)))
+              builder += resultSelector.interpret()(d,c)
           }
+          builder.result()
         }
       }
-      def join[S, TKey, TResult](outercol: Exp[Traversable[S]],
+      def join[S, TKey, TResult, That](outercol: Exp[Traversable[S]],
                                outerKeySelector: Exp[T] => Exp[TKey],
                                innerKeySelector: Exp[S] => Exp[TKey],
-                               resultSelector: Exp[(T, S)] => Exp[TResult]): Exp[Traversable[TResult]]
-      = Join[S, TKey, TResult](this.t, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
+                               resultSelector: Exp[(T, S)] => Exp[TResult])
+                                (implicit cbf: CanBuildFrom[Repr, TResult, That]): Exp[That]
+      = Join[S, TKey, TResult, That](this.t, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
     }
 
     trait TraversableViewLikeOps[
