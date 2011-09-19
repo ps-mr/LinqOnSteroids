@@ -94,6 +94,18 @@ object SimpleOpenEncoding {
       override def copy(base: Exp[This], f: Exp[T => Boolean]) = WithFilter[T, Repr, This](base, f)
     }
 
+    case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr]) extends UnaryOpExp[Repr, TraversableView[T, Repr]](base) {
+      override def interpret = base.interpret.view
+      override def copy(base: Exp[Repr]) = View[T, Repr](base)
+    }
+
+    case class Force[T, Repr <: TraversableLike[T, Repr] with Traversable[T],
+                     ViewColl <: Repr with TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
+                    (base: Exp[ViewColl]) extends UnaryOpExp[ViewColl, Traversable[T]](base) {
+      override def interpret = base.interpret.force
+      override def copy(base: Exp[ViewColl]) = Force[T, Repr, ViewColl](base)
+    }
+
     /* Lift faithfully the complete functional part of the FilterMonadic trait - i.e. all methods excluding foreach.
      * This trait is used both for concrete collections of type Repr <: FilterMonadic[T, Repr] (This = Repr), but also for results
      * of withFilter, which have type <: FilterMonadic[T, Repr] but not <: Repr (This = FilterMonadic[T, Repr]).
@@ -122,11 +134,6 @@ object SimpleOpenEncoding {
         override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union(base, that)
       }
 
-      case class View(base: Exp[Repr]) extends UnaryOpExp[Repr, TraversableView[T, Repr]](base) {
-        override def interpret = base.interpret.view
-        override def copy(base: Exp[Repr]) = View(base)
-      }
-
       case class GroupBy[K](base: Exp[Repr], f: Exp[T => K]) extends BinaryOpExp[Repr, T => K, Map[K, Repr]](base, f) {
         override def interpret = base.interpret groupBy f.interpret()
         override def copy(base: Exp[Repr], f: Exp[T => K]) = GroupBy(base, f)
@@ -138,7 +145,7 @@ object SimpleOpenEncoding {
       def union[U >: T, That](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         Union(this.t, that)
 
-      def view: Exp[TraversableView[T, Repr]] = View(this.t)
+      def view: Exp[TraversableView[T, Repr]] = View[T, Repr](this.t)
 
       def groupBy[K](f: Exp[T] => Exp[K]): Exp[Map[K, Repr]] =
         GroupBy(this.t, FuncExp(f))
@@ -189,12 +196,7 @@ object SimpleOpenEncoding {
         ViewColl <: Repr with TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
       extends TraversableLikeOps[T, ViewColl]
     {
-      case class Force(base: Exp[ViewColl]) extends UnaryOpExp[ViewColl, Traversable[T]](base) {
-        override def interpret = base.interpret.force
-        override def copy(base: Exp[ViewColl]) = Force(base)
-      }
-
-      def force = Force(this.t)
+      def force = Force[T, Repr, ViewColl](this.t)
 
       override def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
         new WithFilterView(this.t, FuncExp(f))
