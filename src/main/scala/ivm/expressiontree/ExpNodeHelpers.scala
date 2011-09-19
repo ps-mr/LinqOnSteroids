@@ -23,12 +23,15 @@ trait NullaryExp[R] extends CheckingExp[R] {
   def checkedGenericConstructor = _ => this
 }
 
-abstract class UnaryOp[T1 <: Exp[_], R](t1: T1) extends CheckingExp[R] {
+trait UnaryOpTrait[T1 <: Exp[_], R] extends CheckingExp[R] {
+  def t1: T1
   override def nodeArity = 1
   def children = Seq(t1)
   def checkedGenericConstructor = v => copy(v(0).asInstanceOf[T1])
   def copy(t1: T1): Exp[R]
 }
+
+abstract class UnaryOp[T1 <: Exp[_], R](val t1: T1) extends UnaryOpTrait[T1, R]
 
 abstract class UnaryOpExp[T1, R](t1: Exp[T1]) extends UnaryOp[Exp[T1], R](t1)
 
