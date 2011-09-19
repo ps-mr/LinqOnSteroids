@@ -1,12 +1,30 @@
 package ivm.expressiontree
 
 object Lifting {
+  implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A,B](pair._1, pair._2)
+
+  //To "unlift" a pair, here's my first solution:
+  /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
+  /*
+  //Unfortunately this conversion is not redundant; we may want to have a special node to support this, or to
+  //remove Pair constructors applied on top of other pair constructors.
+  implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): Pair[A, B] =
+    (Pair[A,B] _).tupled(unliftPair(pair))
+  */
+
+  //Here's the second one, adapted from Klaus code. It represents but does not build a tuple (once one adds lazy vals).
+  //However, one cannot do pattern matching against the result, not with the existing pattern.
+  //Lesson: Scala does not allow to define additional extractors for a given pattern type, and syntax shortcuts such
+  //as tuples or => are simply built-in in the language.
   case class PairHelper[A,B](p: Exp[(A,B)]) {
-    val _1 = Proj1(p)
-    val _2 = Proj2(p)
+    lazy val _1 = Proj1(p)
+    lazy val _2 = Proj2(p)
   }
 
-  implicit def toPairHelper[A,B](e: Exp[(A,B)]) : PairHelper[A,B] = PairHelper(e)
+  implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
+
+  implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
+    x => App(f, x)
 
   // these functions are explicitly not implicit :)
   def liftCall[Res](id: Symbol, callfunc: () => Res) = new Call0(id,callfunc)
@@ -23,14 +41,12 @@ object Lifting {
 
   def liftFunc[S,T](f: Exp[S] => Exp[T]) : Exp[S => T] = FuncExp(f)
 
-  implicit def liftT[T](x: T): Exp[T] = Const(x)
+  implicit def toExp[T](x: T): Exp[T] = Const(x)
   /*implicit def liftOrd[T: Ordering](x: T) = Const(x)
   implicit def liftNum[T: Numeric](x: T) = Const(x)
 
   implicit def liftBool(x: Boolean) : Exp[Boolean] = Const(x)
   implicit def liftString(x: String) : Exp[String] = Const(x)*/
-
-  implicit def liftPair[A,B](pair: (Exp[A],Exp[B])) : Exp[(A,B)] = Pair[A,B](pair._1, pair._2)
 
   class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)

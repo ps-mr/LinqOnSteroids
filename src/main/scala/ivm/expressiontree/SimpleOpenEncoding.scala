@@ -62,8 +62,8 @@ object SimpleOpenEncoding {
       def <=(that: Exp[T]) = LEq(t, that)
     }
 
-    implicit def expToNumExp[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
-    implicit def tToNumExp[T: Numeric](t: T): NumOps[T] = expToNumExp(t)
+    implicit def expToNumOps[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
+    implicit def tToNumOps[T: Numeric](t: T): NumOps[T] = expToNumOps(t)
     implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
     implicit def tToOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
   }
