@@ -176,11 +176,11 @@ object SimpleOpenEncoding {
         }
       }
       def join[S, TKey, TResult, That](outercol: Exp[Traversable[S]],
-                               outerKeySelector: Exp[T] => Exp[TKey],
-                               innerKeySelector: Exp[S] => Exp[TKey],
-                               resultSelector: Exp[(T, S)] => Exp[TResult])
-                                (implicit cbf: CanBuildFrom[Repr, TResult, That]): Exp[That]
-      = Join[S, TKey, TResult, That](this.t, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
+                                       outerKeySelector: Exp[T] => Exp[TKey],
+                                       innerKeySelector: Exp[S] => Exp[TKey],
+                                       resultSelector: Exp[(T, S)] => Exp[TResult])
+                                      (implicit cbf: CanBuildFrom[Repr, TResult, That]): Exp[That]
+      = Join(this.t, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
     }
 
     trait TraversableViewLikeOps[
@@ -327,14 +327,14 @@ object SimpleOpenEncoding {
       val b = a.map(_ + 1)
       assertType[Exp[Traversable[Int]]](b)
       // The underscore is due to the type of TraversableView.canBuildFrom. However, it doesn't really matter - see the
-      // type of forcedB 
+      // type of forcedB
       assertType[Exp[TraversableView[Int, Traversable[_]]]](b)
       //assertType[Exp[TraversableView[Int, Traversable[Int]]]](b)
       showInterp("b", b)
       val forcedB = b.force
       showInterp("forcedB", forcedB)
       assertType[Exp[Traversable[Int]]](forcedB)
-      
+
       val c = a.withFilter(_ <= 3)
       assertType[Exp[Traversable[Int]]](c)
       assertType[Exp[TraversableView[Int, Traversable[Int]]]](c)
