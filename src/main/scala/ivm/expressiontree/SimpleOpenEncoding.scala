@@ -42,10 +42,8 @@ object SimpleOpenEncoding {
 
     implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
 
-    case class FunOps[A, B](f: Exp[A => B]) extends (Exp[A] => Exp[B]) {
-      def apply(x: Exp[A]) = App(f, x)
-    }
-    implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] = FunOps(f)
+    implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
+      x => App(f, x)
   }
 
   /**
