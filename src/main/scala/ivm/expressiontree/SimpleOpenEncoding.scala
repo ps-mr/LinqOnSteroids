@@ -71,8 +71,8 @@ object SimpleOpenEncoding {
   trait TraversableOps {
     import OpsExpressionTree._
     def newWithFilter[T, Repr <: FilterMonadic[T, Repr]](base: Exp[Repr],
-                                                        f: Exp[T => Boolean]) = new WithFilter[T, Repr, Repr](base, f)
-    def newMapOp[T, Repr <: FilterMonadic[T, Repr], U, That](base: Exp[FilterMonadic[T, Repr]], f: Exp[T => U])(implicit c: CanBuildFrom[Repr, U, That]) =
+                                                        f: FuncExp[T, Boolean]) = new WithFilter[T, Repr, Repr](base, f)
+    def newMapOp[T, Repr <: FilterMonadic[T, Repr], U, That](base: Exp[FilterMonadic[T, Repr]], f: FuncExp[T, U])(implicit c: CanBuildFrom[Repr, U, That]) =
       new MapOp[T, Repr, FilterMonadic[T, Repr], U, That](base, f)(c)
 
     /* Lift faithfully the complete functional part of the FilterMonadic trait - i.e. all methods excluding foreach.
@@ -170,10 +170,10 @@ object SimpleOpenEncoding {
       override def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
         new WithFilterView(this.t, FuncExp(f))
 
-      class WithFilterView(base: Exp[ViewColl], f: Exp[T => Boolean]) extends WithFilter[T,
-        ViewColl, ViewColl](base, f) with BinaryOpExpTrait[ViewColl, T => Boolean, ViewColl] {
+      class WithFilterView(base: Exp[ViewColl], f: FuncExp[T, Boolean]) extends WithFilter[T,
+        ViewColl, ViewColl](base, f) with BinaryOpTrait[Exp[ViewColl], FuncExp[T, Boolean], ViewColl] {
         override def interpret = base.interpret filter f.interpret()
-        override def copy(base: Exp[ViewColl], f: Exp[T => Boolean]) = new WithFilterView(base, f)
+        override def copy(base: Exp[ViewColl], f: FuncExp[T, Boolean]) = new WithFilterView(base, f)
       }
     }
 
