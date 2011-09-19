@@ -139,6 +139,40 @@ object SimpleOpenEncoding {
 
       def groupBy[K](f: Exp[T] => Exp[K]): Exp[Map[K, Repr]] =
         GroupBy(this.t, FuncExp(f))
+
+      case class Join[S, TKey, TResult](colouter: Exp[Repr],
+                                           colinner: Exp[Traversable[S]],
+                                           outerKeySelector: FuncExp[T, TKey],
+                                           innerKeySelector: FuncExp[S, TKey],
+                                           resultSelector: FuncExp[(T, S), TResult]) extends
+                                           QuinaryOp[Exp[Repr],
+                                             Exp[Traversable[S]],
+                                             FuncExp[T, TKey], FuncExp[S, TKey], FuncExp[(T, S), TResult],
+                                             Traversable[TResult]](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
+        override def copy(colouter: Exp[Repr],
+                                           colinner: Exp[Traversable[S]],
+                                           outerKeySelector: FuncExp[T, TKey],
+                                           innerKeySelector: FuncExp[S, TKey],
+                                           resultSelector: FuncExp[(T, S), TResult]) = Join(colouter, colinner, outerKeySelector, innerKeySelector, resultSelector)
+
+        override def interpret() = {
+          // naive hash join algorithm
+          val ci: Traversable[S] = colinner.interpret()
+          val co: Repr = colouter.interpret()
+          if (ci.size > co.size) {
+            val map  = ci.groupBy(innerKeySelector.interpret())
+            for (c <- co; d <- map(outerKeySelector.interpret()(c))) yield resultSelector.interpret()(c,d)
+          } else {
+            val map  = co.groupBy(outerKeySelector.interpret())
+            for (c <- ci; d <- map(innerKeySelector.interpret()(c))) yield resultSelector.interpret()(d,c)
+          }
+        }
+      }
+      def join[S, TKey, TResult](outercol: Exp[Traversable[S]],
+                               outerKeySelector: Exp[T] => Exp[TKey],
+                               innerKeySelector: Exp[S] => Exp[TKey],
+                               resultSelector: Exp[(T, S)] => Exp[TResult]): Exp[Traversable[TResult]]
+      = Join[S, TKey, TResult](this.t, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
     }
 
     trait TraversableViewLikeOps[
