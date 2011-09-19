@@ -97,17 +97,6 @@ object TravLifter {
                              resultSelector: Exp[(T, S)] => Exp[TResult]): Exp[Traversable[TResult]]
     = Join[T,S,TKey,TResult](this.underlying, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
   }
-  
-  class TraversableWrapper[T](val underlying: Exp[Traversable[T]]) extends TraversableOps[T] {
-    def asIndexable = new QueryReifier[T](underlying)
-  }
 
-  //XXX better define the usage.
-  case class QueryReifier[T](t: Exp[Traversable[T]]) extends UnaryOpExp[Traversable[T], Traversable[T]](t) with TraversableOps[T] {
-    //Bad idea - the QueryReifier node needs to be part of the expression tree.
-    //override val underlying = t
-    override val underlying = this
-    override def copy(t: Exp[Traversable[T]]) = new QueryReifier(t)
-    override def interpret() = t.interpret()
-  }
+  class TraversableWrapper[T](val underlying: Exp[Traversable[T]]) extends TraversableOps[T]
 }
