@@ -41,6 +41,11 @@ object SimpleOpenEncoding {
     }
 
     implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
+
+    case class FunOps[A, B](f: Exp[A => B]) extends (Exp[A] => Exp[B]) {
+      def apply(x: Exp[A]) = App(f, x)
+    }
+    implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] = FunOps(f)
   }
 
   /**
@@ -392,6 +397,10 @@ object SimpleOpenEncoding {
       val d7 = c groupBy (ab => ab._2)
       assertType[Exp[Map[Int, Map[Int, Int]]]](d7)
       showInterp("d7", d7)
+
+      val d8 = d7(4)
+      assertType[Exp[Map[Int, Int]]](d8)
+      showInterp("d8", d8)
 
       testTraversableView(a)
       testInadequate(c)
