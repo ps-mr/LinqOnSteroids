@@ -174,19 +174,38 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     testFlatMap(working = false)
   }
 
-  @Ignore
-  @Test
-  def testFlatMap2() {
+  //Invalid test case; the query tree is exotic and thus causes failure. Recorded as a typical example.
+  @Ignore @Test def flatMap2V0 = testFlatMap2(0)
+
+  @Test def flatMap2V1 = testFlatMap2(1)
+  @Test def flatMap2V2 = testFlatMap2(2)
+
+  def testFlatMap2(version: Int) {
     val v = new IncHashSet[Int]
     v ++= Seq(0, 1, 2)
     val vArr = Array(IncHashSet(40, 50, 60), IncHashSet(40, 50, 60), IncHashSet(40, 50, 60), IncHashSet(40, 50, 60))
 
-    // This term is invalid because of its use of interpret (which could be avoided if map were available on Exp[Traversable[T]],
-    // rather than only on QueryReifier).
-    val res = new IncrementalResult[Int](for (i <- v.asQueryable;
+    // This term is exotic because of its use of interpret - which can be avoided, now that map is available on
+    // Exp[Traversable[T]], rather than only on QueryReifier[T].
+    val resOld = new IncrementalResult[Int](for (i <- v.asQueryable;
                                               j <- liftCall('dontknow,
                                                 ((_: Array[IncHashSet[Int]]).apply(_: Int).asQueryable),
                                                 vArr, i).interpret()) yield i + j)
+
+    //Now that map is available, we can write also this code:
+    val resMid = new IncrementalResult[Int](for (i <- v.asQueryable;
+                                              j <- liftCall('dontknow,
+                                                ((_: Array[IncHashSet[Int]]).apply(_: Int)),
+                                                vArr, i)) yield i + j)
+    // But in the last line, we get j <- coll with coll: Exp[IncHashSet[T]], and IncHashSet[T] <: Exp[Traversable[T]].
+    // That's bad!
+
+    //This code is yet better.
+    val resNew = new IncrementalResult[Int](for (i <- v.asQueryable;
+                                              j <- toExp(genericWrapArray(vArr))(implicitly)(i))
+                                            yield i + j)
+
+    val res = Seq(resOld, resMid, resNew)(version)
     show("res", res)
     v += 3
     show("res", res)
