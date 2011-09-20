@@ -62,7 +62,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
 
     println("v: " + v)
     val vPlusOne: IncArrayBuffer[Int] = v.map(_ + 1) // confusingly, this works
-    val vQueryable: QueryReifier[Int] = v.asQueryable
+    val vQueryable: Exp[Traversable[Int]] = v.asQueryable
     assert(vQueryable == v)
     //val vQueryablePlusOne2: ArrayBuffer[Int] = vQueryable.map((i: Int) => i + 1) //gives error
     val vQueryablePlusOne: Exp[Traversable[Int]] = vQueryable.map(_ + 1)
@@ -103,7 +103,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     println("v2.map(_ + 1): " + v2.map(_ + 1))
     println("v2.asQueryable.map(_ + 1): " + v2.asQueryable.map(_ + 1))
     println("v2.asCollection.map(_ + 1): " + v2.asCollection.map(_ + 1))
-    val vQueryable: QueryReifier[Int] = v.asQueryable
+    val vQueryable: Exp[Traversable[Int]] = v.asQueryable
     assert(vQueryable == v)
     //val vQueryablePlusOne2: HashSet[Int] = vQueryable.map((i: Int) => i + 1) //gives error
     val vQueryablePlusOne: Exp[Traversable[Int]] = vQueryable.map(_ + 1)

@@ -25,10 +25,10 @@ package expressiontree
 //Probably Repr is also needed, especially if the produced Iterable must also offer stronger
 //interfaces.
 //TODO: add notification interface!
-trait Queryable[T, Repr] extends NullaryExpTrait[Traversable[T]] with MsgSeqPublisher[T] with QueryReifier[T] {
+trait Queryable[T, Repr] extends NullaryExpTrait[Traversable[T]] with MsgSeqPublisher[T] {
   self: Traversable[T] with Repr =>
   //type Pub = Queryable[T, Repr] //XXX? Should this be defined here already? Or should Pub be even more specific?
-  def asQueryable: QueryReifier[T] = this
+  def asQueryable: Exp[Traversable[T]] = this
   def asCollection: Repr = this
   override def interpret() = this
   //This allows selecting early how the query is to be executed.
