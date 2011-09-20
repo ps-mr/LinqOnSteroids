@@ -151,8 +151,10 @@ object SimpleOpenEncoding {
           builder.result()
         }
         override def equals(other: Any) = other match {
-            //XXX: the type here is a hack, but passes tests. We need to move the Join class to the top-level.
-          case that: TraversableOps[_]#Join[_, _, _, _] => this.children == that.children
+            // XXX: this code passes tests, and the type here is correct, but this is a clumsy way of writing this code.
+            // We should maybe move the Join class to the top-level, so that the default implementation of equals for case
+            // classes is correct.
+          case that: TraversableLikeOps[_, _]#Join[_, _, _, _] => this.children == that.children
           case _ => false
         }
       }
