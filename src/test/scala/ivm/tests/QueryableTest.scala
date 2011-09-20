@@ -82,7 +82,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
 
   def show[T: Ordering](name: String, v: IncrementalResult[T]) {
     println()
-    println("%s: after sorting\t\t%s, before\t\t%s" format(name, v.toSeq.sorted, v))
+    println("%s: after sorting\t\t%s, before\t\t%s; query:\n%s" format(name, v.toSeq.sorted, v, v.inner))
     //println("vIncUpd.exec(): " + vIncUpd.exec())
     //println("vIncUpd.interpret.exec(): " + vIncUpd.interpret.exec())
     //v.interpret() should be (v.interpret().exec())
