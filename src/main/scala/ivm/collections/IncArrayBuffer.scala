@@ -9,7 +9,7 @@ import collection.generic.{SeqFactory, GenericTraversableTemplate}
  * Just an experiment, don't use for real! We are going to support Sets first, not Buffers, as semantics and use cases
  * for them are unclear.
  */
-class IncArrayBuffer[T] extends ArrayBuffer[T]
+class IncArrayBuffer[T](implicit val cm: ClassManifest[Traversable[T]]) extends ArrayBuffer[T]
   with Queryable[T, ArrayBuffer[T]] with ObservableBuffer[T]
   with GenericTraversableTemplate[T, IncArrayBuffer]
   with BufferLike[T, IncArrayBuffer[T]]
@@ -20,6 +20,7 @@ class IncArrayBuffer[T] extends ArrayBuffer[T]
   override def companion = IncArrayBuffer
   override def result() = this
   override def newBuilder = new IncArrayBuffer[T]
+  override def manifest = classManifest
 }
 
 object IncArrayBuffer extends SeqFactory[IncArrayBuffer] {

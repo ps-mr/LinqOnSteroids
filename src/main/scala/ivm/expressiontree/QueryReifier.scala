@@ -48,4 +48,4 @@ trait QueryReifier[T] extends QueryReifierBase[T] with MsgSeqPublisher[T] with E
   */
 }
 
-trait ChildlessQueryReifier[T] extends NullaryExp[Traversable[T]] with QueryReifier[T]
+trait ChildlessQueryReifier[T] extends NullaryExpTrait[Traversable[T]] with QueryReifier[T]

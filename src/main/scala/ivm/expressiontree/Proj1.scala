@@ -1,7 +1,6 @@
 package ivm.expressiontree
 
-case class Proj1[A,B](p: Exp[(A,B)]) extends Exp[A] {
+case class Proj1[A: ClassManifest, B](p: Exp[(A, B)]) extends UnaryOpExp[(A, B), A](p) {
   def interpret() = p.interpret()._1
-  def children = Seq(p)
-  def genericConstructor = (v) => Proj1(v(0).asInstanceOf[Exp[(A,B)]])
+  def copy(p: Exp[(A, B)]) = Proj1(p)
 }

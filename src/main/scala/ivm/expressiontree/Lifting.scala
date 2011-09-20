@@ -1,57 +1,22 @@
 package ivm.expressiontree
 
-object Lifting extends SimpleOpenEncoding.MapOps {
-  implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A,B](pair._1, pair._2)
-
-  //To "unlift" a pair, here's my first solution:
-  /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
-  /*
-  //Unfortunately this conversion is not redundant; we may want to have a special node to support this, or to
-  //remove Pair constructors applied on top of other pair constructors.
-  implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): Pair[A, B] =
-    (Pair[A,B] _).tupled(unliftPair(pair))
-  */
-
-  //Here's the second one, adapted from Klaus code. It represents but does not build a tuple (once one adds lazy vals).
-  //However, one cannot do pattern matching against the result, not with the existing pattern.
-  //Lesson: Scala does not allow to define additional extractors for a given pattern type, and syntax shortcuts such
-  //as tuples or => are simply built-in in the language.
-  case class PairHelper[A,B](p: Exp[(A,B)]) {
-    lazy val _1 = Proj1(p)
-    lazy val _2 = Proj2(p)
-  }
-
-  implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
-
-  implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
-    x => f match {
-      case FuncExp(fe) => fe(x) //This line should be dropped, but then we'll need to introduce a beta-reducer.
-      case _ => App(f, x)
-    }
-
+object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.OpsExpressionTreeTrait {
   // these functions are explicitly not implicit :)
-  def liftCall[Res](id: Symbol, callfunc: () => Res) = new Call0(id,callfunc)
-  def liftCall[A0, Res](id: Symbol, callfunc: A0 => Res, arg0: Exp[A0]) = new Call1(id,callfunc, arg0)
-  def liftCall[A0, A1, Res](id: Symbol, callfunc: (A0, A1) => Res, arg0: Exp[A0], arg1: Exp[A1]) =
+  def liftCall[Res: ClassManifest](id: Symbol, callfunc: () => Res) = new Call0(id,callfunc)
+  def liftCall[A0, Res: ClassManifest](id: Symbol, callfunc: A0 => Res, arg0: Exp[A0]) = new Call1(id,callfunc, arg0)
+  def liftCall[A0, A1, Res: ClassManifest](id: Symbol, callfunc: (A0, A1) => Res, arg0: Exp[A0], arg1: Exp[A1]) =
      new Call2(id,callfunc, arg0, arg1)
-  def liftCall[A0, A1, A2, Res](id: Symbol, callfunc: (A0, A1, A2) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2]) =
+  def liftCall[A0, A1, A2, Res: ClassManifest](id: Symbol, callfunc: (A0, A1, A2) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2]) =
      new Call3(id,callfunc, arg0, arg1, arg2)
-  def liftCall[A0, A1, A2, A3, Res](id: Symbol, callfunc: (A0, A1, A2, A3) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3]) =
+  def liftCall[A0, A1, A2, A3, Res: ClassManifest](id: Symbol, callfunc: (A0, A1, A2, A3) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3]) =
      new Call4(id,callfunc, arg0, arg1, arg2, arg3)
-  def liftCall[A0, A1, A2, A3, A4, Res](id: Symbol, callfunc: (A0, A1, A2, A3, A4) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3], arg4: Exp[A4]) =
+  def liftCall[A0, A1, A2, A3, A4, Res: ClassManifest](id: Symbol, callfunc: (A0, A1, A2, A3, A4) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3], arg4: Exp[A4]) =
      new Call5(id,callfunc, arg0, arg1, arg2, arg3, arg4)
 
 
-  def liftFunc[S,T](f: Exp[S] => Exp[T]) : Exp[S => T] = FuncExp(f)
+  def liftFunc[S: ClassManifest, T: ClassManifest](f: Exp[S] => Exp[T]): Exp[S => T] = FuncExp(f)
 
-  implicit def toExp[T](x: T): Exp[T] = Const(x)
-  /*implicit def liftOrd[T: Ordering](x: T) = Const(x)
-  implicit def liftNum[T: Numeric](x: T) = Const(x)
-
-  implicit def liftBool(x: Boolean) : Exp[Boolean] = Const(x)
-  implicit def liftString(x: String) : Exp[String] = Const(x)*/
-
-  class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
+  class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T], val cm: ClassManifest[T]) {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
   }
 
@@ -69,7 +34,7 @@ object Lifting extends SimpleOpenEncoding.MapOps {
     def unary_! = Not(b)
   }
 
-  implicit def expToNumOps[T: Numeric](t: Exp[T]) = new NumOps(t)
+  implicit def expToNumOps[T: Numeric: ClassManifest](t: Exp[T]) = new NumOps(t)
   implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
   implicit def expToStringOps(t: Exp[String]) = new StringOps(t)
   implicit def expToBooleanOps(t: Exp[Boolean]) = new BooleanOps(t)
@@ -80,8 +45,8 @@ object Lifting extends SimpleOpenEncoding.MapOps {
    * just having a polymorphic lift conversion. Other solutions are possible here but don't remove this ambiguity that
    * affects client code then.
    */
-  implicit def toNumOps[T: Numeric](t: T) = expToNumOps(t)
-  implicit def toOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
+  implicit def toNumOps[T: Numeric: ClassManifest](t: T) = expToNumOps(t)
+  implicit def toOrderingOps[T: Ordering: ClassManifest](t: T) = expToOrderingOps(t)
   // These definitions work even if both liftOrd and liftNum are declared.
   /*implicit def toNumOps[T: Numeric](t: T): NumOps[T] = Const(t)
   implicit def toOrderingOps[T: Ordering](t: T): OrderingOps[T] = Const(t)*/
@@ -102,15 +67,15 @@ object Lifting extends SimpleOpenEncoding.MapOps {
 
     //implicit def liftCall0[Res](f: () => Res) = Call0(f)
 
-    implicit def liftCall1[A0, Res](id: Symbol, f: A0 => Res):
+    implicit def liftCall1[A0, Res: ClassManifest](id: Symbol, f: A0 => Res):
       Exp[A0] => Exp[Res] = new Call1(id,f, _)
-    implicit def liftCall2[A0, A1, Res](id: Symbol, f: (A0, A1) => Res):
+    implicit def liftCall2[A0, A1, Res: ClassManifest](id: Symbol, f: (A0, A1) => Res):
       (Exp[A0], Exp[A1]) => Exp[Res] = new Call2(id,f, _, _)
-    implicit def liftCall3[A0, A1, A2, Res](id: Symbol, f: (A0, A1, A2) => Res):
+    implicit def liftCall3[A0, A1, A2, Res: ClassManifest](id: Symbol, f: (A0, A1, A2) => Res):
       (Exp[A0], Exp[A1], Exp[A2]) => Exp[Res] = new Call3(id,f, _, _, _)
-    implicit def liftCall4[A0, A1, A2, A3, Res](id: Symbol, f: (A0, A1, A2, A3) => Res):
+    implicit def liftCall4[A0, A1, A2, A3, Res: ClassManifest](id: Symbol, f: (A0, A1, A2, A3) => Res):
       (Exp[A0], Exp[A1], Exp[A2], Exp[A3]) => Exp[Res] = new Call4(id,f, _, _, _, _)
-    implicit def liftCall5[A0, A1, A2, A3, A4, Res](id: Symbol, f: (A0, A1, A2, A3, A4) => Res):
+    implicit def liftCall5[A0, A1, A2, A3, A4, Res: ClassManifest](id: Symbol, f: (A0, A1, A2, A3, A4) => Res):
       (Exp[A0], Exp[A1], Exp[A2], Exp[A3], Exp[A4]) => Exp[Res]= new Call5(id,f, _, _, _, _, _)
   }
 }

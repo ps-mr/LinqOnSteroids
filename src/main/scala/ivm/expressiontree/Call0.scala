@@ -1,8 +1,5 @@
 package ivm.expressiontree
 
-class
-Call0[Res](id: Symbol, callfunc: () => Res) extends Call[Res](id) {
-  def children = Seq()
-  def genericConstructor = (_) => this 
+class Call0[Res: ClassManifest](val id: Symbol, callfunc: () => Res) extends NullaryExp[Res] with Call[Res] {
   def interpret() = callfunc()
 }

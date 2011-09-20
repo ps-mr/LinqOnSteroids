@@ -15,11 +15,13 @@ object FuncExpIdentity {
 }
 
 class Optimization {
-  private def buildJoinTyped[T, S, TKey, TResult](fmColl: Exp[Traversable[T]],
+  private def buildJoinTyped[T, S, TKey: ClassManifest, TResult: ClassManifest](fmColl: Exp[Traversable[T]],
                                                   wfColl: Exp[Traversable[S]],
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
                                                   moFun: FuncExp[S, TResult], fmFun: FuncExp[T, GenTraversableOnce[TResult]],
-                                                  wfFun: FuncExp[S, Boolean]): Exp[Traversable[TResult]] /*Join[T, S, TKey, TResult]*/ =
+                                                  wfFun: FuncExp[S, Boolean]): Exp[Traversable[TResult]] /*Join[T, S, TKey, TResult]*/ = {
+    implicit val cmT = fmFun.cmS
+    implicit val cmS = moFun.cmS
     fmColl.join(
       wfColl,
       FuncExp.makefun[T, TKey](lhs, fmFun.x).f,
@@ -28,6 +30,7 @@ class Optimization {
         moFun.body,
         fmFun.x,
         moFun.x).f)
+  }
 
   /*
    * Optimizes expressions of the form:
@@ -69,13 +72,16 @@ class Optimization {
   val mergeFilters: Exp[_] => Exp[_] =
     e => e match {
       case WithFilter(WithFilter(col2: Exp[FilterMonadic[t, _]], f2), f) =>
-        mergeFilters(expToFilterMonExp(col2.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]]).withFilter((x: Exp[_]) => And(f2(x), f(x))))
+        mergeFilters(
+          col2.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]].withFilter{
+            (x: Exp[_]) => And(f2(x), f(x))
+          }(f2.cmS.asInstanceOf[ClassManifest[t]]))
       case _ => e
     }
 
   val normalizer: Exp[_] => Exp[_] =
     e => e match {
-      case p@Plus(x, y) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum)
+      case p@Plus(x, y) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum, p.cm)
       case e@Eq(x, y) => Eq(Exp.min(x, y), Exp.max(x, y))
       case _ => e
     }

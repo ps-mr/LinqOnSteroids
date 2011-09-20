@@ -17,13 +17,18 @@ import collection.{GenTraversableOnce, TraversableViewLike, IterableView, Traver
  * we show here.
  */
 object SimpleOpenEncoding {
-  object OpsExpressionTree {
-    implicit def toExp[T](t: T): Exp[T] = Const(t)
+  trait OpsExpressionTreeTrait {
+    implicit def toExp[T: ClassManifest](t: T): Exp[T] = Const(t)
+    /*implicit def liftOrd[T: Ordering](x: T) = Const(x)
+    implicit def liftNum[T: Numeric](x: T) = Const(x)
 
-    implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A,B](pair._1, pair._2)
+    implicit def liftBool(x: Boolean) : Exp[Boolean] = Const(x)
+    implicit def liftString(x: String) : Exp[String] = Const(x)*/
+
+    implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B]))(implicit cm: ClassManifest[(A, B)]): Pair[A, B] = Pair[A,B](pair._1, pair._2)(cm)
 
     //To "unlift" a pair, here's my first solution:
-    /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
+    /*implicit*/ def unliftPair[A: ClassManifest, B: ClassManifest](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
     /*
     //Unfortunately this conversion is not redundant; we may want to have a special node to support this, or to
     //remove Pair constructors applied on top of other pair constructors.
@@ -35,16 +40,20 @@ object SimpleOpenEncoding {
     //However, one cannot do pattern matching against the result, not with the existing pattern.
     //Lesson: Scala does not allow to define additional extractors for a given pattern type, and syntax shortcuts such
     //as tuples or => are simply built-in in the language.
-    case class PairHelper[A,B](p: Exp[(A,B)]) {
+    case class PairHelper[A: ClassManifest, B: ClassManifest](p: Exp[(A, B)]) {
       lazy val _1 = Proj1(p)
       lazy val _2 = Proj2(p)
     }
 
-    implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
+    implicit def toPairHelper[A: ClassManifest, B: ClassManifest](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
 
-    implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
-      x => App(f, x)
+    implicit def fToFunOps[A: ClassManifest, B: ClassManifest](f: Exp[A => B]): Exp[A] => Exp[B] =
+      x => f match {
+        case FuncExp(fe) => fe(x) //This line should be dropped, but then we'll need to introduce a beta-reducer.
+        case _ => App(f, x)
+      }
   }
+  object OpsExpressionTree extends OpsExpressionTreeTrait
 
   /**
    * In comparison to the other encoding, we don't use CanBuildExp to get most specific types as result types, as
@@ -55,25 +64,29 @@ object SimpleOpenEncoding {
 
   object NumOpsExps {
     import OpsExpressionTree._
-    class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
+    class NumOps[T: Numeric: ClassManifest](val t: Exp[T]) {
       def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
     }
     class OrderingOps[T: Ordering](t: Exp[T]) {
       def <=(that: Exp[T]) = LEq(t, that)
     }
 
-    implicit def expToNumOps[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
-    implicit def tToNumOps[T: Numeric](t: T): NumOps[T] = expToNumOps(t)
+    implicit def expToNumOps[T : Numeric: ClassManifest](t: Exp[T]): NumOps[T] = new NumOps(t)
+    implicit def tToNumOps[T: Numeric: ClassManifest](t: T): NumOps[T] = expToNumOps(t)
     implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
-    implicit def tToOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
+    implicit def tToOrderingOps[T: Ordering: ClassManifest](t: T) = expToOrderingOps(t)
   }
 
   trait TraversableOps {
     import OpsExpressionTree._
     def newWithFilter[T, Repr <: FilterMonadic[T, Repr]](base: Exp[Repr],
                                                         f: FuncExp[T, Boolean]) = new WithFilter[T, Repr, Repr](base, f)
-    def newMapOp[T, Repr <: FilterMonadic[T, Repr], U, That](base: Exp[FilterMonadic[T, Repr]], f: FuncExp[T, U])(implicit c: CanBuildFrom[Repr, U, That]) =
-      new MapOp[T, Repr, FilterMonadic[T, Repr], U, That](base, f)(c)
+    def newMapOp[T, Repr <: FilterMonadic[T, Repr], U, That](
+                                                              base: Exp[FilterMonadic[T, Repr]],
+                                                              f: FuncExp[T, U])
+                                                            (implicit c: CanBuildFrom[Repr, U, That],
+                                                             cm: ClassManifest[U], cmThat: ClassManifest[That]) =
+      new MapOp[T, Repr, FilterMonadic[T, Repr], U, That](base, f)
 
     /* Lift faithfully the complete functional part of the FilterMonadic trait - i.e. all methods excluding foreach.
      * This trait is used both for concrete collections of type Repr <: FilterMonadic[T, Repr] (This = Repr), but also for results
@@ -81,49 +94,53 @@ object SimpleOpenEncoding {
      */
     trait FilterMonadicOpsLike[T, Repr <: FilterMonadic[T, Repr], This <: FilterMonadic[T, Repr]] {
       val t: Exp[This]
-      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[FilterMonadic[T, Repr]] =
+      def withFilter(f: Exp[T] => Exp[Boolean])(implicit cmT: ClassManifest[T]): Exp[FilterMonadic[T, Repr]] =
         WithFilter[T, Repr, This](this.t, FuncExp(f))
-      def map[U, That](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+      def map[U, That](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That], cmT: ClassManifest[T],
+                                            cm: ClassManifest[U], cmThat: ClassManifest[That]): Exp[That] =
         MapOp[T, Repr, This, U, That](this.t, FuncExp(f))
-      def flatMap[U, That](f: Exp[T] => Exp[GenTraversableOnce[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+      def flatMap[U, That](f: Exp[T] => Exp[GenTraversableOnce[U]])
+                          (implicit c: CanBuildFrom[Repr, U, That], cmT: ClassManifest[T], cm: ClassManifest[That]): Exp[That] =
         FlatMap[T, Repr, This, U, That](this.t, FuncExp(f))
     }
     class FilterMonadicOps[T, Repr <: FilterMonadic[T, Repr]](val t: Exp[FilterMonadic[T, Repr]])
       extends FilterMonadicOpsLike[T, Repr, FilterMonadic[T, Repr]]
 
     trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOpsLike[T, Repr, Repr] {
-      case class Filter(base: Exp[Repr], f: Exp[T => Boolean]) extends BinaryOpExp[Repr, T => Boolean, Repr](base, f) {
+      case class Filter(base: Exp[Repr], f: Exp[T => Boolean]) extends BinaryOpExp[Repr, T => Boolean, Repr](base, f)(base.manifest) {
         override def interpret = base.interpret filter f.interpret()
         override def copy(base: Exp[Repr], f: Exp[T => Boolean]) = Filter(base, f)
       }
 
       case class Union[U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
-                                    (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOpExp[Repr, Traversable[U], That](base, that) {
+                                    (implicit c: CanBuildFrom[Repr, U, That], cm: ClassManifest[That]) extends BinaryOpExp[Repr, Traversable[U], That](base, that) {
         override def interpret = base.interpret ++ that.interpret
         override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union(base, that)
       }
 
-      case class GroupBy[K](base: Exp[Repr], f: Exp[T => K]) extends BinaryOpExp[Repr, T => K, Map[K, Repr]](base, f) {
+      case class GroupBy[K](base: Exp[Repr], f: Exp[T => K])(implicit cm: ClassManifest[K]) extends BinaryOpExp[Repr,
+        T => K, Map[K, Repr]](base, f)(classManifest[Map[K, Repr]]) {
         override def interpret = base.interpret groupBy f.interpret()
         override def copy(base: Exp[Repr], f: Exp[T => K]) = GroupBy(base, f)
       }
 
-      def filter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
+      def filter(f: Exp[T] => Exp[Boolean])(implicit cmT: ClassManifest[T]): Exp[Repr] =
         Filter(this.t, FuncExp(f))
 
-      def union[U >: T, That](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+      def union[U >: T, That](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That], cm: ClassManifest[That]): Exp[That] =
         Union(this.t, that)
 
       def view: Exp[TraversableView[T, Repr]] = View[T, Repr](this.t)
 
-      def groupBy[K](f: Exp[T] => Exp[K]): Exp[Map[K, Repr]] =
+      def groupBy[K](f: Exp[T] => Exp[K])(implicit cmT: ClassManifest[T], cmK: ClassManifest[K]): Exp[Map[K, Repr]] =
         GroupBy(this.t, FuncExp(f))
 
       case class Join[S, TKey, TResult, That](colouter: Exp[Repr],
                                            colinner: Exp[Traversable[S]],
                                            outerKeySelector: FuncExp[T, TKey],
                                            innerKeySelector: FuncExp[S, TKey],
-                                           resultSelector: FuncExp[(T, S), TResult])(implicit cbf: CanBuildFrom[Repr, TResult, That]) extends
+                                           resultSelector: FuncExp[(T, S), TResult])
+                                             (implicit cbf: CanBuildFrom[Repr, TResult, That], manifest: ClassManifest[That]) extends
                                            QuinaryOp[Exp[Repr],
                                              Exp[Traversable[S]],
                                              FuncExp[T, TKey], FuncExp[S, TKey], FuncExp[(T, S), TResult],
@@ -162,7 +179,9 @@ object SimpleOpenEncoding {
                                        outerKeySelector: Exp[T] => Exp[TKey],
                                        innerKeySelector: Exp[S] => Exp[TKey],
                                        resultSelector: Exp[(T, S)] => Exp[TResult])
-                                      (implicit cbf: CanBuildFrom[Repr, TResult, That]): Exp[That]
+                                      (implicit cbf: CanBuildFrom[Repr, TResult, That],
+                                       cmT: ClassManifest[T], cmS: ClassManifest[S], cm: ClassManifest[TKey],
+                                       cm2: ClassManifest[TResult], cmThat: ClassManifest[That]): Exp[That]
       = Join(this.t, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
     }
 
@@ -172,13 +191,15 @@ object SimpleOpenEncoding {
         ViewColl <: Repr with TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
       extends TraversableLikeOps[T, ViewColl]
     {
+      def viewCollManifest: ClassManifest[ViewColl]
       def force = Force[T, Repr, ViewColl](this.t)
 
-      override def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
+      override def withFilter(f: Exp[T] => Exp[Boolean])(implicit cmT: ClassManifest[T]): Exp[ViewColl] =
         new WithFilterView(this.t, FuncExp(f))
 
       class WithFilterView(base: Exp[ViewColl], f: FuncExp[T, Boolean]) extends WithFilter[T,
         ViewColl, ViewColl](base, f) with BinaryOpTrait[Exp[ViewColl], FuncExp[T, Boolean], ViewColl] {
+        override def manifest = viewCollManifest
         override def interpret = base.interpret filter f.interpret()
         override def copy(base: Exp[ViewColl], f: FuncExp[T, Boolean]) = new WithFilterView(base, f)
       }
@@ -186,8 +207,10 @@ object SimpleOpenEncoding {
 
     class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable[T]]
 
-    class TraversableViewOps[T](val t: Exp[TraversableView[T, Traversable[T]]])
-      extends TraversableViewLikeOps[T, Traversable[T], TraversableView[T, Traversable[T]]]
+    class TraversableViewOps[T: ClassManifest](val t: Exp[TraversableView[T, Traversable[T]]])
+      extends TraversableViewLikeOps[T, Traversable[T], TraversableView[T, Traversable[T]]] {
+      def viewCollManifest = classManifest[TraversableView[T, Traversable[T]]]
+    }
 
     implicit def expToTravExp[T](t: Exp[Traversable[T]]): TraversableOps[T] = new TraversableOps(t)
     implicit def tToTravExp[T](t: Traversable[T]): TraversableOps[T] = {
@@ -195,13 +218,13 @@ object SimpleOpenEncoding {
       expToTravExp(t)
     }
 
-    implicit def expToTravViewExp[T](t: Exp[TraversableView[T, Traversable[T]]]): TraversableViewOps[T] = new TraversableViewOps(t)
-    implicit def tToTravViewExp[T](t: TraversableView[T, Traversable[T]]): TraversableViewOps[T] = expToTravViewExp(t)
+    implicit def expToTravViewExp[T: ClassManifest](t: Exp[TraversableView[T, Traversable[T]]]): TraversableViewOps[T] = new TraversableViewOps(t)
+    implicit def tToTravViewExp[T: ClassManifest](t: TraversableView[T, Traversable[T]]): TraversableViewOps[T] = expToTravViewExp(t)
 
-    implicit def expToTravViewExp2[T](t: Exp[TraversableView[T, Traversable[_]]]): TraversableViewOps[T] = expToTravViewExp(
+    implicit def expToTravViewExp2[T: ClassManifest](t: Exp[TraversableView[T, Traversable[_]]]): TraversableViewOps[T] = expToTravViewExp(
       t.asInstanceOf[Exp[TraversableView[T, Traversable[T]]]])
     //XXX
-    implicit def tToTravViewExp2[T](t: TraversableView[T, Traversable[_]]): TraversableViewOps[T] = expToTravViewExp2(t)
+    implicit def tToTravViewExp2[T: ClassManifest](t: TraversableView[T, Traversable[_]]): TraversableViewOps[T] = expToTravViewExp2(t)
 
     implicit def expToFilterMonExp[T, Repr <: FilterMonadic[T, Repr]](t: Exp[FilterMonadic[T, Repr]]):
       FilterMonadicOps[T, Repr] = new FilterMonadicOps(t)
@@ -380,7 +403,7 @@ object SimpleOpenEncoding {
     }
 
     //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
-    def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = App(f, t)
+    def withExp[T, U: ClassManifest](t: Exp[T])(f: T => U): Exp[U] = App(f, t)
     def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
 
     def main(args: Array[String]) {
