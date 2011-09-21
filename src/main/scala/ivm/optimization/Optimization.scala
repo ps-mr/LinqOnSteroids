@@ -33,6 +33,33 @@ class Optimization {
   }
 
   /*
+  def TypedExp[T: ClassManifest] = new AnyRef {
+    def unapply(t: Exp[_]): Option[Exp[T]] = if (t.manifest == classManifest[T]) Some(t.asInstanceOf[Exp[T]]) else None
+  }
+  object TypedExp {
+    //def unapply[T](t: Exp[_]): Option[Exp[T]] = if (t.manifest == classManifest[T]) Some(t.asInstanceOf[Exp[T]]) else None
+    //def unapply[T](t: Exp[_]): Option[Exp[T]] = Some(t.asInstanceOf[Exp[T]])
+    def unapply[T](t: Exp[_]): Boolean = true
+  }
+
+  object TypedExp {
+    def unapply[T: ClassManifest](t: Exp[_]): Option[Exp[T]] = if (t.manifest == classManifest[T]) Some(t.asInstanceOf[Exp[T]]) else None
+    //def unapply[T](t: Exp[_]): Option[ClassManifest[T]] = Some(t.manifest)
+  }
+
+  //Last, best version:
+  object TypedExp {
+    def unapply[T](t: Exp[T]): Option[ClassManifest[T]] = Some(t.manifest.asInstanceOf[ClassManifest[T]])
+  }
+
+  val ClassOfTrav: ClassManifest[Traversable[_]] = classManifest[Traversable[_]]
+  */
+
+  // Only solution which worked in the end. Of course, it doesn't rebind t. I could return it casted, but then I
+  // couldn't use this easily in a pattern guard.
+  def hasType[T: ClassManifest](t: Exp[_]): Boolean = t.manifest <:< classManifest[T]
+
+  /*
    * Optimizes expressions of the form:
    *   for (k <- l; k2 <- j if l(k) is r(k2)) yield mcf(k, k2)
    * that is:
@@ -44,9 +71,12 @@ class Optimization {
    */
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
+      /*case FlatMap(fmColl @ TypedExp(ClassOfTrav), //: Exp[Traversable[_]],
+        fmFun @ FuncExpBody(MapOp(WithFilter(wfColl: Exp[Traversable[_]], wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
+        if !wfColl.isOrContains(fmFun.x) && hasType[Traversable[_]](fmColl) && hasType[Traversable[_]](wfColl)*/
       case FlatMap(fmColl: Exp[Traversable[_]],
         fmFun @ FuncExpBody(MapOp(WithFilter(wfColl: Exp[Traversable[_]], wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
-        if (!wfColl.isOrContains(fmFun.x))
+        if !wfColl.isOrContains(fmFun.x) && hasType[Traversable[_]](fmColl) && hasType[Traversable[_]](wfColl)
       =>
         if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
           buildJoinTyped(fmColl, wfColl, lhs, rhs, moFun, fmFun, wfFun)
