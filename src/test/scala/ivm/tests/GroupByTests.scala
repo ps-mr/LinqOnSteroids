@@ -6,7 +6,6 @@ import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test
 import ivm.collections.CollectionReifier
 import ivm.optimization.Optimization
-import org.scalatest.Assertions.assert
 import ivm.expressiontree.Lifting._
 
 class GroupByTests extends JUnitSuite with ShouldMatchersForJUnit {
@@ -14,7 +13,7 @@ class GroupByTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testGroupBy() {
-    val q = l.groupBy( (x) => x <= 5)
+    val q = l.groupBy(_ <= 5)
     val q1 = q(true)
     q1.interpret() should be (Vector(1,2,3,4,5))
   }
