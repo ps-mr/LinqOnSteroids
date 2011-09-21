@@ -1,7 +1,7 @@
 package ivm
 package collections
 
-import expressiontree.{QueryReifier, Const}
+import expressiontree.Const
 
 //Reifier on collections (in particular, Traversable). Reifiers on other data sources are also possible.
 
