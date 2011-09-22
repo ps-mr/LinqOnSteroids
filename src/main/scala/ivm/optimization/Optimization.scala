@@ -59,6 +59,20 @@ class Optimization {
   }
 
   val TraversableManifest: ClassManifest[Traversable[_]] = classManifest[Traversable[_]]
+  /*def matcher[T](manifest: ClassManifest[T]) = new AnyRef {
+    def unapply(t: Exp[_]): Boolean = if (t.manifest == classManifest[T]) Some(t.asInstanceOf[Exp[T]]) else None
+  }
+  val TraversableExp = matcher(TraversableManifest)*/
+  def typedExpMatcher[T: ClassManifest] = new AnyRef {
+    def unapply(t: Exp[_]): Boolean =
+      if (t.manifest == classManifest[T])
+        true
+      else
+        false
+  }
+  val TraversableExp = typedExpMatcher[Traversable[_]]
+  // define extractors for TraversableExp and so on. That's less ugly than having this classManifest thing - since one
+  // can't have expressions in a pattern match, apparently.
 
   // Only solution which worked in the end. Of course, it doesn't rebind t. I could return it casted, but then I
   // couldn't use this easily in a pattern guard.
@@ -79,8 +93,8 @@ class Optimization {
       /*case FlatMap(fmColl @ TypedExp(TraversableManifest), //: Exp[Traversable[_]],
         fmFun @ FuncExpBody(MapOp(WithFilter(wfColl: Exp[Traversable[_]], wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
         if !wfColl.isOrContains(fmFun.x) && hasType[Traversable[_]](fmColl) && hasType[Traversable[_]](wfColl)*/
-      case FlatMap((fmColl: Exp[Traversable[_]]) & TypedExp(TraversableManifest),
-        fmFun @ FuncExpBody(MapOp(WithFilter((wfColl: Exp[Traversable[_]]) & TypedExp(TraversableManifest), wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
+      case FlatMap((fmColl: Exp[Traversable[_]]) & TraversableExp(),
+        fmFun @ FuncExpBody(MapOp(WithFilter((wfColl: Exp[Traversable[_]]) & TraversableExp(), wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
         if !wfColl.isOrContains(fmFun.x)// && hasType[Traversable[_]](fmColl) && hasType[Traversable[_]](wfColl)
       =>
         if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
