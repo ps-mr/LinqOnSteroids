@@ -63,6 +63,11 @@ class Optimization {
     def unapply(t: Exp[_]): Boolean = if (t.manifest == classManifest[T]) Some(t.asInstanceOf[Exp[T]]) else None
   }
   val TraversableExp = matcher(TraversableManifest)*/
+  def typedExpMatcherBind[T: ClassManifest] = new AnyRef {
+    def unapply(t: Exp[_]): Option[Exp[T]] = if (t.manifest == classManifest[T]) Some(t.asInstanceOf[Exp[T]]) else None
+  }
+  val TraversableExpBind = typedExpMatcherBind[Traversable[Any]] //If I use Traversable[_] type inference cannot deduce
+  //a specific type parameter for buildJoinTyped, hence let's use Any instead of _ to make type inference deduce Any.
   def typedExpMatcher[T: ClassManifest] = new AnyRef {
     def unapply(t: Exp[_]): Boolean =
       if (t.manifest == classManifest[T])
@@ -93,8 +98,8 @@ class Optimization {
       /*case FlatMap(fmColl @ TypedExp(TraversableManifest), //: Exp[Traversable[_]],
         fmFun @ FuncExpBody(MapOp(WithFilter(wfColl: Exp[Traversable[_]], wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
         if !wfColl.isOrContains(fmFun.x) && hasType[Traversable[_]](fmColl) && hasType[Traversable[_]](wfColl)*/
-      case FlatMap((fmColl: Exp[Traversable[_]]) & TraversableExp(),
-        fmFun @ FuncExpBody(MapOp(WithFilter((wfColl: Exp[Traversable[_]]) & TraversableExp(), wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
+      case FlatMap(TraversableExpBind(fmColl),
+        fmFun @ FuncExpBody(MapOp(WithFilter(TraversableExpBind(wfColl), wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
         if !wfColl.isOrContains(fmFun.x)// && hasType[Traversable[_]](fmColl) && hasType[Traversable[_]](wfColl)
       =>
         if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
