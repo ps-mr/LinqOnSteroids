@@ -13,7 +13,7 @@ object FuncExpBody {
 object FuncExpIdentity {
   def unapply[S, T](f: FuncExp[S, T]): Boolean = f.body == f.x
 }
-
+object & { def unapply[A](a: A) = Some(a, a) }
 class Optimization {
   private def buildJoinTyped[T, S, TKey: ClassManifest, TResult: ClassManifest](fmColl: Exp[Traversable[T]],
                                                   wfColl: Exp[Traversable[S]],
@@ -46,14 +46,19 @@ class Optimization {
     def unapply[T: ClassManifest](t: Exp[_]): Option[Exp[T]] = if (t.manifest == classManifest[T]) Some(t.asInstanceOf[Exp[T]]) else None
     //def unapply[T](t: Exp[_]): Option[ClassManifest[T]] = Some(t.manifest)
   }
-
+  */
+  /*
   //Last, best version:
   object TypedExp {
     def unapply[T](t: Exp[T]): Option[ClassManifest[T]] = Some(t.manifest.asInstanceOf[ClassManifest[T]])
   }
-
-  val ClassOfTrav: ClassManifest[Traversable[_]] = classManifest[Traversable[_]]
+  //But it's strictly typed, so it does not work with &.
   */
+  object TypedExp {
+    def unapply[_](t: Exp[_]): Option[ClassManifest[_]] = Some(t.manifest)
+  }
+
+  val TraversableManifest: ClassManifest[Traversable[_]] = classManifest[Traversable[_]]
 
   // Only solution which worked in the end. Of course, it doesn't rebind t. I could return it casted, but then I
   // couldn't use this easily in a pattern guard.
@@ -71,12 +76,12 @@ class Optimization {
    */
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
-      /*case FlatMap(fmColl @ TypedExp(ClassOfTrav), //: Exp[Traversable[_]],
+      /*case FlatMap(fmColl @ TypedExp(TraversableManifest), //: Exp[Traversable[_]],
         fmFun @ FuncExpBody(MapOp(WithFilter(wfColl: Exp[Traversable[_]], wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
         if !wfColl.isOrContains(fmFun.x) && hasType[Traversable[_]](fmColl) && hasType[Traversable[_]](wfColl)*/
-      case FlatMap(fmColl: Exp[Traversable[_]],
-        fmFun @ FuncExpBody(MapOp(WithFilter(wfColl: Exp[Traversable[_]], wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
-        if !wfColl.isOrContains(fmFun.x) && hasType[Traversable[_]](fmColl) && hasType[Traversable[_]](wfColl)
+      case FlatMap((fmColl: Exp[Traversable[_]]) & TypedExp(TraversableManifest),
+        fmFun @ FuncExpBody(MapOp(WithFilter((wfColl: Exp[Traversable[_]]) & TypedExp(TraversableManifest), wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
+        if !wfColl.isOrContains(fmFun.x)// && hasType[Traversable[_]](fmColl) && hasType[Traversable[_]](wfColl)
       =>
         if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
           buildJoinTyped(fmColl, wfColl, lhs, rhs, moFun, fmFun, wfFun)
