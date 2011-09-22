@@ -84,10 +84,10 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
     val n1 = Vector.range(1,testSize)
     val n2 = Vector.range(1,testSize)
     val notoptimized = for (k  <- c1; k2  <- c2 if k is k2) yield k+k2
-    silentBenchMark("Native query") {
+    benchMark("Native query") {
       val nativequery  = for (k  <- n1; k2  <- n2 if k.equals(k2)) yield k+k2
     }
-    silentBenchMark("Native query with primitive ==") {
+    benchMark("Native query with primitive ==") {
       // The native query is significantly faster if we compare by  k == k2 instead of k.equals(k2)
       val nativequery  = for (k  <- n1; k2  <- n2 if k == k2) yield k+k2
     }
@@ -97,8 +97,8 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
     // RE: In my tests, I seldom get a difference, it is not significant, and seems to disappear
     // by enabling the Scala optimizer.
     assert(
-      silentBenchMark("Non optimized")(notoptimized.interpret().size)
-      > (2 * silentBenchMark("Optimized")(optimize(notoptimized).interpret().interpret().size)))
+      benchMark("Non optimized")(notoptimized.interpret().size)
+      > (2 * benchMark("Optimized")(optimize(notoptimized).interpret().interpret().size)))
   }
 
  
