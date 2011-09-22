@@ -96,6 +96,8 @@ class Optimization {
   val mergeFilters: Exp[_] => Exp[_] =
     e => e match {
       case WithFilter(WithFilter(col2: Exp[FilterMonadic[t, _]], f2), f) =>
+        // Here, the cast is needed to make the type to match the one of the implicit conversion and thus to enable the
+        // latter.
         mergeFilters(
           col2.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]].withFilter{
             (x: Exp[_]) => And(f2(x), f(x))
