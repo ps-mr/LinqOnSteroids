@@ -50,6 +50,9 @@ object SimpleOpenEncoding {
     implicit def fToFunOps[A: ClassManifest, B: ClassManifest](f: Exp[A => B]): Exp[A] => Exp[B] =
       x => f match {
         case FuncExp(fe) => fe(x) //This line should be dropped, but then we'll need to introduce a beta-reducer.
+                                  // KO: Why do we need a beta-reducer? Since we use HOAS this is just Scala function application
+                                  // and already available in App.interpret
+                                  // But it may still make sense to evaluate such applications right away
         case _ => App(f, x)
       }
   }
