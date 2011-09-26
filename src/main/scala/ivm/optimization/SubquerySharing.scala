@@ -14,7 +14,7 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
     }
 
    private def groupByShareBody[T: ClassManifest, T2: ClassManifest](c: Exp[FilterMonadic[T, Traversable[T]]],
-                                                        f: FuncExp[T, Boolean], fEqBody: Eq[T2],
+                                                        f: FuncExp[T, Boolean], fEqBody: Eq[T2], lhs: Exp[T2],
                                                         completeExp: Exp[_]) = {
      /*
      //How the fuck does this typecheck?
@@ -36,7 +36,7 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
      assertType[Exp[T2 => Traversable[T]]](groupedBy) //Just for documentation.
 
      subqueries.get(groupedBy) match {
-       case Some(t) => App(Const(t.asInstanceOf[T2 => Traversable[T]]), fEqBody.x)
+       case Some(t) => App(Const(t.asInstanceOf[T2 => Traversable[T]]), lhs)
        case None => completeExp
      }
    }
@@ -52,7 +52,7 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
             case fEqBody: Eq[t2] =>
               val cmT: ClassManifest[t] = f.cmS
               val cmT2 = fEqBody.x.manifest.asInstanceOf[ClassManifest[t2]] //we have ClassManifest[_ <: t2], hence we need the cast :-(.
-              groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, e)(cmT, cmT2)
+              groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, fEqBody.x, e)(cmT, cmT2)
           }
         }
         case _ => e
