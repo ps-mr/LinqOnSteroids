@@ -15,7 +15,7 @@ object FuncExpIdentity {
 }
 object & { def unapply[A](a: A) = Some(a, a) }
 class Optimization {
-  private def buildJoinTyped[T, S, TKey: ClassManifest, TResult: ClassManifest](fmColl: Exp[Traversable[T]],
+  private def buildJoin[T, S, TKey: ClassManifest, TResult: ClassManifest](fmColl: Exp[Traversable[T]],
                                                   wfColl: Exp[Traversable[S]],
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
                                                   moFun: FuncExp[S, TResult], fmFun: FuncExp[T, GenTraversableOnce[TResult]],
@@ -72,10 +72,13 @@ class Optimization {
         fmFun @ FuncExpBody(MapOp(WithFilter(TraversableExp(wfColl), wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
         if !wfColl.isOrContains(fmFun.x)
       =>
+        //XXX: buildJoin is passed Any as type parameter - this makes manifests for Any be part of the new expression.
+        // It's not so bad because we'll produce a res: Exp[Traversable[Any]] - the lost information has little relevance
+        // currently: the manifest still shows that result represents a Traversable.
         if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
-          buildJoinTyped(fmColl, wfColl, lhs, rhs, moFun, fmFun, wfFun)
+          buildJoin(fmColl, wfColl, lhs, rhs, moFun, fmFun, wfFun)
         else if (!(rhs.isOrContains(wfFun.x)) && !(lhs.isOrContains(fmFun.x)))
-          buildJoinTyped(fmColl, wfColl, rhs, lhs, moFun, fmFun, wfFun)
+          buildJoin(fmColl, wfColl, rhs, lhs, moFun, fmFun, wfFun)
         else
           e
       case _ => e
