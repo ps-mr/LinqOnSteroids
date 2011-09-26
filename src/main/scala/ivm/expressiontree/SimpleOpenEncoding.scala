@@ -17,7 +17,14 @@ import collection.{GenTraversableOnce, TraversableViewLike, IterableView, Traver
  * we show here.
  */
 object SimpleOpenEncoding {
-  trait OpsExpressionTreeTrait {
+  trait ConversionDisabler {
+    //We forbid implicit conversion from Unit to Exp[Unit] by making it ambiguous. To this end we declare noToExpForUnit.
+    //It is more specific than toExp[Unit] because it's not generic, but is declared in a superclass, hence
+    //has less priority. Ambiguity follows.
+    implicit def noToExpForUnit(t: Unit): Exp[Unit] = null
+  }
+
+  trait OpsExpressionTreeTrait extends ConversionDisabler {
     implicit def toExp[T: ClassManifest](t: T): Exp[T] = Const(t)
     /*implicit def liftOrd[T: Ordering](x: T) = Const(x)
     implicit def liftNum[T: Numeric](x: T) = Const(x)
