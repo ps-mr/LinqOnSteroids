@@ -310,7 +310,7 @@ object SimpleOpenEncoding {
       println()
     }
 
-    def assertType[T](t: T) {}
+    import Util.assertType
 
     def testInadequate(c: Exp[Map[Int, Int]]) {
       val e: Exp[Map[Int, Int]] = c map (_ match {
