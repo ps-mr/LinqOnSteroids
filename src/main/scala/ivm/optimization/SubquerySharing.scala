@@ -45,24 +45,22 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
 
    val groupByShare: Exp[_] => Exp[_] = {
     (e) => e match {
-        // KO: Paolo, maybe you can fix the two compiler errors in this code? They are both related to your encoding.
-
         case WithFilter(c: Exp[FilterMonadic[_ /*t*/, _]], (f: FuncExp[t, _/*Boolean*/]) & FuncExpBody(Eq(lhs, rhs))) =>
           if (rhs.isOrContains(f.x) && !lhs.isOrContains(f.x)) {
-          f.body match {
-            case fEqBody: Eq[t2] =>
-              val cmT: ClassManifest[t] = f.cmS
-              val cmT2 = fEqBody.x.manifest.asInstanceOf[ClassManifest[t2]] //we have ClassManifest[_ <: t2], hence we need the cast :-(.
-              groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, fEqBody.x, fEqBody.y, e)(cmT, cmT2)
-          }
+            f.body match {
+              case fEqBody: Eq[t2] =>
+                val cmT: ClassManifest[t] = f.cmS
+                val cmT2 = fEqBody.x.manifest.asInstanceOf[ClassManifest[t2]] //we have ClassManifest[_ <: t2], hence we need the cast :-(.
+                groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, fEqBody.x, fEqBody.y, e)(cmT, cmT2)
+            }
           }
           else if (lhs.isOrContains(f.x) && !rhs.isOrContains(f.x)) {
-          f.body match {
-            case fEqBody: Eq[t2] =>
-              val cmT: ClassManifest[t] = f.cmS
-              val cmT2 = fEqBody.x.manifest.asInstanceOf[ClassManifest[t2]] //we have ClassManifest[_ <: t2], hence we need the cast :-(.
-              groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, fEqBody.y, fEqBody.x, e)(cmT, cmT2)
-          }
+            f.body match {
+              case fEqBody: Eq[t2] =>
+                val cmT: ClassManifest[t] = f.cmS
+                val cmT2 = fEqBody.x.manifest.asInstanceOf[ClassManifest[t2]] //ditto
+                groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, fEqBody.y, fEqBody.x, e)(cmT, cmT2)
+            }
           }
         case _ => e
     }
