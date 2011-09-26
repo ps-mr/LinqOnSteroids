@@ -48,13 +48,13 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
    val groupByShare: Exp[_] => Exp[_] = {
     e => e match {
         case WithFilter(c: Exp[FilterMonadic[_ /*t*/, _]], (f: FuncExp[t, _/*Boolean*/]) & FuncExpBody(fEqBody: Eq[t2])) =>
-                val Eq(lhs, rhs) = fEqBody
-                if (rhs.isOrContains(f.x) && !lhs.isOrContains(f.x))
-                  groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, lhs, rhs, e)
-                else if (lhs.isOrContains(f.x) && !rhs.isOrContains(f.x))
-                  groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, rhs, lhs, e)
-                else
-                  e
+          val Eq(lhs, rhs) = fEqBody
+          if (rhs.isOrContains(f.x) && !lhs.isOrContains(f.x))
+            groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, lhs, rhs, e)
+          else if (lhs.isOrContains(f.x) && !rhs.isOrContains(f.x))
+            groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, rhs, lhs, e)
+          else
+            e
         case _ => e
     }
   }
