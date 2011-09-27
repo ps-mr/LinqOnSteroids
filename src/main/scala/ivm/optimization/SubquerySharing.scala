@@ -32,10 +32,18 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
      //This code:
      //val groupedBy = c.map(identity).groupBy(FuncExp.makefun[T, T2](fEqBody.y, f.x).f)
      //expands to this:
+
+     // KO : This code needs some more thoughts. The SubquerySharingTests.testIndexing test
+     // does not work because of the "map(identity)" transformation - since the identity mapping
+     // does not show up in the original subquery it is not found in subqueries. Maybe a broader
+     // equivalence relation must be used to search for matching subqueries
+
+     // I also wonder about the soundness of the "removeIdentityMaps" transformation - it seems
+     // to be unsound in general. Added a comment there.
      val groupedBy = c.map(identity).groupBy[T2](FuncExp.makefun[T, T2](rhs, f.x).f)
 
      assertType[Exp[T2 => Traversable[T]]](groupedBy) //Just for documentation.
-
+     print("trying" + groupedBy+ "*** in ***"+subqueries)
      subqueries.get(groupedBy) match {
        case Some(t) => Some(App(Const(t.asInstanceOf[T2 => Traversable[T]]), lhs))
        case None => None
@@ -92,6 +100,6 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
   }
 
   def shareSubqueries[T](query: Exp[T]) : Exp[T] = {
-      query.transform(directsubqueryShare.andThen(groupByShare2))
+      query.transform(directsubqueryShare.andThen(groupByShare))
   }
 }
