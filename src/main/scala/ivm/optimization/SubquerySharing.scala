@@ -4,7 +4,6 @@ import ivm.expressiontree._
 import Lifting._
 import Util._
 import collection.generic.FilterMonadic
-
 class SubquerySharing(val subqueries: Map[Exp[_],_]) {
    val directsubqueryShare: Exp[_] => Exp[_] = {
       (e) => subqueries.get(e) match {
@@ -15,8 +14,7 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
 
    private def groupByShareBody[T, T2](c: Exp[FilterMonadic[T, Traversable[T]]],
                                                         f: FuncExp[T, Boolean],
-                                                        fEqBody: Eq[T2], lhs: Exp[T2], rhs: Exp[T2],
-                                                        completeExp: Exp[_]) = {
+                                                        fEqBody: Eq[T2], lhs: Exp[T2], rhs: Exp[T2]) = {
      implicit val cmT = f.cmS
      implicit val cmT2 = fEqBody.x.manifest.asInstanceOf[ClassManifest[T2]] //we have ClassManifest[_ <: t2], hence we need the cast :-(.
      /*
@@ -39,20 +37,54 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
      assertType[Exp[T2 => Traversable[T]]](groupedBy) //Just for documentation.
 
      subqueries.get(groupedBy) match {
-       case Some(t) => App(Const(t.asInstanceOf[T2 => Traversable[T]]), lhs)
-       case None => completeExp
+       case Some(t) => Some(App(Const(t.asInstanceOf[T2 => Traversable[T]]), lhs))
+       case None => None
      }
    }
 
+  private def residualQuery[T](e: Exp[FilterMonadic[T, Traversable[T]]], conds: Set[Exp[Boolean]], v: Var) : Exp[FilterMonadic[T, Traversable[T]]] = {
+    implicit val cmT : ClassManifest[T] = e.manifest.asInstanceOf[ClassManifest[T]]
+    if (conds.isEmpty) return e
+    val residualcond : Exp[Boolean] = conds.reduce( (x,y) => And(x,y))
+    e.withFilter(FuncExp.makefun[T,Boolean](residualcond,v))
+
+  }
+  private def tryGroupBy[T](c: Exp[FilterMonadic[T, Traversable[T]]],
+                               allConds: Set[Exp[Boolean]],
+                               f: FuncExp[T,Boolean])
+                               (equ : Exp[Boolean])
+                                  : Option[Exp[FilterMonadic[T, Traversable[T]]]] = {
+    equ match {
+      case eq : Eq[t2] => {
+       val oq : Option[Exp[FilterMonadic[T, Traversable[T]]]] =
+        if (eq.x.isOrContains(f.x) && !eq.y.isOrContains(f.x))
+                 groupByShareBody[T,t2](c.asInstanceOf[Exp[FilterMonadic[T,Traversable[T]]]], f, eq, eq.x, eq.y)
+              else if (eq.y.isOrContains(f.x) && !eq.x.isOrContains(f.x))
+                 groupByShareBody[T,t2](c.asInstanceOf[Exp[FilterMonadic[T,Traversable[T]]]], f, eq, eq.y, eq.x)
+              else None
+       oq.map( (e) => residualQuery(e, allConds-eq, f.x)) }
+      case _ => None
+    }
+  }
+  val groupByShare2: Exp[_] => Exp[_] = {
+   e => e match {
+       case WithFilter(c: Exp[FilterMonadic[_ /*t*/, _]], f: FuncExp[t, _/*Boolean*/]) =>
+         val conds : Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
+         val optimized : Option[Exp[_]]=
+            conds.collectFirst( Function.unlift( tryGroupBy(c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]],conds,f)))
+         optimized.getOrElse(e)
+       case _ => e
+   }
+ }
 
    val groupByShare: Exp[_] => Exp[_] = {
     e => e match {
         case WithFilter(c: Exp[FilterMonadic[_ /*t*/, _]], (f: FuncExp[t, _/*Boolean*/]) & FuncExpBody(fEqBody: Eq[t2])) =>
           val Eq(lhs, rhs) = fEqBody
           if (rhs.isOrContains(f.x) && !lhs.isOrContains(f.x))
-            groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, lhs, rhs, e)
+            groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, lhs, rhs).getOrElse(e)
           else if (lhs.isOrContains(f.x) && !rhs.isOrContains(f.x))
-            groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, rhs, lhs, e)
+            groupByShareBody[t, t2](c.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]], f, fEqBody, rhs, lhs).getOrElse(e)
           else
             e
         case _ => e
