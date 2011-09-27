@@ -92,6 +92,6 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
   }
 
   def shareSubqueries[T](query: Exp[T]) : Exp[T] = {
-      query.transform(directsubqueryShare.andThen(groupByShare))
+      query.transform(directsubqueryShare.andThen(groupByShare2))
   }
 }
