@@ -116,6 +116,11 @@ object SimpleOpenEncoding {
     class FilterMonadicOps[T, Repr <: FilterMonadic[T, Repr]](val t: Exp[FilterMonadic[T, Repr]])
       extends FilterMonadicOpsLike[T, Repr, FilterMonadic[T, Repr]]
 
+    // KO: Why are Filter, GroupBy etc. inside the TraversableLikeOps trait?
+    // The downside is that the automatically generated equality methods do
+    // not work as expected, since they (possibly distinct) enclosing instances into account
+    // even though the queries may be equal otherwise
+
     trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOpsLike[T, Repr, Repr] {
       case class Filter(base: Exp[Repr], f: Exp[T => Boolean]) extends BinaryOpExp[Repr, T => Boolean, Repr](base, f)(base.manifest) {
         override def interpret = base.interpret filter f.interpret()
