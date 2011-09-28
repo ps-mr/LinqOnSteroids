@@ -4,8 +4,8 @@ package tests
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import org.junit.Test
 
-import expressiontree.Exp
-import expressiontree.Const
+import expressiontree._
+
 import expressiontree.Lifting._
 import collections.CollectionReifier
 import optimization.Optimization
@@ -18,9 +18,9 @@ import optimization.SubquerySharing
 */
 
 class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
-  val l: CollectionReifier[(Int,Int)] = new CollectionReifier(Vector.range(1,5).flatMap( (i) => Vector.range(1,5).map((i,_))))
+  val l: CollectionReifier[(Int,Int)] = new CollectionReifier(Vector.range(1,3).flatMap( (i) => Vector.range(1,2).map((i,_))))
 
-  @Test def testSimpleSharing {
+   @Test def testSimpleSharing {
     val s1 = l.map( (p) => (p._1 + 1, p._2 + 2))
     val ress1 = s1.interpret()
     val subqueries : Map[Exp[_],_] = Map(s1 -> ress1)
@@ -40,7 +40,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val subqueries : Map[Exp[_],_] = Map(index -> indexres)
     val testquery = l.withFilter( (p) => p._1 + p._2 is 5)
     val optimized = new SubquerySharing(subqueries).shareSubqueries(testquery)
-    optimized should equal (index(5))
+    optimized should equal (App(Const(indexres),Const(5)))
     
   }
 

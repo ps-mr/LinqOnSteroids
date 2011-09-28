@@ -121,75 +121,73 @@ object SimpleOpenEncoding {
     // not work as expected, since they (possibly distinct) enclosing instances into account
     // even though the queries may be equal otherwise
 
-    trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOpsLike[T, Repr, Repr] {
-      case class Filter(base: Exp[Repr], f: Exp[T => Boolean]) extends BinaryOpExp[Repr, T => Boolean, Repr](base, f)(base.manifest) {
-        override def interpret = base.interpret filter f.interpret()
-        override def copy(base: Exp[Repr], f: Exp[T => Boolean]) = Filter(base, f)
-      }
+    case class Union[T, Repr <: TraversableLike[T,Repr], U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
+                                       (implicit c: CanBuildFrom[Repr, U, That], cm: ClassManifest[That]) extends BinaryOpExp[Repr, Traversable[U], That](base, that) {
+           override def interpret = base.interpret ++ that.interpret
+           override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union[T,Repr,U,That](base, that)
+    }
+    case class Filter[T, Repr <: TraversableLike[T,Repr]](base: Exp[Repr], f: Exp[T => Boolean]) extends BinaryOpExp[Repr, T => Boolean, Repr](base, f)(base.manifest) {
+      override def interpret = base.interpret filter f.interpret()
+      override def copy(base: Exp[Repr], f: Exp[T => Boolean]) = Filter(base, f)
+   }
 
-      case class Union[U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
+    case class GroupBy[T, Repr <: TraversableLike[T,Repr],K](base: Exp[Repr], f: Exp[T => K])(implicit cm: ClassManifest[K]) extends BinaryOpExp[Repr,
+      T => K, Map[K, Repr]](base, f)(classManifest[Map[K, Repr]]) {
+      override def interpret = base.interpret groupBy f.interpret()
+      override def copy(base: Exp[Repr], f: Exp[T => K]) = GroupBy(base, f)
+    }
+
+    case class Join[T, Repr <: TraversableLike[T,Repr],S, TKey, TResult, That](colouter: Exp[Repr],
+                                         colinner: Exp[Traversable[S]],
+                                         outerKeySelector: FuncExp[T, TKey],
+                                         innerKeySelector: FuncExp[S, TKey],
+                                         resultSelector: FuncExp[(T, S), TResult])
+                                           (implicit cbf: CanBuildFrom[Repr, TResult, That], manifest: ClassManifest[That]) extends
+                                         QuinaryOp[Exp[Repr],
+                                           Exp[Traversable[S]],
+                                           FuncExp[T, TKey], FuncExp[S, TKey], FuncExp[(T, S), TResult],
+                                           That](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
+      override def copy(colouter: Exp[Repr],
+                                         colinner: Exp[Traversable[S]],
+                                         outerKeySelector: FuncExp[T, TKey],
+                                         innerKeySelector: FuncExp[S, TKey],
+                                         resultSelector: FuncExp[(T, S), TResult]) = Join(colouter, colinner, outerKeySelector, innerKeySelector, resultSelector)
+
+      override def interpret() = {
+        // naive hash join algorithm
+        val ci: Traversable[S] = colinner.interpret()
+        val co: Repr = colouter.interpret()
+        val builder = cbf(co)
+        if (ci.size > co.size) {
+          val map  = ci.groupBy(innerKeySelector.interpret())
+          for (c <- co; d <- map(outerKeySelector.interpret()(c)))
+            builder += resultSelector.interpret()(c,d)
+        } else {
+          val map  = co.groupBy(outerKeySelector.interpret())
+          for (c <- ci; d <- map(innerKeySelector.interpret()(c)))
+            builder += resultSelector.interpret()(d,c)
+        }
+        builder.result()
+      }
+    }
+    trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOpsLike[T, Repr, Repr] {
+/*      case class Union[U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
                                     (implicit c: CanBuildFrom[Repr, U, That], cm: ClassManifest[That]) extends BinaryOpExp[Repr, Traversable[U], That](base, that) {
         override def interpret = base.interpret ++ that.interpret
         override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union(base, that)
-      }
-
-      case class GroupBy[K](base: Exp[Repr], f: Exp[T => K])(implicit cm: ClassManifest[K]) extends BinaryOpExp[Repr,
-        T => K, Map[K, Repr]](base, f)(classManifest[Map[K, Repr]]) {
-        override def interpret = base.interpret groupBy f.interpret()
-        override def copy(base: Exp[Repr], f: Exp[T => K]) = GroupBy(base, f)
-      }
+      }*/
 
       def filter(f: Exp[T] => Exp[Boolean])(implicit cmT: ClassManifest[T]): Exp[Repr] =
         Filter(this.t, FuncExp(f))
 
       def union[U >: T, That](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That], cm: ClassManifest[That]): Exp[That] =
-        Union(this.t, that)
+        Union[T,Repr,U,That](this.t, that)
 
       def view: Exp[TraversableView[T, Repr]] = View[T, Repr](this.t)
 
       def groupBy[K](f: Exp[T] => Exp[K])(implicit cmT: ClassManifest[T], cmK: ClassManifest[K]): Exp[Map[K, Repr]] =
         GroupBy(this.t, FuncExp(f))
 
-      case class Join[S, TKey, TResult, That](colouter: Exp[Repr],
-                                           colinner: Exp[Traversable[S]],
-                                           outerKeySelector: FuncExp[T, TKey],
-                                           innerKeySelector: FuncExp[S, TKey],
-                                           resultSelector: FuncExp[(T, S), TResult])
-                                             (implicit cbf: CanBuildFrom[Repr, TResult, That], manifest: ClassManifest[That]) extends
-                                           QuinaryOp[Exp[Repr],
-                                             Exp[Traversable[S]],
-                                             FuncExp[T, TKey], FuncExp[S, TKey], FuncExp[(T, S), TResult],
-                                             That](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
-        override def copy(colouter: Exp[Repr],
-                                           colinner: Exp[Traversable[S]],
-                                           outerKeySelector: FuncExp[T, TKey],
-                                           innerKeySelector: FuncExp[S, TKey],
-                                           resultSelector: FuncExp[(T, S), TResult]) = Join(colouter, colinner, outerKeySelector, innerKeySelector, resultSelector)
-
-        override def interpret() = {
-          // naive hash join algorithm
-          val ci: Traversable[S] = colinner.interpret()
-          val co: Repr = colouter.interpret()
-          val builder = cbf(co)
-          if (ci.size > co.size) {
-            val map  = ci.groupBy(innerKeySelector.interpret())
-            for (c <- co; d <- map(outerKeySelector.interpret()(c)))
-              builder += resultSelector.interpret()(c,d)
-          } else {
-            val map  = co.groupBy(outerKeySelector.interpret())
-            for (c <- ci; d <- map(innerKeySelector.interpret()(c)))
-              builder += resultSelector.interpret()(d,c)
-          }
-          builder.result()
-        }
-        override def equals(other: Any) = other match {
-          // XXX: this code passes tests, and the type here is correct, but this is a clumsy way of writing this code.
-          // We should maybe move the Join class to the top-level, so that the default implementation of equals for case
-          // classes is correct.
-          case that: TraversableLikeOps[_, _]#Join[_, _, _, _] => this.children == that.children
-          case _ => false
-        }
-      }
       def join[S, TKey, TResult, That](outercol: Exp[Traversable[S]],
                                        outerKeySelector: Exp[T] => Exp[TKey],
                                        innerKeySelector: Exp[S] => Exp[TKey],

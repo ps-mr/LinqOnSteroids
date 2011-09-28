@@ -40,10 +40,13 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
 
      // I also wonder about the soundness of the "removeIdentityMaps" transformation - it seems
      // to be unsound in general. Added a comment there.
-     val groupedBy = c.map(identity).groupBy[T2](FuncExp.makefun[T, T2](rhs, f.x).f)
+
+     // For now this temporary hack uses the manifests to leave out the identity map if possible
+     val c2 : Exp[Traversable[T]] =
+       if (c.manifest <:< manifest[Traversable[Any]]) c.asInstanceOf[Exp[Traversable[T]]] else c.map(identity)
+     val groupedBy = c2.groupBy[T2](FuncExp.makefun[T, T2](rhs, f.x).f)
 
      assertType[Exp[T2 => Traversable[T]]](groupedBy) //Just for documentation.
-     print("trying" + groupedBy+ "*** in ***"+subqueries)
      subqueries.get(groupedBy) match {
        case Some(t) => Some(App(Const(t.asInstanceOf[T2 => Traversable[T]]), lhs))
        case None => None

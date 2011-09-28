@@ -28,7 +28,7 @@ class CallTests extends JUnitSuite with ShouldMatchersForJUnit  {
     l5 should not equal (l4)
     l6 should equal (l5)
     l5 should equal (l6)
-    Set(l1,l2,l3,l4,l5,l6) should equal (Set(l2,l3,l4,l5))
+    Set[Any](l1,l2,l3,l4,l5,l6) should equal (Set[Any](l2,l3,l4,l5))
 
   }
 
