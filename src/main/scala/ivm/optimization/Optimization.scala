@@ -5,7 +5,6 @@ import expressiontree._
 import Lifting._
 import collection.generic.FilterMonadic
 import collection.GenTraversableOnce
-
 object FuncExpBody {
   def unapply[S, T](f: FuncExp[S, T]): Option[Exp[T]] = Some(f.body)
 }
@@ -121,17 +120,34 @@ class Optimization {
 
 }
 
+import scala.collection.mutable.Map
 
 object Optimization {
   val opt = new Optimization()
-
+  val subqueries : Map[Exp[_],Any] = Map.empty
+  def addSubQuery[T](query: Exp[T]) {
+    val optquery = optimize(query)  // TODO: Reconsider whether it is a good idea to optimize here
+    subqueries += optquery -> optquery.interpret()
+  }
+  def removeSubQuery[T](query: Exp[T]) {
+    subqueries -=  query
+  }
   def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(opt.cartProdToJoin)
 
-  def optimize[T](exp: Exp[T]): Exp[T] = optimizeCartProdToJoin(exp)
+  def optimize[T](exp: Exp[T]): Exp[T] = {
+    shareSubqueries(
+     mergeFilters(
+      optimizeCartProdToJoin(exp)))
+  }
 
   def normalize[T](exp: Exp[T]): Exp[T] = exp.transform(opt.normalizer)
 
   def mergeFilters[T](exp: Exp[T]): Exp[T] = exp.transform(opt.mergeFilters)
 
   def removeIdentityMaps[T](exp: Exp[T]): Exp[T] = exp.transform(opt.removeIdentityMaps)
+
+  def shareSubqueries[T](query: Exp[T]) : Exp[T] = {
+      new SubquerySharing(subqueries).shareSubqueries(query)
+  }
+
 }

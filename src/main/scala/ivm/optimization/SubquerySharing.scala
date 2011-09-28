@@ -4,7 +4,10 @@ import ivm.expressiontree._
 import Lifting._
 import Util._
 import collection.generic.FilterMonadic
-class SubquerySharing(val subqueries: Map[Exp[_],_]) {
+import scala.collection.Map
+
+// Contract: Each map entry has the form Exp[T] -> T for some T
+class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
    val directsubqueryShare: Exp[_] => Exp[_] = {
       (e) => subqueries.get(e) match {
         case Some(t) => Const(t)

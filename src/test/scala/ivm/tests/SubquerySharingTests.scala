@@ -41,7 +41,15 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val testquery = l.withFilter( (p) => p._1 + p._2 is 5)
     val optimized = new SubquerySharing(subqueries).shareSubqueries(testquery)
     optimized should equal (App(Const(indexres),Const(5)))
-    
+  }
+
+  @Test def testCNFconversion {
+    val index = l.groupBy( (p) => p._1 + p._2)
+    val indexres = index.interpret()
+    val subqueries : Map[Exp[_],_] = Map(index -> indexres)
+    val testquery = l.withFilter( (p) => (p._1 <= 7) && (p._1 + p._2 is 5))
+    val optimized = new SubquerySharing(subqueries).shareSubqueries(testquery)
+    optimized should equal (App(Const(indexres),Const(5)).withFilter( (p) => p._1 <= 7))
   }
 
 }
