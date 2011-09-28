@@ -20,7 +20,7 @@ import optimization.SubquerySharing
 class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l: CollectionReifier[(Int,Int)] = new CollectionReifier(Vector.range(1,3).flatMap( (i) => Vector.range(1,2).map((i,_))))
 
-   @Test def testSimpleSharing {
+  @Test def testSimpleSharing {
     val s1 = l.map( (p) => (p._1 + 1, p._2 + 2))
     val ress1 = s1.interpret()
     val subqueries : Map[Exp[_],_] = Map(s1 -> ress1)

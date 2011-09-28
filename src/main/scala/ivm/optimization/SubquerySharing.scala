@@ -69,9 +69,9 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
       case eq : Eq[t2] => {
        val oq : Option[Exp[FilterMonadic[T, Traversable[T]]]] =
         if (eq.x.isOrContains(f.x) && !eq.y.isOrContains(f.x))
-                 groupByShareBody[T,t2](c.asInstanceOf[Exp[FilterMonadic[T,Traversable[T]]]], f, eq, eq.x, eq.y)
-              else if (eq.y.isOrContains(f.x) && !eq.x.isOrContains(f.x))
                  groupByShareBody[T,t2](c.asInstanceOf[Exp[FilterMonadic[T,Traversable[T]]]], f, eq, eq.y, eq.x)
+              else if (eq.y.isOrContains(f.x) && !eq.x.isOrContains(f.x))
+                 groupByShareBody[T,t2](c.asInstanceOf[Exp[FilterMonadic[T,Traversable[T]]]], f, eq, eq.x, eq.y)
               else None
        oq.map( (e) => residualQuery(e, allConds-eq, f.x)) }
       case _ => None
@@ -103,6 +103,6 @@ class SubquerySharing(val subqueries: Map[Exp[_],_]) {
   }
 
   def shareSubqueries[T](query: Exp[T]) : Exp[T] = {
-      query.transform(directsubqueryShare.andThen(groupByShare))
+      query.transform(directsubqueryShare.andThen(groupByShare2))
   }
 }
