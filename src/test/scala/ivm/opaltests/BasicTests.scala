@@ -36,17 +36,25 @@ object BATLifting {
   implicit def expToAttributeOps(t: Exp[Method_Info]) = new Method_InfoOps(t)
   class Method_InfoOps(t: Exp[Method_Info]) {
        def attributes = liftCall('attributes, (m: Method_Info) => m.attributes, t)
+       def name = liftCall('name, (m: Method_Info) => m.name, t)
   }
   object Code_attribute {
-    def unapply(t: Exp[Code_attribute]) : Option[(Exp[Int],Exp[Int],Exp[Array[Instruction]],Exp[ExceptionTable], Exp[Attributes])] = {
+    def unapply(t: Exp[Code_attribute]) : Option[(Exp[Int],Exp[Int],Exp[Seq[Instruction]],Exp[ExceptionTable], Exp[Attributes])] = {
        if (t eq null) None // or should we rather compare the actual wrapped value for nullness?
        else Some(liftCall('maxStack,      (ca: Code_attribute) => ca.maxStack, t),
                  liftCall('maxLocals,     (ca: Code_attribute) => ca.maxLocals, t),
-                 liftCall('code,          (ca: Code_attribute) => ca.code, t),
+                 liftCall('code,          (ca: Code_attribute) => genericWrapArray(ca.code), t), //doing something special here!
                  liftCall('exceptionTable,(ca: Code_attribute) => ca.exceptionTable, t),
                  liftCall('attributes   , (ca: Code_attribute) => ca.attributes, t)  )
     }
   }
+  object INSTANCEOF {
+    def unapply(t: Exp[INSTANCEOF]) : Option[Exp[ReferenceType]] = {
+      if (t eq null) None
+      else Some(liftCall('referenceType, (io: INSTANCEOF) => io.referenceType, t))
+    }
+  }
+
 }
   /* end of boilerplate code */
 
@@ -74,7 +82,9 @@ class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
                        m <- cf.methods;
                        Code_attribute(_,_,code,_,_) <- m.attributes;
                        INSTANCEOF(_) <- code) yield m.name
-    println(methods)
+     println("begin native result")
+     println(methods)
+     println("end native result")
 
      // using reified query
     import BATLifting._
@@ -82,12 +92,11 @@ class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
     val queryData = new CollectionReifier(testdata)
     val methods2 = for (cf <- queryData;
                          m <- cf.methods;
-                         Code_attribute(_,_,code,_,_) <- m.attributes
-
-                       ) yield code
-
-
-     println(methods2)
+                         Code_attribute(_,_,code,_,_) <- m.attributes;
+                         INSTANCEOF(_) <- code) yield m.name
+     println("begin los result")
+     println(methods2.interpret())
+     println("end los result")
 
 
 
