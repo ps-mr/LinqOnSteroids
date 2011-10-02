@@ -58,6 +58,23 @@ object BATLifting {
           case _ =>
             None
         }
+        /*
+        // Correct solution - but the type becomes:
+        //Exp[Option[(Int, Int, Seq[Instruction], ExceptionTable, Attributes)]
+        // which is not accepted by Scala for extractors - but it should, and I believe it would work, much like the
+        // desugaring of for comprehensions happens before typing.
+        liftCall('Code_attribute$unapply$anon1XXX, //As long as the function below is closed, we can supply a fixed Id
+          (t: Any) => t match {
+          case ca: Code_attribute =>
+            assert(ca != null) //This is satisfied because of the pattern match.
+            Some((ca.maxStack, ca.maxLocals,
+              toExp(ca.code), //This is needed to allow predefined implicit conversions to trigger.
+              // We can call toExp unconditionally in the generated version of this code.
+              ca.exceptionTable, ca.attributes))
+          case _ =>
+            None
+        }, t)
+        */
       } else None
     }
   }
