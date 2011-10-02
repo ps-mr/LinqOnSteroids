@@ -39,7 +39,13 @@ object BATLifting {
        def name = liftCall('name, (m: Method_Info) => m.name, t)
   }
   object Code_attribute {
-    def unapply(t: Exp[_]) : Option[(Exp[Int],Exp[Int],Exp[Seq[Instruction]],Exp[ExceptionTable], Exp[Attributes])] = {
+    // We need to specify Exp[Seq[Instruction]] instead of Exp[Array[Instruction]] because one cannot convert
+    // Exp[Array[T]] to Exp[Seq[T]], so we must request here an implicit conversion (LowPriorityImplicits.wrapRefArray)
+    // before wrapping everything within Exp.
+    def unapply(t: Exp[_]) : Option[(Exp[Int], Exp[Int],
+      Exp[Seq[Instruction]], //doing something special here!
+      Exp[ExceptionTable],
+      Exp[Attributes])] = {
       // or should we rather compare the actual wrapped value for nullness?
       if ((t ne null) && t.interpret().isInstanceOf[Code_attribute] /*&& (t.manifest <:< classManifest[Code_attribute])*/) {
         val codeAttrib = t.asInstanceOf[Exp[Code_attribute]]
