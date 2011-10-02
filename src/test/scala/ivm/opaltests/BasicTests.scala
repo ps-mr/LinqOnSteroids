@@ -46,16 +46,19 @@ object BATLifting {
       Exp[Seq[Instruction]], //doing something special here!
       Exp[ExceptionTable],
       Exp[Attributes])] = {
-      // or should we rather compare the actual wrapped value for nullness?
-      if ((t ne null) && t.interpret().isInstanceOf[Code_attribute] /*&& (t.manifest <:< classManifest[Code_attribute])*/) {
-        val codeAttrib = t.asInstanceOf[Exp[Code_attribute]]
-        Some(liftCall('maxStack,      (ca: Code_attribute) => ca.maxStack, codeAttrib),
-                 liftCall('maxLocals,     (ca: Code_attribute) => ca.maxLocals, codeAttrib),
-                 liftCall('code,          (ca: Code_attribute) => ca.code, codeAttrib),
-                 liftCall('exceptionTable,(ca: Code_attribute) => ca.exceptionTable, codeAttrib),
-                 liftCall('attributes   , (ca: Code_attribute) => ca.attributes, codeAttrib)  )
-      } else
-        None
+      if (t ne null) {
+        //Calling interpret here makes the result an exotic term - doesn't it?
+        t.interpret() match {
+          case ca: Code_attribute =>
+            assert(ca != null) //This is satisfied because of the pattern match.
+            Some((ca.maxStack, ca.maxLocals,
+              toExp(ca.code), //This is needed to allow predefined implicit conversions to trigger.
+              // We can call toExp unconditionally in the generated version of this code.
+              ca.exceptionTable, ca.attributes))
+          case _ =>
+            None
+        }
+      } else None
     }
   }
   object INSTANCEOF {
@@ -105,6 +108,7 @@ class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
                          m <- cf.methods;
                          Code_attribute(_,_,code,_,_) <- m.attributes;
                          INSTANCEOF(_) <- code) yield m.name
+     //println(methods2) //goes OOM!
      println("begin los result")
      val m2Int = methods2.interpret()
      println(m2Int)
