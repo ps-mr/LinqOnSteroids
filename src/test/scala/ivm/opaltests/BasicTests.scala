@@ -45,7 +45,7 @@ object BATLifting {
         val codeAttrib = t.asInstanceOf[Exp[Code_attribute]]
         Some(liftCall('maxStack,      (ca: Code_attribute) => ca.maxStack, codeAttrib),
                  liftCall('maxLocals,     (ca: Code_attribute) => ca.maxLocals, codeAttrib),
-                 liftCall('code,          (ca: Code_attribute) => genericWrapArray(ca.code), codeAttrib), //doing something special here!
+                 liftCall('code,          (ca: Code_attribute) => ca.code, codeAttrib),
                  liftCall('exceptionTable,(ca: Code_attribute) => ca.exceptionTable, codeAttrib),
                  liftCall('attributes   , (ca: Code_attribute) => ca.attributes, codeAttrib)  )
       } else
