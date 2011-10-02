@@ -39,19 +39,24 @@ object BATLifting {
        def name = liftCall('name, (m: Method_Info) => m.name, t)
   }
   object Code_attribute {
-    def unapply(t: Exp[Code_attribute]) : Option[(Exp[Int],Exp[Int],Exp[Seq[Instruction]],Exp[ExceptionTable], Exp[Attributes])] = {
-       if (t eq null) None // or should we rather compare the actual wrapped value for nullness?
-       else Some(liftCall('maxStack,      (ca: Code_attribute) => ca.maxStack, t),
-                 liftCall('maxLocals,     (ca: Code_attribute) => ca.maxLocals, t),
-                 liftCall('code,          (ca: Code_attribute) => genericWrapArray(ca.code), t), //doing something special here!
-                 liftCall('exceptionTable,(ca: Code_attribute) => ca.exceptionTable, t),
-                 liftCall('attributes   , (ca: Code_attribute) => ca.attributes, t)  )
+    def unapply(t: Exp[_]) : Option[(Exp[Int],Exp[Int],Exp[Seq[Instruction]],Exp[ExceptionTable], Exp[Attributes])] = {
+      // or should we rather compare the actual wrapped value for nullness?
+      if ((t ne null) && t.interpret().isInstanceOf[Code_attribute] /*&& (t.manifest <:< classManifest[Code_attribute])*/) {
+        val codeAttrib = t.asInstanceOf[Exp[Code_attribute]]
+        Some(liftCall('maxStack,      (ca: Code_attribute) => ca.maxStack, codeAttrib),
+                 liftCall('maxLocals,     (ca: Code_attribute) => ca.maxLocals, codeAttrib),
+                 liftCall('code,          (ca: Code_attribute) => genericWrapArray(ca.code), codeAttrib), //doing something special here!
+                 liftCall('exceptionTable,(ca: Code_attribute) => ca.exceptionTable, codeAttrib),
+                 liftCall('attributes   , (ca: Code_attribute) => ca.attributes, codeAttrib)  )
+      } else
+        None
     }
   }
   object INSTANCEOF {
-    def unapply(t: Exp[INSTANCEOF]) : Option[Exp[ReferenceType]] = {
-      if (t eq null) None
-      else Some(liftCall('referenceType, (io: INSTANCEOF) => io.referenceType, t))
+    def unapply(t: Exp[_]) : Option[Exp[ReferenceType]] = {
+      if ((t ne null) && t.interpret().isInstanceOf[INSTANCEOF])
+        Some(liftCall('referenceType, (io: INSTANCEOF) => io.referenceType, t.asInstanceOf[Exp[INSTANCEOF]]))
+      else None
     }
   }
 
@@ -86,7 +91,7 @@ class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
      println(methods)
      println("end native result")
 
-     // using reified query
+     // using reified query; INSTANCEOF is here shadowed.
     import BATLifting._
 
     val queryData = new CollectionReifier(testdata)
@@ -95,10 +100,10 @@ class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
                          Code_attribute(_,_,code,_,_) <- m.attributes;
                          INSTANCEOF(_) <- code) yield m.name
      println("begin los result")
-     println(methods2.interpret())
+     val m2Int = methods2.interpret()
+     println(m2Int)
      println("end los result")
 
-
-
+     methods should equal (m2Int)
   }
 }
