@@ -22,6 +22,7 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
 import java.io.{InputStream, File}
 import resolved.TypeAliases.ExceptionTable
+import tests.Benchmarking._
 
   /* (Very incomplete) boilerplate code for making use of BAT types convenient in queries.
      This code should be generated
@@ -109,10 +110,13 @@ class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
      // computing all method names that make an instance-of check in their body
 
      // native Scala for-comprehension
-    val methods  = for (cf <- testdata;
+     var methods: Set[String] = null
+     benchMark("native", warmUpLoops = 0, sampleLoops = 1) {
+       methods  = for (cf <- testdata;
                        m <- cf.methods;
                        Code_attribute(_,_,code,_,_) <- m.attributes;
                        INSTANCEOF(_) <- code) yield m.name
+     }
      println("begin native result")
      println(methods)
      println("end native result")
@@ -126,8 +130,11 @@ class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
                          Code_attribute(_,_,code,_,_) <- m.attributes;
                          INSTANCEOF(_) <- code) yield m.name
      //println(methods2) //goes OOM!
+     var m2Int: Traversable[String] = null
+     benchMark("los", warmUpLoops = 0, sampleLoops = 1) {
+       m2Int = methods2.interpret()
+     }
      println("begin los result")
-     val m2Int = methods2.interpret()
      println(m2Int)
      println("end los result")
 
