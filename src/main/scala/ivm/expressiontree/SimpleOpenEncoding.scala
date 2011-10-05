@@ -89,30 +89,27 @@ object SimpleOpenEncoding {
 
   trait TraversableOps {
     import OpsExpressionTree._
-    def newWithFilter[T, Repr <: FilterMonadic[T, Repr]](base: Exp[Repr],
-                                                        f: FuncExp[T, Boolean]) = new WithFilter[T, Repr, Repr](base, f)
+    def newWithFilter[T, Repr <: TraversableLike[T, Repr] with Traversable[T]](base: Exp[Repr],
+                                                        f: FuncExp[T, Boolean]) =
+      new WithFilter[T, Repr](base, f)
+      //new Filter(base.view, f) //Switch to two-nodes implementation to expose the structure to the optimizer, and fix it
     def newMapOp[T, Repr <: FilterMonadic[T, Repr], U, That](
-                                                              base: Exp[FilterMonadic[T, Repr]],
+                                                              base: Exp[Repr],
                                                               f: FuncExp[T, U])
                                                             (implicit c: CanBuildFrom[Repr, U, That]) =
-      new MapOp[T, Repr, FilterMonadic[T, Repr], U, That](base, f)
+      new MapOp[T, Repr, U, That](base, f)
 
-    /* Lift faithfully the complete functional part of the FilterMonadic trait - i.e. all methods excluding foreach.
-     * This trait is used both for concrete collections of type Repr <: FilterMonadic[T, Repr] (This = Repr), but also for results
-     * of withFilter, which have type <: FilterMonadic[T, Repr] but not <: Repr (This = FilterMonadic[T, Repr]).
+    /* Lift faithfully the FilterMonadic trait except foreach and withFilter, since we have a special lifting for it.
+     * This trait is used both for concrete collections of type Repr <: FilterMonadic[T, Repr].
      */
-    trait FilterMonadicOpsLike[T, Repr <: FilterMonadic[T, Repr], This <: FilterMonadic[T, Repr]] {
-      val t: Exp[This]
-      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[FilterMonadic[T, Repr]] =
-        WithFilter[T, Repr, This](this.t, FuncExp(f))
+    trait FilterMonadicOpsLike[T, Repr <: FilterMonadic[T, Repr]] {
+      val t: Exp[Repr]
       def map[U, That](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-        MapOp[T, Repr, This, U, That](this.t, FuncExp(f))
+        MapOp[T, Repr, U, That](this.t, FuncExp(f))
       def flatMap[U, That](f: Exp[T] => Exp[GenTraversableOnce[U]])
                           (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-        FlatMap[T, Repr, This, U, That](this.t, FuncExp(f))
+        FlatMap[T, Repr, U, That](this.t, FuncExp(f))
     }
-    class FilterMonadicOps[T, Repr <: FilterMonadic[T, Repr]](val t: Exp[FilterMonadic[T, Repr]])
-      extends FilterMonadicOpsLike[T, Repr, FilterMonadic[T, Repr]]
 
     // KO: Why are Filter, GroupBy etc. inside the TraversableLikeOps trait?
     // The downside is that the automatically generated equality methods do
@@ -168,12 +165,14 @@ object SimpleOpenEncoding {
         builder.result()
       }
     }
-    trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOpsLike[T, Repr, Repr] {
+    trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOpsLike[T, Repr] {
 /*      case class Union[U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
                                     (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOpExp[Repr, Traversable[U], That](base, that) {
         override def interpret = base.interpret ++ that.interpret
         override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union(base, that)
       }*/
+      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Repr]] =
+        newWithFilter(this.t, FuncExp(f))
 
       def filter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
         Filter(this.t, FuncExp(f))
@@ -202,14 +201,15 @@ object SimpleOpenEncoding {
     {
       def force = Force[T, Repr, ViewColl](this.t)
 
-      override def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
+      //XXX: reenable this code to return a more precise type for withFilter.
+      /*override def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
         new WithFilterView(this.t, FuncExp(f))
 
       class WithFilterView(base: Exp[ViewColl], f: FuncExp[T, Boolean]) extends WithFilter[T,
-        ViewColl, ViewColl](base, f) with BinaryOpTrait[Exp[ViewColl], FuncExp[T, Boolean], ViewColl] {
+        ViewColl](base, f) with BinaryOpTrait[Exp[ViewColl], FuncExp[T, Boolean], ViewColl] {
         override def interpret = base.interpret filter f.interpret()
         override def copy(base: Exp[ViewColl], f: FuncExp[T, Boolean]) = new WithFilterView(base, f)
-      }
+      }*/
     }
 
     class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable[T]]
@@ -231,12 +231,6 @@ object SimpleOpenEncoding {
       t.asInstanceOf[Exp[TraversableView[T, Traversable[T]]]])
     //XXX
     implicit def tToTravViewExp2[T](t: TraversableView[T, Traversable[_]]): TraversableViewOps[T] = expToTravViewExp2(t)
-
-    implicit def expToFilterMonExp[T, Repr <: FilterMonadic[T, Repr]](t: Exp[FilterMonadic[T, Repr]]):
-      FilterMonadicOps[T, Repr] = new FilterMonadicOps(t)
-    implicit def tToFilterMonExp[T, Repr <: FilterMonadic[T, Repr]](t: FilterMonadic[T, Repr]):
-      FilterMonadicOps[T, Repr] = expToFilterMonExp(t)
-    //implicit def expToFilterMonExp[Repr <: FilterMonadic[T, Repr], T](t: Exp[Repr]): FilterMonadicOpsLike[T, Repr] = new FilterMonadicOps(t)
   }
 
   /**
@@ -389,11 +383,15 @@ object SimpleOpenEncoding {
       showInterp("d4", d4)
 
       val d5 = c withFilter (ab => (ab._1 + ab._2 <= 4))
-      assertType[Exp[FilterMonadic[(Int, Int), Map[Int, Int]]]](d5)
+      assertType[Exp[Traversable[(Int, Int)]]](d5)
+      assertType[Exp[TraversableView[(Int, Int), Map[Int, Int]]]](d5)
+      //assertType[Exp[FilterMonadic[(Int, Int), Map[Int, Int]]]](d5)
       showInterp("d5", d5)
 
       val d6 = d5 withFilter (ab => (ab._1 + ab._2 <= 4))
-      assertType[Exp[FilterMonadic[(Int, Int), Map[Int, Int]]]](d6)
+      assertType[Exp[Traversable[(Int, Int)]]](d6)
+      //assertType[Exp[TraversableView[(Int, Int), Map[Int, Int]]]](d6) //XXX
+      //assertType[Exp[FilterMonadic[(Int, Int), Map[Int, Int]]]](d6)
       showInterp("d6", d6)
 
       val d7 = c groupBy (ab => ab._2)

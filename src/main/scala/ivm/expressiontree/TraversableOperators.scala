@@ -10,27 +10,24 @@ import collection.{TraversableViewLike, TraversableView, TraversableLike, GenTra
 
 // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
 case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
-                   This <: FilterMonadic[T, Repr],
-                   U, That](base: Exp[This], f: FuncExp[T, GenTraversableOnce[U]])
-                            (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[This], FuncExp[T, GenTraversableOnce[U]], That](base, f) {
+                   U, That](base: Exp[Repr], f: FuncExp[T, GenTraversableOnce[U]])
+                            (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[Repr], FuncExp[T, GenTraversableOnce[U]], That](base, f) {
   override def interpret = base.interpret flatMap f.interpret()
-  override def copy(base: Exp[This], f: FuncExp[T, GenTraversableOnce[U]]) = FlatMap[T, Repr, This, U, That](base, f)
+  override def copy(base: Exp[Repr], f: FuncExp[T, GenTraversableOnce[U]]) = FlatMap[T, Repr, U, That](base, f)
 }
 
 case class MapOp[T, Repr <: FilterMonadic[T, Repr],
-                 This <: FilterMonadic[T, Repr],
-                 U, That](base: Exp[This], f: FuncExp[T, U])
-                          (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[This], FuncExp[T, U], That](base, f) {
+                 U, That](base: Exp[Repr], f: FuncExp[T, U])
+                          (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[Repr], FuncExp[T, U], That](base, f) {
   override def interpret = base.interpret map f.interpret()
-  override def copy(base: Exp[This], f: FuncExp[T, U]) = MapOp[T, Repr, This, U, That](base, f)
+  override def copy(base: Exp[Repr], f: FuncExp[T, U]) = MapOp[T, Repr, U, That](base, f)
 }
 
-case class WithFilter[T, Repr <: FilterMonadic[T, Repr],
-                      This <: FilterMonadic[T, Repr]](base: Exp[This],
+case class WithFilter[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr],
                                                       f: FuncExp[T, Boolean])
-                                                      extends BinaryOp[Exp[This], FuncExp[T, Boolean], FilterMonadic[T, Repr]](base, f) {
-  override def interpret = base.interpret withFilter f.interpret()
-  override def copy(base: Exp[This], f: FuncExp[T, Boolean]) = WithFilter[T, Repr, This](base, f)
+                                                      extends BinaryOp[Exp[Repr], FuncExp[T, Boolean], TraversableView[T, Repr]](base, f) {
+  override def interpret = base.interpret.view filter f.interpret()
+  override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = WithFilter[T, Repr](base, f)
 }
 
 case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr]) extends UnaryOpExp[Repr, TraversableView[T, Repr]](base) {
