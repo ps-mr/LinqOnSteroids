@@ -165,20 +165,24 @@ object SimpleOpenEncoding {
         builder.result()
       }
     }
+
+    //This is just an interface for documentation purposes.
+    trait WithFilterable[T, Repr] {
+      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Repr]]
+    }
+
+    trait WithFilterImpl[T, This <: Traversable[T] with TraversableLike[T, Repr], Repr <: Traversable[T] with TraversableLike[T, Repr]] extends WithFilterable[T, Repr] {
+      self: FilterMonadicOpsLike[T, Repr] =>
+      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Repr]] =
+        newWithFilter(this.t, FuncExp(f))
+    }
+
     trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOpsLike[T, Repr] {
 /*      case class Union[U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
                                     (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOpExp[Repr, Traversable[U], That](base, that) {
         override def interpret = base.interpret ++ that.interpret
         override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union(base, that)
       }*/
-
-      /*
-      //XXX: it is unfortunate that we have to comment this out and duplicate it elsewhere. OTOH, this seems required to
-      //have a different definition, with return type Exp[Repr], in TraversableViewOpsLike.
-      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Repr]] =
-        newWithFilter(this.t, FuncExp(f))
-      */
-
       def filter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
         Filter(this.t, FuncExp(f))
 
@@ -202,7 +206,7 @@ object SimpleOpenEncoding {
         T,
         Repr <: TraversableLike[T, Repr] with Traversable[T],
         ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
-      extends TraversableLikeOps[T, ViewColl]
+      extends TraversableLikeOps[T, ViewColl] with WithFilterable[T, Repr]
     {
       def force[That](implicit bf: CanBuildFrom[Repr, T, That]) = Force[T, Repr, ViewColl, That](this.t)
 
@@ -219,10 +223,7 @@ object SimpleOpenEncoding {
       */
     }
 
-    class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable[T]] {
-      def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Traversable[T]]] =
-        newWithFilter(this.t, FuncExp(f))
-    }
+    class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable[T]] with WithFilterImpl[T, Traversable[T], Traversable[T]]
 
     class TraversableViewOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val t: Exp[TraversableView[T, Repr]])
       extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]]
@@ -250,9 +251,7 @@ object SimpleOpenEncoding {
 
   trait MapOps extends TraversableOps {
     import OpsExpressionTree._
-    class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Map[K, V]] {
-      def withFilter(f: Exp[(K, V)] => Exp[Boolean]): Exp[TraversableView[(K, V), Map[K, V]]] =
-        newWithFilter(this.t, FuncExp(f))
+    class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Map[K, V]] with WithFilterImpl[(K, V), Map[K, V], Map[K, V]] {
       /*
       //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
       case class WithFilter(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[IterableView[(K, V), Map[K, V]]] {
