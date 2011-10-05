@@ -214,9 +214,10 @@ object SimpleOpenEncoding {
 
     class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable[T]]
 
+    // We cannot abstract over Traversable[T] here because of the bound ViewColl <: Repr.
+    // Here ViewColl = TraversableView[T, Traversable[T]], so Repr = Traversable[T].
     class TraversableViewOps[T](val t: Exp[TraversableView[T, Traversable[T]]])
-      extends TraversableViewLikeOps[T, Traversable[T], TraversableView[T, Traversable[T]]] {
-    }
+      extends TraversableViewLikeOps[T, Traversable[T], TraversableView[T, Traversable[T]]]
 
     implicit def expToTravExp[T](t: Exp[Traversable[T]]): TraversableOps[T] = new TraversableOps(t)
     implicit def tToTravExp[T](t: Traversable[T]): TraversableOps[T] = {
