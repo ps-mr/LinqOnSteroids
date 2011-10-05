@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
 import collection.generic.{FilterMonadic, CanBuildFrom}
-import collection.{GenTraversableOnce, TraversableViewLike, IterableView, TraversableLike, TraversableView}
+import collection.{TraversableView, GenTraversableOnce, TraversableViewLike, IterableView, TraversableLike}
 
 /**
  * Here I show yet another encoding of expression trees, where methods
@@ -91,8 +91,7 @@ object SimpleOpenEncoding {
     import OpsExpressionTree._
     def newWithFilter[T, Repr <: TraversableLike[T, Repr] with Traversable[T]](base: Exp[Repr],
                                                         f: FuncExp[T, Boolean]) =
-      new WithFilter[T, Repr](base, f)
-      //new Filter(base.view, f) //Switch to two-nodes implementation to expose the structure to the optimizer, and fix it
+      new Filter(View[T, Repr](base), f)
     def newMapOp[T, Repr <: FilterMonadic[T, Repr], U, That](
                                                               base: Exp[Repr],
                                                               f: FuncExp[T, U])
@@ -121,9 +120,9 @@ object SimpleOpenEncoding {
            override def interpret = base.interpret ++ that.interpret
            override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union[T,Repr,U,That](base, that)
     }
-    case class Filter[T, Repr <: TraversableLike[T,Repr]](base: Exp[Repr], f: Exp[T => Boolean]) extends BinaryOpExp[Repr, T => Boolean, Repr](base, f) {
+    case class Filter[T, Repr <: TraversableLike[T,Repr]](base: Exp[Repr], f: FuncExp[T, Boolean]) extends BinaryOp[Exp[Repr], FuncExp[T, Boolean], Repr](base, f) {
       override def interpret = base.interpret filter f.interpret()
-      override def copy(base: Exp[Repr], f: Exp[T => Boolean]) = Filter(base, f)
+      override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = Filter(base, f)
    }
 
     case class GroupBy[T, Repr <: TraversableLike[T,Repr],K](base: Exp[Repr], f: Exp[T => K]) extends BinaryOpExp[Repr,

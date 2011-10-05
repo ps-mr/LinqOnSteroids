@@ -19,8 +19,10 @@ class Optimization {
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
                                                   moFun: FuncExp[S, TResult], fmFun: FuncExp[T, GenTraversableOnce[TResult]],
                                                   wfFun: FuncExp[S, Boolean]): Exp[Traversable[TResult]] /*Join[T, S, TKey, TResult]*/ = {
-    fmColl.join(
-      wfColl,
+    import Optimization.stripView
+
+    stripView(fmColl).join(
+      stripView(wfColl),
       FuncExp.makefun[T, TKey](lhs, fmFun.x).f,
       FuncExp.makefun[S, TKey](rhs, wfFun.x).f,
       FuncExp.makepairfun[T, S, TResult](
@@ -66,7 +68,7 @@ class Optimization {
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
       case FlatMap(fmColl: Exp[Traversable[_]],
-        fmFun @ FuncExpBody(MapOp(WithFilter(wfColl: Exp[Traversable[_]], wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
+        fmFun @ FuncExpBody(MapOp(Filter(wfColl: Exp[Traversable[_]], wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
         if !wfColl.isOrContains(fmFun.x)
       =>
         //XXX: buildJoin is passed Any as type parameter - this makes manifests for Any be part of the new expression.
@@ -97,13 +99,20 @@ class Optimization {
 
   val mergeFilters: Exp[_] => Exp[_] =
     e => e match {
-      case WithFilter(WithFilter(col2: Exp[Traversable[_]], f2), f) =>
+      case Filter(Filter(col2: Exp[Traversable[_]], f2), f) =>
         // Here, the cast is needed to make the type to match the one of the implicit conversion and thus to enable the
         // latter.
         mergeFilters(
           col2.withFilter{
             (x: Exp[_]) => And(f2(x), f(x))
           })
+      case _ => e
+    }
+
+  val mergeViews: Exp[_] => Exp[_] =
+    e => e match {
+      case View(coll @ View(_)) =>
+        coll
       case _ => e
     }
 
@@ -119,6 +128,12 @@ class Optimization {
 import scala.collection.mutable.Map
 
 object Optimization {
+  private[optimization] def stripView[T](coll: Exp[Traversable[T]]) =
+    coll match {
+      case View(coll2: Exp[Traversable[T]]) => coll2
+      case _ => coll
+    }
+
   val opt = new Optimization()
   val subqueries : Map[Exp[_],Any] = Map.empty
   def addSubQuery[T](query: Exp[T]) {
@@ -136,9 +151,11 @@ object Optimization {
       optimizeCartProdToJoin(exp)))
   }
 
+  def mergeViews[T](exp: Exp[T]): Exp[T] = exp.transform(opt.mergeViews)
+
   def normalize[T](exp: Exp[T]): Exp[T] = exp.transform(opt.normalizer)
 
-  def mergeFilters[T](exp: Exp[T]): Exp[T] = exp.transform(opt.mergeFilters)
+  def mergeFilters[T](exp: Exp[T]): Exp[T] = mergeViews(exp.transform(opt.mergeFilters))
 
   def removeIdentityMaps[T](exp: Exp[T]): Exp[T] = exp.transform(opt.removeIdentityMaps)
 

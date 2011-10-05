@@ -66,12 +66,15 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
       case _ => None
     }
   }
+
+  //XXX: we should strip View if needed on _both_ sides before performing the match.
   val groupByShare2: Exp[_] => Exp[_] = {
    e => e match {
-       case WithFilter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _/*Boolean*/]) =>
+       case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _/*Boolean*/]) =>
          val conds : Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
+         //Function.unlift is expensive.
          val optimized : Option[Exp[_]]=
-            conds.collectFirst( Function.unlift( tryGroupBy(c.asInstanceOf[Exp[Traversable[t]]],conds,f)))
+            conds.collectFirst( Function.unlift( tryGroupBy(Optimization.stripView(c.asInstanceOf[Exp[Traversable[t]]]),conds,f)))
          optimized.getOrElse(e)
        case _ => e
    }
@@ -79,12 +82,13 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
 
    val groupByShare: Exp[_] => Exp[_] = {
     e => e match {
-        case WithFilter(c: Exp[Traversable[_ /*t*/]], (f: FuncExp[t, _/*Boolean*/]) & FuncExpBody(fEqBody: Eq[t2])) =>
+        case Filter(View(c: Exp[Traversable[_ /*t*/]]), (f: FuncExp[t, _/*Boolean*/]) & FuncExpBody(fEqBody: Eq[t2])) =>
           val Eq(lhs, rhs) = fEqBody
+          val coll = Optimization.stripView(c.asInstanceOf[Exp[Traversable[t]]])
           if (rhs.isOrContains(f.x) && !lhs.isOrContains(f.x))
-            groupByShareBody[t, t2](c.asInstanceOf[Exp[Traversable[t]]], f, fEqBody, lhs, rhs).getOrElse(e)
+            groupByShareBody[t, t2](coll, f, fEqBody, lhs, rhs).getOrElse(e)
           else if (lhs.isOrContains(f.x) && !rhs.isOrContains(f.x))
-            groupByShareBody[t, t2](c.asInstanceOf[Exp[Traversable[t]]], f, fEqBody, rhs, lhs).getOrElse(e)
+            groupByShareBody[t, t2](coll, f, fEqBody, rhs, lhs).getOrElse(e)
           else
             e
         case _ => e

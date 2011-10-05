@@ -3,13 +3,12 @@ package tests
 
 import collections.CollectionReifier
 import expressiontree.Lifting._
-import expressiontree.{And, FuncExp, Exp, Plus, Eq, WithFilter}
+import expressiontree.{And, FuncExp, Exp, Plus, Eq, View}
 import optimization.Optimization
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test
-import collection.generic.FilterMonadic
-
+import collection.TraversableView
 
 class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l: CollectionReifier[Int] = new CollectionReifier(Vector.range(1, 10))
@@ -48,12 +47,12 @@ class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testRemoveIdentityMaps() {
-    val (q1, q2) = withFilterQueries
+    val (_, q2) = withFilterQueries
 
-    val desiredResult = newWithFilter(
-                         newWithFilter(
-                           newWithFilter(
-                             l,
+    val desiredResult = Filter(
+                         Filter(
+                           Filter(
+                             View[Int, Traversable[Int]](l),
                              FuncExp((v24245:Exp[Int]) => Eq(Plus(v24245,3),7))),
                            FuncExp((v24246:Exp[Int]) => Eq(Plus(v24246,8),19))),
                         FuncExp((v24248:Exp[Int]) => Eq(v24248,19)))
