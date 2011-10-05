@@ -178,11 +178,6 @@ object SimpleOpenEncoding {
     }
 
     trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOpsLike[T, Repr] {
-/*      case class Union[U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
-                                    (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOpExp[Repr, Traversable[U], That](base, that) {
-        override def interpret = base.interpret ++ that.interpret
-        override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union(base, that)
-      }*/
       def filter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
         Filter(this.t, FuncExp(f))
 
@@ -212,15 +207,6 @@ object SimpleOpenEncoding {
 
       def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
         new Filter(this.t, FuncExp(f))
-
-      //Now this is redundant.
-      /*
-      class WithFilterView(base: Exp[ViewColl], f: FuncExp[T, Boolean]) extends WithFilter[T,
-        ViewColl](base, f) with BinaryOpTrait[Exp[ViewColl], FuncExp[T, Boolean], ViewColl] {
-        override def interpret = base.interpret filter f.interpret()
-        override def copy(base: Exp[ViewColl], f: FuncExp[T, Boolean]) = new WithFilterView(base, f)
-      }
-      */
     }
 
     class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable[T]] with WithFilterImpl[T, Traversable[T], Traversable[T]]
@@ -393,15 +379,11 @@ object SimpleOpenEncoding {
       showInterp("d4", d4)
 
       val d5 = c withFilter (ab => (ab._1 + ab._2 <= 4))
-      assertType[Exp[Traversable[(Int, Int)]]](d5)
       assertType[Exp[TraversableView[(Int, Int), Map[Int, Int]]]](d5)
-      //assertType[Exp[FilterMonadic[(Int, Int), Map[Int, Int]]]](d5)
       showInterp("d5", d5)
 
       val d6 = d5 withFilter (ab => (ab._1 + ab._2 <= 4))
-      assertType[Exp[Traversable[(Int, Int)]]](d6)
       assertType[Exp[TraversableView[(Int, Int), Map[Int, Int]]]](d6)
-      //assertType[Exp[FilterMonadic[(Int, Int), Map[Int, Int]]]](d6)
       showInterp("d6", d6)
 
       val forced = d6.force
