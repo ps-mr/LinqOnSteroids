@@ -31,30 +31,6 @@ class Optimization {
         moFun.x).f)
   }
 
-  // First solution which worked in the end. Of course, it doesn't rebind t. I could return it casted, but then I
-  // couldn't use this easily in a pattern guard.
-  //def hasType[T: ClassManifest](t: Exp[_]): Boolean = t.manifest <:< classManifest[T]
-
-  //Second solution: this pattern matcher must be used with &, as in
-  // (fmColl: Exp[Traversable[_]]) & TypedExp(TraversableManifest)
-  object TypedExp {
-    //def unapply[_](t: Exp[_]): Option[ClassManifest[_]] = Some(t.manifest)
-  }
-
-  val TraversableManifest: ClassManifest[Traversable[_]] = classManifest[Traversable[_]]
-
-  //This final solution rebinds Exp while matching on its manifest.
-  /*def typedExpMatcher[T: ClassManifest] = new AnyRef {
-    def unapply(t: Exp[_]): Option[Exp[T]] =
-      if (t.manifest == classManifest[T])
-        Some(t.asInstanceOf[Exp[T]])
-      else
-        None
-  }*/
-  //val TraversableExp = typedExpMatcher[Traversable[Any]]
-  // Implementation note: if I use Traversable[_] type inference cannot deduce a specific type parameter for
-  // buildJoinTyped, hence let's use Any instead of _ to make type inference deduce Any.
-
   /*
    * Optimizes expressions of the form:
    *   for (k <- l; k2 <- j if l(k) is r(k2)) yield mcf(k, k2)

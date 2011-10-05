@@ -96,9 +96,8 @@ object SimpleOpenEncoding {
     def newWithFilter[T, Repr <: TraversableLike[T, Repr] with Traversable[T]](base: Exp[Repr],
                                                         f: FuncExp[T, Boolean]) =
       new Filter(View[T, Repr](base), f)
-    def newMapOp[T, Repr <: FilterMonadic[T, Repr], U, That](
-                                                              base: Exp[Repr],
-                                                              f: FuncExp[T, U])
+    def newMapOp[T, Repr <: FilterMonadic[T, Repr], U, That](base: Exp[Repr],
+                                                             f: FuncExp[T, U])
                                                             (implicit c: CanBuildFrom[Repr, U, That]) =
       new MapOp[T, Repr, U, That](base, f)
 
@@ -114,15 +113,10 @@ object SimpleOpenEncoding {
         FlatMap[T, Repr, U, That](this.t, FuncExp(f))
     }
 
-    // KO: Why are Filter, GroupBy etc. inside the TraversableLikeOps trait?
-    // The downside is that the automatically generated equality methods do
-    // not work as expected, since they (possibly distinct) enclosing instances into account
-    // even though the queries may be equal otherwise
-
     case class Union[T, Repr <: TraversableLike[T,Repr], U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
                                        (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOpExp[Repr, Traversable[U], That](base, that) {
-           override def interpret = base.interpret ++ that.interpret
-           override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union[T,Repr,U,That](base, that)
+      override def interpret = base.interpret ++ that.interpret
+      override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union[T,Repr,U,That](base, that)
     }
     case class Filter[T, Repr <: TraversableLike[T,Repr]](base: Exp[Repr], f: FuncExp[T, Boolean]) extends BinaryOp[Exp[Repr], FuncExp[T, Boolean], Repr](base, f) {
       override def interpret = base.interpret filter f.interpret()
@@ -381,7 +375,6 @@ object SimpleOpenEncoding {
       assertType[Exp[Map[Int, Int]]](d2)
       showInterp("d2", d2)
       val d3 = c map (ab => (ab._1 + ab._2))
-      //assertType[Exp[Seq[Int]]](d3) //XXX broken
       assertType[Exp[Iterable[Int]]](d3)
       showInterp("d3", d3)
 
