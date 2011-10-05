@@ -1,8 +1,6 @@
 package ivm.expressiontree
 
 trait Exp[+T] {
-  implicit def manifest: ClassManifest[_ <: T]
-
   def interpret(): T
   private[ivm] def children: Seq[Exp[_]]
   private[ivm] def closedTermChildren: Seq[Exp[_]] = children

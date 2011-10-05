@@ -22,9 +22,7 @@ trait NullaryExpTrait[+R] extends CheckingExp[R] {
   def children = Seq()
   def checkedGenericConstructor = _ => this
 }
-abstract class NullaryExp[+R: ClassManifest] extends NullaryExpTrait[R] {
-  override def manifest: ClassManifest[_ <: R] = classManifest[R]
-}
+abstract class NullaryExp[+R] extends NullaryExpTrait[R]
 
 trait UnaryOpTrait[T1 <: Exp[_], +R] extends CheckingExp[R] {
   def t1: T1
@@ -34,11 +32,9 @@ trait UnaryOpTrait[T1 <: Exp[_], +R] extends CheckingExp[R] {
   def copy(t1: T1): Exp[R]
 }
 
-abstract class UnaryOp[T1 <: Exp[_], +R: ClassManifest](val t1: T1) extends UnaryOpTrait[T1, R] {
-  override def manifest: ClassManifest[_ <: R] = classManifest[R]
-}
+abstract class UnaryOp[T1 <: Exp[_], +R](val t1: T1) extends UnaryOpTrait[T1, R]
 
-abstract class UnaryOpExp[T1, R: ClassManifest](t1: Exp[T1]) extends UnaryOp[Exp[T1], R](t1)
+abstract class UnaryOpExp[T1, R](t1: Exp[T1]) extends UnaryOp[Exp[T1], R](t1)
 
 trait BinaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], +R] extends CheckingExp[R] {
   def t1: T1
@@ -50,16 +46,14 @@ trait BinaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], +R] extends CheckingExp[R] {
   def copy(t1: T1, t2: T2): Exp[R]
 }
 
-abstract class BinaryOp[T1 <: Exp[_], T2 <: Exp[_], +R](val t1: T1, val t2: T2)(implicit cm: ClassManifest[_ <: R]) extends BinaryOpTrait[T1, T2, R] {
-  override def manifest: ClassManifest[_ <: R] = cm
-}
+abstract class BinaryOp[T1 <: Exp[_], T2 <: Exp[_], +R](val t1: T1, val t2: T2) extends BinaryOpTrait[T1, T2, R]
 
 trait BinaryOpExpTrait[T1, T2, +R] extends BinaryOpTrait[Exp[T1], Exp[T2], R]
 
 // XXX: should this inherit from BinaryOpExpTrait or from BinaryOp? Does it matter? I hope not - these classes should
 // stay an implementation detail.
-abstract class BinaryOpExp[T1, T2, +R](t1: Exp[T1], t2: Exp[T2])(implicit cm: ClassManifest[_ <: R]) extends BinaryOp[Exp[T1], Exp[T2], R](t1, t2)
-abstract class BinaryOpSymmExp[Arg, +R: ClassManifest](t1: Exp[Arg], t2: Exp[Arg]) extends BinaryOpExp[Arg, Arg, R](t1, t2)
+abstract class BinaryOpExp[T1, T2, +R](t1: Exp[T1], t2: Exp[T2]) extends BinaryOp[Exp[T1], Exp[T2], R](t1, t2)
+abstract class BinaryOpSymmExp[Arg, +R](t1: Exp[Arg], t2: Exp[Arg]) extends BinaryOpExp[Arg, Arg, R](t1, t2)
 
 trait TernaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R] extends CheckingExp[R] {
   def t1: T1
@@ -72,16 +66,15 @@ trait TernaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R] extends Check
   def copy(t1: T1, t2: T2, t3: T3): Exp[R]
 }
 abstract class TernaryOp[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R](val t1: T1, val t2: T2, val t3: T3)
-                                                                      (implicit cm: ClassManifest[_ <: R])
-  extends TernaryOpTrait[T1, T2, T3, R] {
-  override def manifest: ClassManifest[_ <: R] = cm
-}
-abstract class TernaryOpExp[T1, T2, T3, +R](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3])(implicit cm: ClassManifest[_ <: R])
+
+  extends TernaryOpTrait[T1, T2, T3, R]
+
+abstract class TernaryOpExp[T1, T2, T3, +R](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3])
   extends TernaryOp[Exp[T1], Exp[T2], Exp[T3], R](t1, t2, t3)
 
 //For Call4
 abstract class QuaternaryOp[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], +R](t1: T1, t2: T2, t3: T3, t4: T4)
-                                                                                       (implicit cm: ClassManifest[_ <: R]) extends CheckingExp[R] {
+                                                                                        extends CheckingExp[R] {
   override def nodeArity = 4
   def children = Seq(t1, t2, t3, t4)
   def checkedGenericConstructor =
@@ -91,16 +84,15 @@ abstract class QuaternaryOp[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[
       v(2).asInstanceOf[T3],
       v(3).asInstanceOf[T4])
   def copy(t1: T1, t2: T2, t3: T3, t4: T4): Exp[R]
-  override def manifest: ClassManifest[_ <: R] = cm
 }
 
 abstract class QuaternaryOpExp[T1, T2, T3, T4, +R](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3], t4: Exp[T4])
-                                                  (implicit cm: ClassManifest[_ <: R])
+
   extends QuaternaryOp[Exp[T1], Exp[T2], Exp[T3], Exp[T4], R](t1, t2, t3, t4)
 
 //For Join and Call5
 abstract class QuinaryOp[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], T5 <: Exp[_], +R](t1: T1, t2: T2, t3: T3, t4: T4, t5: T5)
-                                                                                                 (implicit cm: ClassManifest[_ <: R]) extends CheckingExp[R] {
+                                                                                                  extends CheckingExp[R] {
   override def nodeArity = 5
   def children = Seq(t1, t2, t3, t4, t5)
   def checkedGenericConstructor =
@@ -111,9 +103,8 @@ abstract class QuinaryOp[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_],
       v(3).asInstanceOf[T4],
       v(4).asInstanceOf[T5])
   def copy(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5): Exp[R]
-  override def manifest: ClassManifest[_ <: R] = cm
 }
 abstract class QuinaryOpExp[T1, T2, T3, T4, T5, +R](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3], t4: Exp[T4], t5: Exp[T5])
-                                                  (implicit cm: ClassManifest[_ <: R])
+
   extends QuinaryOp[Exp[T1], Exp[T2], Exp[T3], Exp[T4], Exp[T5], R](t1, t2, t3, t4, t5)
 

@@ -18,8 +18,6 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
    private def groupByShareBody[T, T2](c: Exp[FilterMonadic[T, Traversable[T]]],
                                                         f: FuncExp[T, Boolean],
                                                         fEqBody: Eq[T2], lhs: Exp[T2], rhs: Exp[T2]) = {
-     implicit val cmT = f.cmS
-     implicit val cmT2 = fEqBody.x.manifest.asInstanceOf[ClassManifest[T2]] //we have ClassManifest[_ <: t2], hence we need the cast :-(.
      /*
      //How the fuck does this typecheck?
      val groupedBy2: Exp[T => Traversable[T]] = c.map(identity).groupBy(FuncExp.makefun[T, T2](fEqBody.y, f.x).f)
@@ -45,8 +43,7 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
      // to be unsound in general. Added a comment there.
 
      // For now this temporary hack uses the manifests to leave out the identity map if possible
-     val c2 : Exp[Traversable[T]] =
-       if (c.manifest <:< manifest[Traversable[Any]]) c.asInstanceOf[Exp[Traversable[T]]] else c.map(identity)
+     val c2 : Exp[Traversable[T]] = c.map(identity)
      val groupedBy = c2.groupBy[T2](FuncExp.makefun[T, T2](rhs, f.x).f)
 
      assertType[Exp[T2 => Traversable[T]]](groupedBy) //Just for documentation.
@@ -57,7 +54,6 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
    }
 
   private def residualQuery[T](e: Exp[FilterMonadic[T, Traversable[T]]], conds: Set[Exp[Boolean]], v: Var) : Exp[FilterMonadic[T, Traversable[T]]] = {
-    implicit val cmT : ClassManifest[T] = e.manifest.asInstanceOf[ClassManifest[T]]
     if (conds.isEmpty) return e
     val residualcond : Exp[Boolean] = conds.reduce( (x,y) => And(x,y))
     e.withFilter(FuncExp.makefun[T,Boolean](residualcond,v))

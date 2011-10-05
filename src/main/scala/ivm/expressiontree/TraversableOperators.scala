@@ -12,7 +12,7 @@ import collection.{TraversableViewLike, TraversableView, TraversableLike, GenTra
 case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
                    This <: FilterMonadic[T, Repr],
                    U, That](base: Exp[This], f: FuncExp[T, GenTraversableOnce[U]])
-                            (implicit c: CanBuildFrom[Repr, U, That], cm: ClassManifest[That]) extends BinaryOp[Exp[This], FuncExp[T, GenTraversableOnce[U]], That](base, f) {
+                            (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[This], FuncExp[T, GenTraversableOnce[U]], That](base, f) {
   override def interpret = base.interpret flatMap f.interpret()
   override def copy(base: Exp[This], f: FuncExp[T, GenTraversableOnce[U]]) = FlatMap[T, Repr, This, U, That](base, f)
 }
@@ -20,7 +20,7 @@ case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
 case class MapOp[T, Repr <: FilterMonadic[T, Repr],
                  This <: FilterMonadic[T, Repr],
                  U, That](base: Exp[This], f: FuncExp[T, U])
-                          (implicit c: CanBuildFrom[Repr, U, That], cm: ClassManifest[That]) extends BinaryOp[Exp[This], FuncExp[T, U], That](base, f) {
+                          (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[This], FuncExp[T, U], That](base, f) {
   override def interpret = base.interpret map f.interpret()
   override def copy(base: Exp[This], f: FuncExp[T, U]) = MapOp[T, Repr, This, U, That](base, f)
 }
@@ -28,7 +28,7 @@ case class MapOp[T, Repr <: FilterMonadic[T, Repr],
 case class WithFilter[T, Repr <: FilterMonadic[T, Repr],
                       This <: FilterMonadic[T, Repr]](base: Exp[This],
                                                       f: FuncExp[T, Boolean])
-                                                     (implicit cm: ClassManifest[FilterMonadic[T, Repr]]) extends BinaryOp[Exp[This], FuncExp[T, Boolean], FilterMonadic[T, Repr]](base, f) {
+                                                      extends BinaryOp[Exp[This], FuncExp[T, Boolean], FilterMonadic[T, Repr]](base, f) {
   override def interpret = base.interpret withFilter f.interpret()
   override def copy(base: Exp[This], f: FuncExp[T, Boolean]) = WithFilter[T, Repr, This](base, f)
 }

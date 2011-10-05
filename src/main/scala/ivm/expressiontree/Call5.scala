@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-class Call5[A0, A1, A2, A3, A4, Res: ClassManifest](val id: Symbol,
+class Call5[A0, A1, A2, A3, A4, Res](val id: Symbol,
                                                     callfunc: (A0, A1, A2, A3, A4) => Res,
                                                     arg0: Exp[A0],
                                                     arg1: Exp[A1],

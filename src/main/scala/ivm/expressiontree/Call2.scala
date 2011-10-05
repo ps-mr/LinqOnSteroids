@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-class Call2[A0, A1, Res: ClassManifest](val id: Symbol,
+class Call2[A0, A1, Res](val id: Symbol,
                                         callfunc: (A0, A1) => Res,
                                         arg0: Exp[A0],
                                         arg1: Exp[A1]) extends BinaryOpExp[A0, A1, Res](arg0, arg1) with Call[Res] {

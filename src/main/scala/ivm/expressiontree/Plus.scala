@@ -8,7 +8,7 @@ trait CommutativeOp[T] extends Exp[T] {
   def y: Exp[T]
 }
 
-case class Plus[T](x: Exp[T], y: Exp[T])(implicit val isNum: Numeric[T], val cm: ClassManifest[T]) extends BinaryOpSymmExp[T, T](x, y) with CommutativeOp[T] {
+case class Plus[T](x: Exp[T], y: Exp[T])(implicit val isNum: Numeric[T]) extends BinaryOpSymmExp[T, T](x, y) with CommutativeOp[T] {
   def interpret() = isNum.plus(x.interpret(), y.interpret())
   def copy(x: Exp[T], y: Exp[T]) = Plus(x, y)
 }

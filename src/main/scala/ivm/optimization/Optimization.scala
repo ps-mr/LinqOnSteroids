@@ -14,13 +14,11 @@ object FuncExpIdentity {
 }
 object & { def unapply[A](a: A) = Some(a, a) }
 class Optimization {
-  private def buildJoin[T, S, TKey: ClassManifest, TResult: ClassManifest](fmColl: Exp[Traversable[T]],
+  private def buildJoin[T, S, TKey, TResult](fmColl: Exp[Traversable[T]],
                                                   wfColl: Exp[Traversable[S]],
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
                                                   moFun: FuncExp[S, TResult], fmFun: FuncExp[T, GenTraversableOnce[TResult]],
                                                   wfFun: FuncExp[S, Boolean]): Exp[Traversable[TResult]] /*Join[T, S, TKey, TResult]*/ = {
-    implicit val cmT = fmFun.cmS
-    implicit val cmS = moFun.cmS
     fmColl.join(
       wfColl,
       FuncExp.makefun[T, TKey](lhs, fmFun.x).f,
@@ -33,25 +31,25 @@ class Optimization {
 
   // First solution which worked in the end. Of course, it doesn't rebind t. I could return it casted, but then I
   // couldn't use this easily in a pattern guard.
-  def hasType[T: ClassManifest](t: Exp[_]): Boolean = t.manifest <:< classManifest[T]
+  //def hasType[T: ClassManifest](t: Exp[_]): Boolean = t.manifest <:< classManifest[T]
 
   //Second solution: this pattern matcher must be used with &, as in
   // (fmColl: Exp[Traversable[_]]) & TypedExp(TraversableManifest)
   object TypedExp {
-    def unapply[_](t: Exp[_]): Option[ClassManifest[_]] = Some(t.manifest)
+    //def unapply[_](t: Exp[_]): Option[ClassManifest[_]] = Some(t.manifest)
   }
 
   val TraversableManifest: ClassManifest[Traversable[_]] = classManifest[Traversable[_]]
 
   //This final solution rebinds Exp while matching on its manifest.
-  def typedExpMatcher[T: ClassManifest] = new AnyRef {
+  /*def typedExpMatcher[T: ClassManifest] = new AnyRef {
     def unapply(t: Exp[_]): Option[Exp[T]] =
       if (t.manifest == classManifest[T])
         Some(t.asInstanceOf[Exp[T]])
       else
         None
-  }
-  val TraversableExp = typedExpMatcher[Traversable[Any]]
+  }*/
+  //val TraversableExp = typedExpMatcher[Traversable[Any]]
   // Implementation note: if I use Traversable[_] type inference cannot deduce a specific type parameter for
   // buildJoinTyped, hence let's use Any instead of _ to make type inference deduce Any.
 
@@ -67,8 +65,8 @@ class Optimization {
    */
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
-      case FlatMap(TraversableExp(fmColl),
-        fmFun @ FuncExpBody(MapOp(WithFilter(TraversableExp(wfColl), wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
+      case FlatMap(fmColl: Exp[Traversable[_]],
+        fmFun @ FuncExpBody(MapOp(WithFilter(wfColl: Exp[Traversable[_]], wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
         if !wfColl.isOrContains(fmFun.x)
       =>
         //XXX: buildJoin is passed Any as type parameter - this makes manifests for Any be part of the new expression.
@@ -107,13 +105,13 @@ class Optimization {
         mergeFilters(
           col2.asInstanceOf[Exp[FilterMonadic[t, Traversable[t]]]].withFilter{
             (x: Exp[_]) => And(f2(x), f(x))
-          }(f2.cmS.asInstanceOf[ClassManifest[t]]))
+          })
       case _ => e
     }
 
   val normalizer: Exp[_] => Exp[_] =
     e => e match {
-      case p@Plus(x, y) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum, p.cm)
+      case p@Plus(x, y) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum)
       case e@Eq(x, y) => Eq(Exp.min(x, y), Exp.max(x, y))
       case _ => e
     }

@@ -202,7 +202,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
 
     //This code is yet better.
     val resNew = new IncrementalResult[Int](for (i <- v.asQueryable;
-                                              j <- toExp(genericWrapArray(vArr))(implicitly)(i))
+                                              j <- toExp(genericWrapArray(vArr))(i))
                                             yield i + j)
 
     val res = Seq(resOld, resMid, resNew)(version)

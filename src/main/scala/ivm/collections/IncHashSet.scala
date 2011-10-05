@@ -55,12 +55,11 @@ trait IncSetLike[T, CCThis[X] <: Set[X] with SetLike[X, CCThis[X]] with GenSet[X
   override def companion: GenericCompanion[CCThis] = null
 }
 
-class IncHashSet[T](implicit val cm: ClassManifest[Traversable[T]]) extends HashSet[T]
+class IncHashSet[T] extends HashSet[T]
    with IncSetLike[T, IncHashSet, HashSet[T]]
 {
   type Pub <: IncHashSet[T] //This definition is not required but simplifies the definition of Pub
   override def companion = IncHashSet
-  override def manifest = classManifest
 }
 
 // Next TODO: try to hide from the public interface of IncHashSet the methods from HashSet, so that people must call

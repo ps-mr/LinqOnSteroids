@@ -6,16 +6,14 @@ import annotation.unchecked.uncheckedVariance
 // encodings of the STLC (simply typed lambda calculus).
 //Having explicit App nodes for application can be useful to represent application instead of computing it,
 //since computing it means inlining and can replicate terms.
-case class App[T, U: ClassManifest](f: Exp[T => U], t: Exp[T]) extends BinaryOpExp[T => U, T, U](f, t) {
+case class App[T, U](f: Exp[T => U], t: Exp[T]) extends BinaryOpExp[T => U, T, U](f, t) {
   def interpret = f.interpret()(t.interpret)
   override def copy(f: Exp[T => U], t: Exp[T]) = App(f, t)
 }
 
-case class FuncExp[S, T](f: Exp[S] => Exp[T])
-                          (implicit val cmS: ClassManifest[S], val cmT: ClassManifest[T]) extends CheckingExp[S => T] with Equals {
+case class FuncExp[S, T](f: Exp[S] => Exp[T]) extends CheckingExp[S => T] with Equals {
   import FuncExp._
   val x = gensym()
-  def manifest = classManifest[S => T]
   lazy val body = f(x)
   override def toString() = {
     "(" + x.name + ") => " + body
@@ -35,7 +33,7 @@ case class FuncExp[S, T](f: Exp[S] => Exp[T])
   override def nodeArity = 1
   //}}}
 
-  def copy[U >: T: ClassManifest](t1: Exp[U]): FuncExp[S, U] = makefun(t1, x)
+  def copy[U >: T](t1: Exp[U]): FuncExp[S, U] = makefun(t1, x)
   def children = Seq(body)
   private[ivm] override def closedTermChildren: Seq[Exp[_]] = Seq()
 
@@ -61,7 +59,7 @@ object FuncExp {
   private var varCounter: Int = 0;
   val varzero = gensym()
   def gensym(): Var = { varCounter += 1;  new Var("v"+varCounter) }
-  def makefun[S: ClassManifest, T: ClassManifest](e: Exp[T], v: Var): FuncExp[S, T] = FuncExp(x => e.substVar(v.name,x))
-  def makepairfun[S1: ClassManifest, S2: ClassManifest, T: ClassManifest](e: Exp[T], v1: Var, v2: Var): FuncExp[(S1, S2), T] =
+  def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = FuncExp(x => e.substVar(v.name,x))
+  def makepairfun[S1, S2, T](e: Exp[T], v1: Var, v2: Var): FuncExp[(S1, S2), T] =
     FuncExp(p => e.substVar(v1.name, Proj1(p)).substVar(v2.name, Proj2(p)))
 }
