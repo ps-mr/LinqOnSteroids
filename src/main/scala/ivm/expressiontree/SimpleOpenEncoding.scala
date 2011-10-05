@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
 import collection.generic.{FilterMonadic, CanBuildFrom}
-import collection.{TraversableView, GenTraversableOnce, TraversableViewLike, IterableView, TraversableLike}
+import collection.{TraversableView, GenTraversableOnce, TraversableViewLike, IterableView, TraversableLike, mutable}
 
 /**
  * Here I show yet another encoding of expression trees, where methods
@@ -22,6 +22,10 @@ object SimpleOpenEncoding {
     //It is more specific than toExp[Unit] because it's not generic, but is declared in a superclass, hence
     //has less priority. Ambiguity follows.
     implicit def noToExpForUnit(t: Unit): Exp[Unit] = null
+    //Ditto. Creating Const nodes for mutable collection is a contradiction; moreover, those nodes would send no
+    //notification for updates to the underlying collection.
+    //To test, edit testNoMutableConst below to see that the currently commented-out code does not compile.
+    implicit def noConstForMutableColl[T](t: mutable.Traversable[T]): Exp[mutable.Traversable[T]] = null
   }
 
   trait OpsExpressionTreeTrait extends ConversionDisabler {
@@ -338,8 +342,16 @@ object SimpleOpenEncoding {
       assertType[Exp[Traversable[Int]]](forcedC)
     }
 
+    def testNoMutableConst() {
+      val mutableD = mutable.Seq(1)
+      //XXX: As desired, thanks to noConstForMutableColl this code does not compile. It is unfortunate that we can't assert
+      // that some code does not compile. Recheck when changing this code.
+      //val mutExp: Exp[Traversable[Int]] = mutableD
+    }
+
     def testTraversable() {
       moreTests()
+      testNoMutableConst()
 
       val data = Seq(1, 2, 2, 3, 5, 5, 3)
       val a: Exp[Traversable[Int]] = data
