@@ -36,8 +36,8 @@ case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr]) extends Un
 }
 
 case class Force[T, Repr <: TraversableLike[T, Repr] with Traversable[T],
-                 ViewColl <: Repr with TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
-                (base: Exp[ViewColl]) extends UnaryOpExp[ViewColl, Traversable[T]](base) {
+                 ViewColl <: Repr with TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl], That]
+                (base: Exp[ViewColl])(implicit bf: CanBuildFrom[Repr, T, That]) extends UnaryOpExp[ViewColl, That](base) {
   override def interpret = base.interpret.force
-  override def copy(base: Exp[ViewColl]) = Force[T, Repr, ViewColl](base)
+  override def copy(base: Exp[ViewColl]) = Force[T, Repr, ViewColl, That](base)
 }
