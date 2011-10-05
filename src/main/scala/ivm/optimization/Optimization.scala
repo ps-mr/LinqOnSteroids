@@ -81,9 +81,6 @@ class Optimization {
       case _ => e
     }
 
-  // KO: Is this transformation typesound? If we have a collection c of type Exp[FilterMonadic...] and
-  // transform c.map(identity).groupBy(...) to c.groupBy(...) then we have a problem because groupBy
-  // is not available on FilterMonadic...
   val removeIdentityMaps: Exp[_] => Exp[_] =
     e => e match {
       case MapOp(col, FuncExpIdentity()) =>
