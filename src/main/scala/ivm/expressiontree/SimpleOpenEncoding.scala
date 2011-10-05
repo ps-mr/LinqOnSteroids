@@ -201,7 +201,7 @@ object SimpleOpenEncoding {
     trait TraversableViewLikeOps[
         T,
         Repr <: TraversableLike[T, Repr] with Traversable[T],
-        ViewColl <: Repr with TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
+        ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
       extends TraversableLikeOps[T, ViewColl]
     {
       def force[That](implicit bf: CanBuildFrom[Repr, T, That]) = Force[T, Repr, ViewColl, That](this.t)
@@ -224,10 +224,8 @@ object SimpleOpenEncoding {
         newWithFilter(this.t, FuncExp(f))
     }
 
-    // XXX: We cannot pass Repr instead of Traversable[T] to TraversableViewLikeOps, because of the bound ViewColl <: Repr.
-    // Here ViewColl = TraversableView[T, Traversable[T]], so Repr would have to be Traversable[T].
-    class TraversableViewOps[T, Repr <: Traversable[T]](val t: Exp[TraversableView[T, Repr]])
-      extends TraversableViewLikeOps[T, Traversable[T], TraversableView[T, Repr]]
+    class TraversableViewOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val t: Exp[TraversableView[T, Repr]])
+      extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]]
 
     implicit def expToTravExp[T](t: Exp[Traversable[T]]): TraversableOps[T] = new TraversableOps(t)
     implicit def tToTravExp[T](t: Traversable[T]): TraversableOps[T] = {
@@ -235,8 +233,8 @@ object SimpleOpenEncoding {
       expToTravExp(t)
     }
 
-    implicit def expToTravViewExp[T, Repr <: Traversable[T]](t: Exp[TraversableView[T, Repr]]): TraversableViewOps[T, Repr] = new TraversableViewOps(t)
-    implicit def tToTravViewExp[T, Repr <: Traversable[T]](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
+    implicit def expToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Exp[TraversableView[T, Repr]]): TraversableViewOps[T, Repr] = new TraversableViewOps(t)
+    implicit def tToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
 
     implicit def expToTravViewExp2[T](t: Exp[TraversableView[T, Traversable[_]]]): TraversableViewOps[T, Traversable[T]] = expToTravViewExp(
       t.asInstanceOf[Exp[TraversableView[T, Traversable[T]]]])
@@ -408,7 +406,7 @@ object SimpleOpenEncoding {
       showInterp("d6", d6)
 
       val forced = d6.force
-      //assertType[Exp[Map[Int, Int]]](forced) //XXX
+      assertType[Exp[Map[Int, Int]]](forced)
 
       val d7 = c groupBy (ab => ab._2)
       assertType[Exp[Map[Int, Map[Int, Int]]]](d7)
