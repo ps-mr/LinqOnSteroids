@@ -13,13 +13,42 @@ import collection.generic.FilterMonadic
 
 class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l: CollectionReifier[Int] = new CollectionReifier(Vector.range(1, 10))
-  @Test
-  def testRemoveIdentityMaps() {
+  def withFilterQueries = {
     val q1 = for (
                x <- for (c <- l if c + 3 is 7; if c + 8 is 19) yield c
                if x is 19)
              yield x
     val q2 = Optimization.removeIdentityMaps(q1)
+    (q1, q2)
+  }
+
+  @Test
+  def testJoinOnWithFilter() {
+    val (_, q2) = withFilterQueries
+    //Compose the query, using the optimized version...
+    val r = for (k <- q2; k2  <- l if k is k2) yield k + k2
+    //Perform a further optimization
+    val r2 = Optimization.optimizeCartProdToJoin(r)
+
+    //Now this will fail with ClassCastException, if we built a Join based on a WithFilter.
+    r2.interpret()
+  }
+
+  @Test
+  def testJoinOnWithFilter2() {
+    val (q1, _) = withFilterQueries
+    //First compose the query, based on the unoptimized version...
+    val r = for (k <- q1; k2  <- l if k is k2) yield k + k2
+    //Then do both optims
+    val r2 = Optimization.optimizeCartProdToJoin(Optimization.removeIdentityMaps(r))
+
+    //Now this might fail as above.
+    r2.interpret()
+  }
+
+  @Test
+  def testRemoveIdentityMaps() {
+    val (q1, q2) = withFilterQueries
 
     val desiredResult = newWithFilter(
                          newWithFilter(
