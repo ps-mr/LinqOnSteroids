@@ -4,7 +4,7 @@ package expressiontree
 // Variant of QueryReifier, which also sends event to derived collections. Note that this is not reified!
 // XXX: we forget to add mutation operations. But see Queryable and QueryableTest. So make this a trait which is mixed in
 // by Queryable.
-trait QueryReifier[T] extends MsgSeqPublisher[Traversable[T]] with Exp[Traversable[T]] {
+trait QueryReifier[T] extends TravMsgSeqPublisher[T] with Exp[Traversable[T]] {
   type Pub <: QueryReifier[T]
   //XXX: the dummy parameter avoids view to override view in collections, when both are inherited (e.g. in Queryable).
   //The 'implicit' keyword allows to leave out the parameter list entirely.

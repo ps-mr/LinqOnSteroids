@@ -4,9 +4,9 @@ import collection.mutable.HashMap
 
 // All the maintainer classes/traits (MapMaintener, WithFilterMaintainer, FlatMapMaintainer) have a common structure of
 // "message transformers". That can be probably abstracted away: they should have a method
-// producedMessages: Message[Traversable[T]] => Seq[Message[Traversable[T]]], we should remove Script[T], implement publish in term of it in type:
-// Forwarder[T, U, Repr] extends Subscriber[Seq[Message[Traversable[T]]], Repr] with Publisher[Seq[Message[Traversable[U]]]]
-// notify(evts: Seq[Message[Traversable[T]]]) = publish(evts flatMap producedMessages)
+// producedMessages: TravMessage[T] => Seq[TravMessage[T]], we should remove Script[T], implement publish in term of it in type:
+// Forwarder[T, U, Repr] extends Subscriber[Seq[TravMessage[T]], Repr] with Publisher[Seq[TravMessage[U]]]
+// notify(evts: Seq[TravMessage[T]]) = publish(evts flatMap producedMessages)
 // This should just be the default implementation though, because it doesn't use batching.
 // Moreover, we might want to have by-name values there (impossible) or sth. alike - otherwise the pipeline will always
 // execute the maintenance (say, apply the mapped function) before we get a chance to say "better not".
@@ -30,7 +30,7 @@ import collection.mutable.HashMap
 //Trait implementing incremental view maintenance for MapOp operations
 trait MapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   def fInt: T => U
-  override def transformedMessages(evt: Message[Traversable[T]]) = {
+  override def transformedMessages(evt: TravMessage[T]) = {
     evt match {
       case Include(v) => Seq(Include(fInt(v)))
       case Remove(v) => Seq(Remove(fInt(v)))
@@ -56,7 +56,7 @@ trait MapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
 // Do we get a problem because of the different properties of subtraction?
 trait WithFilterMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
   def pInt: T => Boolean
-  override def transformedMessages(evt: Message[Traversable[T]]) = {
+  override def transformedMessages(evt: TravMessage[T]) = {
     evt match {
       case Include(v) => if (pInt(v)) Seq(Include(v)) else Seq.empty
       case Remove(v) => if (pInt(v)) Seq(Remove(v)) else Seq.empty
@@ -70,9 +70,9 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   self: QueryReifier[U] => //? [T]? That's needed for the subscribe.
   def fInt: T => QueryReifier[U]
   var cache = new HashMap[T, QueryReifier[U]]
-  val subCollListener: MsgSeqSubscriber[Traversable[U], QueryReifier[U]] =
-    new MsgSeqSubscriber[Traversable[U], QueryReifier[U]] {
-      override def notify(pub: QueryReifier[U], evts: Seq[Message[Traversable[U]]]) = {
+  val subCollListener: TravMsgSeqSubscriber[U, QueryReifier[U]] =
+    new TravMsgSeqSubscriber[U, QueryReifier[U]] {
+      override def notify(pub: QueryReifier[U], evts: Seq[TravMessage[U]]) = {
         //publish(evts flatMap (evt => evt match {
         //evts foreach (evt => evt match {
         for (evt <- evts) {
@@ -100,7 +100,7 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
       }
     }
   }
-  override def transformedMessages(evt: Message[Traversable[T]]) = {
+  override def transformedMessages(evt: TravMessage[T]) = {
     evt match {
       case Include(v) =>
         val fV = cache.getOrElseUpdate(v, fInt(v))
@@ -145,7 +145,7 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   }
 }*/
 trait Maintainer[T] {
-  this: MsgSeqSubscriber[Traversable[T], QueryReifier[T]] =>
+  this: TravMsgSeqSubscriber[T, QueryReifier[T]] =>
   val col: QueryReifier[T]
 
   def startListening() {
