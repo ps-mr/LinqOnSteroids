@@ -12,12 +12,12 @@ import collection.immutable.HashSet
  */
 
 sealed trait Message[+T]
-case class Include[T](t: T) extends TravMessage[T]
+case class Include[+T](t: T) extends TravMessage[T]
 /*class Include[T](_t : => T) extends Message[T] {
   lazy val t = _t
 }*/
-case class Remove[T](t: T) extends TravMessage[T]
-case class Update[T](old: T, curr: T) extends TravMessage[T]
+case class Remove[+T](t: T) extends TravMessage[T]
+case class Update[+T](old: T, curr: T) extends TravMessage[T]
 case class Reset() extends TravMessage[Nothing]
 // XXX: A union class will have a hard time handling a Reset event. Maybe it's better to just batch Remove messages for
 // a Reset? That's a problem when reset is O(1); maybe that must be done by intermediate nodes, which don't have however
