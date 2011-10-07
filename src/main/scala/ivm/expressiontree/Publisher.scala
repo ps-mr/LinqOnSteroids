@@ -12,13 +12,13 @@ import collection.immutable.HashSet
  */
 
 sealed trait Message[+T]
-case class Include[T](t: T) extends Message[T]
+case class Include[T](t: T) extends Message[Traversable[T]]
 /*class Include[T](_t : => T) extends Message[T] {
   lazy val t = _t
 }*/
-case class Remove[T](t: T) extends Message[T]
-case class Update[T](old: T, curr: T) extends Message[T]
-case class Reset() extends Message[Nothing]
+case class Remove[T](t: T) extends Message[Traversable[T]]
+case class Update[T](old: T, curr: T) extends Message[Traversable[T]]
+case class Reset() extends Message[Traversable[Nothing]]
 // XXX: A union class will have a hard time handling a Reset event. Maybe it's better to just batch Remove messages for
 // a Reset? That's a problem when reset is O(1); maybe that must be done by intermediate nodes, which don't have however
 // the elements anyway, because they have not been transformed.
@@ -97,12 +97,12 @@ trait MsgSeqPublisher[T] extends Publisher[Seq[Message[T]]] {
 
 trait MsgSeqSubscriber[-T, -Repr] extends Subscriber[Seq[Message[T]], Repr]
 
-trait EvtTransformer[-T, U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U] {
+trait EvtTransformer[-T, U, -Repr] extends MsgSeqSubscriber[Traversable[T], Repr] with MsgSeqPublisher[Traversable[U]] {
   //Contract: transforms messages, potentially executes them.
-  def transformedMessages(v: Message[T]): Seq[Message[U]]
+  def transformedMessages(v: Message[Traversable[T]]): Seq[Message[Traversable[U]]]
 
   //Precondition: only ever pass Reset or Update nodes.
-  protected def defTransformedMessages(v: Message[T]): Seq[Message[U]] = {
+  protected def defTransformedMessages(v: Message[Traversable[T]]): Seq[Message[Traversable[U]]] = {
     v match {
       case Reset() => Seq(Reset())
       case Update(old, curr) =>
@@ -115,7 +115,7 @@ trait EvtTransformer[-T, U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeq
     }
   }
 
-  override def notify(pub: Repr, evts: Seq[Message[T]]) = {
+  override def notify(pub: Repr, evts: Seq[Message[Traversable[T]]]) = {
     val res = evts flatMap transformedMessages
     if (Debug.verbose)
       println("%s notify(\n  pub = %s,\n  evts = %s\n) = %s" format (this, pub, evts, res))
