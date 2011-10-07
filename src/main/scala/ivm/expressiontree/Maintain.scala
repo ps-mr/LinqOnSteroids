@@ -5,7 +5,7 @@ import collection.mutable.HashMap
 // All the maintainer classes/traits (MapMaintener, WithFilterMaintainer, FlatMapMaintainer) have a common structure of
 // "message transformers". That can be probably abstracted away: they should have a method
 // producedMessages: TravMessage[T] => Seq[TravMessage[T]], we should remove Script[T], implement publish in term of it in type:
-// Forwarder[T, U, Repr] extends Subscriber[Seq[TravMessage[T]], Repr] with Publisher[Seq[TravMessage[U]]]
+// Forwarder[T, U, Repr] extends Subscriber[Seq[TravMessage[T]], Repr] with DefaultPublisher[Seq[TravMessage[U]]]
 // notify(evts: Seq[TravMessage[T]]) = publish(evts flatMap producedMessages)
 // This should just be the default implementation though, because it doesn't use batching.
 // Moreover, we might want to have by-name values there (impossible) or sth. alike - otherwise the pipeline will always

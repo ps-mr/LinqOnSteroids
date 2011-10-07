@@ -35,12 +35,12 @@ case class Reset() extends TravMessage[Nothing]
 //Script nodes can be useful as a space optimization for Seq[Message[T]]; however, types become less perspicuous.
 //case class Script[T](changes: Message[T]*) extends Message[T]
 
-// Publisher hangs onto the listeners directly, while in our scenario weak references are badly needed.
-// Here's a version of Publisher without this problem; the design is very similar to the original Publisher class, but
+// DefaultPublisher hangs onto the listeners directly, while in our scenario weak references are badly needed.
+// Here's a version of DefaultPublisher without this problem; the design is very similar to the original DefaultPublisher class, but
 // with weak references and without filters (since we currently don't need them).
 
-/* TODO Copyright: our Publisher class derives from the Scala library, which has a BSD license. Copying code is allowed
- * and no problem, as long as we acknowledge it in the sources. */
+/* TODO Copyright: our DefaultPublisher class derives from Publisher in the Scala library, which has a BSD license.
+ * Copying code is allowed and no problem, as long as we acknowledge it in the sources. */
 
 /**
  * Extends WeakReference with working equality comparison
@@ -68,12 +68,26 @@ trait Publisher[Evt] {
   type Pub <: Publisher[Evt]
   type Sub = Subscriber[Evt, Pub]
 
+  def subscribe(sub: Sub)
+  def removeSubscription(sub: Sub)
+  def publish(evt: Evt)
+}
+
+trait IgnoringPublisher[Evt] extends Publisher[Evt] {
+  def subscribe(sub: Sub) {}
+  def removeSubscription(sub: Sub) {}
+  def publish(evt: Evt) {}
+}
+
+trait DefaultPublisher[Evt] extends Publisher[Evt] {
+  type Pub <: DefaultPublisher[Evt]
+
   protected def selfAsPub: Pub = this.asInstanceOf[Pub]
   //XXX: If Pub were a (covariant) type parameter, then we could just write (I expect) selfAsPub: Pub => at the beginning, instead of
   //such an ugly cast. However, Pub appears in Subscriber in a contravariant position, so that's not so easily possible.
 
   //XXX: I believe that we need to filter out duplicate elements - I'd need a WeakHashSet.
-  var subscribers: Set[EqWeakReference[Sub]] = HashSet()
+  private var subscribers: Set[EqWeakReference[Sub]] = HashSet()
   def subscribe(sub: Sub) {
     subscribers += new EqWeakReference(sub)
   }
@@ -89,7 +103,7 @@ trait Publisher[Evt] {
   }
 }
 
-trait MsgSeqPublisher[T] extends Publisher[Seq[Message[T]]] {
+trait MsgSeqPublisher[T] extends DefaultPublisher[Seq[Message[T]]] {
   def publish(evt: Message[T]) {
     publish(Seq(evt))
   }
