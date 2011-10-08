@@ -12,7 +12,7 @@ import org.junit.{Ignore, Test}
 class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
   import Lifting._
 
-  @Test @Ignore
+  @Test
   def emptyIncHashSet() {
     val a = IncHashSet.empty
     a should not be (null)
@@ -21,7 +21,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     b should be (a)
   }
 
-  @Test @Ignore
+  @Test
   def builderIncHashSet() {
     val c = IncHashSet.newBuilder[Int]
     c ++= Seq(1, 2, 3)
@@ -34,7 +34,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     d should be (cRes)
   }
 
-  @Test @Ignore
+  @Test
   def emptyIncArrayBuffer() {
     val a = IncArrayBuffer.empty
     a should not be (null)
@@ -43,7 +43,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     b should be (a)
   }
 
-  @Test @Ignore
+  @Test
   def builderIncArrayBuffer() {
     val c = IncArrayBuffer.newBuilder[Int]
     c ++= Seq(1, 2, 3)
@@ -55,8 +55,8 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     d should be (cRes)
   }
 
-  @Test @Ignore
-  def testQueryable() {
+  @Test
+  def testIncArrayBuffer() {
     val v = new IncArrayBuffer[Int]
     v ++= Seq(1, 2, 3)
 
@@ -90,7 +90,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     //println("vIncUpd.inner.exec(): " + vIncUpd.inner.exec())
   }
 
-  @Test @Ignore
+  @Test
   def testIncremental() {
     val v = new IncHashSet[Int]
     v ++= Seq(1, 2, 3)
@@ -164,12 +164,12 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     show("res", res)
   }
 
-  @Test @Ignore
+  @Test
   def testFlatMapWorking() {
     testFlatMap(working = true)
   }
 
-  @Test @Ignore
+  @Test
   def testFlatMapNotWorking() {
     testFlatMap(working = false)
   }
@@ -177,8 +177,8 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
   //Invalid test case; the query tree is exotic and thus causes failure. Recorded as a typical example.
   @Ignore @Test def flatMap2V0 = testFlatMap2(0)
 
-  @Test @Ignore def flatMap2V1 = testFlatMap2(1)
-  @Test @Ignore def flatMap2V2 = testFlatMap2(2)
+  @Test def flatMap2V1 = testFlatMap2(1)
+  @Test def flatMap2V2 = testFlatMap2(2)
 
   def testFlatMap2(version: Int) {
     val v = new IncHashSet[Int]
