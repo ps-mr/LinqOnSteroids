@@ -11,7 +11,7 @@ case class App[T, U](f: Exp[T => U], t: Exp[T]) extends BinaryOpExp[T => U, T, U
   override def copy(f: Exp[T => U], t: Exp[T]) = App(f, t)
 }
 
-case class FuncExp[S, T](f: Exp[S] => Exp[T]) extends CheckingExp[S => T] with Equals {
+case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends CheckingExp[S => T] with Equals {
   import FuncExp._
   val x = gensym()
   lazy val body = f(x)
