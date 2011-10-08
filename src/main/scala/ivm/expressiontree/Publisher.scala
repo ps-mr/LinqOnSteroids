@@ -111,7 +111,7 @@ trait MsgSeqPublisher[+T] extends DefaultPublisher[Seq[Message[T]]] {
 
 trait MsgSeqSubscriber[-T, -Repr] extends Subscriber[Seq[Message[T]], Repr]
 
-trait EvtTransformer[-T, U, -Repr] extends TravMsgSeqSubscriber[T, Repr] with TravMsgSeqPublisher[U] {
+trait EvtTransformer[-T, +U, -Repr] extends TravMsgSeqSubscriber[T, Repr] with TravMsgSeqPublisher[U] {
   //Contract: transforms messages, potentially executes them.
   def transformedMessages(v: TravMessage[T]): Seq[TravMessage[U]]
 
