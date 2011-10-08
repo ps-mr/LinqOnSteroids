@@ -64,22 +64,22 @@ class EqWeakReference[+T >: Null <: AnyRef](t: T) extends WeakReference[T](t: T)
   override def hashCode() = get.hashCode
 }
 
-trait Publisher[Evt] {
+trait Publisher[+Evt] {
   type Pub <: Publisher[Evt]
   type Sub = Subscriber[Evt, Pub]
 
   def subscribe(sub: Sub)
   def removeSubscription(sub: Sub)
-  def publish(evt: Evt)
+  protected[this] def publish(evt: Evt)
 }
 
-trait IgnoringPublisher[Evt] extends Publisher[Evt] {
+trait IgnoringPublisher[+Evt] extends Publisher[Evt] {
   def subscribe(sub: Sub) {}
   def removeSubscription(sub: Sub) {}
-  def publish(evt: Evt) {}
+  protected[this] def publish(evt: Evt) {}
 }
 
-trait DefaultPublisher[Evt] extends Publisher[Evt] {
+trait DefaultPublisher[+Evt] extends Publisher[Evt] {
   type Pub <: DefaultPublisher[Evt]
 
   protected def selfAsPub: Pub = this.asInstanceOf[Pub]
@@ -87,7 +87,7 @@ trait DefaultPublisher[Evt] extends Publisher[Evt] {
   //such an ugly cast. However, Pub appears in Subscriber in a contravariant position, so that's not so easily possible.
 
   //XXX: I believe that we need to filter out duplicate elements - I'd need a WeakHashSet.
-  private var subscribers: Set[EqWeakReference[Sub]] = HashSet()
+  private[this] var subscribers: Set[EqWeakReference[Sub]] = HashSet()
   def subscribe(sub: Sub) {
     subscribers += new EqWeakReference(sub)
   }
@@ -95,7 +95,7 @@ trait DefaultPublisher[Evt] extends Publisher[Evt] {
     subscribers -= new EqWeakReference(sub)
   }
 
-  def publish(evt: Evt) {
+  protected[this] def publish(evt: Evt) {
     for (subWeakRef <- subscribers; sub <- subWeakRef.get) {
       sub.notify(selfAsPub, evt)
     }
@@ -103,8 +103,8 @@ trait DefaultPublisher[Evt] extends Publisher[Evt] {
   }
 }
 
-trait MsgSeqPublisher[T] extends DefaultPublisher[Seq[Message[T]]] {
-  def publish(evt: Message[T]) {
+trait MsgSeqPublisher[+T] extends DefaultPublisher[Seq[Message[T]]] {
+  protected[this] def publish(evt: Message[T]) {
     publish(Seq(evt))
   }
 }
