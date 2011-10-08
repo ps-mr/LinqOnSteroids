@@ -1,6 +1,8 @@
 package ivm.expressiontree
 
 import collection.mutable.HashMap
+import collection.generic.CanBuildFrom
+import collection.TraversableLike
 
 // All the maintainer classes/traits (MapMaintener, WithFilterMaintainer, FlatMapMaintainer) have a common structure of
 // "message transformers". That can be probably abstracted away: they should have a method
@@ -66,13 +68,13 @@ trait WithFilterMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
 }
 
 //Trait implementing incremental view maintenance for FlatMap operations.
-trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
-  self: QueryReifier[U] => //? [T]? That's needed for the subscribe.
-  def fInt: T => QueryReifier[U]
-  var cache = new HashMap[T, QueryReifier[U]]
-  val subCollListener: TravMsgSeqSubscriber[U, QueryReifier[U]] =
-    new TravMsgSeqSubscriber[U, QueryReifier[U]] {
-      override def notify(pub: QueryReifier[U], evts: Seq[TravMessage[U]]) = {
+trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransformer[T, U, Repr] {
+  self: Exp[Traversable[U]] => //? [T]? That's needed for the subscribe.
+  def fInt: T => Exp[Traversable[U]]
+  var cache = new HashMap[T, Exp[Traversable[U]]]
+  val subCollListener: TravMsgSeqSubscriber[U, Exp[Traversable[U]]] =
+    new TravMsgSeqSubscriber[U, Exp[Traversable[U]]] {
+      override def notify(pub: Exp[Traversable[U]], evts: Seq[TravMessage[U]]) = {
         //publish(evts flatMap (evt => evt match {
         //evts foreach (evt => evt match {
         for (evt <- evts) {
@@ -145,50 +147,55 @@ trait FlatMapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   }
 }*/
 trait Maintainer[T] {
-  this: TravMsgSeqSubscriber[T, QueryReifier[T]] =>
-  val col: QueryReifier[T]
+  this: MsgSeqSubscriber[T, Exp[T]] =>
+  val base: Exp[T]
 
   def startListening() {
     if (Debug.verbose)
       //println("Maintainer(col = %s) startListening" format col)
       println("%s startListening" format this)
-    col subscribe this
+    base subscribe this
   }
 }
 
-/*
 //Don't make Repr so specific as IncCollectionReifier. Making Repr any specific
 //is entirely optional - it just enables the listener to get a more specific
 //type for the pub param to notify(), if he cares.
-class MapOpMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,U]) extends MapOp[T,U](col, f)
-    with MapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] with Maintainer[T] {
+class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
+                 U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, U])
+                         (implicit c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
+    with MapMaintainer[T, U, Exp[Repr]]  with Maintainer[Repr] {
   override def fInt = f.interpret()
-  //XXX: only the name of the constructed class changes
+  //XXX: only the name of the constructed class changes. XXX: override copy instead!
   override def genericConstructor =
-      v => new MapOpMaintainerExp(v(0).asInstanceOf[QueryReifier[T]],
+      v => new MapOpMaintainerExp[T, Repr, U, That](v(0).asInstanceOf[Exp[Repr]],
           v(1).asInstanceOf[FuncExp[T, U]])
 }
-class FlatMapMaintainerExp[T,U](col: QueryReifier[T], f: FuncExp[T,QueryReifier[U]]) extends FlatMap[T,U](col, f)
-    with FlatMapMaintainer[T, U, QueryReifier[T]] with QueryReifier[U] with Maintainer[T] {
-  override def fInt = x => f.interpret()(x)
+
+class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
+                 U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
+                         (implicit c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
+    with FlatMapMaintainer[T, U, Exp[Repr], That] with Maintainer[Repr] {
+  override def fInt = x => Const(f.interpret()(x)) //XXX: Is this Const here sensible? Probably not, especially since Const will ignore listeners.
   //XXX ditto
   override def genericConstructor =
-      v => new FlatMapMaintainerExp(v(0).asInstanceOf[QueryReifier[T]],
-          v(1).asInstanceOf[FuncExp[T, QueryReifier[U]]])
+      v => new FlatMapMaintainerExp(v(0).asInstanceOf[Exp[Repr]],
+          v(1).asInstanceOf[FuncExp[T, Traversable[U]]])
 
   //XXX this ensures that we listen on the results corresponding to the elements already present in col.
   //However, it is a hack - see IncrementalResult for discussion.
-  initListening(col.interpret())
+  initListening(base.interpret())
 }
-class WithFilterMaintainerExp[T](col: QueryReifier[T], p: FuncExp[T,Boolean]) extends WithFilter[T](col, p)
-    with WithFilterMaintainer[T, QueryReifier[T]] with QueryReifier[T] with Maintainer[T] {
+
+//XXX: we must now have support for Filter, not WithFilter
+class WithFilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: FuncExp[T, Boolean]) extends WithFilter[T, Repr](base, p)
+    with WithFilterMaintainer[T, Exp[Repr]] with Maintainer[Repr] {
   override def pInt = p.interpret()
   //XXX ditto
   override def genericConstructor =
-      v => new WithFilterMaintainerExp(v(0).asInstanceOf[QueryReifier[T]],
+      v => new WithFilterMaintainerExp[T, Repr](v(0).asInstanceOf[Exp[Repr]],
           v(1).asInstanceOf[FuncExp[T, Boolean]])
 }
-*/
 // TODO: add a trait which implements maintenance of union.
 // Probably they can be both implemented together. Look into the other implementation, use bags or sth.
 // There was a use-case I forget where other context information, other than a simple count, had to be stored.
