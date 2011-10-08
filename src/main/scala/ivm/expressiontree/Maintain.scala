@@ -164,7 +164,7 @@ trait Maintainer[T] {
 class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, U])
                          (implicit c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
-    with MapMaintainer[T, U, Exp[Repr]]  with Maintainer[Repr] {
+    with MapMaintainer[T, U, Exp[Repr]] with Maintainer[Repr] {
   override def fInt = f.interpret()
   //XXX: only the name of the constructed class changes. XXX: override copy instead!
   override def genericConstructor =
@@ -176,7 +176,12 @@ class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
                          (implicit c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
     with FlatMapMaintainer[T, U, Exp[Repr], That] with Maintainer[Repr] {
-  override def fInt = x => Const(f.interpret()(x)) //XXX: Is this Const here sensible? Probably not, especially since Const will ignore listeners.
+  //override def fInt = x => Const(f.interpret()(x)) //XXX: Is this Const here sensible? Probably not, especially since Const will ignore listeners.
+  override def fInt: T => Exp[Traversable[U]] = {
+    import Lifting._
+    f(_)
+  }
+
   //XXX ditto
   override def genericConstructor =
       v => new FlatMapMaintainerExp(v(0).asInstanceOf[Exp[Repr]],
