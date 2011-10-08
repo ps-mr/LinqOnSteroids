@@ -18,7 +18,6 @@ case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends CheckingExp[S => T] with
   override def toString() = {
     "(" + x.name + ") => " + body
   }
-  //def apply(z: Exp[S]): Exp[T] = f(z) // or rather create App node here?
   //XXX: Uglymost hack. Paolo
   private[ivm] var interpretHook: Option[Exp[Any] => Unit] = None
   def interpret(): S => T =
