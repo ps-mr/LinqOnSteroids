@@ -24,7 +24,7 @@ case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends CheckingExp[S => T] with
   def interpret(): S => T =
     z => {
       val res = f(Const(z))
-      interpretHook.map(_(res))
+      interpretHook.map(_(res))  // KO: What is the purpose of this? Remove?
       res.interpret()
     }
 
@@ -54,6 +54,59 @@ case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends CheckingExp[S => T] with
   // not be constant!
   override def hashCode() = f(FuncExp.varzero).hashCode()
 }
+
+// The redundancy between FuncExp and PartialFuncExp should be outsourced into a common superclass
+
+// Note that giving f the type PartialFunction[Exp[S],Exp[T]] would not work, because "definedness"
+// can only be determined during interpretation
+case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends CheckingExp[PartialFunction[S,T]] with Equals {
+  import FuncExp._
+  val x = gensym()
+  lazy val body = f(x)
+  override def toString() = {
+    "(" + x.name + ") -(pf)-> " + body
+  }
+  def interpret(): PartialFunction[S,T] = {
+    new PartialFunction[S,T] {
+      override def apply(z: S) = {
+        f(Const(z)).interpret() match {
+          case Some(x) => x
+          case _ => sys.error("partial function not defined on arg" + z)
+        }
+      }
+      override def isDefinedAt(z: S) = {
+        f(Const(z)).interpret() match {
+          case Some(_) => true
+          case _ => false
+        }
+      }
+    }
+  }
+
+  def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[Option[T]]])
+  override def nodeArity = 1
+  def copy[U >: T](t1: Exp[Option[U]]): PartialFuncExp[S, U] = PartialFuncExp(y => t1.substVar(x.name,y))
+  def children = Seq(body)
+  private[ivm] override def closedTermChildren: Seq[Exp[_]] = Seq()
+
+  // alpha equivalence for functions! (modulo calls to scala functions)
+  override def equals(other: Any): Boolean = other match {
+     case that: PartialFuncExp[_,_] =>
+       val s = gensym()
+       that.canEqual(this) && f(s).equals(that.f(s))
+     case _ => false
+  }
+  override def canEqual(other: Any): Boolean = other.isInstanceOf[PartialFuncExp[_,_]]
+
+  // by using varzero, this definition makes sure that alpha-equivalent functions have the same hashcode
+  // some non-alpha-equivalent functions will also have the same hash code, such as
+  // (x) => (y) => x+y and (x) => (y) => x+x
+  // but these functions will not be equal, hence it is only a potential performance problem.
+  // Using gensym() here would still give alpha-equivalence, but hashcodes would
+  // not be constant!
+  override def hashCode() = f(FuncExp.varzero).hashCode()
+}
+
 
 object FuncExp {
   private var varCounter: Int = 0;
