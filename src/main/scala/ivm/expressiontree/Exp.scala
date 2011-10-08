@@ -55,6 +55,8 @@ trait Exp[+T] extends MsgSeqPublisher[T] {
   def is[S >: T](that: Exp[S]): Exp[Boolean] = Eq(this, that)
   //def is(that: Exp[T]): Exp[Boolean] = Eq(this, that)
 
+  def ifInstanceOf[S:ClassManifest] : Exp[Option[S]] = IfInstanceOf(this)
+
 }
 
 private[ivm] object Exp {
