@@ -15,7 +15,7 @@ import collection.mutable.HashMap
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
 // same type. OTOH, this methods allows accessing the underlying data at all.
 class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Traversable[T]]
-  with TravMsgSeqSubscriber[T, QueryReifier[T]]
+  with TravMsgSeqSubscriber[T, Exp[Traversable[T]]]
   with Queryable[T, collection.SetProxy[T]]
   with collection.SetProxy[T] //I mean immutable.SetProxy[T], but that requires an underlying immutable Set.
   // I'll probably end up with forwarding most basic methods manually, and implementing the others through SetLike.
@@ -55,7 +55,7 @@ class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Tr
     publish(evt)
   }
 
-  override def notify(pub: QueryReifier[T], evts: Seq[TravMessage[T]]) {
+  override def notify(pub: Exp[Traversable[T]], evts: Seq[TravMessage[T]]) {
     if (Debug.verbose)
       println("%s notify(\n  pub = %s,\n  evts = %s\n)" format (this, pub, evts))
     for (evt <- evts) {
