@@ -180,6 +180,12 @@ object SimpleOpenEncoding {
     }
 
     trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOpsLike[T, Repr] {
+      def collect[U, That](f: Exp[T] => Exp[Option[U]])
+                   (implicit c: CanBuildFrom[TraversableView[T,Repr], U, That]): Exp[That] = {
+         MapOp(WithFilter(this.t, FuncExp( (x : Exp[T]) => IsDefinedAt(PartialFuncExp(f),x))),
+                                  FuncExp( (x : Exp[T]) => App(PartialFuncExp(f),x)))(c)
+      }
+
       def filter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
         Filter(this.t, FuncExp(f))
 
