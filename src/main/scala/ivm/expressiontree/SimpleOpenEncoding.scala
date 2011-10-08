@@ -113,7 +113,7 @@ object SimpleOpenEncoding {
       val t: Exp[Repr]
       def map[U, That](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         MapOp[T, Repr, U, That](this.t, FuncExp(f))
-      def flatMap[U, That](f: Exp[T] => Exp[Traversable[U]])
+      def flatMap[U, That](f: Exp[T] => Exp[TraversableOnce[U]])
                           (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         FlatMap[T, Repr, U, That](this.t, FuncExp(f))
     }

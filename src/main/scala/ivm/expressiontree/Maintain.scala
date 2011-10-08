@@ -70,18 +70,18 @@ trait WithFilterMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
 //Trait implementing incremental view maintenance for FlatMap operations.
 trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransformer[T, U, Repr] {
   self: Exp[Traversable[U]] => //? [T]? That's needed for the subscribe.
-  def fInt: T => Exp[Traversable[U]]
-  var cache = new HashMap[T, Exp[Traversable[U]]]
-  val subCollListener: TravMsgSeqSubscriber[U, Exp[Traversable[U]]] =
-    new TravMsgSeqSubscriber[U, Exp[Traversable[U]]] {
-      override def notify(pub: Exp[Traversable[U]], evts: Seq[TravMessage[U]]) = {
+  def fInt: T => Exp[TraversableOnce[U]]
+  var cache = new HashMap[T, Exp[TraversableOnce[U]]]
+  val subCollListener: MsgSeqSubscriber[TraversableOnce[U], Exp[TraversableOnce[U]]] =
+    new MsgSeqSubscriber[TraversableOnce[U], Exp[TraversableOnce[U]]] {
+      override def notify(pub: Exp[TraversableOnce[U]], evts: Seq[Message[TraversableOnce[U]]]) = {
         //publish(evts flatMap (evt => evt match {
         //evts foreach (evt => evt match {
         for (evt <- evts) {
           evt match {
-            case Include(_) => publish(evt)
-            case Remove(_) => publish(evt)
-            case Update(_, _) => publish(evt)
+            case e@Include(_) => publish(e)
+            case e@Remove(_) => publish(e)
+            case e@Update(_, _) => publish(e)
             //XXX very important! This can only work because we send the
             //modification before performing the update
             case Reset() => publish(pub.interpret().toSeq map (Remove(_)))
@@ -170,16 +170,16 @@ class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]
 }
 
 class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
-                 U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
+                 U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
                          (implicit c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
     with FlatMapMaintainer[T, U, Exp[Repr], That] with Maintainer[Repr] {
   //override def fInt = x => Const(f.interpret()(x)) //XXX: Is this Const here sensible? Probably not, especially since Const will ignore listeners.
-  override def fInt: T => Exp[Traversable[U]] = {
+  override def fInt: T => Exp[TraversableOnce[U]] = {
     import Lifting._
     f(_)
   }
 
-  override def copy(base: Exp[Repr], f: FuncExp[T, Traversable[U]]) = new FlatMapMaintainerExp[T, Repr, U, That](base, f)
+  override def copy(base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]]) = new FlatMapMaintainerExp[T, Repr, U, That](base, f)
 
   //XXX this ensures that we listen on the results corresponding to the elements already present in col.
   //However, it is a hack - see IncrementalResult for discussion.
