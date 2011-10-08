@@ -22,14 +22,14 @@ class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Tr
   // Or we'll just support incremental query update for all methods.
 {
   var set = new HashMap[T, Int]
-  //inner subscribe this
+  inner subscribe this
   startListeners(inner)
   //XXX: I now believe this is a hack, in essence. I should not rely on interpret();
   // I should rather trigger updates starting from the root collection.
   // See FlatMapMaintainer.initListening() for the hack currently compensating this problem.
 
   // It is crucial to have this statement only here after construction
-  //notify(inner, inner.interpret().toSeq.map(Include(_)))
+  notify(inner, inner.interpret().toSeq.map(Include(_)))
 
   private[this] def startListener(e: Exp[_]) {
     e match {
