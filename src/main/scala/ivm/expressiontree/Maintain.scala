@@ -4,7 +4,7 @@ import collection.mutable.HashMap
 import collection.generic.CanBuildFrom
 import collection.TraversableLike
 
-// All the maintainer classes/traits (MapMaintener, WithFilterMaintainer, FlatMapMaintainer) have a common structure of
+// All the maintainer classes/traits (MapMaintener, FilterMaintainer, FlatMapMaintainer) have a common structure of
 // "message transformers". That can be probably abstracted away: they should have a method
 // producedMessages: TravMessage[T] => Seq[TravMessage[T]], we should remove Script[T], implement publish in term of it in type:
 // Forwarder[T, U, Repr] extends Subscriber[Seq[TravMessage[T]], Repr] with DefaultPublisher[Seq[TravMessage[U]]]
@@ -56,7 +56,7 @@ trait MapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
 // multiset difference: we get {b} in the first case, {a, b} in the second.
 // XXX: suppose we're using a bag for incremental view maintenance of a uniqueness constraint.
 // Do we get a problem because of the different properties of subtraction?
-trait WithFilterMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
+trait FilterMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
   def pInt: T => Boolean
   override def transformedMessages(evt: TravMessage[T]) = {
     evt match {
@@ -186,11 +186,10 @@ class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
   initListening(base.interpret())
 }
 
-//XXX: we must now have support for Filter, not WithFilter
-class WithFilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: FuncExp[T, Boolean]) extends WithFilter[T, Repr](base, p)
-    with WithFilterMaintainer[T, Exp[Repr]] with Maintainer[Repr] {
+class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: FuncExp[T, Boolean]) extends Filter[T, Repr](base, p)
+    with FilterMaintainer[T, Exp[Repr]] with Maintainer[Repr] {
   override def pInt = p.interpret()
-  override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = new WithFilterMaintainerExp[T, Repr](base, f)
+  override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = new FilterMaintainerExp[T, Repr](base, f)
 }
 // TODO: add a trait which implements maintenance of union.
 // Probably they can be both implemented together. Look into the other implementation, use bags or sth.
