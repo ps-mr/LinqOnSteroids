@@ -64,6 +64,11 @@ object SimpleOpenEncoding {
                                   // KO: Why do we need a beta-reducer? Since we use HOAS this is just Scala function application
                                   // and already available in App.interpret
                                   // But it may still make sense to evaluate such applications right away
+                                  // PG: I believe we need a beta-reducer before any optimization, to ensure that beta-equivalent
+                                  // operations optimize to the same thing. Otherwise the optimizer might not find a pattern
+                                  // because it would show up only after reduction.
+                                  // I believe we want to have App for the same exact reason not all function calls are
+                                  // inlined: preventing code size explosion.
         case _ => App(f, x)
       }
   }
