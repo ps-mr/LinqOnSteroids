@@ -3,7 +3,7 @@ package tests
 
 import collections.CollectionReifier
 import expressiontree.Lifting._
-import expressiontree.{And, FuncExp, Exp, Plus, Eq, View}
+import expressiontree.{And, FuncExp, Exp, Plus, Eq, View, Filter}
 import optimization.Optimization
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit

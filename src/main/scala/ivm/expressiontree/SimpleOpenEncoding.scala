@@ -123,10 +123,6 @@ object SimpleOpenEncoding {
       override def interpret = base.interpret ++ that.interpret
       override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union[T,Repr,U,That](base, that)
     }
-    case class Filter[T, Repr <: TraversableLike[T,Repr]](base: Exp[Repr], f: FuncExp[T, Boolean]) extends BinaryOp[Exp[Repr], FuncExp[T, Boolean], Repr](base, f) {
-      override def interpret = base.interpret filter f.interpret()
-      override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = Filter(base, f)
-   }
 
     case class GroupBy[T, Repr <: TraversableLike[T,Repr],K](base: Exp[Repr], f: Exp[T => K]) extends BinaryOpExp[Repr,
       T => K, Map[K, Repr]](base, f) {

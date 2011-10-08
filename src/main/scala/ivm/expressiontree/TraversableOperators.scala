@@ -23,6 +23,12 @@ case class MapOp[T, Repr <: FilterMonadic[T, Repr],
   override def copy(base: Exp[Repr], f: FuncExp[T, U]) = MapOp[T, Repr, U, That](base, f)
 }
 
+case class Filter[T, Repr <: TraversableLike[T,Repr]](base: Exp[Repr],
+                                                      f: FuncExp[T, Boolean]) extends BinaryOp[Exp[Repr], FuncExp[T, Boolean], Repr](base, f) {
+  override def interpret = base.interpret filter f.interpret()
+  override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = Filter(base, f)
+ }
+
 case class WithFilter[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr],
                                                       f: FuncExp[T, Boolean])
                                                       extends BinaryOp[Exp[Repr], FuncExp[T, Boolean], TraversableView[T, Repr]](base, f) {
