@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
 import collection.generic.{FilterMonadic, CanBuildFrom}
-import collection.{TraversableView, GenTraversableOnce, TraversableViewLike, IterableView, TraversableLike, mutable}
+import collection.{TraversableView, TraversableViewLike, IterableView, TraversableLike, mutable}
 
 /**
  * Here I show yet another encoding of expression trees, where methods
@@ -113,7 +113,7 @@ object SimpleOpenEncoding {
       val t: Exp[Repr]
       def map[U, That](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         MapOp[T, Repr, U, That](this.t, FuncExp(f))
-      def flatMap[U, That](f: Exp[T] => Exp[GenTraversableOnce[U]])
+      def flatMap[U, That](f: Exp[T] => Exp[Traversable[U]])
                           (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         FlatMap[T, Repr, U, That](this.t, FuncExp(f))
     }

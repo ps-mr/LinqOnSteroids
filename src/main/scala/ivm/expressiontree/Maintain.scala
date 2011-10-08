@@ -166,10 +166,7 @@ class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]
                          (implicit c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
     with MapMaintainer[T, U, Exp[Repr]] with Maintainer[Repr] {
   override def fInt = f.interpret()
-  //XXX: only the name of the constructed class changes. XXX: override copy instead!
-  override def genericConstructor =
-      v => new MapOpMaintainerExp[T, Repr, U, That](v(0).asInstanceOf[Exp[Repr]],
-          v(1).asInstanceOf[FuncExp[T, U]])
+  override def copy(base: Exp[Repr], f: FuncExp[T, U]) = new MapOpMaintainerExp[T, Repr, U, That](base, f)
 }
 
 class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
@@ -182,10 +179,7 @@ class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
     f(_)
   }
 
-  //XXX ditto
-  override def genericConstructor =
-      v => new FlatMapMaintainerExp(v(0).asInstanceOf[Exp[Repr]],
-          v(1).asInstanceOf[FuncExp[T, Traversable[U]]])
+  override def copy(base: Exp[Repr], f: FuncExp[T, Traversable[U]]) = new FlatMapMaintainerExp[T, Repr, U, That](base, f)
 
   //XXX this ensures that we listen on the results corresponding to the elements already present in col.
   //However, it is a hack - see IncrementalResult for discussion.
@@ -196,10 +190,7 @@ class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
 class WithFilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: FuncExp[T, Boolean]) extends WithFilter[T, Repr](base, p)
     with WithFilterMaintainer[T, Exp[Repr]] with Maintainer[Repr] {
   override def pInt = p.interpret()
-  //XXX ditto
-  override def genericConstructor =
-      v => new WithFilterMaintainerExp[T, Repr](v(0).asInstanceOf[Exp[Repr]],
-          v(1).asInstanceOf[FuncExp[T, Boolean]])
+  override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = new WithFilterMaintainerExp[T, Repr](base, f)
 }
 // TODO: add a trait which implements maintenance of union.
 // Probably they can be both implemented together. Look into the other implementation, use bags or sth.

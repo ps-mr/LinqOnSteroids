@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
 import collection.generic.{CanBuildFrom, FilterMonadic}
-import collection.{TraversableViewLike, TraversableView, TraversableLike, GenTraversableOnce}
+import collection.{TraversableViewLike, TraversableView, TraversableLike}
 
 /**
 * User: pgiarrusso
@@ -10,10 +10,10 @@ import collection.{TraversableViewLike, TraversableView, TraversableLike, GenTra
 
 // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
 case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
-                   U, That](base: Exp[Repr], f: FuncExp[T, GenTraversableOnce[U]])
-                            (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[Repr], FuncExp[T, GenTraversableOnce[U]], That](base, f) {
+                   U, That](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
+                            (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[Repr], FuncExp[T, Traversable[U]], That](base, f) {
   override def interpret = base.interpret flatMap f.interpret()
-  override def copy(base: Exp[Repr], f: FuncExp[T, GenTraversableOnce[U]]) = FlatMap[T, Repr, U, That](base, f)
+  override def copy(base: Exp[Repr], f: FuncExp[T, Traversable[U]]) = FlatMap[T, Repr, U, That](base, f)
 }
 
 case class MapOp[T, Repr <: FilterMonadic[T, Repr],
