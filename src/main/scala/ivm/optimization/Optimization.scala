@@ -72,6 +72,19 @@ class Optimization {
       case _ => e
     }
 
+  private def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: FuncExp[T, U], g: FuncExp[U, V]) =
+    coll.map(f.f andThen g.f)
+    //coll.map(g.f andThen f.f) //Here the typechecker can reject this line.
+  
+
+  val mergeMaps: Exp[_] => Exp[_] =
+    e => e match {
+      case MapOp(MapOp(coll: Exp[Traversable[_]], f1), f2) =>
+        //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
+        //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
+        mergeMaps(buildMergedMaps(coll, f1, f2))
+      case _ => e
+    }
 
   val mergeFilters: Exp[_] => Exp[_] =
     e => e match {
@@ -126,6 +139,8 @@ object Optimization {
      mergeFilters(
       optimizeCartProdToJoin(exp)))
   }
+
+  def mergeMaps[T](exp: Exp[T]): Exp[T] = exp.transform(opt.mergeMaps)
 
   def mergeViews[T](exp: Exp[T]): Exp[T] = exp.transform(opt.mergeViews)
 
