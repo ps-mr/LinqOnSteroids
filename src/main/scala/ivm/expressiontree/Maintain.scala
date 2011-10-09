@@ -99,6 +99,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
       fV subscribe subCollListener
       fV match {
         case m: Maintainer[_] => m.startListening()
+        case _ => //XXX: wasn't there before, will cause problems, but is needed! Therefore we must rewrite this code some other way
       }
     }
   }
@@ -151,9 +152,16 @@ trait Maintainer[T] {
   val base: Exp[T]
 
   def startListening() {
-    if (Debug.verbose)
+    if (Debug.verbose) {
       //println("Maintainer(col = %s) startListening" format col)
-      println("%s startListening" format this)
+      val asString =
+        try {
+          this.toString
+        } catch {
+          case _ => ""
+        }
+      println("%s startListening" format asString)
+    }
     base subscribe this
   }
 }
@@ -173,7 +181,7 @@ class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
                          (implicit c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
     with FlatMapMaintainer[T, U, Exp[Repr], That] with Maintainer[Repr] {
-  //override def fInt = x => Const(f.interpret()(x)) //XXX: Is this Const here sensible? Probably not, especially since Const will ignore listeners.
+  //override def fInt: T => Exp[TraversableOnce[U]] = x => Const(f.interpret()(x)) //XXX: Is this Const here sensible? Probably not, especially since Const will ignore listeners.
   override def fInt: T => Exp[TraversableOnce[U]] = {
     import Lifting._
     f(_)
@@ -183,7 +191,8 @@ class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
 
   //XXX this ensures that we listen on the results corresponding to the elements already present in col.
   //However, it is a hack - see IncrementalResult for discussion.
-  initListening(base.interpret())
+  //XXX disabled because it causes "Interpret on Var" messages.
+  //initListening(base.interpret())
 }
 
 class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: FuncExp[T, Boolean]) extends Filter[T, Repr](base, p)
