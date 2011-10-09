@@ -7,8 +7,9 @@ case class IfInstanceOf[T,S](x: Exp[T])(implicit val cS: ClassManifest[S]) exten
   def interpret() = {
     val v = x.interpret()
     if (v == null) None else {
-      val mf = fromClass(v.getClass)
-      if (mf <:< cS) Some(v.asInstanceOf[S]) else None
+      if (cS.erasure.isInstance(v))
+        Some(v.asInstanceOf[S])
+      else None
     }
   }
 }
