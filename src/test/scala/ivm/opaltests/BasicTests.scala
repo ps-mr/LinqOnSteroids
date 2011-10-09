@@ -157,5 +157,6 @@ class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
        println("begin los2 result")
        println(m3Int)
        println("end los2 result")
+     methods should equal (m3Int)
   }
 }
