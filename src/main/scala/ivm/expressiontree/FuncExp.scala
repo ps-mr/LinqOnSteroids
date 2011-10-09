@@ -11,13 +11,40 @@ case class App[T, U](f: Exp[T => U], t: Exp[T]) extends BinaryOpExp[T => U, T, U
   override def copy(f: Exp[T => U], t: Exp[T]) = App(f, t)
 }
 
-case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends CheckingExp[S => T] with Equals {
+abstract class FuncExpBase[-S, +T, +Type] extends CheckingExp[Type] with Equals {
   import FuncExp._
+  val f: Exp[S] => Exp[T]
+
   val x = gensym()
   lazy val body = f(x)
-  override def toString() = {
-    "(" + x.name + ") => " + body
+  override def toString() =
+    "(%s) %s %s" format (x.name, arrowString, body)
+  def arrowString: String
+
+  private[ivm] override def children = Seq(body)
+  private[ivm] override def closedTermChildren: Seq[Exp[_]] = Seq()
+  //Copied from UnaryOpTrait:
+  override def nodeArity = 1
+
+  // by using varzero, this definition makes sure that alpha-equivalent functions have the same hashcode
+  // some non-alpha-equivalent functions will also have the same hash code, such as
+  // (x) => (y) => x+y and (x) => (y) => x+x
+  // but these functions will not be equal, hence it is only a potential performance problem.
+  // Using gensym() here would still give alpha-equivalence, but hashcodes would
+  // not be constant!
+  override def hashCode() = f(FuncExp.varzero).hashCode()
+
+  // alpha equivalence for functions! (modulo calls to scala functions)
+  override def equals(other: Any): Boolean = other match {
+     case that: FuncExpBase[_, _, _] =>
+       val s = gensym()
+       (this canEqual that) && //This is a hack for testing that.isInstanceOf[Foo]
+         (that canEqual this) && (this.f(s) == that.f(s))
+     case _ => false
   }
+}
+
+case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S => T] {
   //XXX: Uglymost hack. Paolo
   private[ivm] var interpretHook: Option[Exp[Any] => Unit] = None
   def interpret(): S => T =
@@ -27,45 +54,17 @@ case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends CheckingExp[S => T] with
       res.interpret()
     }
 
-  //Copied from UnaryOpTrait {{{
-  def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[T]])
-  override def nodeArity = 1
-  //}}}
-
-  def copy[U >: T](t1: Exp[U]): FuncExp[S, U] = makefun(t1, x)
-  def children = Seq(body)
-  private[ivm] override def closedTermChildren: Seq[Exp[_]] = Seq()
-
-  // alpha equivalence for functions! (modulo calls to scala functions)
-  override def equals(other: Any): Boolean = other match {
-     case that: FuncExp[_,_] =>
-       val s = gensym()
-       that.canEqual(this) && f(s).equals(that.f(s))
-     case _ => false
-  }
+  def arrowString = "=>"
+  def copy[U >: T](t1: Exp[U]): FuncExp[S, U] = FuncExp.makefun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[FuncExp[_,_]]
-
-  // by using varzero, this definition makes sure that alpha-equivalent functions have the same hashcode
-  // some non-alpha-equivalent functions will also have the same hash code, such as
-  // (x) => (y) => x+y and (x) => (y) => x+x
-  // but these functions will not be equal, hence it is only a potential performance problem.
-  // Using gensym() here would still give alpha-equivalence, but hashcodes would
-  // not be constant!
-  override def hashCode() = f(FuncExp.varzero).hashCode()
+  //Copied from UnaryOpTrait:
+  def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[T]])
 }
-
-// The redundancy between FuncExp and PartialFuncExp should be outsourced into a common superclass
 
 // Note that giving f the type PartialFunction[Exp[S],Exp[T]] would not work, because "definedness"
 // can only be determined during interpretation
 
-case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends CheckingExp[PartialFunction[S,T]] with Equals {
-  import FuncExp._
-  val x = gensym()
-  lazy val body = f(x)
-  override def toString() = {
-    "(" + x.name + ") -(pf)-> " + body
-  }
+case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBase[S, Option[T], PartialFunction[S, T]] {
   def interpret(): PartialFunction[S,T] = {
     new PartialFunction[S,T] {
       override def apply(z: S) = {
@@ -83,21 +82,11 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends CheckingE
     }
   }
 
-  def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[Option[T]]])
-  override def nodeArity = 1
-  def copy[U >: T](t1: Exp[Option[U]]): PartialFuncExp[S, U] = PartialFuncExp(y => t1.substVar(x.name,y))
-  def children = Seq(body)
-  private[ivm] override def closedTermChildren: Seq[Exp[_]] = Seq()
-
-  // alpha equivalence for functions! (modulo calls to scala functions)
-  override def equals(other: Any): Boolean = other match {
-     case that: PartialFuncExp[_,_] =>
-       val s = gensym()
-       that.canEqual(this) && f(s).equals(that.f(s))
-     case _ => false
-  }
+  def arrowString = "-(pf)->"
+  def copy[U >: T](t1: Exp[Option[U]]): PartialFuncExp[S, U] = FuncExp.makePartialFun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[PartialFuncExp[_,_]]
-  override def hashCode() = f(FuncExp.varzero).hashCode()
+  //Copied from UnaryOpTrait:
+  def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[Option[T]]])
 }
 
 case class IsDefinedAt[S,T](f: Exp[PartialFunction[S,T]], a: Exp[S]) extends BinaryOpExp[PartialFunction[S,T], S, Boolean](f, a){
@@ -108,8 +97,11 @@ case class IsDefinedAt[S,T](f: Exp[PartialFunction[S,T]], a: Exp[S]) extends Bin
 object FuncExp {
   private var varCounter: Int = 0;
   val varzero = gensym()
-  def gensym(): Var = { varCounter += 1;  new Var("v"+varCounter) }
-  def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = FuncExp(x => e.substVar(v.name,x))
+  def gensymName() = { varCounter += 1; "v" + varCounter }
+  def gensym(): Var = new Var(gensymName())
+  def closeOver[S, T](e: Exp[T], v: Var): Exp[S] => Exp[T] = x => e.substVar(v.name, x)
+  def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = FuncExp(closeOver(e, v))
+  def makePartialFun[S, T](e: Exp[Option[T]], v: Var): PartialFuncExp[S, T] = PartialFuncExp(closeOver(e, v))
   def makepairfun[S1, S2, T](e: Exp[T], v1: Var, v2: Var): FuncExp[(S1, S2), T] =
     FuncExp(p => e.substVar(v1.name, Proj1(p)).substVar(v2.name, Proj2(p)))
 }
