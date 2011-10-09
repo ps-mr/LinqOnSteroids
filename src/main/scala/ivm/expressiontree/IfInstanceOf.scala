@@ -6,6 +6,9 @@ case class IfInstanceOf[T,S](x: Exp[T])(implicit val cS: ClassManifest[S]) exten
   def copy(x: Exp[T]) = IfInstanceOf(x)
   def interpret() = {
     val v = x.interpret()
-    if (fromClass(v.getClass) <:< cS) Some(v.asInstanceOf[S]) else None
+    if (v == null) None else {
+      val mf = fromClass(v.getClass)
+      if (mf <:< cS) Some(v.asInstanceOf[S]) else None
+    }
   }
 }

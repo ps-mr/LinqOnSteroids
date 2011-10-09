@@ -39,6 +39,10 @@ object BATLifting {
        def attributes = liftCall('attributes, (m: Method_Info) => m.attributes, t)
        def name = liftCall('name, (m: Method_Info) => m.name, t)
   }
+  implicit def expToCode_attributeOps(t: Exp[Code_attribute]) = new Code_attributeOps(t)
+  class Code_attributeOps(t: Exp[Code_attribute]) {
+    def code : Exp[Seq[Instruction]] = liftCall('code, (c: Code_attribute) => c.code, t)
+  }
   object Code_attribute {
     // We need to specify Exp[Seq[Instruction]] instead of Exp[Array[Instruction]] because one cannot convert
     // Exp[Array[T]] to Exp[Seq[T]], so we must request here an implicit conversion (LowPriorityImplicits.wrapRefArray)
@@ -129,6 +133,13 @@ class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
                          m <- cf.methods;
                          Code_attribute(_,_,code,_,_) <- m.attributes;
                          INSTANCEOF(_) <- code) yield m.name
+    val methods3 = queryData.flatMap( cf => cf.methods
+                             .flatMap( m => m.attributes
+                              .collect( x => x.ifInstanceOf[Code_attribute])
+                              .flatMap( c => c.code)
+                              .collect( i => i.ifInstanceOf[INSTANCEOF])
+                              .map( i => m.name)))
+
      //println(methods2) //goes OOM!
      var m2Int: Traversable[String] = null
      benchMark("los", warmUpLoops = 0, sampleLoops = 1) {
@@ -139,5 +150,12 @@ class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
      println("end los result")
 
      methods should equal (m2Int)
+     var m3Int: Traversable[String] = null
+       benchMark("los", warmUpLoops = 0, sampleLoops = 1) {
+         m3Int = methods3.interpret()
+       }
+       println("begin los2 result")
+       println(m3Int)
+       println("end los2 result")
   }
 }

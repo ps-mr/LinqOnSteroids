@@ -58,6 +58,7 @@ case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends CheckingExp[S => T] with
 
 // Note that giving f the type PartialFunction[Exp[S],Exp[T]] would not work, because "definedness"
 // can only be determined during interpretation
+
 case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends CheckingExp[PartialFunction[S,T]] with Equals {
   import FuncExp._
   val x = gensym()
@@ -96,16 +97,13 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends CheckingE
      case _ => false
   }
   override def canEqual(other: Any): Boolean = other.isInstanceOf[PartialFuncExp[_,_]]
-
-  // by using varzero, this definition makes sure that alpha-equivalent functions have the same hashcode
-  // some non-alpha-equivalent functions will also have the same hash code, such as
-  // (x) => (y) => x+y and (x) => (y) => x+x
-  // but these functions will not be equal, hence it is only a potential performance problem.
-  // Using gensym() here would still give alpha-equivalence, but hashcodes would
-  // not be constant!
   override def hashCode() = f(FuncExp.varzero).hashCode()
 }
 
+case class IsDefinedAt[S,T](f: Exp[PartialFunction[S,T]], a: Exp[S]) extends BinaryOpExp[PartialFunction[S,T], S, Boolean](f, a){
+  def interpret = f.interpret().isDefinedAt(a.interpret())
+  override def copy(f: Exp[PartialFunction[S,T]], a: Exp[S]) = IsDefinedAt(f, a)
+}
 
 object FuncExp {
   private var varCounter: Int = 0;
