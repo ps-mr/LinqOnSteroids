@@ -133,12 +133,6 @@ class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
                          m <- cf.methods;
                          Code_attribute(_,_,code,_,_) <- m.attributes;
                          INSTANCEOF(_) <- code) yield m.name
-    val methods3 = queryData.flatMap( cf => cf.methods
-                             .flatMap( m => m.attributes
-                              .collect( x => x.ifInstanceOf[Code_attribute])
-                              .flatMap( c => c.code)
-                              .collect( i => i.ifInstanceOf[INSTANCEOF])
-                              .map( i => m.name)))
 
      //println(methods2) //goes OOM!
      var m2Int: Traversable[String] = null
