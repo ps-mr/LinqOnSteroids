@@ -94,7 +94,7 @@ object BATLifting {
 }
   /* end of boilerplate code */
 
-class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
+class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
   def getTestData = {
     val file = new File("lib/scalatest-1.6.1.jar")
     val zipfile = new ZipFile(file)
@@ -151,12 +151,12 @@ class BasicTests  extends JUnitSuite with ShouldMatchersForJUnit {
 
      methods should equal (m2Int)
      var m3Int: Traversable[String] = null
-       benchMark("los", warmUpLoops = 0, sampleLoops = 1) {
-         m3Int = methods3.interpret()
-       }
-       println("begin los2 result")
-       println(m3Int)
-       println("end los2 result")
+     benchMark("los2", warmUpLoops = 0, sampleLoops = 1) {
+       m3Int = methods3.interpret()
+     }
+     println("begin los2 result")
+     println(m3Int)
+     println("end los2 result")
      methods should equal (m3Int)
   }
 }
