@@ -15,10 +15,11 @@ abstract class FuncExpBase[-S, +T, +Type] extends CheckingExp[Type] with Equals 
   import FuncExp._
   val f: Exp[S] => Exp[T]
 
-  val x = gensym()
+  def xName = x.name
+  lazy val x = gensym()
   lazy val body = f(x)
   override def toString() =
-    "(%s) %s %s" format (x.name, arrowString, body)
+    "(%s) %s %s" format (xName, arrowString, body)
   def arrowString: String
 
   private[ivm] override def children = Seq(body)
@@ -97,11 +98,11 @@ case class IsDefinedAt[S,T](f: Exp[PartialFunction[S,T]], a: Exp[S]) extends Bin
 object FuncExp {
   private var varCounter: Int = 0;
   val varzero = gensym()
-  def gensymName() = { varCounter += 1; "v" + varCounter }
-  def gensym(): Var = new Var(gensymName())
-  def closeOver[S, T](e: Exp[T], v: Var): Exp[S] => Exp[T] = x => e.substVar(v.name, x)
+  def gensymId() = { varCounter += 1; varCounter }
+  def gensym(): Var = Var(gensymId())
+  def closeOver[S, T](e: Exp[T], v: Var): Exp[S] => Exp[T] = x => e.substVar(v.id, x)
   def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = FuncExp(closeOver(e, v))
   def makePartialFun[S, T](e: Exp[Option[T]], v: Var): PartialFuncExp[S, T] = PartialFuncExp(closeOver(e, v))
   def makepairfun[S1, S2, T](e: Exp[T], v1: Var, v2: Var): FuncExp[(S1, S2), T] =
-    FuncExp(p => e.substVar(v1.name, Proj1(p)).substVar(v2.name, Proj2(p)))
+    FuncExp(p => e.substVar(v1.id, Proj1(p)).substVar(v2.id, Proj2(p)))
 }

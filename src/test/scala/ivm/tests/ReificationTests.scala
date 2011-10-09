@@ -49,7 +49,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   @Test 
   def testfreeVars() {
     q.freeVars should be (Set.empty)
-    newMapOp(l,FuncExp( (x: Exp[Int]) => x + Var("y"))).freeVars should be (Set(Var("y")))
+    newMapOp(l,FuncExp( (x: Exp[Int]) => x + Var(58))).freeVars should be (Set(Var(58)))
   }
 
   @Test

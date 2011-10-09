@@ -5,6 +5,7 @@ trait Exp[+T] extends MsgSeqPublisher[T] {
   def interpret(): T
   private[ivm] def children: Seq[Exp[_]]
   private[ivm] def closedTermChildren: Seq[Exp[_]] = children
+  //private[ivm] def roots: Seq[Exp[_]]// = Seq.empty
   //The arity is not specified.
   private[ivm] def genericConstructor: Seq[Exp[_]] => Exp[T]
   // some child management auxiliary functions
@@ -35,7 +36,7 @@ trait Exp[+T] extends MsgSeqPublisher[T] {
   private[ivm] def isOrContains(e: Exp[_]): Boolean = if (this.equals(e)) true else containsExp(e)
   private[ivm] def allChildren: Seq[Exp[_]] = children ++ (for (c <- children; a <- c.allChildren) yield a)
 
-  private[ivm] def substVar[S](v: String, e: Exp[S]) =
+  private[ivm] def substVar[S](v: Int, e: Exp[S]) =
     transform((exp) => exp match {
       case Var(x) => if (x.equals(v)) e else exp
       case _ => exp
