@@ -14,6 +14,8 @@ libraryDependencies += "com.novocode" % "junit-interface" % "0.5" % "test->defau
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes")
 
+//scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes", "-optimise")
+
 //addCompilerPlugin("org.scala-tools.sxr" %% "sxr" % "0.2.8-SNAPSHOT")
 
 //scalacOptions <+= scalaSource in Compile map { "-P:sxr:base-directory:" + _.getAbsolutePath }
