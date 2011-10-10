@@ -189,8 +189,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
          m <- cf.methods
          a <- m.attributes
          if onExp(a)('instanceOf$Code_attribute, _.isInstanceOf[Code_attribute])
-         ca <- onExp(a)('cast$Code_attribute, x => Seq(x.asInstanceOf[Code_attribute])) //XXX: value defs are most complex to translate
-         i <- ca.code
+         i <- a.asInstanceOf[Exp[Code_attribute]].code //This cast works perfectly
          if onExp(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
        } yield m.name
      var m5Int: Traversable[String] = null
