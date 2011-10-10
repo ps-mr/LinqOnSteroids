@@ -110,7 +110,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
   val sampleLoops = 1 //5
 
    @Test def testOpal() {
-    val testdata  = getTestData.toSet
+     val testdata  = getTestData.toSet
 
 
      // computing all method names that make an instance-of check in their body
@@ -128,10 +128,10 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      println("end native result")
 
      // using reified query; INSTANCEOF is here shadowed.
-    import BATLifting._
+     import BATLifting._
 
-    val queryData = new CollectionReifier(testdata)
-    val methods2 = for (cf <- queryData;
+     val queryData = new CollectionReifier(testdata)
+     val methods2 = for (cf <- queryData;
                          m <- cf.methods;
                          Code_attribute(_,_,code,_,_) <- m.attributes;
                          INSTANCEOF(_) <- code) yield m.name
@@ -175,7 +175,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
                                .map( _ => m.name)))
 
      var m4Int: Traversable[String] = null
-     benchMark("los", warmUpLoops = 0, sampleLoops = 1) {
+     benchMark("los3", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        m4Int = methods4.interpret()
      }
      println("begin los3 result")
@@ -193,7 +193,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
          if onExp(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
        } yield m.name
      var m5Int: Traversable[String] = null
-     benchMark("los", warmUpLoops = 0, sampleLoops = 1) {
+     benchMark("los4", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        m5Int = methods5.interpret()
      }
      println("begin los4 result")
