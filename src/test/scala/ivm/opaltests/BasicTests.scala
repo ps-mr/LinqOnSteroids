@@ -86,7 +86,7 @@ object BATLifting {
   object INSTANCEOF {
     def unapply(t: Exp[_]) : Option[Exp[ReferenceType]] = {
       if ((t ne null) && t.interpret().isInstanceOf[INSTANCEOF])
-        Some(liftCall('referenceType, (io: INSTANCEOF) => io.referenceType, t.asInstanceOf[Exp[INSTANCEOF]]))
+        Some(onExp(t.asInstanceOf[Exp[INSTANCEOF]])('referenceType, _.referenceType))
       else None
     }
   }
@@ -131,6 +131,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      import BATLifting._
 
      val queryData = new CollectionReifier(testdata)
+     //The pattern-matches used are unsound.
      val methods2 = for (cf <- queryData;
                          m <- cf.methods;
                          Code_attribute(_,_,code,_,_) <- m.attributes;
@@ -162,6 +163,8 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      println("end los2 result")
      methods should equal (m3Int)
 
+     //This is twice as slow as the other los solutions, except methods3.
+     //My guess is that this is because collect applies the given function twice.
      val methods4 = queryData.flatMap( cf => cf.methods
                               .flatMap( m => m.attributes
                                .collect(
@@ -183,6 +186,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      println("end los3 result")
      methods should equal (m4Int)
 
+     //Best performance and quite clear code.
      val methods5 =
        for {
          cf <- queryData
