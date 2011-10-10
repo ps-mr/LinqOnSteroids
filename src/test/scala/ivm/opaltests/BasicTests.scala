@@ -106,6 +106,8 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
 
 
+  val warmUpLoops = 0 //100
+  val sampleLoops = 1 //5
 
    @Test def testOpal() {
     val testdata  = getTestData.toSet
@@ -115,7 +117,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
      // native Scala for-comprehension
      var methods: Set[String] = null
-     benchMark("native", warmUpLoops = 0, sampleLoops = 1) {
+     benchMark("native", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        methods  = for (cf <- testdata;
                        m <- cf.methods;
                        Code_attribute(_,_,code,_,_) <- m.attributes;
@@ -142,7 +144,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
      //println(methods2) //goes OOM!
      var m2Int: Traversable[String] = null
-     benchMark("los", warmUpLoops = 0, sampleLoops = 1) {
+     benchMark("los", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        m2Int = methods2.interpret()
      }
      println("begin los result")
@@ -151,7 +153,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
      methods should equal (m2Int)
      var m3Int: Traversable[String] = null
-     benchMark("los2", warmUpLoops = 0, sampleLoops = 1) {
+     benchMark("los2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        m3Int = methods3.interpret()
      }
      println("begin los2 result")
