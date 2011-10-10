@@ -166,19 +166,21 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
                               .flatMap( m => m.attributes
                                .collect(
                                    a => liftCall('instanceOf$Code_attribute,
-                                                 (x:Attribute) => if (x.isInstanceOf[Code_attribute])
-                                                      Some(x.asInstanceOf[Code_attribute]) else None,
+                                                 (x:Attribute) =>
+                                                   if (x.isInstanceOf[Code_attribute])
+                                                     Some(x.asInstanceOf[Code_attribute])
+                                                   else None,
                                                   a))
                                .flatMap( c => c.code)
                                .filter( a => liftCall('instanceOf$INSTANCEOF, (i:Instruction) => i.isInstanceOf[INSTANCEOF],a))
                                .map( _ => m.name)))
 
      var m4Int: Traversable[String] = null
-       benchMark("los", warmUpLoops = 0, sampleLoops = 1) {
-         m4Int = methods4.interpret()
-       }
-       println("begin los3 result")
-       println(m4Int)
-       println("end los3 result")
+     benchMark("los", warmUpLoops = 0, sampleLoops = 1) {
+       m4Int = methods4.interpret()
+     }
+     println("begin los3 result")
+     println(m4Int)
+     println("end los3 result")
   }
 }
