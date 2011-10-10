@@ -189,9 +189,10 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
          cf <- queryData
          m <- cf.methods
          a <- m.attributes
-         if liftCall('instanceOf$Code_attribute, (x:Attribute) => x.isInstanceOf[Code_attribute], a)
-         i <- (a.asInstanceOf[Code_attribute].code: Seq[Instruction]): Exp[Seq[Instruction]]
-         if liftCall('instanceOf$INSTANCEOF, (i:Instruction) => i.isInstanceOf[INSTANCEOF], i)
+         if onExp(a)('instanceOf$Code_attribute, _.isInstanceOf[Code_attribute])
+         ca <- onExp(a)('cast$Code_attribute, x => Seq(x.asInstanceOf[Code_attribute])) //XXX: value defs are most complex to translate
+         i <- ca.code
+         if onExp(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
        } yield m.name
      var m5Int: Traversable[String] = null
      benchMark("los", warmUpLoops = 0, sampleLoops = 1) {

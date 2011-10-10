@@ -193,14 +193,14 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     //Now that map is available, we can write also this code:
     val resMid = new IncrementalResult[Int](for (i <- v.asQueryable;
                                               j <- liftCall('dontknow,
-                                                ((_: Array[IncHashSet[Int]]).apply(_: Int)),
+                                                ((_: Seq[IncHashSet[Int]]).apply(_: Int)),
                                                 vArr, i)) yield i + j)
     // But in the last line, we get j <- coll with coll: Exp[IncHashSet[T]], and IncHashSet[T] <: Exp[Traversable[T]].
     // That's bad!
 
     //This code is yet better.
     val resNew = new IncrementalResult[Int](for (i <- v.asQueryable;
-                                              j <- ((vArr: Seq[IncHashSet[Int]]): Exp[Seq[IncHashSet[Int]]])(i))
+                                              j <- (vArr: Exp[Seq[IncHashSet[Int]]])(i))
                                             yield i + j)
 
     val res = Seq(resMid, resNew)(version)

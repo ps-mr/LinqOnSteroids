@@ -16,6 +16,8 @@ object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.OpsExpr
 
   def liftFunc[S, T](f: Exp[S] => Exp[T]): Exp[S => T] = FuncExp(f)
 
+  implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
+
   class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
   }
@@ -78,6 +80,8 @@ object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.OpsExpr
     implicit def liftCall5[A0, A1, A2, A3, A4, Res](id: Symbol, f: (A0, A1, A2, A3, A4) => Res):
       (Exp[A0], Exp[A1], Exp[A2], Exp[A3], Exp[A4]) => Exp[Res]= new Call5(id,f, _, _, _, _, _)
   }
+
+  def onExp[T, U](t: Exp[T])(id: Symbol, f: T => U): Exp[U] = liftCall(id, f, t)
 
   // maybe this is not the best place to define this function
   def filterByType[S: Manifest]: Exp[PartialFunction[Any,S]] = new PartialFuncExp( (x) => x.ifInstanceOf[S])
