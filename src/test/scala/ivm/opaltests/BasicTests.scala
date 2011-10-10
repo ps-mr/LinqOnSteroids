@@ -107,7 +107,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
 
   val warmUpLoops = 0 //100
-  val sampleLoops = 1 //5
+  val sampleLoops = 1 //20
 
    @Test def testOpal() {
      val testdata  = getTestData.toSet
