@@ -51,7 +51,7 @@ case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S => T
   def interpret(): S => T =
     z => {
       val res = f(Const(z))
-      interpretHook.map(_(res))  // KO: What is the purpose of this? Remove?
+      interpretHook.map(_(res))  // XXX: PG: hack to remove, even a performance problem.
       res.interpret()
     }
 
