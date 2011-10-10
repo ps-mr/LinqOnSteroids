@@ -31,17 +31,17 @@ import tests.Benchmarking._
 object BATLifting {
   implicit def expToClassFileOps(t: Exp[ClassFile]) = new ClassFileOps(t)
   class ClassFileOps(t: Exp[ClassFile]) {
-       def methods = liftCall('methods, (cf: ClassFile) => cf.methods, t)
+       def methods = onExp(t)('methods, _.methods)
   }
 
   implicit def expToAttributeOps(t: Exp[Method_Info]) = new Method_InfoOps(t)
   class Method_InfoOps(t: Exp[Method_Info]) {
-       def attributes = liftCall('attributes, (m: Method_Info) => m.attributes, t)
-       def name = liftCall('name, (m: Method_Info) => m.name, t)
+       def attributes = onExp(t)('attributes, _.attributes)
+       def name = onExp(t)('name, _.name)
   }
   implicit def expToCode_attributeOps(t: Exp[Code_attribute]) = new Code_attributeOps(t)
   class Code_attributeOps(t: Exp[Code_attribute]) {
-    def code : Exp[Seq[Instruction]] = liftCall('code, (c: Code_attribute) => c.code, t)
+    def code: Exp[Seq[Instruction]] = onExp(t)('code, _.code)
   }
   object Code_attribute {
     // We need to specify Exp[Seq[Instruction]] instead of Exp[Array[Instruction]] because one cannot convert
@@ -165,14 +165,13 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      val methods4 = queryData.flatMap( cf => cf.methods
                               .flatMap( m => m.attributes
                                .collect(
-                                   a => liftCall('instanceOf$Code_attribute,
-                                                 (x:Attribute) =>
+                                   a => onExp(a)('instanceOf$Code_attribute,
+                                                 x =>
                                                    if (x.isInstanceOf[Code_attribute])
                                                      Some(x.asInstanceOf[Code_attribute])
-                                                   else None,
-                                                  a))
+                                                   else None))
                                .flatMap( c => c.code)
-                               .filter( a => liftCall('instanceOf$INSTANCEOF, (i:Instruction) => i.isInstanceOf[INSTANCEOF],a))
+                               .filter( a => onExp(a)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF]))
                                .map( _ => m.name)))
 
      var m4Int: Traversable[String] = null
