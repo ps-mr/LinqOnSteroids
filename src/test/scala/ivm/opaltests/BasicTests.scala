@@ -135,12 +135,6 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
                          m <- cf.methods;
                          Code_attribute(_,_,code,_,_) <- m.attributes;
                          INSTANCEOF(_) <- code) yield m.name
-    val methods3 = queryData.flatMap( cf => cf.methods
-                             .flatMap( m => m.attributes
-                              .collect( x => x.ifInstanceOf[Code_attribute])
-                              .flatMap( c => c.code)
-                              .collect( i => i.ifInstanceOf[INSTANCEOF])
-                              .map( i => m.name)))
 
      //println(methods2) //goes OOM!
      var m2Int: Traversable[String] = null
@@ -152,6 +146,13 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      println("end los result")
 
      methods should equal (m2Int)
+     val methods3 = queryData.flatMap( cf => cf.methods
+                              .flatMap( m => m.attributes
+                               .collect( x => x.ifInstanceOf[Code_attribute])
+                               .flatMap( c => c.code)
+                               .collect( i => i.ifInstanceOf[INSTANCEOF])
+                               .map( _ => m.name)))
+
      var m3Int: Traversable[String] = null
      benchMark("los2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        m3Int = methods3.interpret()
@@ -160,5 +161,24 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      println(m3Int)
      println("end los2 result")
      methods should equal (m3Int)
+
+     val methods4 = queryData.flatMap( cf => cf.methods
+                              .flatMap( m => m.attributes
+                               .collect(
+                                   a => liftCall('instanceOf$Code_attribute,
+                                                 (x:Attribute) => if (x.isInstanceOf[Code_attribute])
+                                                      Some(x.asInstanceOf[Code_attribute]) else None,
+                                                  a))
+                               .flatMap( c => c.code)
+                               .filter( a => liftCall('instanceOf$INSTANCEOF, (i:Instruction) => i.isInstanceOf[INSTANCEOF],a))
+                               .map( _ => m.name)))
+
+     var m4Int: Traversable[String] = null
+       benchMark("los", warmUpLoops = 0, sampleLoops = 1) {
+         m4Int = methods4.interpret()
+       }
+       println("begin los3 result")
+       println(m4Int)
+       println("end los3 result")
   }
 }
