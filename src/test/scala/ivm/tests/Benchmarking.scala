@@ -41,10 +41,12 @@ object Benchmarking {
       stats.update((System.nanoTime() - before) / execLoops)
     }
     val avg = stats.avg / math.pow(10,6)
-    if (verbose)
-      println(">>> Name = %s, time = %.3f +- %.3f" format (name,
-        avg,
-        math.sqrt(stats.variance) / math.pow(10, 6)))
+    if (verbose) {
+      val devStd = math.sqrt(stats.variance) / math.pow(10,6)
+      //The error of the measured average as an estimator of the average of the underlying random variable
+      val stdErr = devStd / math.sqrt(sampleLoops)
+      println(">>> Name = %s, time = %.3f +- %.3f" format (name, avg, stdErr))
+    }
     avg
   }
 
