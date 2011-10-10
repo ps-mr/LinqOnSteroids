@@ -182,5 +182,25 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      println("begin los3 result")
      println(m4Int)
      println("end los3 result")
+     methods should equal (m4Int)
+
+     val methods5 =
+       for {
+         cf <- queryData
+         m <- cf.methods
+         a <- m.attributes
+         if liftCall('instanceOf$Code_attribute, (x:Attribute) => x.isInstanceOf[Code_attribute], a)
+         i <- (a.asInstanceOf[Code_attribute].code: Seq[Instruction]): Exp[Seq[Instruction]]
+         if liftCall('instanceOf$INSTANCEOF, (i:Instruction) => i.isInstanceOf[INSTANCEOF], i)
+       } yield m.name
+     var m5Int: Traversable[String] = null
+     benchMark("los", warmUpLoops = 0, sampleLoops = 1) {
+       m5Int = methods5.interpret()
+     }
+     println("begin los4 result")
+     println(m5Int)
+     println("end los4 result")
+
+     methods should equal (m5Int)
   }
 }
