@@ -23,8 +23,14 @@ object IncrementalResult {
   def findRoots(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
     if (e.roots.isEmpty)
       Seq((parent, e))
-    else
-      e.roots flatMap ((x: Exp[_]) => findRoots(Some(e.asInstanceOf[Exp[Traversable[_]]]), x.asInstanceOf[Exp[Traversable[_]]]))
+    else {
+      val newParent =
+        if (e.isInstanceOf[MsgSeqSubscriber[_, _]])
+          Some(e.asInstanceOf[Exp[Traversable[_]]])
+        else None //parent //returning parent causes run-time type errors (ClassCastExceptions).
+      e.roots flatMap ((x: Exp[_]) => findRoots(newParent, x.asInstanceOf[Exp[Traversable[_]]]))
+    }
+
   }
 
   def newStartListeners(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]) {
@@ -34,7 +40,10 @@ object IncrementalResult {
       p match {
         case parent: MsgSeqSubscriber[Traversable[`t`], Exp[Traversable[`t`]]] =>
           root subscribe parent
-          parent notify (root, root.interpret().toSeq.map(Include(_)))
+          parent notify (root, root.interpret().toSeq.map(Include(_))) //This line is correct, but implies that parent is
+          // a direct child of root, so that parent accepts notifications from child.
+          // This can cause run-time type errors with a tricked findRoots.
+          // We need to use EvtTransformer here to ensure type-safety.
       }
     }
   }
