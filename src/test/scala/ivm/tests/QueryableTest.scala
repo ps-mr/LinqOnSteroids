@@ -98,7 +98,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     println("v: " + v)
     val vPlusOne: IncHashSet[Int] = v.map(_ + 1) //canBuildFrom gives us the expected return type
 
-    val vIncUpd = new IncrementalResult(v)
+    val vIncUpd = new IncrementalResult[Int](v)
     val v2: Queryable[Int, HashSet[Int]] = v //Queryable does not inherit from Traversable!
     println("v2.map(_ + 1): " + v2.map(_ + 1))
     println("v2.asQueryable.map(_ + 1): " + v2.asQueryable.map(_ + 1))
@@ -153,7 +153,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
       v ++= Seq(10, 20, 30)
     val v2 = IncHashSet(4, 5, 6)
 
-    val res = new IncrementalResult(for (i <- v.asQueryable; j <- v2.asQueryable) yield i + j)
+    val res = new IncrementalResult[Int](for (i <- v.asQueryable; j <- v2.asQueryable) yield i + j)
     show("res", res)
     if (working)
       v ++= Seq(10, 20, 30)
@@ -185,13 +185,13 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     /*
     // This term is exotic because of its use of interpret - which can be avoided, now that map is available on
     // Exp[Traversable[T]], rather than only on QueryReifier[T].
-    val resOld = new IncrementalResult(for (i <- v.asQueryable;
+    val resOld = new IncrementalResult[Int](for (i <- v.asQueryable;
                                               j <- liftCall('dontknow,
                                                 ((_: Array[IncHashSet[Int]]).apply(_: Int).asQueryable),
                                                 vArr, i).interpret()) yield i + j)*/
 
     //Now that map is available, we can write also this code:
-    val resMid = new IncrementalResult(for (i <- v.asQueryable;
+    val resMid = new IncrementalResult[Int](for (i <- v.asQueryable;
                                               j <- liftCall('dontknow,
                                                 ((_: Seq[IncHashSet[Int]]).apply(_: Int)),
                                                 vArr, i)) yield i + j)
@@ -199,7 +199,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     // That's bad!
 
     //This code is yet better.
-    val resNew = new IncrementalResult(for (i <- v.asQueryable;
+    val resNew = new IncrementalResult[Int](for (i <- v.asQueryable;
                                               j <- (vArr: Exp[Seq[IncHashSet[Int]]])(i))
                                             yield i + j)
 

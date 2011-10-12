@@ -14,13 +14,13 @@ object IncrementalResult {
       case m: Maintainer[_, _] =>
         m.startListening() //i.e. m.base subscribe this; add notify(m.base, m.base.interpret().toSeq.map(Include(_))) or the like on the bottom.
 
-      case f@FuncExp(_: (Exp[_] => Maintainer[_, _])) => //XXX broken
-        f setInterpretHook Some((x: Exp[_]) => startListeners(None, x.asInstanceOf[Maintainer[Traversable[Any], Traversable[Any]]])) //Evil hack, I know. Have FlatMapMaintainer (but actually, all Maintainers) do that.
+      case f: FuncExp[_, Traversable[_]] => //XXX broken
+        f setInterpretHook Some(startListeners(None, _)) //Evil hack, I know. Have FlatMapMaintainer (but actually, all Maintainers) do that.
       case _ =>
     }
   }
 
-  def findRoots[T, U](parent: Option[Exp[Traversable[_]]], e: Maintainer[Traversable[T], Traversable[U]]/*Exp[Traversable[_]] with MsgSeqSubscriber[_, _]*/): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
+  def findRoots(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
     if (e.roots.isEmpty)
       Seq((parent, e))
     else {
@@ -28,12 +28,12 @@ object IncrementalResult {
         if (e.isInstanceOf[MsgSeqSubscriber[_, _]])
           Some(e.asInstanceOf[Exp[Traversable[_]]])
         else None //parent //returning parent causes run-time type errors (ClassCastExceptions).
-      Seq(e.base) flatMap ((x: Exp[Traversable[T]]) => findRoots(newParent, x.asInstanceOf[Maintainer[Traversable[Any], Traversable[Any]]]))
+      e.roots flatMap ((x: Exp[_]) => findRoots(newParent, x.asInstanceOf[Exp[Traversable[_]]]))
     }
 
   }
 
-  def newStartListeners[T, U](parent: Option[Exp[Traversable[U]]], e: Maintainer[Traversable[T], Traversable[U]]) {
+  def newStartListeners(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]) {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple parents.
     val roots = findRoots(parent, e) //Instead, fix startListener.
     for ((Some(p), root: Exp[Traversable[t]]) <- roots) {
@@ -52,7 +52,7 @@ object IncrementalResult {
     e visitPreorderClosedChildren startListener
   }
 
-  def startListeners[T, U](parent: Option[Exp[Traversable[U]]], e: Maintainer[Traversable[T], Traversable[U]]) {
+  def startListeners(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]) {
     newStartListeners(parent, e)
     oldStartListeners(e)
   }
@@ -63,7 +63,7 @@ object IncrementalResult {
 // XXX: SetProxy is not entirely
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
 // same type. OTOH, this methods allows accessing the underlying data at all.
-class IncrementalResult[T, U](val inner: Maintainer[Traversable[U], Traversable[T]]) extends NullaryExp[Traversable[T]]
+class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Traversable[T]]
   with TravMsgSeqSubscriber[T, Exp[Traversable[T]]]
   with Queryable[T, collection.SetProxy[T]]
   with collection.SetProxy[T] //I mean immutable.SetProxy[T], but that requires an underlying immutable Set.
