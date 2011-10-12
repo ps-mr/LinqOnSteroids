@@ -9,14 +9,6 @@ import collection.mutable.HashMap
  */
 
 object IncrementalResult {
-  private[this] def startListener(e: Exp[_]) {
-    e match {
-      case m: Maintainer[_, _] =>
-        m.startListening() //i.e. m.base subscribe this; add notify(m.base, m.base.interpret().toSeq.map(Include(_))) or the like on the bottom.
-      case _ =>
-    }
-  }
-
   def findRoots(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
     if (e.roots.isEmpty)
       Seq((parent, e))
@@ -30,7 +22,7 @@ object IncrementalResult {
 
   }
 
-  def newStartListeners(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]) {
+  def startListeners(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]) {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple parents.
     val roots = findRoots(parent, e) //Instead, fix startListener.
     for ((Some(p), root: Exp[Traversable[t]]) <- roots) {
@@ -43,15 +35,6 @@ object IncrementalResult {
           // We need to use EvtTransformer here to ensure type-safety.
       }
     }
-  }
-
-  def oldStartListeners(e: Exp[_]) {
-    e visitPreorderClosedChildren startListener
-  }
-
-  def startListeners(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]) {
-    newStartListeners(parent, e)
-    oldStartListeners(e)
   }
 }
 /**
@@ -71,12 +54,6 @@ class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Tr
   var set = new HashMap[T, Int]
   inner subscribe this
   startListeners(Some(this), inner)
-  //XXX: I now believe this is a hack, in essence. I should not rely on interpret();
-  // I should rather trigger updates starting from the root collection.
-  // See FlatMapMaintainer.initListening() for the hack currently compensating this problem.
-
-  // It is crucial to have this statement only here after construction
-  notify(inner, inner.interpret().toSeq.map(Include(_)))
 
   //From SetProxy
   override def self = set.keySet

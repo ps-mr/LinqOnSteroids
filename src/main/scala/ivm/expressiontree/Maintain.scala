@@ -25,7 +25,7 @@ import collection.TraversableLike
 //
 // This way, a pipeline of message transformers becomes simply a sequencing through >>= of monadic actions.
 // However, since some reifiers will not work this way, we cannot enforce this structure.
-// TODO: We could use MonadPlus.mplus for composing observables.
+// TODO: We could use MonadPlus.mplus (or equivalent) for composing observables, e.g. in Union.
 
 // Let us first implement incremental view maintenance for sets.
 
@@ -75,8 +75,6 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
   val subCollListener: MsgSeqSubscriber[TraversableOnce[U], Exp[TraversableOnce[U]]] =
     new MsgSeqSubscriber[TraversableOnce[U], Exp[TraversableOnce[U]]] {
       override def notify(pub: Exp[TraversableOnce[U]], evts: Seq[Message[TraversableOnce[U]]]) = {
-        //publish(evts flatMap (evt => evt match {
-        //evts foreach (evt => evt match {
         for (evt <- evts) {
           evt match {
             case e@Include(_) => publish(e)
@@ -167,13 +165,6 @@ class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
   }
 
   override def copy(base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]]) = new FlatMapMaintainerExp[T, Repr, U, That](base, f)
-
-  //XXX this ensures that we listen on the results corresponding to the elements already present in col.
-  //However, it is a hack - see IncrementalResult for discussion.
-  //XXX disabled because it causes "Interpret on Var" messages.
-  //XXX reenabled, needed for QueryableTest.testFlatMapNotWorking, and not causing "Interpret on Var" currently, probably because of other changes
-  //But it does cause slowdowns and OOM on BasicTests. Investigate. Anyway, this is still a hack.
-  initListening(base.interpret())
 }
 
 class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: FuncExp[T, Boolean]) extends Filter[T, Repr](base, p)
