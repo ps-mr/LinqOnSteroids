@@ -10,6 +10,7 @@ import collection.mutable.HashMap
 
 object IncrementalResult {
   // Given e.g. coll2 = MapOp(coll@IncHashSet(_), FuncExp(...)), coll2 is the child and coll is the parent (here, the root).
+  //XXX: this code could be typechecked using a typelist like HList.
   def findRoots(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
     if (e.roots.isEmpty)
       Seq((child, e))
@@ -23,9 +24,9 @@ object IncrementalResult {
 
   }
 
-  def startListeners(initialChild: Option[Exp[Traversable[_]]], initialRoot: Exp[Traversable[_]]) {
+  def startListeners(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
-    val roots = findRoots(initialChild, initialRoot) //Instead, fix startListener.
+    val roots = findRoots(Some(initialChild), initialRoot) //Instead, fix startListener.
     for ((Some(c), root: Exp[Traversable[t]]) <- roots) {
       c match {
         case child: MsgSeqSubscriber[Traversable[`t`], Exp[Traversable[`t`]]] => //XXX: broken, but no counterexamples yet.
@@ -55,7 +56,7 @@ class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Tr
   import IncrementalResult._
   var set = new HashMap[T, Int]
   inner subscribe this
-  startListeners(Some(this), inner)
+  startListeners(this, inner)
 
   //From SetProxy
   override def self = set.keySet
