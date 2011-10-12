@@ -89,25 +89,25 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
         }
       }
     }
+  private def process(v: T) = {
+    val fV = cache.getOrElseUpdate(v, fInt(v))
+    fV subscribe subCollListener
+    fV match {
+      case m: Maintainer[_, _] => m.startListening()
+      case _ => //XXX: wasn't there before, will cause problems, but is needed! Therefore we must rewrite this code some other way
+    }
+    fV
+  }
   //To be invoked by the constructor with the initial elements.
   protected def initListening(values: Traversable[T]) {
     for (v <- values) {
-      //XXX copied from transformedMessages. Could I really reuse that as-is? I believe I cannot!
-      //Basically, it doesn't make sense to generate the new events and then to drop them!
-      //Plus, here I still need to call startListening.
-      val fV = cache.getOrElseUpdate(v, fInt(v))
-      fV subscribe subCollListener
-      fV match {
-        case m: Maintainer[_, _] => m.startListening()
-        case _ => //XXX: wasn't there before, will cause problems, but is needed! Therefore we must rewrite this code some other way
-      }
+      process(v)
     }
   }
   override def transformedMessages(evt: TravMessage[T]) = {
     evt match {
       case Include(v) =>
-        val fV = cache.getOrElseUpdate(v, fInt(v))
-        fV subscribe subCollListener
+        val fV = process(v)
         fV.interpret().toSeq map (Include(_))
       case Remove(v) =>
         //val fV = fInt(v) //fV will not always return the _same_ result. We
@@ -193,7 +193,9 @@ class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
   //XXX this ensures that we listen on the results corresponding to the elements already present in col.
   //However, it is a hack - see IncrementalResult for discussion.
   //XXX disabled because it causes "Interpret on Var" messages.
-  //initListening(base.interpret())
+  //XXX reenabled, needed for QueryableTest.testFlatMapNotWorking, and not causing "Interpret on Var" currently, probably because of other changes
+  //But it does cause slowdowns and OOM on BasicTests. Investigate. Anyway, this is still a hack.
+  initListening(base.interpret())
 }
 
 class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: FuncExp[T, Boolean]) extends Filter[T, Repr](base, p)

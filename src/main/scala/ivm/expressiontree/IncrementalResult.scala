@@ -57,7 +57,7 @@ class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Tr
 
   def startListeners(e: Exp[_]) {
     //XXX: what if a collection appears multiple times in the tree?
-    val roots = findRoots2(None, inner) //Instead, fix startListener.
+    /*val roots = findRoots2(None, inner) //Instead, fix startListener.
     for ((Some(p), /*r*/ root: Exp[Traversable[t]]) <- roots) {
       /*r match {
         case root/*: EvtTransformer[t, _/*u*/, repr] with  Exp[Traversable[u]] */ =>*/
@@ -78,7 +78,7 @@ class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Tr
       //root.startListening()
       //root.sendContentToParents()
       */
-    }
+    }*/
 
     e visitPreorderClosedChildren startListener
   }
