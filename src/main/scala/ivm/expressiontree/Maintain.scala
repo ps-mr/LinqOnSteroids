@@ -126,8 +126,8 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
   }
 }
 
-trait Maintainer[T, +U] extends MsgSeqSubscriber[T, Exp[T]] with Exp[U] {
-  val base: Exp[T]
+trait Maintainer[+T, U] extends MsgSeqSubscriber[U, Exp[U]] with Exp[T] {
+  val base: Exp[U]
   private[ivm] override def roots = Seq(base)
 
   def startListening() {
@@ -151,7 +151,7 @@ trait Maintainer[T, +U] extends MsgSeqSubscriber[T, Exp[T]] with Exp[U] {
 class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, U])
                          (implicit override protected val c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
-    with MapMaintainer[T, U, Exp[Repr]] with Maintainer[Repr, That] {
+    with MapMaintainer[T, U, Exp[Repr]] with Maintainer[That, Repr] {
   override def fInt = f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, U]) = new MapOpMaintainerExp[T, Repr, U, That](base, f)
 }
@@ -159,7 +159,7 @@ class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]
 class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
                          (implicit override protected val c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
-    with FlatMapMaintainer[T, U, Exp[Repr], That] with Maintainer[Repr, That] {
+    with FlatMapMaintainer[T, U, Exp[Repr], That] with Maintainer[That, Repr] {
   //override def fInt: T => Exp[TraversableOnce[U]] = x => Const(f.interpret()(x)) //XXX: Is this Const here sensible? Probably not, especially since Const will ignore listeners.
   override def fInt: T => Exp[TraversableOnce[U]] = {
     import Lifting._
