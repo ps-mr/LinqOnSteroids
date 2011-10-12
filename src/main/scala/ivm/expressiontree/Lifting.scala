@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.OpsExpressionTreeTrait {
+object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.OpsExpressionTreeTrait with SimpleOpenEncoding.TypeFilterOps {
   // these functions are explicitly not implicit :)
   def liftCall[Res](id: Symbol, callfunc: () => Res) = new Call0(id,callfunc)
   def liftCall[A0, Res](id: Symbol, callfunc: A0 => Res, arg0: Exp[A0]) = new Call1(id,callfunc, arg0)
