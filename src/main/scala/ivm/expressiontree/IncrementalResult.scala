@@ -13,9 +13,6 @@ object IncrementalResult {
     e match {
       case m: Maintainer[_, _] =>
         m.startListening() //i.e. m.base subscribe this; add notify(m.base, m.base.interpret().toSeq.map(Include(_))) or the like on the bottom.
-
-      case f: FuncExp[_, Traversable[_]] => //XXX broken
-        f setInterpretHook Some(startListeners(None, _)) //Evil hack, I know. Have FlatMapMaintainer (but actually, all Maintainers) do that.
       case _ =>
     }
   }

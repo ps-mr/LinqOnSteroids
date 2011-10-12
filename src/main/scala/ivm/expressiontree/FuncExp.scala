@@ -44,15 +44,9 @@ abstract class FuncExpBase[-S, +T, +Type] extends CheckingExp[Type] with Equals 
 }
 
 case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S => T] {
-  //XXX: Uglymost hack. Paolo
-  private[this] var interpretHook: Option[Exp[T] => Unit] = None
-  private[ivm] def setInterpretHook(v: Option[Exp[T] => Unit]) {
-    interpretHook = v
-  }
   def interpret(): S => T =
     z => {
       val res = f(Const(z))
-      interpretHook.map(_(res))  // XXX: PG: hack to remove, even a performance problem.
       res.interpret()
     }
 
