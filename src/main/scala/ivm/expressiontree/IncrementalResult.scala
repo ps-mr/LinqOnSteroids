@@ -1,7 +1,7 @@
 package ivm
 package expressiontree
 
-import collection.mutable.HashMap
+import collection.mutable.{Subscriber, HashMap}
 
 /**
  * User: pgiarrusso
@@ -34,14 +34,52 @@ class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Tr
   private[this] def startListener(e: Exp[_]) {
     e match {
       case m: Maintainer[_, _] =>
-        m.startListening()
+        m.startListening() //i.e. m.base subscribe this; add notify(m.base, m.base.interpret().toSeq.map(Include(_))) or the like on the bottom.
+
       case f: FuncExp[_, _] =>
-        f.interpretHook = Some(startListeners(_)) //Evil hack, I know.
+        f.interpretHook = Some(startListeners(_)) //Evil hack, I know. Have FlatMapMaintainer (but actually, all Maintainers) do that.
       case _ =>
     }
   }
 
+  def findRoots(parent: Option[Exp[_]], e: Exp[_]): (Seq[(Option[Exp[_]], Exp[_])]) = {
+    if (e.roots.isEmpty)
+      Seq((parent, e))
+    else
+      e.roots flatMap (findRoots(Some(e), _))
+  }
+  def findRoots2(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
+    if (e.roots.isEmpty)
+      Seq((parent, e))
+    else
+      e.roots flatMap ((x: Exp[_]) => findRoots2(Some(e.asInstanceOf[Exp[Traversable[_]]]), x.asInstanceOf[Exp[Traversable[_]]]))
+  }
+
   def startListeners(e: Exp[_]) {
+    //XXX: what if a collection appears multiple times in the tree?
+    val roots = findRoots2(None, inner) //Instead, fix startListener.
+    for ((Some(p), /*r*/ root: Exp[Traversable[t]]) <- roots) {
+      /*r match {
+        case root/*: EvtTransformer[t, _/*u*/, repr] with  Exp[Traversable[u]] */ =>*/
+      //Util.assertType[Exp[Traversable[_]]](root)
+      p match {
+        case parent: /*r*/ /*root.Sub with */Subscriber[Seq[TravMessage[`t`]], `root`.Pub/*Exp[Traversable[_]]*/] => //TravMsgSeqSubscriber[t, repr] =>
+          /*r*/ root subscribe parent
+          parent notify (root.asInstanceOf[/*r*/ root.Pub], root.interpret().toSeq.map(Include(_)))
+      }
+      //}
+      /*
+      //val root = r.asInstanceOf[MsgSeqSubscriber[T, Exp[T]] forSome { type T }]
+      val root = r.asInstanceOf[parent.Sub] //XXX XXX XXX!
+      val parent2 = parent.asInstanceOf[root.Sub] //XXX !
+      root subscribe parent
+      //parent subscribe root
+      parent2.notify(root, root.asInstanceOf[Exp[Traversable[_]]].interpret().toSeq.map(Include(_)))
+      //root.startListening()
+      //root.sendContentToParents()
+      */
+    }
+
     e visitPreorderClosedChildren startListener
   }
 
