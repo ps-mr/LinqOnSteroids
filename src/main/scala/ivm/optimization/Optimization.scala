@@ -3,7 +3,6 @@ package optimization
 
 import expressiontree._
 import Lifting._
-import collection.generic.FilterMonadic
 import collection.GenTraversableOnce
 object FuncExpBody {
   def unapply[S, T](f: FuncExp[S, T]): Option[Exp[T]] = Some(f.body)

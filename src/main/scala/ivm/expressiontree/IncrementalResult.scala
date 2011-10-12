@@ -1,7 +1,7 @@
 package ivm
 package expressiontree
 
-import collection.mutable.{Subscriber, HashMap}
+import collection.mutable.HashMap
 
 /**
  * User: pgiarrusso

@@ -1,7 +1,5 @@
 package ivm.expressiontree
 
-import annotation.unchecked.uncheckedVariance
-
 // Not exactly sure what I should use to represent applications, but this is the standard App node, well known from
 // encodings of the STLC (simply typed lambda calculus).
 //Having explicit App nodes for application can be useful to represent application instead of computing it,
