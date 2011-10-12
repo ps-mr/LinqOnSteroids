@@ -21,7 +21,7 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipEntry
 import java.io.{InputStream, File}
 import resolved.TypeAliases.ExceptionTable
-import tests.Benchmarking._
+import performancetests.Benchmarking._
 
   /* (Very incomplete) boilerplate code for making use of BAT types convenient in queries.
      This code should be generated

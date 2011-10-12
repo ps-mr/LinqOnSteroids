@@ -1,5 +1,5 @@
 package ivm
-package tests
+package performancetests
 
 import expressiontree.Exp
 import optimization._
