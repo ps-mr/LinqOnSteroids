@@ -126,8 +126,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
   }
 }
 
-trait Maintainer[T, U] {
-  this: MsgSeqSubscriber[T, Exp[T]] with Exp[U] =>
+trait Maintainer[T, +U] extends MsgSeqSubscriber[T, Exp[T]] with Exp[U] {
   val base: Exp[T]
   private[ivm] override def roots = Seq(base)
 
