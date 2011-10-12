@@ -26,8 +26,8 @@ object IncrementalResult {
   def startListeners(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]) {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
     val roots = findRoots(child, e) //Instead, fix startListener.
-    for ((Some(p), root: Exp[Traversable[t]]) <- roots) {
-      p match {
+    for ((Some(c), root: Exp[Traversable[t]]) <- roots) {
+      c match {
         case child: MsgSeqSubscriber[Traversable[`t`], Exp[Traversable[`t`]]] => //XXX: broken, but no counterexamples yet.
           root subscribe child
           child notify (root, root.interpret().toSeq.map(Include(_))) //This line is correct, but implies that child is
