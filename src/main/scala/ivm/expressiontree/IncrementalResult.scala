@@ -32,9 +32,9 @@ object IncrementalResult {
     val roots = findRoots(parent, e) //Instead, fix startListener.
     for ((Some(p), root: Exp[Traversable[t]]) <- roots) {
       p match {
-        case parent: /*root.Sub with */MsgSeqSubscriber[Traversable[`t`], /*`root`.Pub */Exp[Traversable[`t`]]] => //TravMsgSeqSubscriber[t, repr] =>
+        case parent: MsgSeqSubscriber[Traversable[`t`], Exp[Traversable[`t`]]] =>
           root subscribe parent
-          parent notify (root/*.asInstanceOf[/*r*/ root.Pub]*/, root.interpret().toSeq.map(Include(_)))
+          parent notify (root, root.interpret().toSeq.map(Include(_)))
       }
     }
   }
