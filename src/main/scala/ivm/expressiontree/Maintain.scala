@@ -172,7 +172,7 @@ trait Maintainer[T, U] {
 //type for the pub param to notify(), if he cares.
 class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, U])
-                         (implicit c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
+                         (implicit override protected val c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
     with MapMaintainer[T, U, Exp[Repr]] with Maintainer[Repr, That] {
   override def fInt = f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, U]) = new MapOpMaintainerExp[T, Repr, U, That](base, f)
@@ -180,7 +180,7 @@ class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]
 
 class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
-                         (implicit c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
+                         (implicit override protected val c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
     with FlatMapMaintainer[T, U, Exp[Repr], That] with Maintainer[Repr, That] {
   //override def fInt: T => Exp[TraversableOnce[U]] = x => Const(f.interpret()(x)) //XXX: Is this Const here sensible? Probably not, especially since Const will ignore listeners.
   override def fInt: T => Exp[TraversableOnce[U]] = {

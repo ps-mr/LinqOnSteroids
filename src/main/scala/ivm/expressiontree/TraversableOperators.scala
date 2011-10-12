@@ -11,14 +11,14 @@ import collection.{TraversableViewLike, TraversableView, TraversableLike}
 // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
 case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
                    U, That](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
-                            (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[Repr], FuncExp[T, TraversableOnce[U]], That](base, f) {
+                            (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[Repr], FuncExp[T, TraversableOnce[U]], That](base, f) {
   override def interpret = base.interpret flatMap f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]]) = FlatMap[T, Repr, U, That](base, f)
 }
 
 case class MapOp[T, Repr <: FilterMonadic[T, Repr],
                  U, That](base: Exp[Repr], f: FuncExp[T, U])
-                          (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[Repr], FuncExp[T, U], That](base, f) {
+                          (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[Repr], FuncExp[T, U], That](base, f) {
   override def interpret = base.interpret map f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, U]) = MapOp[T, Repr, U, That](base, f)
 }
@@ -43,7 +43,7 @@ case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr]) extends Un
 
 case class Force[T, Repr <: TraversableLike[T, Repr] with Traversable[T],
                  ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl], That]
-                (base: Exp[ViewColl])(implicit bf: CanBuildFrom[Repr, T, That]) extends UnaryOpExp[ViewColl, That](base) {
+                (base: Exp[ViewColl])(implicit protected[this] val bf: CanBuildFrom[Repr, T, That]) extends UnaryOpExp[ViewColl, That](base) {
   override def interpret = base.interpret.force
   override def copy(base: Exp[ViewColl]) = Force[T, Repr, ViewColl, That](base)
 }
