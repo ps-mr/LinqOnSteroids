@@ -20,43 +20,22 @@ object IncrementalResult {
     }
   }
 
-  /*def findRoots(parent: Option[Exp[_]], e: Exp[_]): (Seq[(Option[Exp[_]], Exp[_])]) = {
+  def findRoots(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
     if (e.roots.isEmpty)
       Seq((parent, e))
     else
-      e.roots flatMap (findRoots(Some(e), _))
-  }*/
-
-  def findRoots2(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
-    if (e.roots.isEmpty)
-      Seq((parent, e))
-    else
-      e.roots flatMap ((x: Exp[_]) => findRoots2(Some(e.asInstanceOf[Exp[Traversable[_]]]), x.asInstanceOf[Exp[Traversable[_]]]))
+      e.roots flatMap ((x: Exp[_]) => findRoots(Some(e.asInstanceOf[Exp[Traversable[_]]]), x.asInstanceOf[Exp[Traversable[_]]]))
   }
 
   def newStartListeners(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]) {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple parents.
-    val roots = findRoots2(parent, e) //Instead, fix startListener.
-    for ((Some(p), /*r*/ root: Exp[Traversable[t]]) <- roots) {
-      /*r match {
-        case root/*: EvtTransformer[t, _/*u*/, repr] with  Exp[Traversable[u]] */ =>*/
-      //Util.assertType[Exp[Traversable[_]]](root)
+    val roots = findRoots(parent, e) //Instead, fix startListener.
+    for ((Some(p), root: Exp[Traversable[t]]) <- roots) {
       p match {
-        case parent: /*r*/ /*root.Sub with */MsgSeqSubscriber[Traversable[`t`], /*`root`.Pub */Exp[Traversable[`t`]]] => //TravMsgSeqSubscriber[t, repr] =>
-          /*r*/ root subscribe parent
+        case parent: /*root.Sub with */MsgSeqSubscriber[Traversable[`t`], /*`root`.Pub */Exp[Traversable[`t`]]] => //TravMsgSeqSubscriber[t, repr] =>
+          root subscribe parent
           parent notify (root/*.asInstanceOf[/*r*/ root.Pub]*/, root.interpret().toSeq.map(Include(_)))
       }
-      //}
-      /*
-      //val root = r.asInstanceOf[MsgSeqSubscriber[T, Exp[T]] forSome { type T }]
-      val root = r.asInstanceOf[parent.Sub] //XXX XXX XXX!
-      val parent2 = parent.asInstanceOf[root.Sub] //XXX !
-      root subscribe parent
-      //parent subscribe root
-      parent2.notify(root, root.asInstanceOf[Exp[Traversable[_]]].interpret().toSeq.map(Include(_)))
-      //root.startListening()
-      //root.sendContentToParents()
-      */
     }
   }
 
