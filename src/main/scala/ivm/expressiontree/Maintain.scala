@@ -126,27 +126,6 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
   }
 }
 
-/*trait Maintainer[T, Repr <: QueryReifier[T]] extends MsgSeqSubscriber[T, Repr] {
-  this: QueryReifier[T]#Sub =>
-  val col: QueryReifier[T]
-
-  //def uglyCast(v: Subscriber[Seq[Message[T]], QueryReifier[T]#Pub]): Subscriber[Seq[Message[T]], col.Pub] =
-  //Equivalent to:
-  //def uglyCast(v: Subscriber[Seq[Message[T]], QueryReifier[T]]): Subscriber[Seq[Message[T]], col.Pub] =
-  //Which is wrong. Instead we need:
-  def uglyCast(v: Subscriber[Seq[Message[T]], Repr]): Subscriber[Seq[Message[T]], col.Pub] =
-    v.asInstanceOf[Subscriber[Seq[Message[T]], col.Pub]]
-  /*
-   * Why is that cast needed? Repr <: QueryReifier[T], col.Pub <: QueryReifier[T], but col.Pub and Repr are incomparable.
-   * The cast would be unneeded if Subscriber[..., col.Pub] >: Subscriber[..., Repr], i.e. col.Pub <: Repr.
-   * Therefore, let's set Repr = QueryReifier[T]
-   */
-
-  def startListening() {
-    //col subscribe this.asInstanceOf[col.Sub]
-    col subscribe uglyCast(this)
-  }
-}*/
 trait Maintainer[T, U] {
   this: MsgSeqSubscriber[T, Exp[T]] with Exp[U] =>
   val base: Exp[T]
