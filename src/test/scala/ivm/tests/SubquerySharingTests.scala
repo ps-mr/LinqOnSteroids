@@ -7,7 +7,6 @@ import org.junit.Test
 import expressiontree._
 
 import expressiontree.Lifting._
-import collections.CollectionReifier
 import optimization.Optimization
 import optimization.SubquerySharing
 
@@ -18,7 +17,7 @@ import optimization.SubquerySharing
 */
 
 class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
-  val l: CollectionReifier[(Int,Int)] = new CollectionReifier(Vector.range(1,3).flatMap( (i) => Vector.range(1,2).map((i,_))))
+  val l: Exp[Traversable[(Int,Int)]] = toExp(Vector.range(1,3).flatMap( (i) => Vector.range(1,2).map((i,_))))
 
   @Test def testSimpleSharing {
     val s1 = l.map( (p) => (p._1 + 1, p._2 + 2))

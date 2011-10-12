@@ -1,7 +1,6 @@
 package ivm
 package tests
 
-import collections.CollectionReifier
 import expressiontree.Lifting._
 import expressiontree.{And, FuncExp, Exp, Plus, Eq, View, Filter}
 import optimization.Optimization
@@ -11,7 +10,7 @@ import org.junit.Test
 import collection.TraversableView
 
 class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
-  val l: CollectionReifier[Int] = new CollectionReifier(Vector.range(1, 10))
+  val l: Exp[Traversable[Int]] = toExp(Vector.range(1, 10))
   def withFilterQueries = {
     val q1 = for (
                x <- for (c <- l if c + 3 is 7; if c + 8 is 19) yield c

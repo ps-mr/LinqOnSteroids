@@ -2,14 +2,14 @@ package ivm
 package tests
 
 import optimization.Optimization
-import collections.CollectionReifier
 import expressiontree.Lifting._
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test
+import expressiontree.Exp
 
 class MergeFilterTests extends JUnitSuite with ShouldMatchersForJUnit {
-  val l: CollectionReifier[Int] = new CollectionReifier(Vector.range(1, 10))
+  val l: Exp[Traversable[Int]] = toExp(Vector.range(1, 10))
 
   @Test
   def testMerging() {

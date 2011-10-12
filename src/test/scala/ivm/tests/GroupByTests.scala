@@ -4,12 +4,12 @@ package ivm.tests
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test
-import ivm.collections.CollectionReifier
+import ivm.expressiontree.Exp
 import ivm.optimization.Optimization
 import ivm.expressiontree.Lifting._
 
 class GroupByTests extends JUnitSuite with ShouldMatchersForJUnit {
-  val l: CollectionReifier[Int] = new CollectionReifier(Vector.range(1, 10))
+  val l: Exp[Traversable[Int]] = toExp(Vector.range(1, 10))
 
   @Test
   def testGroupBy() {

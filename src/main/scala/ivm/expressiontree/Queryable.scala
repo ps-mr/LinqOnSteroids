@@ -33,13 +33,13 @@ trait Queryable[T, Repr] extends NullaryExpTrait[Traversable[T]] {
   override def interpret() = this
   //This allows selecting early how the query is to be executed.
   // The alternative is to choose between exec(isLazy = true) and exec(isLazy = false).
-  //def asQueryableLazy: QueryReifier[T] = new CollectionReifier[T](this.view)
+  //def asQueryableLazy: QueryReifier[T] = Const(this.view)
   // XXX: this returns another object! So don't have it with this name, call it view - see below.
-  //def view: TraversableView[T] = new CollectionReifier[T](self.view)
+  //def view: TraversableView[T] = Const(self.view)
   //Can't have that type. Make it an overload - untested.
 
   // commented out by KO - need to check back with PG
-  //def view2: QueryReifier[T] = new CollectionReifier[T](self.view)
+  //def view2: QueryReifier[T] = Const(self.view)
 }
 
 // vim: set ts=4 sw=4 et:

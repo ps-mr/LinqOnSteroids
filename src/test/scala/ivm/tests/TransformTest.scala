@@ -6,7 +6,6 @@ import org.junit.Test
 
 import expressiontree.Exp
 import expressiontree.Lifting._
-import collections.CollectionReifier
 import optimization.Optimization
 
 
@@ -16,8 +15,8 @@ import optimization.Optimization
 */
 
 class TransformTest extends JUnitSuite with ShouldMatchersForJUnit {
-  val l: CollectionReifier[Int] = new CollectionReifier(Vector.range(1, 10))
-  val l2: CollectionReifier[Int] = new CollectionReifier(Vector.range(1, 10))
+  val l: Exp[Traversable[Int]] = toExp(Vector.range(1, 10))
+  val l2: Exp[Traversable[Int]] = toExp(Vector.range(1, 10))
 
   def testRebuild[T](t: Exp[T]) {
     val tTransf = t transform identity

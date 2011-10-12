@@ -8,7 +8,6 @@ import org.junit.Test
 import expressiontree._
 
 import scala.collection.JavaConversions._
-import collections.CollectionReifier
 import optimization.Optimization
 import optimization.SubquerySharing
 import de.tud.cs.st.bat.resolved
@@ -130,7 +129,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      // using reified query; INSTANCEOF is here shadowed.
      import BATLifting._
 
-     val queryData = new CollectionReifier(testdata)
+     val queryData = toExp(testdata)
      //The pattern-matches used are unsound.
      val methods2 = for (cf <- queryData;
                          m <- cf.methods;
