@@ -45,10 +45,7 @@ abstract class FuncExpBase[-S, +T, +Type] extends CheckingExp[Type] with Equals 
 
 case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S => T] {
   def interpret(): S => T =
-    z => {
-      val res = f(Const(z))
-      res.interpret()
-    }
+    z => f(Const(z)).interpret()
 
   def arrowString = "=>"
   def copy[U >: T](t1: Exp[U]): FuncExp[S, U] = FuncExp.makefun(t1, x)
