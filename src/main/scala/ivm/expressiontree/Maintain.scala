@@ -98,7 +98,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
       val fV = cache.getOrElseUpdate(v, fInt(v))
       fV subscribe subCollListener
       fV match {
-        case m: Maintainer[_] => m.startListening()
+        case m: Maintainer[_, _] => m.startListening()
         case _ => //XXX: wasn't there before, will cause problems, but is needed! Therefore we must rewrite this code some other way
       }
     }
@@ -147,9 +147,10 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
     col subscribe uglyCast(this)
   }
 }*/
-trait Maintainer[T] {
-  this: MsgSeqSubscriber[T, Exp[T]] =>
+trait Maintainer[T, U] {
+  this: MsgSeqSubscriber[T, Exp[T]] with Exp[U] =>
   val base: Exp[T]
+  private[ivm] override def roots = Seq(base)
 
   def startListening() {
     if (Debug.verbose) {
@@ -172,7 +173,7 @@ trait Maintainer[T] {
 class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, U])
                          (implicit c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
-    with MapMaintainer[T, U, Exp[Repr]] with Maintainer[Repr] {
+    with MapMaintainer[T, U, Exp[Repr]] with Maintainer[Repr, That] {
   override def fInt = f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, U]) = new MapOpMaintainerExp[T, Repr, U, That](base, f)
 }
@@ -180,7 +181,7 @@ class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]
 class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
                          (implicit c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
-    with FlatMapMaintainer[T, U, Exp[Repr], That] with Maintainer[Repr] {
+    with FlatMapMaintainer[T, U, Exp[Repr], That] with Maintainer[Repr, That] {
   //override def fInt: T => Exp[TraversableOnce[U]] = x => Const(f.interpret()(x)) //XXX: Is this Const here sensible? Probably not, especially since Const will ignore listeners.
   override def fInt: T => Exp[TraversableOnce[U]] = {
     import Lifting._
@@ -196,7 +197,7 @@ class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
 }
 
 class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: FuncExp[T, Boolean]) extends Filter[T, Repr](base, p)
-    with FilterMaintainer[T, Exp[Repr]] with Maintainer[Repr] {
+    with FilterMaintainer[T, Exp[Repr]] with Maintainer[Repr, Repr] {
   override def pInt = p.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = new FilterMaintainerExp[T, Repr](base, f)
 }

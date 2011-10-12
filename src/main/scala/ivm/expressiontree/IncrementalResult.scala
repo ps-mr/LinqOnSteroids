@@ -33,7 +33,7 @@ class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Tr
 
   private[this] def startListener(e: Exp[_]) {
     e match {
-      case m: Maintainer[_] =>
+      case m: Maintainer[_, _] =>
         m.startListening()
       case f: FuncExp[_, _] =>
         f.interpretHook = Some(startListeners(_)) //Evil hack, I know.
