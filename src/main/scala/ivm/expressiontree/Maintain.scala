@@ -126,6 +126,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
 
 trait Maintainer[+T, U] extends MsgSeqSubscriber[U, Exp[U]] with Exp[T] {
   val base: Exp[U]
+  type RootType = U
   private[ivm] override def roots = Seq(base)
 
   def startListening() {

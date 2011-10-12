@@ -2,10 +2,11 @@ package ivm.expressiontree
 
 trait Exp[+T] extends MsgSeqPublisher[T] {
   type Pub <: Exp[T]
+  type RootType
   def interpret(): T
   private[ivm] def children: Seq[Exp[_]]
   private[ivm] def closedTermChildren: Seq[Exp[_]] = children
-  private[ivm] def roots: Seq[Exp[_]] = Seq.empty
+  private[ivm] def roots: Seq[Exp[RootType]] = Seq.empty
   //The arity is not specified.
   private[ivm] def genericConstructor: Seq[Exp[_]] => Exp[T]
   // some child management auxiliary functions
