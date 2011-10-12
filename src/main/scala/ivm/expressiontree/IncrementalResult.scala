@@ -9,30 +9,32 @@ import collection.mutable.HashMap
  */
 
 object IncrementalResult {
-  def findRoots(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
+  // Given e.g. coll2 = MapOp(coll@IncHashSet(_), FuncExp(...)), coll2 is the child and coll is the parent (here, the root).
+  def findRoots(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
     if (e.roots.isEmpty)
-      Seq((parent, e))
+      Seq((child, e))
     else {
       val newParent =
         if (e.isInstanceOf[MsgSeqSubscriber[_, _]])
           Some(e.asInstanceOf[Exp[Traversable[_]]])
-        else None //parent //returning parent causes run-time type errors (ClassCastExceptions).
+        else None //child //returning child causes run-time type errors (ClassCastExceptions).
       e.roots flatMap ((x: Exp[_]) => findRoots(newParent, x.asInstanceOf[Exp[Traversable[_]]]))
     }
 
   }
 
-  def startListeners(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]) {
-    //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple parents.
-    val roots = findRoots(parent, e) //Instead, fix startListener.
+  def startListeners(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]) {
+    //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
+    val roots = findRoots(child, e) //Instead, fix startListener.
     for ((Some(p), root: Exp[Traversable[t]]) <- roots) {
       p match {
-        case parent: MsgSeqSubscriber[Traversable[`t`], Exp[Traversable[`t`]]] =>
-          root subscribe parent
-          parent notify (root, root.interpret().toSeq.map(Include(_))) //This line is correct, but implies that parent is
-          // a direct child of root, so that parent accepts notifications from child.
-          // This can cause run-time type errors with a tricked findRoots.
-          // We need to use EvtTransformer here to ensure type-safety.
+        case child: MsgSeqSubscriber[Traversable[`t`], Exp[Traversable[`t`]]] => //XXX: broken, but no counterexamples yet.
+          root subscribe child
+          child notify (root, root.interpret().toSeq.map(Include(_))) //This line is correct, but implies that child is
+          // a direct child of root, so that child accepts notifications from it.
+          // This constraint is not reflected in the type, thus we can write a version of findRoots
+          // causing run-time type errors.
+          // XXX: we probably need to use EvtTransformer here to express type-safety.
       }
     }
   }
