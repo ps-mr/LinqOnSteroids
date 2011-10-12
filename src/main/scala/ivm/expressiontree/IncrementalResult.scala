@@ -8,6 +8,67 @@ import collection.mutable.{Subscriber, HashMap}
  * Date: 27/8/2011
  */
 
+object IncrementalResult {
+  private[this] def startListener(e: Exp[_]) {
+    e match {
+      case m: Maintainer[_, _] =>
+        m.startListening() //i.e. m.base subscribe this; add notify(m.base, m.base.interpret().toSeq.map(Include(_))) or the like on the bottom.
+
+      case f: FuncExp[_, Traversable[_]] => //XXX broken
+        f setInterpretHook Some(startListeners(None, _)) //Evil hack, I know. Have FlatMapMaintainer (but actually, all Maintainers) do that.
+      case _ =>
+    }
+  }
+
+  /*def findRoots(parent: Option[Exp[_]], e: Exp[_]): (Seq[(Option[Exp[_]], Exp[_])]) = {
+    if (e.roots.isEmpty)
+      Seq((parent, e))
+    else
+      e.roots flatMap (findRoots(Some(e), _))
+  }*/
+
+  def findRoots2(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
+    if (e.roots.isEmpty)
+      Seq((parent, e))
+    else
+      e.roots flatMap ((x: Exp[_]) => findRoots2(Some(e.asInstanceOf[Exp[Traversable[_]]]), x.asInstanceOf[Exp[Traversable[_]]]))
+  }
+
+  def newStartListeners(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]) {
+    //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple parents.
+    val roots = findRoots2(parent, e) //Instead, fix startListener.
+    for ((Some(p), /*r*/ root: Exp[Traversable[t]]) <- roots) {
+      /*r match {
+        case root/*: EvtTransformer[t, _/*u*/, repr] with  Exp[Traversable[u]] */ =>*/
+      //Util.assertType[Exp[Traversable[_]]](root)
+      p match {
+        case parent: /*r*/ /*root.Sub with */MsgSeqSubscriber[Traversable[`t`], /*`root`.Pub */Exp[Traversable[`t`]]] => //TravMsgSeqSubscriber[t, repr] =>
+          /*r*/ root subscribe parent
+          parent notify (root/*.asInstanceOf[/*r*/ root.Pub]*/, root.interpret().toSeq.map(Include(_)))
+      }
+      //}
+      /*
+      //val root = r.asInstanceOf[MsgSeqSubscriber[T, Exp[T]] forSome { type T }]
+      val root = r.asInstanceOf[parent.Sub] //XXX XXX XXX!
+      val parent2 = parent.asInstanceOf[root.Sub] //XXX !
+      root subscribe parent
+      //parent subscribe root
+      parent2.notify(root, root.asInstanceOf[Exp[Traversable[_]]].interpret().toSeq.map(Include(_)))
+      //root.startListening()
+      //root.sendContentToParents()
+      */
+    }
+  }
+
+  def oldStartListeners(e: Exp[_]) {
+    e visitPreorderClosedChildren startListener
+  }
+
+  def startListeners(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]) {
+    newStartListeners(parent, e)
+    oldStartListeners(e)
+  }
+}
 /**
  * A class representing an intermediate or final result of an incremental query.
  */
@@ -21,67 +82,16 @@ class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Tr
   // I'll probably end up with forwarding most basic methods manually, and implementing the others through SetLike.
   // Or we'll just support incremental query update for all methods.
 {
+  import IncrementalResult._
   var set = new HashMap[T, Int]
   inner subscribe this
-  startListeners(inner)
+  startListeners(Some(this), inner)
   //XXX: I now believe this is a hack, in essence. I should not rely on interpret();
   // I should rather trigger updates starting from the root collection.
   // See FlatMapMaintainer.initListening() for the hack currently compensating this problem.
 
   // It is crucial to have this statement only here after construction
   notify(inner, inner.interpret().toSeq.map(Include(_)))
-
-  private[this] def startListener(e: Exp[_]) {
-    e match {
-      case m: Maintainer[_, _] =>
-        m.startListening() //i.e. m.base subscribe this; add notify(m.base, m.base.interpret().toSeq.map(Include(_))) or the like on the bottom.
-
-      case f: FuncExp[_, _] =>
-        f.interpretHook = Some(startListeners(_)) //Evil hack, I know. Have FlatMapMaintainer (but actually, all Maintainers) do that.
-      case _ =>
-    }
-  }
-
-  def findRoots(parent: Option[Exp[_]], e: Exp[_]): (Seq[(Option[Exp[_]], Exp[_])]) = {
-    if (e.roots.isEmpty)
-      Seq((parent, e))
-    else
-      e.roots flatMap (findRoots(Some(e), _))
-  }
-  def findRoots2(parent: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
-    if (e.roots.isEmpty)
-      Seq((parent, e))
-    else
-      e.roots flatMap ((x: Exp[_]) => findRoots2(Some(e.asInstanceOf[Exp[Traversable[_]]]), x.asInstanceOf[Exp[Traversable[_]]]))
-  }
-
-  def startListeners(e: Exp[_]) {
-    //XXX: what if a collection appears multiple times in the tree?
-    /*val roots = findRoots2(None, inner) //Instead, fix startListener.
-    for ((Some(p), /*r*/ root: Exp[Traversable[t]]) <- roots) {
-      /*r match {
-        case root/*: EvtTransformer[t, _/*u*/, repr] with  Exp[Traversable[u]] */ =>*/
-      //Util.assertType[Exp[Traversable[_]]](root)
-      p match {
-        case parent: /*r*/ /*root.Sub with */Subscriber[Seq[TravMessage[`t`]], `root`.Pub/*Exp[Traversable[_]]*/] => //TravMsgSeqSubscriber[t, repr] =>
-          /*r*/ root subscribe parent
-          parent notify (root.asInstanceOf[/*r*/ root.Pub], root.interpret().toSeq.map(Include(_)))
-      }
-      //}
-      /*
-      //val root = r.asInstanceOf[MsgSeqSubscriber[T, Exp[T]] forSome { type T }]
-      val root = r.asInstanceOf[parent.Sub] //XXX XXX XXX!
-      val parent2 = parent.asInstanceOf[root.Sub] //XXX !
-      root subscribe parent
-      //parent subscribe root
-      parent2.notify(root, root.asInstanceOf[Exp[Traversable[_]]].interpret().toSeq.map(Include(_)))
-      //root.startListening()
-      //root.sendContentToParents()
-      */
-    }*/
-
-    e visitPreorderClosedChildren startListener
-  }
 
   //From SetProxy
   override def self = set.keySet
