@@ -174,8 +174,8 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     testFlatMap(working = false)
   }
 
-  @Test def flatMap2V1 = testFlatMap2(0)
-  @Test def flatMap2V2 = testFlatMap2(1)
+  @Ignore @Test def flatMap2V1 = testFlatMap2(0)
+  @Ignore @Test def flatMap2V2 = testFlatMap2(1)
 
   def testFlatMap2(version: Int) {
     val v = new IncHashSet[Int]
