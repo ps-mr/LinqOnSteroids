@@ -45,7 +45,7 @@ object IncrementalResult {
 // XXX: SetProxy is not entirely
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
 // same type. OTOH, this methods allows accessing the underlying data at all.
-class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Traversable[T]]
+class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Traversable[T]]
   with TravMsgSeqSubscriber[T, Exp[Traversable[T]]]
   with Queryable[T, collection.SetProxy[T]]
   with collection.SetProxy[T] //I mean immutable.SetProxy[T], but that requires an underlying immutable Set.
@@ -54,8 +54,8 @@ class IncrementalResult[T](val inner: Exp[Traversable[T]]) extends NullaryExp[Tr
 {
   import IncrementalResult._
   var set = new HashMap[T, Int]
-  inner subscribe this
-  startListeners(this, inner)
+  base subscribe this
+  startListeners(this, base)
 
   //From SetProxy
   override def self = set.keySet
