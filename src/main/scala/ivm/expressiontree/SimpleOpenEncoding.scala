@@ -299,12 +299,16 @@ object SimpleOpenEncoding {
       //def typeFilter[S](implicit cS: ClassManifest[S]) = TypeFilter[T,C,D,S](t,FuncExp(identity))
       def groupByType(f: Exp[D[T]] => Exp[T]) =  GroupByType(this.t, FuncExp(f))
       //def groupByType =  GroupByType(this.t, FuncExp(identity))
-
+    }
+    class SimpleTypeFilterOps[T,C[_] <: Traversable[_]](val t: Exp[C[T]]) {
+      type ID[T] = T
+      def typeFilter[S](implicit cS: ClassManifest[S]) = TypeFilter[T,C,ID,S](t,FuncExp(identity))
     }
     class TypeMappingAppOps[C[_] <: Traversable[_], D[_]](val t: Exp[TypeMapping[C,D]]) {
       def get[S](implicit cS: ClassManifest[S]) = TypeMappingApp[C,D,S](t)
     }
     implicit def expToTypeFilterOps[T,C[_] <: Traversable[_],D[_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T,C,D](t)
+    implicit def expToSimpleTypeFilterOps[T,C[_] <: Traversable[_]](t: Exp[C[T]]) = new SimpleTypeFilterOps[T,C](t)
     implicit def expToTypeMappingAppOps[C[_] <: Traversable[_], D[_]](t: Exp[TypeMapping[C,D]]) = new TypeMappingAppOps[C,D](t)
 
   }
