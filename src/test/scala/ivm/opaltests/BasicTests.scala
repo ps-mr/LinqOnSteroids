@@ -124,6 +124,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      }
      println("begin native result")
      println(methods)
+     println(methods.size())
      println("end native result")
 
      // using reified query; INSTANCEOF is here shadowed.
@@ -141,11 +142,8 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      benchMark("los", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        m2Int = methods2.interpret()
      }
-     println("begin los result")
-     println(m2Int)
-     println("end los result")
-
      methods should equal (m2Int)
+
      val methods3 = queryData.flatMap( cf => cf.methods
                               .flatMap( m => m.attributes
                                .collect( x => x.ifInstanceOf[Code_attribute])
@@ -157,9 +155,6 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      benchMark("los2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        m3Int = methods3.interpret()
      }
-     println("begin los2 result")
-     println(m3Int)
-     println("end los2 result")
      methods should equal (m3Int)
 
      //This is twice as slow as the other los solutions, except methods3.
@@ -180,9 +175,6 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      benchMark("los3", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        m4Int = methods4.interpret()
      }
-     println("begin los3 result")
-     println(m4Int)
-     println("end los3 result")
      methods should equal (m4Int)
 
      //Best performance and quite clear code.
@@ -199,10 +191,6 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      benchMark("los4", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        m5Int = methods5.interpret()
      }
-     println("begin los4 result")
-     println(m5Int)
-     println("end los4 result")
-
      methods should equal (m5Int)
 
      val methods6 =  for (cf <- queryData;
@@ -213,9 +201,6 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      benchMark("los5", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        m6Int = methods6.interpret()
      }
-     println("begin los5 result")
-     println(m6Int)
-     println("end los5 result")
      methods should equal (m6Int)
 
   }
