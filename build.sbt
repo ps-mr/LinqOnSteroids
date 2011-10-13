@@ -10,12 +10,16 @@ libraryDependencies += "junit" % "junit" % "4.8.2" % "test->default"
 
 libraryDependencies += "org.scalatest" % "scalatest_2.9.0" % "1.6.1"
 
-libraryDependencies += "com.novocode" % "junit-interface" % "0.5" % "test->default"
-
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes")
 
 //scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes", "-optimise")
 
+//scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes", "-optimise", "-Yinline")
+
 //addCompilerPlugin("org.scala-tools.sxr" %% "sxr" % "0.2.8-SNAPSHOT")
 
 //scalacOptions <+= scalaSource in Compile map { "-P:sxr:base-directory:" + _.getAbsolutePath }
+
+//Would run again the same tests. Would be useful if we ever used pure JUnit
+//tests.
+//libraryDependencies += "com.novocode" % "junit-interface" % "0.5" % "test->default"
