@@ -204,5 +204,19 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      println("end los4 result")
 
      methods should equal (m5Int)
+
+     val methods6 =  for (cf <- queryData;
+                          m <- cf.methods;
+                          ca <- m.attributes.typeFilter[Code_attribute];
+                          io <- ca.code.typeFilter[INSTANCEOF]) yield m.name
+     var m6Int: Traversable[String] = null
+     benchMark("los5", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+       m6Int = methods6.interpret()
+     }
+     println("begin los5 result")
+     println(m6Int)
+     println("end los5 result")
+     methods should equal (m6Int)
+
   }
 }

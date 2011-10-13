@@ -256,7 +256,14 @@ object SimpleOpenEncoding {
       expToMapExp(t)
   }
 
-  object SimpleOpenEncoding extends MapOps {
+  trait TypeFilterOps {
+    class TypeFilterOps[T,C[_] <: Traversable[_]](val t: Exp[C[T]]) {
+      def typeFilter[S](implicit cS: ClassManifest[S]) = TypeFilter[T,C,S](t)
+    }
+    implicit def expToTypeFilterOps[T,C[_] <: Traversable[_]](t: Exp[C[T]]) = new TypeFilterOps[T,C](t)
+  }
+
+  object SimpleOpenEncoding extends MapOps  {
     import OpsExpressionTree._
     import NumOpsExps._
 

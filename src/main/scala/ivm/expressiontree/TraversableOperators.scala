@@ -47,3 +47,12 @@ case class Force[T, Repr <: TraversableLike[T, Repr] with Traversable[T],
   override def interpret = base.interpret.force
   override def copy(base: Exp[ViewColl]) = Force[T, Repr, ViewColl, That](base)
 }
+
+case class TypeFilter[T, C[_] <: Traversable[_], S /* is this too strict? <: T */](base: Exp[C[T]])
+                                 (implicit cS: ClassManifest[S])
+                                  extends UnaryOp[Exp[C[T]], C[S]](base) {
+  private[this] val classS = cS.erasure
+
+  override def interpret = base.interpret.filter(classS.isInstance(_)).asInstanceOf[C[S]]
+  override def copy(base: Exp[C[T]]) = TypeFilter[T,C,S](base)
+}
