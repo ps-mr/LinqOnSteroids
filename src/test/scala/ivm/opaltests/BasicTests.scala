@@ -123,10 +123,10 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
                        Code_attribute(_,_,code,_,_) <- m.attributes;
                        INSTANCEOF(_) <- code) yield m.name
      }
-     println("begin native result")
-     println(methods)
-     println(methods.size())
-     println("end native result")
+//     println("begin native result")
+//     println(methods)
+//     println(methods.size())
+//     println("end native result")
 
      // using reified query; INSTANCEOF is here shadowed.
      import BATLifting._
@@ -232,9 +232,6 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      benchMark("los6", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        m7Int = methods7.interpret()
      }
-     println("begin los6 result")
-     println(m7Int)
-     println("end los6 result")
      methods should equal (m7Int)
 
 

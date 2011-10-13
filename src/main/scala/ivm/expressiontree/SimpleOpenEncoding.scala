@@ -270,18 +270,14 @@ object SimpleOpenEncoding {
   }
 
   trait TypeFilterOps {
-    case class GroupByType[T, C[_] <: Traversable[_],D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends BinaryOpExp[C[D[T]],D[T]=>T, TypeMapping[C,D]](base,f) {
+    case class GroupByType[T, C[X] <: Traversable[X],D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends BinaryOpExp[C[D[T]],D[T]=>T, TypeMapping[C,D]](base,f) {
       override def interpret = {
         val x : C[D[T]] = base.interpret()
         val g: D[T] => T = f.interpret()
 
         // I do not understand why x: T does not typecheck
         new TypeMapping[C,D](x.groupBy
-          ( (x : Any /* T */) => ClassManifest.fromClass({
-              val q = g({ assert(x != null); x.asInstanceOf[D[T]]})
-              assert(q != null, "applying "+x+" to "+f+" yielded null")
-              q.getClass})
-          ).asInstanceOf[Map[ClassManifest[_], C[D[_]]]])
+          ( (x : D[T] /* T */) => ClassManifest.fromClass(g(x).getClass)).asInstanceOf[Map[ClassManifest[_], C[D[_]]]])
       }
       override def copy(base: Exp[C[D[T]]], f: Exp[D[T]=>T]) = GroupByType[T,C,D](base,f)
     }
@@ -294,7 +290,7 @@ object SimpleOpenEncoding {
       }
 
     }
-    class TypeFilterOps[T,C[_] <: Traversable[_],D[_]](val t: Exp[C[D[T]]]) {
+    class TypeFilterOps[T,C[X] <: Traversable[X],D[_]](val t: Exp[C[D[T]]]) {
       def typeFilterWith[S](f: Exp[D[T]]=>Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T,C,D,S](t,FuncExp(f))
       //def typeFilter[S](implicit cS: ClassManifest[S]) = TypeFilter[T,C,D,S](t,FuncExp(identity))
       def groupByType(f: Exp[D[T]] => Exp[T]) =  GroupByType(this.t, FuncExp(f))
@@ -307,9 +303,9 @@ object SimpleOpenEncoding {
     class TypeMappingAppOps[C[_] <: Traversable[_], D[_]](val t: Exp[TypeMapping[C,D]]) {
       def get[S](implicit cS: ClassManifest[S]) = TypeMappingApp[C,D,S](t)
     }
-    implicit def expToTypeFilterOps[T,C[_] <: Traversable[_],D[_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T,C,D](t)
-    implicit def expToSimpleTypeFilterOps[T,C[_] <: Traversable[_]](t: Exp[C[T]]) = new SimpleTypeFilterOps[T,C](t)
-    implicit def expToTypeMappingAppOps[C[_] <: Traversable[_], D[_]](t: Exp[TypeMapping[C,D]]) = new TypeMappingAppOps[C,D](t)
+    implicit def expToTypeFilterOps[T,C[X] <: Traversable[X],D[_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T,C,D](t)
+    implicit def expToSimpleTypeFilterOps[T,C[X] <: Traversable[X]](t: Exp[C[T]]) = new SimpleTypeFilterOps[T,C](t)
+    implicit def expToTypeMappingAppOps[C[X] <: Traversable[X], D[_]](t: Exp[TypeMapping[C,D]]) = new TypeMappingAppOps[C,D](t)
 
   }
 
