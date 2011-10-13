@@ -295,7 +295,7 @@ object SimpleOpenEncoding {
 
     }
     class TypeFilterOps[T,C[_] <: Traversable[_],D[_]](val t: Exp[C[D[T]]]) {
-      def typeFilter[S](f: Exp[D[T]]=>Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T,C,D,S](t,FuncExp(f))
+      def typeFilterWith[S](f: Exp[D[T]]=>Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T,C,D,S](t,FuncExp(f))
       //def typeFilter[S](implicit cS: ClassManifest[S]) = TypeFilter[T,C,D,S](t,FuncExp(identity))
       def groupByType(f: Exp[D[T]] => Exp[T]) =  GroupByType(this.t, FuncExp(f))
       //def groupByType =  GroupByType(this.t, FuncExp(identity))

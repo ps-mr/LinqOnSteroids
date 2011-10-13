@@ -197,11 +197,6 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
      type ID[T] = T
 
-     // Unfortunately automatic lifting before calling typeFilter does not work here.
-     // Presumably this is due to the last type parameter of expToTypeFilterOps which
-     // is hard to infer
-     // For the special case of the parameter ID it would be easy to generate a special version
-     // where automatic lifting will work, but it is unclear in the general case.
      val methods6 =  for (cf <- queryData;
                           m <- cf.methods;
                           ca <- m.attributes.typeFilter[Code_attribute];
@@ -219,11 +214,15 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
      val q = for (cf <- queryData;
                           m <- cf.methods;
-                          ca <- expToTypeFilterOps[Attribute,Seq,ID](m.attributes).typeFilter[Code_attribute](x => x);
+                          ca <- m.attributes.typeFilter[Code_attribute];
                           i <- ca.code if !(i is Const(null))      // the null check is not very nice...any ideas?
                           ) yield (m,i)
 
      type SND[T] = (Method_Info,T)
+
+     // Unfortunately automatic lifting before calling groupByType does not work here.
+     // Presumably this is due to the last type parameter of expToTypeFilterOps which
+     // is hard to infer
      val typeindex = expToTypeFilterOps[Instruction,Traversable,SND](q).groupByType( p => p._2)
      val evaluatedtypeindex = typeindex.interpret()
      //println(evaluatedtypeindex.map.keys)
