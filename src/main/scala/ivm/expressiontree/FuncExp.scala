@@ -21,7 +21,7 @@ abstract class FuncExpBase[-S, +T, +Type] extends CheckingExp[Type] with Equals 
   def arrowString: String
 
   private[ivm] override def children = Seq(body)
-  private[ivm] override def closedTermChildren: Seq[Exp[_]] = Seq()
+  //private[ivm] override def closedTermChildren: Seq[Exp[_]] = Seq()
   //Copied from UnaryOpTrait:
   override def nodeArity = 1
 

@@ -35,7 +35,6 @@ object IncrementalResult {
           // a direct child of root, so that child accepts notifications from it.
           // This constraint is not reflected in the type, thus we can write a version of findRoots
           // causing run-time type errors.
-          // XXX: we probably need to use EvtTransformer here to express type-safety.
       }
     }
   }
