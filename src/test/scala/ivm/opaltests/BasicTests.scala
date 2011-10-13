@@ -105,8 +105,8 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
 
 
-  val warmUpLoops = 0 //100
-  val sampleLoops = 1 //20
+  val warmUpLoops = 1 //100
+  val sampleLoops = 2 //20
 
    @Test def testOpal() {
      val testdata  = getTestData.toSet
@@ -115,6 +115,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      // computing all method names that make an instance-of check in their body
 
      // native Scala for-comprehension
+
      var methods: Set[String] = null
      benchMark("native", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        methods  = for (cf <- testdata;
@@ -132,6 +133,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
      val queryData = toExp(testdata)
      //The pattern-matches used are unsound.
+
      val methods2 = for (cf <- queryData;
                          m <- cf.methods;
                          Code_attribute(_,_,code,_,_) <- m.attributes;
@@ -193,6 +195,13 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      }
      methods should equal (m5Int)
 
+     type ID[T] = T
+
+     // Unfortunately automatic lifting before calling typeFilter does not work here.
+     // Presumably this is due to the last type parameter of expToTypeFilterOps which
+     // is hard to infer
+     // For the special case of the parameter ID it would be easy to generate a special version
+     // where automatic lifting will work, but it is unclear in the general case.
      val methods6 =  for (cf <- queryData;
                           m <- cf.methods;
                           ca <- m.attributes.typeFilter[Code_attribute];
@@ -202,6 +211,33 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
        m6Int = methods6.interpret()
      }
      methods should equal (m6Int)
+
+
+
+     // another version using type index but manual index application
+     // (need to code this into optimizer - not quite obvious how to do it)
+
+     val q = for (cf <- queryData;
+                          m <- cf.methods;
+                          ca <- expToTypeFilterOps[Attribute,Seq,ID](m.attributes).typeFilter[Code_attribute](x => x);
+                          i <- ca.code if !(i is Const(null))      // the null check is not very nice...any ideas?
+                          ) yield (m,i)
+
+     type SND[T] = (Method_Info,T)
+     val typeindex = expToTypeFilterOps[Instruction,Traversable,SND](q).groupByType( p => p._2)
+     val evaluatedtypeindex = typeindex.interpret()
+     //println(evaluatedtypeindex.map.keys)
+
+     val methods7 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
+     var m7Int: Traversable[String] = null
+     benchMark("los6", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+       m7Int = methods7.interpret()
+     }
+     println("begin los6 result")
+     println(m7Int)
+     println("end los6 result")
+     methods should equal (m7Int)
+
 
   }
 }

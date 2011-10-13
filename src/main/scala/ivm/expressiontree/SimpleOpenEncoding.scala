@@ -2,6 +2,7 @@ package ivm.expressiontree
 
 import collection.generic.{FilterMonadic, CanBuildFrom}
 import collection.{TraversableView, TraversableViewLike, IterableView, TraversableLike, mutable}
+import ivm.collections.TypeMapping
 
 /**
  * Here I show yet another encoding of expression trees, where methods
@@ -130,6 +131,18 @@ object SimpleOpenEncoding {
       override def copy(base: Exp[Repr], f: Exp[T => K]) = GroupBy(base, f)
     }
 
+    /*
+     * failed attempt to code GroupByType without type cast
+      case class GroupByType[T, C[_] <: Traversable[_], Repr <: TraversableLike[T,Repr]](base: Exp[C[T] with Repr]) extends UnaryOpExp[C[T] with Repr, TypeMapping[C]](base) {
+      override def interpret = {
+        val x : C[T] with Repr = base.interpret()
+        new TypeMapping[C](x.groupBy[ClassManifest[_]]( (_ : Any) => ClassManifest.Int).asInstanceOf[Map[ClassManifest[_], C[_]]])
+        //x.groupBy[ClassManifest[_]]( (x:C[T])  => ClassManifest.fromClass(x.getClass).asInstanceOf[ClassManifest[_]])
+      }
+      override def copy(base: Exp[C[T] with Repr]) = GroupByType[T,C,Repr](base)
+    }
+   */
+
     case class Join[T, Repr <: TraversableLike[T,Repr],S, TKey, TResult, That](colouter: Exp[Repr],
                                          colinner: Exp[Traversable[S]],
                                          outerKeySelector: FuncExp[T, TKey],
@@ -257,10 +270,47 @@ object SimpleOpenEncoding {
   }
 
   trait TypeFilterOps {
-    class TypeFilterOps[T,C[_] <: Traversable[_]](val t: Exp[C[T]]) {
-      def typeFilter[S](implicit cS: ClassManifest[S]) = TypeFilter[T,C,S](t)
+    case class GroupByType[T, C[_] <: Traversable[_],D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends BinaryOpExp[C[D[T]],D[T]=>T, TypeMapping[C,D]](base,f) {
+      override def interpret = {
+        val x : C[D[T]] = base.interpret()
+        val g: D[T] => T = f.interpret()
+
+        // I do not understand why x: T does not typecheck
+        new TypeMapping[C,D](x.groupBy
+          ( (x : Any /* T */) => ClassManifest.fromClass({
+              val q = g({ assert(x != null); x.asInstanceOf[D[T]]})
+              assert(q != null, "applying "+x+" to "+f+" yielded null")
+              q.getClass})
+          ).asInstanceOf[Map[ClassManifest[_], C[D[_]]]])
+      }
+      override def copy(base: Exp[C[D[T]]], f: Exp[D[T]=>T]) = GroupByType[T,C,D](base,f)
     }
-    implicit def expToTypeFilterOps[T,C[_] <: Traversable[_]](t: Exp[C[T]]) = new TypeFilterOps[T,C](t)
+
+    case class TypeMappingApp[C[_] <: Traversable[_],D[_],S](base: Exp[TypeMapping[C,D]])(implicit cS: ClassManifest[S])
+       extends UnaryOpExp[TypeMapping[C,D],C[D[S]]](base) {
+      override def copy(base: Exp[TypeMapping[C,D]]) = TypeMappingApp[C,D,S](base)
+      override def interpret = {
+        base.interpret.get[S]
+      }
+
+    }
+    class TypeFilterOps[T,C[_] <: Traversable[_],D[_]](val t: Exp[C[D[T]]]) {
+      def typeFilter[S](f: Exp[D[T]]=>Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T,C,D,S](t,FuncExp(f))
+      //def typeFilter[S](implicit cS: ClassManifest[S]) = TypeFilter[T,C,D,S](t,FuncExp(identity))
+      def groupByType(f: Exp[D[T]] => Exp[T]) =  GroupByType(this.t, FuncExp(f))
+      //def groupByType =  GroupByType(this.t, FuncExp(identity))
+    }
+    class SimpleTypeFilterOps[T,C[_] <: Traversable[_]](val t: Exp[C[T]]) {
+      type ID[T] = T
+      def typeFilter[S](implicit cS: ClassManifest[S]) = TypeFilter[T,C,ID,S](t,FuncExp(identity))
+    }
+    class TypeMappingAppOps[C[_] <: Traversable[_], D[_]](val t: Exp[TypeMapping[C,D]]) {
+      def get[S](implicit cS: ClassManifest[S]) = TypeMappingApp[C,D,S](t)
+    }
+    implicit def expToTypeFilterOps[T,C[_] <: Traversable[_],D[_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T,C,D](t)
+    implicit def expToSimpleTypeFilterOps[T,C[_] <: Traversable[_]](t: Exp[C[T]]) = new SimpleTypeFilterOps[T,C](t)
+    implicit def expToTypeMappingAppOps[C[_] <: Traversable[_], D[_]](t: Exp[TypeMapping[C,D]]) = new TypeMappingAppOps[C,D](t)
+
   }
 
   object SimpleOpenEncoding extends MapOps  {
