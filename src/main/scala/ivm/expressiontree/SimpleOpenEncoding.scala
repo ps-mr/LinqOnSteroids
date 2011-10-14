@@ -261,7 +261,8 @@ object SimpleOpenEncoding {
       expToMapExp(t)
   }
 
-  trait TypeFilterOps {
+  trait TypeFilterOps extends TraversableOps {
+    import OpsExpressionTree._
     case class GroupByType[T, C[X] <: Traversable[X],D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends BinaryOpExp[C[D[T]],D[T]=>T, TypeMapping[C,D]](base,f) {
       override def interpret = {
         val x : C[D[T]] = base.interpret()
@@ -306,7 +307,25 @@ object SimpleOpenEncoding {
     implicit def expToTypeFilterOps[T,C[X] <: Traversable[X],D[_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T,C,D](t)
     implicit def expToSimpleTypeFilterOps[T,C[X] <: Traversable[X]](t: Exp[C[T]]) = new SimpleTypeFilterOps[T,C](t)
     implicit def expToTypeMappingAppOps[C[X] <: Traversable[X], D[_]](t: Exp[TypeMapping[C,D]]) = new TypeMappingAppOps[C,D](t)
+    //Experiments
+    class GroupByTupleType[U, C[X] <: Traversable[X]](val t: Exp[C[U]]) {
+      def groupByTupleType[T, D[_]](typeEqual: U =:= D[T])(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t map (x => onExp(x)('foo, typeEqual)), FuncExp(f))
+    }
+    //XXX: Copied from Scalaz for testing - this should be _temporary_!
+    trait PartialApply1Of2[T[_, _], A] {
+      type Apply[B] = T[A, B]
 
+      type Flip[B] = T[B, A]
+    }
+
+    class GroupByTupleType1[T, U, C[X] <: Traversable[X]](val t: Exp[C[(T, U)]]) {
+      def groupByTupleType1 /*(f: Exp[(T, U)] => Exp[T]) */ =  GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, FuncExp(_._1))
+    }
+    class GroupByTupleType2[T, U, C[X] <: Traversable[X]](val t: Exp[C[(T, U)]]) {
+      def groupByTupleType2 /*(f: Exp[(T, U)] => Exp[U]) */ =  GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, FuncExp(_._2))
+    }
+    implicit def expToGroupByTupleType1[T, U, C[X] <: Traversable[X]](t: Exp[C[(T, U)]]) = new GroupByTupleType1(t)
+    implicit def expToGroupByTupleType2[T, U, C[X] <: Traversable[X]](t: Exp[C[(T, U)]]) = new GroupByTupleType2(t)
   }
 
   object SimpleOpenEncoding extends MapOps  {

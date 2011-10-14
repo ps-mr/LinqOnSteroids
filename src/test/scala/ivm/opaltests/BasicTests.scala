@@ -207,19 +207,6 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      }
      methods should equal (m6Int)
 
-
-     //XXX: Copied from Scalaz for testing.
-     trait PartialApply1Of2[T[_, _], A] {
-       type Apply[B] = T[A, B]
-
-       type Flip[B] = T[B, A]
-     }
-     type SND[T] = PartialApply1Of2[Tuple2, Method_Info]#Apply[T]
-
-     case class SNDExp[T](p: Exp[(Method_Info, T)]) extends UnaryOpExp[(Method_Info, T), SND[T]](p) {
-       override def copy(p: Exp[(Method_Info, T)]) = SNDExp(p)
-       override def interpret = p.interpret
-     }
      // another version using type index but manual index application
      // (need to code this into optimizer - not quite obvious how to do it)
 
@@ -227,15 +214,27 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
                           m <- cf.methods;
                           ca <- m.attributes.typeFilter[Code_attribute];
                           i <- ca.code if !(i is null)      // the null check is not very nice...any ideas?
-                          ) yield SNDExp(m, i)
+                          ) yield (m, i)
      //Util.assertType[Exp[Set[SND[Instruction]]]](q) //Does not compile because there is no lifting Set[T] => Exp[Set[T]]
-     Util.assertType[Exp[Traversable[SND[Instruction]]]](q) //This is just for documentation.
+     //Util.assertType[Exp[Traversable[SND[Instruction]]]](q) //This is just for documentation.
 
-     val typeindex = q.groupByType(_._2)
+     //val typeindex = q.groupByType(_._2)
+     val typeindex = q.groupByTupleType2
      val evaluatedtypeindex = typeindex.interpret()
      //println(evaluatedtypeindex.map.keys)
 
-     val methods7 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
+     //val methods7 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
+     val methods7 = expToTypeMappingAppOps[Traversable, PartialApply1Of2[Tuple2, Method_Info]#Apply](evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
+     //If I omit type parameters, not type inference, but typechecking here fails after figuring the right type, even if expToTypeMappingAppOps is explicitly called.
+     //As you see, it fails to unify D[_] with [B](de.tud.cs.st.bat.resolved.Method_Info, B).
+     /*
+[error] /Users/pgiarrusso/Documents/Research/Sorgenti/SAE-privGit/linqonsteroids/src/test/scala/ivm/opaltests/BasicTests.scala:228: no type parameters for method expToTypeMappingAppOps: (t: ivm.expressiontree.Exp[ivm.collections.TypeMapping[C,D]])ivm.expressiontree.Lifting.TypeMappingAppOps[C,D] exist so that it can be applied to arguments (ivm.expressiontree.Exp[ivm.collections.TypeMapping[Traversable,[B](de.tud.cs.st.bat.resolved.Method_Info, B)]])
+[error]  --- because ---
+[error] argument expression's type is not compatible with formal parameter type;
+[error]  found   : ivm.expressiontree.Exp[ivm.collections.TypeMapping[Traversable,[B](de.tud.cs.st.bat.resolved.Method_Info, B)]]
+[error]  required: ivm.expressiontree.Exp[ivm.collections.TypeMapping[?0C,?0D]]
+[error]      val methods7 = expToTypeMappingAppOps(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
+      */
      var m7Int: Traversable[String] = null
      benchMark("los6", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
        m7Int = methods7.interpret()
