@@ -3,7 +3,6 @@ package ivm.expressiontree
 object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.OpsExpressionTreeTrait with SimpleOpenEncoding.TypeFilterOps {
   // these functions are explicitly not implicit :)
   def liftCall[Res](id: Symbol, callfunc: () => Res) = new Call0(id,callfunc)
-  def liftCall[A0, Res](id: Symbol, callfunc: A0 => Res, arg0: Exp[A0]) = new Call1(id,callfunc, arg0)
   def liftCall[A0, A1, Res](id: Symbol, callfunc: (A0, A1) => Res, arg0: Exp[A0], arg1: Exp[A1]) =
      new Call2(id,callfunc, arg0, arg1)
   def liftCall[A0, A1, A2, Res](id: Symbol, callfunc: (A0, A1, A2) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2]) =
@@ -80,8 +79,6 @@ object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.OpsExpr
     implicit def liftCall5[A0, A1, A2, A3, A4, Res](id: Symbol, f: (A0, A1, A2, A3, A4) => Res):
       (Exp[A0], Exp[A1], Exp[A2], Exp[A3], Exp[A4]) => Exp[Res]= new Call5(id,f, _, _, _, _, _)
   }
-
-  def onExp[T, U](t: Exp[T])(id: Symbol, f: T => U): Exp[U] = liftCall(id, f, t)
 
   // maybe this is not the best place to define this function
   def filterByType[S: Manifest]: Exp[PartialFunction[Any,S]] = new PartialFuncExp( (x) => x.ifInstanceOf[S])

@@ -72,6 +72,9 @@ object SimpleOpenEncoding {
                                   // inlined: preventing code size explosion.
         case _ => App(f, x)
       }
+
+    def liftCall[A0, Res](id: Symbol, callfunc: A0 => Res, arg0: Exp[A0]) = new Call1(id,callfunc, arg0)
+    def onExp[T, U](t: Exp[T])(id: Symbol, f: T => U): Exp[U] = liftCall(id, f, t)
   }
   object OpsExpressionTree extends OpsExpressionTreeTrait
 
