@@ -208,20 +208,17 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      methods should equal (m6Int)
 
 
-     class SND[T](_1: Method_Info, _2: T)
-       extends Tuple2(_1, _2) //This clause reuses the lifted methods _1, _2: Exp[(Method_Info, T)] => ...
+     //XXX: Copied from Scalaz for testing.
+     trait PartialApply1Of2[T[_, _], A] {
+       type Apply[B] = T[A, B]
 
-     //Either one of SNDExp or SNDExp2 does the job. This is something we'll have to generate!
-     case class SNDExp2[T](p: Exp[(Method_Info, T)]) extends UnaryOpExp[(Method_Info, T), SND[T]](p) {
-       override def copy(p: Exp[(Method_Info, T)]) = SNDExp2(p)
-       override def interpret = {
-         val (p1, p2) = p.interpret
-         new SND(p1, p2)
-       }
+       type Flip[B] = T[B, A]
      }
-     case class SNDExp[T](p1: Exp[Method_Info], p2: Exp[T]) extends BinaryOpExp[Method_Info, T, SND[T]](p1, p2) {
-       override def copy(p1: Exp[Method_Info], p2: Exp[T]) = SNDExp(p1, p2)
-       override def interpret() = new SND(p1.interpret(), p2.interpret())
+     type SND[T] = PartialApply1Of2[Tuple2, Method_Info]#Apply[T]
+
+     case class SNDExp[T](p: Exp[(Method_Info, T)]) extends UnaryOpExp[(Method_Info, T), SND[T]](p) {
+       override def copy(p: Exp[(Method_Info, T)]) = SNDExp(p)
+       override def interpret = p.interpret
      }
      // another version using type index but manual index application
      // (need to code this into optimizer - not quite obvious how to do it)
