@@ -208,7 +208,21 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      methods should equal (m6Int)
 
 
+     class SND[T](_1: Method_Info, _2: T)
+       extends Tuple2(_1, _2) //This clause reuses the lifted methods _1, _2: Exp[(Method_Info, T)] => ...
 
+     //Either one of SNDExp or SNDExp2 does the job. This is something we'll have to generate!
+     case class SNDExp2[T](p: Exp[(Method_Info, T)]) extends UnaryOpExp[(Method_Info, T), SND[T]](p) {
+       override def copy(p: Exp[(Method_Info, T)]) = SNDExp2(p)
+       override def interpret = {
+         val (p1, p2) = p.interpret
+         new SND(p1, p2)
+       }
+     }
+     case class SNDExp[T](p1: Exp[Method_Info], p2: Exp[T]) extends BinaryOpExp[Method_Info, T, SND[T]](p1, p2) {
+       override def copy(p1: Exp[Method_Info], p2: Exp[T]) = SNDExp(p1, p2)
+       override def interpret() = new SND(p1.interpret(), p2.interpret())
+     }
      // another version using type index but manual index application
      // (need to code this into optimizer - not quite obvious how to do it)
 
@@ -216,15 +230,11 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
                           m <- cf.methods;
                           ca <- m.attributes.typeFilter[Code_attribute];
                           i <- ca.code if !(i is null)      // the null check is not very nice...any ideas?
-                          ) yield ((m,i): Exp[SND[Instruction]])
-     type SND[T] = (Method_Info,T)
-     //Util.assertType[Exp[Set[SND[Instruction]]]](q) //Why does not compile?
-     Util.assertType[Exp[Traversable[SND[Instruction]]]](q)
+                          ) yield SNDExp(m, i)
+     //Util.assertType[Exp[Set[SND[Instruction]]]](q) //Does not compile because there is no lifting Set[T] => Exp[Set[T]]
+     Util.assertType[Exp[Traversable[SND[Instruction]]]](q) //This is just for documentation.
 
-     // Unfortunately automatic lifting before calling groupByType does not work here.
-     // Presumably this is due to the last type parameter of expToTypeFilterOps which
-     // is hard to infer
-     val typeindex = /*expToTypeFilterOps*/ /*[Instruction,Traversable,SND] */ q.groupByType( p => p._2)
+     val typeindex = q.groupByType(_._2)
      val evaluatedtypeindex = typeindex.interpret()
      //println(evaluatedtypeindex.map.keys)
 
