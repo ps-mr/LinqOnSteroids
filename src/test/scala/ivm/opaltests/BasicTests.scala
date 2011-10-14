@@ -215,7 +215,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
      val q = for (cf <- queryData;
                           m <- cf.methods;
                           ca <- m.attributes.typeFilter[Code_attribute];
-                          i <- ca.code if !(i is Const(null))      // the null check is not very nice...any ideas?
+                          i <- ca.code if !(i is null)      // the null check is not very nice...any ideas?
                           ) yield (m,i)
 
      type SND[T] = (Method_Info,T)
