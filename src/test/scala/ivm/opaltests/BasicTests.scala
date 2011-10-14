@@ -217,13 +217,14 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
                           ca <- m.attributes.typeFilter[Code_attribute];
                           i <- ca.code if !(i is null)      // the null check is not very nice...any ideas?
                           ) yield (m,i)
-
      type SND[T] = (Method_Info,T)
+     //Util.assertType[Exp[Set[SND[Instruction]]]](q) //Why does not compile?
+     Util.assertType[Exp[Traversable[SND[Instruction]]]](q)
 
      // Unfortunately automatic lifting before calling groupByType does not work here.
      // Presumably this is due to the last type parameter of expToTypeFilterOps which
      // is hard to infer
-     val typeindex = expToTypeFilterOps[Instruction,Traversable,SND](q).groupByType( p => p._2)
+     val typeindex = /*expToTypeFilterOps*/ /*[Instruction,Traversable,SND] */ (q: Exp[Traversable[SND[Instruction]]]).groupByType( p => p._2)
      val evaluatedtypeindex = typeindex.interpret()
      //println(evaluatedtypeindex.map.keys)
 
