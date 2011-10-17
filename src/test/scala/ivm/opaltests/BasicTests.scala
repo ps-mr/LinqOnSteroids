@@ -108,138 +108,138 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
   val warmUpLoops = 1 //100
   val sampleLoops = 2 //20
 
-   @Test def testOpal() {
-     val testdata  = getTestData.toSet
+  @Test def testOpal() {
+    val testdata  = getTestData.toSet
 
 
-     // computing all method names that make an instance-of check in their body
+    // computing all method names that make an instance-of check in their body
 
-     // native Scala for-comprehension
+    // native Scala for-comprehension
 
-     var methods: Set[String] = null
-     benchMark("native", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-       methods  = for (cf <- testdata;
-                       m <- cf.methods;
-                       Code_attribute(_,_,code,_,_) <- m.attributes;
-                       INSTANCEOF(_) <- code) yield m.name
-     }
-//     println("begin native result")
-//     println(methods)
-//     println(methods.size())
-//     println("end native result")
+    var methods: Set[String] = null
+    benchMark("native", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      methods  = for (cf <- testdata;
+                      m <- cf.methods;
+                      Code_attribute(_,_,code,_,_) <- m.attributes;
+                      INSTANCEOF(_) <- code) yield m.name
+    }
+    //println("begin native result")
+    //println(methods)
+    //println(methods.size())
+    //println("end native result")
 
-     // using reified query; INSTANCEOF is here shadowed.
-     import BATLifting._
+    // using reified query; INSTANCEOF is here shadowed.
+    import BATLifting._
 
-     val queryData = toExp(testdata)
-     //The pattern-matches used are unsound.
+    val queryData = toExp(testdata)
+    //The pattern-matches used are unsound.
 
-     val methods2 = for (cf <- queryData;
+    val methods2 = for (cf <- queryData;
+                        m <- cf.methods;
+                        Code_attribute(_,_,code,_,_) <- m.attributes;
+                        INSTANCEOF(_) <- code) yield m.name
+
+    //println(methods2) //goes OOM!
+    var m2Int: Traversable[String] = null
+    benchMark("los", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      m2Int = methods2.interpret()
+    }
+    methods should equal (m2Int)
+
+    val methods3 = queryData.flatMap( cf => cf.methods
+      .flatMap( m => m.attributes
+      .collect( x => x.ifInstanceOf[Code_attribute])
+      .flatMap( c => c.code)
+      .collect( i => i.ifInstanceOf[INSTANCEOF])
+      .map( _ => m.name)))
+
+    var m3Int: Traversable[String] = null
+    benchMark("los2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      m3Int = methods3.interpret()
+    }
+    methods should equal (m3Int)
+
+    //This is twice as slow as the other los solutions, except methods3.
+    //My guess is that this is because collect applies the given function twice.
+    val methods4 = queryData.flatMap( cf => cf.methods
+      .flatMap( m => m.attributes
+      .collect(
+      a => onExp(a)('instanceOf$Code_attribute,
+        x =>
+          if (x.isInstanceOf[Code_attribute])
+            Some(x.asInstanceOf[Code_attribute])
+          else None))
+      .flatMap( c => c.code)
+      .filter( a => onExp(a)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF]))
+      .map( _ => m.name)))
+
+    var m4Int: Traversable[String] = null
+    benchMark("los3", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      m4Int = methods4.interpret()
+    }
+    methods should equal (m4Int)
+
+    //Best performance and quite clear code.
+    val methods5 =
+      for {
+        cf <- queryData
+        m <- cf.methods
+        a <- m.attributes
+        if onExp(a)('instanceOf$Code_attribute, _.isInstanceOf[Code_attribute])
+        i <- a.asInstanceOf[Exp[Code_attribute]].code //This cast works perfectly
+        if onExp(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
+      } yield m.name
+    var m5Int: Traversable[String] = null
+    benchMark("los4", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      m5Int = methods5.interpret()
+    }
+    methods should equal (m5Int)
+
+    type ID[T] = T
+
+    val methods6 =  for (cf <- queryData;
                          m <- cf.methods;
-                         Code_attribute(_,_,code,_,_) <- m.attributes;
-                         INSTANCEOF(_) <- code) yield m.name
+                         ca <- m.attributes.typeFilter[Code_attribute];
+                         io <- ca.code.typeFilter[INSTANCEOF]) yield m.name
+    var m6Int: Traversable[String] = null
+    benchMark("los5", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      m6Int = methods6.interpret()
+    }
+    methods should equal (m6Int)
 
-     //println(methods2) //goes OOM!
-     var m2Int: Traversable[String] = null
-     benchMark("los", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-       m2Int = methods2.interpret()
-     }
-     methods should equal (m2Int)
+    // another version using type index but manual index application
+    // (need to code this into optimizer - not quite obvious how to do it)
 
-     val methods3 = queryData.flatMap( cf => cf.methods
-                              .flatMap( m => m.attributes
-                               .collect( x => x.ifInstanceOf[Code_attribute])
-                               .flatMap( c => c.code)
-                               .collect( i => i.ifInstanceOf[INSTANCEOF])
-                               .map( _ => m.name)))
+    val q = for (cf <- queryData;
+                 m <- cf.methods;
+                 ca <- m.attributes.typeFilter[Code_attribute];
+                 i <- ca.code if !(i is null)      // the null check is not very nice...any ideas?
+    ) yield (m, i)
+    //Util.assertType[Exp[Set[SND[Instruction]]]](q) //Does not compile because there is no lifting Set[T] => Exp[Set[T]]
+    //Util.assertType[Exp[Traversable[SND[Instruction]]]](q) //This is just for documentation.
 
-     var m3Int: Traversable[String] = null
-     benchMark("los2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-       m3Int = methods3.interpret()
-     }
-     methods should equal (m3Int)
+    //val typeindex = q.groupByType(_._2)
+    val typeindex = q.groupByTupleType2
+    val evaluatedtypeindex = typeindex.interpret()
+    //println(evaluatedtypeindex.map.keys)
 
-     //This is twice as slow as the other los solutions, except methods3.
-     //My guess is that this is because collect applies the given function twice.
-     val methods4 = queryData.flatMap( cf => cf.methods
-                              .flatMap( m => m.attributes
-                               .collect(
-                                   a => onExp(a)('instanceOf$Code_attribute,
-                                                 x =>
-                                                   if (x.isInstanceOf[Code_attribute])
-                                                     Some(x.asInstanceOf[Code_attribute])
-                                                   else None))
-                               .flatMap( c => c.code)
-                               .filter( a => onExp(a)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF]))
-                               .map( _ => m.name)))
-
-     var m4Int: Traversable[String] = null
-     benchMark("los3", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-       m4Int = methods4.interpret()
-     }
-     methods should equal (m4Int)
-
-     //Best performance and quite clear code.
-     val methods5 =
-       for {
-         cf <- queryData
-         m <- cf.methods
-         a <- m.attributes
-         if onExp(a)('instanceOf$Code_attribute, _.isInstanceOf[Code_attribute])
-         i <- a.asInstanceOf[Exp[Code_attribute]].code //This cast works perfectly
-         if onExp(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
-       } yield m.name
-     var m5Int: Traversable[String] = null
-     benchMark("los4", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-       m5Int = methods5.interpret()
-     }
-     methods should equal (m5Int)
-
-     type ID[T] = T
-
-     val methods6 =  for (cf <- queryData;
-                          m <- cf.methods;
-                          ca <- m.attributes.typeFilter[Code_attribute];
-                          io <- ca.code.typeFilter[INSTANCEOF]) yield m.name
-     var m6Int: Traversable[String] = null
-     benchMark("los5", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-       m6Int = methods6.interpret()
-     }
-     methods should equal (m6Int)
-
-     // another version using type index but manual index application
-     // (need to code this into optimizer - not quite obvious how to do it)
-
-     val q = for (cf <- queryData;
-                          m <- cf.methods;
-                          ca <- m.attributes.typeFilter[Code_attribute];
-                          i <- ca.code if !(i is null)      // the null check is not very nice...any ideas?
-                          ) yield (m, i)
-     //Util.assertType[Exp[Set[SND[Instruction]]]](q) //Does not compile because there is no lifting Set[T] => Exp[Set[T]]
-     //Util.assertType[Exp[Traversable[SND[Instruction]]]](q) //This is just for documentation.
-
-     //val typeindex = q.groupByType(_._2)
-     val typeindex = q.groupByTupleType2
-     val evaluatedtypeindex = typeindex.interpret()
-     //println(evaluatedtypeindex.map.keys)
-
-     //val methods7 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
-     val methods7 = expToTypeMappingAppOps[Traversable, PartialApply1Of2[Tuple2, Method_Info]#Apply](evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
-     //If I omit type parameters, not type inference, but typechecking here fails after figuring the right type, even if expToTypeMappingAppOps is explicitly called.
-     //As you see, it fails to unify D[_] with [B](de.tud.cs.st.bat.resolved.Method_Info, B).
-     /*
+    //val methods7 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
+    val methods7 = expToTypeMappingAppOps[Traversable, PartialApply1Of2[Tuple2, Method_Info]#Apply](evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
+    //If I omit type parameters, not type inference, but typechecking here fails after figuring the right type, even if expToTypeMappingAppOps is explicitly called.
+    //As you see, it fails to unify D[_] with [B](de.tud.cs.st.bat.resolved.Method_Info, B).
+    /*
 [error] /Users/pgiarrusso/Documents/Research/Sorgenti/SAE-privGit/linqonsteroids/src/test/scala/ivm/opaltests/BasicTests.scala:228: no type parameters for method expToTypeMappingAppOps: (t: ivm.expressiontree.Exp[ivm.collections.TypeMapping[C,D]])ivm.expressiontree.Lifting.TypeMappingAppOps[C,D] exist so that it can be applied to arguments (ivm.expressiontree.Exp[ivm.collections.TypeMapping[Traversable,[B](de.tud.cs.st.bat.resolved.Method_Info, B)]])
 [error]  --- because ---
 [error] argument expression's type is not compatible with formal parameter type;
 [error]  found   : ivm.expressiontree.Exp[ivm.collections.TypeMapping[Traversable,[B](de.tud.cs.st.bat.resolved.Method_Info, B)]]
 [error]  required: ivm.expressiontree.Exp[ivm.collections.TypeMapping[?0C,?0D]]
 [error]      val methods7 = expToTypeMappingAppOps(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
-      */
-     var m7Int: Traversable[String] = null
-     benchMark("los6", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-       m7Int = methods7.interpret()
-     }
-     methods should equal (m7Int)
+    */
+    var m7Int: Traversable[String] = null
+    benchMark("los6", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      m7Int = methods7.interpret()
+    }
+    methods should equal (m7Int)
 
 
   }
