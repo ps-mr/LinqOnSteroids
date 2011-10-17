@@ -23,10 +23,8 @@ import java.io.{InputStream, File}
 import resolved.TypeAliases.ExceptionTable
 import performancetests.Benchmarking._
 
-  /* (Very incomplete) boilerplate code for making use of BAT types convenient in queries.
-     This code should be generated
-    */
-
+/* (Very incomplete) boilerplate code for making use of BAT types convenient in queries.
+ * This code should be generated */
 object BATLifting {
   implicit def expToClassFileOps(t: Exp[ClassFile]) = new ClassFileOps(t)
   class ClassFileOps(t: Exp[ClassFile]) {
@@ -42,6 +40,12 @@ object BATLifting {
   class Code_attributeOps(t: Exp[Code_attribute]) {
     def code: Exp[Seq[Instruction]] = onExp(t)('code, _.code)
   }
+}
+
+/*
+ * More experimental boilerplate code - this needs to evolve into something that we can generate.
+ */
+object BATLiftingExperimental {
   object Code_attribute {
     // We need to specify Exp[Seq[Instruction]] instead of Exp[Array[Instruction]] because one cannot convert
     // Exp[Array[T]] to Exp[Seq[T]], so we must request here an implicit conversion (LowPriorityImplicits.wrapRefArray)
@@ -56,9 +60,7 @@ object BATLifting {
           case ca: Code_attribute =>
             assert(ca != null) //This is satisfied because of the pattern match.
             Some((ca.maxStack, ca.maxLocals,
-              ca.code,
-              // We can call toExp unconditionally in the generated version of this code.
-              ca.exceptionTable, ca.attributes))
+              ca.code, ca.exceptionTable, ca.attributes))
           case _ =>
             None
         }
@@ -108,10 +110,41 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
   val warmUpLoops = 1 //100
   val sampleLoops = 2 //20
 
+  val testdata  = getTestData.toSet
+
+  //A simple query, which does not use pattern matching.
+  @Test def basicQuery() {
+    var methodsNative: Set[Attribute] = null
+    // native Scala for-comprehension
+    benchMark("native simple", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      methodsNative =
+        for (cf <- testdata;
+             m <- cf.methods;
+             attrib <- m.attributes)
+        yield attrib
+    }
+
+    // using reified query
+    import BATLifting._
+    val queryData = toExp(testdata)
+
+    val methodsQuery =
+      for (cf <- queryData;
+           m <- cf.methods;
+           attrib <- m.attributes)
+      yield attrib
+
+    var methods: Traversable[Attribute] = null
+    benchMark("los simple", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      methods = methodsQuery.interpret()
+    }
+
+    //Result on my system (PG - Core 2 @2.66 GHz):
+    //>>> Name = native simple, time = 55.415 +- 1.225
+    //>>> Name = los simple, time = 59.698 +- 2.857
+  }
+
   @Test def testOpal() {
-    val testdata  = getTestData.toSet
-
-
     // computing all method names that make an instance-of check in their body
 
     // native Scala for-comprehension
@@ -129,6 +162,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     // using reified query; INSTANCEOF is here shadowed.
     import BATLifting._
+    import BATLiftingExperimental._
 
     val queryData = toExp(testdata)
     //The pattern-matches used are unsound.
