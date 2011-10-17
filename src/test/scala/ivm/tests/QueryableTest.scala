@@ -115,9 +115,9 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
 
     def out() {
       show("vIncUpd", vIncUpd)
-      show("vQueryablePOIRPlusOne", vQueryablePOIRPlusOne) //Works
       show("vIncUpdPlus2", vIncUpdPlus2)
-      show("vQueryablePlusOnePlusOne", vQueryablePlusOnePlusOne) //Doesn't work
+      show("vQueryablePlusOnePlusOne", vQueryablePlusOnePlusOne)
+      show("vQueryablePOIRPlusOne", vQueryablePOIRPlusOne)
     }
     out()
     v ++= Seq(4, 5, 6)
