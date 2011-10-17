@@ -106,13 +106,18 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     val vQueryable: Exp[Traversable[Int]] = v.asQueryable
     assert(vQueryable == v)
     //val vQueryablePlusOne2: HashSet[Int] = vQueryable.map((i: Int) => i + 1) //gives error
-    val vQueryablePlusOne: Exp[Traversable[Int]] = vQueryable.map(_ + 1)
+    val vQueryablePlusOne = vQueryable.map(_ + 1)
+    val vQueryablePlusOneIncRes = new IncrementalResult(vQueryablePlusOne)
+    val vQueryablePlusOnePlusOne = new IncrementalResult(vQueryablePlusOne.map(_ + 1))
+    val vQueryablePOIRPlusOne = new IncrementalResult(vQueryablePlusOneIncRes.map(_ + 1))
     //val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 * i) //XXX can't use *, not defined, nor asQueryable.
     val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 + i)
 
     def out() {
       show("vIncUpd", vIncUpd)
+      show("vQueryablePOIRPlusOne", vQueryablePOIRPlusOne) //Works
       show("vIncUpdPlus2", vIncUpdPlus2)
+      show("vQueryablePlusOnePlusOne", vQueryablePlusOnePlusOne) //Doesn't work
     }
     out()
     v ++= Seq(4, 5, 6)
