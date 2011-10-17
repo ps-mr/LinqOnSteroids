@@ -56,7 +56,7 @@ object BATLifting {
           case ca: Code_attribute =>
             assert(ca != null) //This is satisfied because of the pattern match.
             Some((ca.maxStack, ca.maxLocals,
-              ca.code: Seq[Instruction], //This is needed to allow predefined implicit conversions to trigger.
+              ca.code,
               // We can call toExp unconditionally in the generated version of this code.
               ca.exceptionTable, ca.attributes))
           case _ =>
