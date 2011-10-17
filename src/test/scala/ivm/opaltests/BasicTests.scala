@@ -213,7 +213,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     val q = for (cf <- queryData;
                  m <- cf.methods;
                  ca <- m.attributes.typeFilter[Code_attribute];
-                 i <- ca.code if !(i is Const(null))      // the null check is not very nice...any ideas?
+                 i <- ca.code if !(i is null)      // the null check is not very nice...any ideas?
     ) yield (m, i)
     //Util.assertType[Exp[Set[SND[Instruction]]]](q) //Does not compile because there is no lifting Set[T] => Exp[Set[T]]
     //Util.assertType[Exp[Traversable[SND[Instruction]]]](q) //This is just for documentation.

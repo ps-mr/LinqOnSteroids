@@ -58,6 +58,7 @@ trait Exp[+T] extends MsgSeqPublisher[T] {
   //Methods for the clients of the library, rather than for the implementations.
   //They simply produce the appropriate expression tree nodes.
   def is[S >: T](that: Exp[S]): Exp[Boolean] = Eq(this, that)
+  def is(that: Null): Exp[Boolean] = Eq(this, Const(null))
   //def is(that: Exp[T]): Exp[Boolean] = Eq(this, that)
 
   def ifInstanceOf[S:ClassManifest] : Exp[Option[S]] = IfInstanceOf(this)
