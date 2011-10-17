@@ -123,10 +123,9 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
                       Code_attribute(_,_,code,_,_) <- m.attributes;
                       INSTANCEOF(_) <- code) yield m.name
     }
-    //println("begin native result")
-    //println(methods)
-    //println(methods.size())
-    //println("end native result")
+    //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
+    //Not very pretty, but better than nothing
+    methods.size should be (84)
 
     // using reified query; INSTANCEOF is here shadowed.
     import BATLifting._
