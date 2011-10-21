@@ -124,12 +124,13 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
   }
 }
 
-trait Maintainer[+T, U] extends MsgSeqSubscriber[U, Exp[U]] with Exp[T] {
+trait Maintainer[+T, U <: Traversable[_]] extends MsgSeqSubscriber[U, Exp[U]] with Exp[T] {
   val base: Exp[U]
   type RootType = U
   private[ivm] override def roots = Seq(base)
 
-  def startListening() {
+  def startListening() = startListeningOn(base)
+  def startListeningOn(root: Exp[U]) {
     if (Debug.verbose) {
       //println("Maintainer(col = %s) startListening" format col)
       val asString =
@@ -138,9 +139,14 @@ trait Maintainer[+T, U] extends MsgSeqSubscriber[U, Exp[U]] with Exp[T] {
         } catch {
           case _ => ""
         }
-      println("%s startListening" format asString)
+      println("%s startListeningOn %s" format (asString, root))
     }
-    base subscribe this
+    root subscribe this
+  }
+  //This is the method we should be calling from IncrementalResult.startListeners, defined on Exp and implemented only here.
+  def giveRoot(root: Exp[U]) {
+    startListeningOn(root)
+    //notify (root, root.interpret().toSeq.map(Include(_)))
   }
 }
 
