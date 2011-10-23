@@ -30,8 +30,11 @@ object IncrementalResult {
     val roots = findRoots(Some(initialChild), initialRoot) //Instead, fix startListener.
     for ((Some(c), root: Exp[Traversable[t]]) <- roots) {
       c match {
-        case child: MsgSeqSubscriber[Traversable[`t`], Exp[Traversable[`t`]]] => //XXX: broken, but no counterexamples yet.
-          root subscribe child
+        //Have a suitable method on Exp, implemented by e.g. Maintainer.  
+        //case child: MsgSeqSubscriber[Traversable[`t`], Exp[Traversable[`t`]]] => //XXX: broken, but no counterexamples yet.
+        case child: Maintainer[_, Traversable[`t`]] => //XXX: bounds on Maintainer
+          child startListeningOn root
+          //root subscribe child
           child notify (root, root.interpret().toSeq.map(Include(_))) //This line is correct, but implies that child is
           // a direct child of root, so that child accepts notifications from it.
           // This constraint is not reflected in the type, thus we can write a version of findRoots
