@@ -10,7 +10,7 @@ import collection.mutable.HashMap
 
 object IncrementalResult {
   // Given e.g. coll2 = MapOp(coll@IncHashSet(_), FuncExp(...)), coll2 is the child and coll is the parent (here, the root).
-  //XXX: this code could be typechecked using a typelist like HList.
+  //XXX: this code could maybe be typechecked using a typelist like HList.
   def findRoots(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
     if (e.roots.isEmpty)
       Seq((child, e))
@@ -22,9 +22,17 @@ object IncrementalResult {
       //XXX: The initial Seq() part is needed, as it makes sense now and as shown through test-cases. Rewrite the recursion structure please with sth. like Exp.visitPreorder
       Seq((child, e)) ++ (e.roots flatMap ((x: Exp[_]) => findRoots(newParent, x.asInstanceOf[Exp[Traversable[_]]])))
     }
-
   }
 
+  /*
+   * Here we have two different tasks to take care of. Each child must start listening onto its parent; moreover,
+   * for each root, we need to inform its children of addition of their elements
+   * Using findRoots for both is a bug. However, for strange reasons, the code currently works by performing both
+   * operations on all child-parent couples. Probably this is because of the iteration order: roots will be returned at the end by findRoots,
+   * which means that most notify calls will send no notifications. Additionally, even when sending extra notifications,
+   * the containing IncrementalResult will contain the right elements: only their presence count will be too high, so we
+   * need to remove the initial elements to show the problem. Add a test for this.
+   */
   def startListeners(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
     val roots = findRoots(Some(initialChild), initialRoot) //Instead, fix startListener.
