@@ -79,7 +79,7 @@ trait ObservableSet[T] extends Set[T] with TravMsgSeqPublisher[T] {
 
   abstract override def --= (xs: TraversableOnce[T]) = {
     //We need to prefilter elements, to avoid Remove'ing elements which are
-    //already there.
+    //already not there.
     val newEls = (for (x <- xs; if this contains x) yield x).toSeq
     publish(newEls map (Remove(_)))
     assert(silenceNotifications == false)
