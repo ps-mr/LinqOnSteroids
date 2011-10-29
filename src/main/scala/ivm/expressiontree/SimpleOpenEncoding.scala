@@ -122,12 +122,6 @@ object SimpleOpenEncoding {
         new FlatMapMaintainerExp[T, Repr, U, That](this.t, FuncExp(f))
     }
 
-    case class Union[T, Repr <: TraversableLike[T,Repr], U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
-                                       (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOpExp[Repr, Traversable[U], That](base, that) {
-      override def interpret = base.interpret ++ that.interpret
-      override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union[T,Repr,U,That](base, that)
-    }
-
     case class GroupBy[T, Repr <: TraversableLike[T,Repr],K](base: Exp[Repr], f: Exp[T => K]) extends BinaryOpExp[Repr,
       T => K, Map[K, Repr]](base, f) {
       override def interpret = base.interpret groupBy f.interpret()

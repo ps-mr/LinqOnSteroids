@@ -48,6 +48,12 @@ case class Force[T, Repr <: TraversableLike[T, Repr] with Traversable[T],
   override def copy(base: Exp[ViewColl]) = Force[T, Repr, ViewColl, That](base)
 }
 
+case class Union[T, Repr <: TraversableLike[T,Repr], U >: T, That](base: Exp[Repr], that: Exp[Traversable[U]])
+                                   (implicit c: CanBuildFrom[Repr, U, That]) extends BinaryOpExp[Repr, Traversable[U], That](base, that) {
+  override def interpret = base.interpret ++ that.interpret
+  override def copy(base: Exp[Repr], that: Exp[Traversable[U]]) = Union[T, Repr, U, That](base, that)
+}
+
 case class TypeFilter[T, C[_] <: Traversable[_],D[_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T])
                                  (implicit cS: ClassManifest[S])
                                   extends BinaryOp[Exp[C[D[T]]], Exp[D[T]=>T], C[D[S]]](base,f) {
