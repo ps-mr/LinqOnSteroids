@@ -30,7 +30,7 @@ import collection.TraversableLike
 // Let us first implement incremental view maintenance for sets.
 
 //Trait implementing incremental view maintenance for MapOp operations
-trait MapMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
+trait MapOpMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   def fInt: T => U
   override def transformedMessages(evt: TravMessage[T]) = {
     evt match {
@@ -148,7 +148,7 @@ trait Maintainer[+T, U <: Traversable[_]] extends MsgSeqSubscriber[U, Exp[U]] wi
 class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, U])
                          (implicit override protected val c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
-    with MapMaintainer[T, U, Exp[Repr]] with Maintainer[That, Repr] {
+    with MapOpMaintainer[T, U, Exp[Repr]] with Maintainer[That, Repr] {
   override def fInt = f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, U]) = new MapOpMaintainerExp[T, Repr, U, That](base, f)
 }
