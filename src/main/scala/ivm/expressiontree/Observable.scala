@@ -81,7 +81,9 @@ trait ObservableSet[T] extends Set[T] with TravMsgSeqPublisher[T] {
     //We need to prefilter elements, to avoid Remove'ing elements which are
     //already not there.
     val newEls = (for (x <- xs; if this contains x) yield x).toSeq
-    if (true)//(newEls.size > size/2) //True is there for testing only.
+    // To understand the heuristic, imagine maintaining MapOp(this, f) in response to this --= xs.
+    // To minimize the invocations of f needed for IVM, this is the correct strategy.
+    if (newEls.size > size/2)
       doRemoveAndRebuild(newEls) //We could use xs directly here, and save computing newEls - but we need that for the
       // heuristic
     else
