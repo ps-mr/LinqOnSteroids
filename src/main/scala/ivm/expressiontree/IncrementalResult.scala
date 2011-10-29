@@ -35,13 +35,11 @@ object IncrementalResult {
    * need to remove the initial elements to show the problem. Add a test for this.
    */
   def startListeners(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
-    //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
-    val childrenParentCouples = findRoots(Some(initialChild), initialRoot, onlyRoots = false) //Instead, fix startListener.
-    for ((Some(c), _) <- childrenParentCouples)
-      c activateIVM()
+   initialRoot.visitPreorderRoots(_ activateIVM())
   }
 
   def propagateRootsElements(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
+    //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
     val roots = findRoots(Some(initialChild), initialRoot, onlyRoots = true)
     for ((Some(c), root: Exp[Traversable[t]]) <- roots) {
       c match {
