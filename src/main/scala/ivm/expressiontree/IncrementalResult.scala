@@ -11,16 +11,16 @@ import collection.mutable.HashMap
 private[expressiontree] object IncrementalResult {
   // Given e.g. coll2 = MapOp(coll@IncHashSet(_), FuncExp(...)), coll2 is the child and coll is the parent (here, the root).
   //XXX: this code could maybe be typechecked using a typelist like HList.
-  def findChildrenOfRoots(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[Exp[Traversable[_]]] = {
+  def findChildrenOfRoots(child: Option[Exp[_]], e: Exp[_]): Seq[Exp[_]] = {
     (if (e.isRoot)
       child.toSeq
     else
       Seq.empty) ++ {
       val newParent =
         if (e.isInstanceOf[MsgSeqSubscriber[_, _]])
-          Some(e.asInstanceOf[Exp[Traversable[_]]])
+          Some(e)
         else None //child //returning child causes run-time type errors (ClassCastExceptions).
-      e.roots flatMap ((x: Exp[_]) => findChildrenOfRoots(newParent, x.asInstanceOf[Exp[Traversable[_]]]))
+      e.roots flatMap ((x: Exp[_]) => findChildrenOfRoots(newParent, x))
     }
   }
 
@@ -37,7 +37,7 @@ private[expressiontree] object IncrementalResult {
     initialRoot.visitPreorderRoots(_ activateIVM())
   }
 
-  def propagateRootsElements(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
+  def propagateRootsElements(initialChild: Exp[_], initialRoot: Exp[_]) {
     for (child <- findChildrenOfRoots(Some(initialChild), initialRoot))
       child pullAndPropagateContent()
   }
