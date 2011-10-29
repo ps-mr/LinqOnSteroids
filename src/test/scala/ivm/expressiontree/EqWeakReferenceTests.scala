@@ -10,17 +10,22 @@ import ref.WeakReference
 */
 
 class EqWeakReferenceTests extends JUnitSuite with ShouldMatchersForJUnit {
+  def compare[T >: Null <: AnyRef](l: EqWeakReference[T], r: EqWeakReference[T]) {
+    l should (be === r)
+    //l should (equal(r))
+    l.hashCode() should (equal(r.hashCode()))
+  }
   @Test
   def equals() {
     val o = new AnyRef()
     val a = new EqWeakReference(o)
     val b = new EqWeakReference(o)
-    a should (be === b)
+    compare(a, b)
     val nullRef = new EqWeakReference(null)
     a should (not (be === nullRef))
     nullRef should (not (be === a))
     val d = new EqWeakReference(null)
-    nullRef should (be === d)
+    compare(nullRef, d)
     val e = new WeakReference(o)
     a should (not (be === e))
     e should (not (be === a))
