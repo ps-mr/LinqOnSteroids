@@ -37,15 +37,12 @@ object IncrementalResult {
   def startListeners(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
     val childrenParentCouples = findRoots(Some(initialChild), initialRoot, onlyRoots = false) //Instead, fix startListener.
-    for ((Some(c), root: Exp[Traversable[t]]) <- childrenParentCouples) {
+    for ((Some(c), _) <- childrenParentCouples) {
       c match {
-        //Have a suitable method on Exp, implemented by e.g. Maintainer.
-        //case child: MsgSeqSubscriber[Traversable[`t`], Exp[Traversable[`t`]]] => //XXX: broken, but no counterexamples yet.
-
-        //XXX: bounds on Maintainer guarantee that this pattern match is
-        // safe in spite of erasure
-        case child: Maintainer[_, Traversable[`t`]] =>
-          child startListeningOn root
+        // Have a suitable method on Exp with an empty implementation to remove this pattern match,
+        // so that Maintainer (and others) have only the implementation.
+        case child: Maintainer[_, _] =>
+          child startListening
       }
     }
   }

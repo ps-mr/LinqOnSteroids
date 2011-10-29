@@ -143,11 +143,6 @@ trait Maintainer[+T, U <: Traversable[_]] extends MsgSeqSubscriber[U, Exp[U]] wi
     }
     root subscribe this
   }
-  //This is the method we should be calling from IncrementalResult.startListeners, defined on Exp and implemented only here.
-  def giveRoot(root: Exp[U]) {
-    startListeningOn(root)
-    //notify (root, root.interpret().toSeq.map(Include(_)))
-  }
 }
 
 //Don't make Repr so specific as IncCollectionReifier. Making Repr any specific
