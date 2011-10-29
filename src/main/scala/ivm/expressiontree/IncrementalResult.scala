@@ -15,10 +15,8 @@ private[expressiontree] object IncrementalResult {
     (if (e.isRoot)
       Seq(child)
     else
-      Seq.empty) ++ {
-      val newParent = e //Some(child) //returning child causes run-time type errors (ClassCastExceptions).
-      e.roots flatMap ((x: Exp[_]) => findChildrenOfRoots(newParent, x))
-    }
+      Seq.empty) ++
+      (e.roots flatMap (findChildrenOfRoots(e, _)))
   }
 
   /*
@@ -44,7 +42,9 @@ private[expressiontree] object IncrementalResult {
  * XXX: This class mixes two roles - its constructor activates listeners for IVM, and its listener materialize the
  * collection. We might need the second function without necessarily needing the first, but since its constructor calls
  * base.interpret(), the constructor cannot be invoked on open terms - thus, it can't be used within the body of closures.
- * Moreover, the first function does not seem to conceptually require a new class.
+ * Moreover, the first function does not seem to conceptually require a new class. The only problem in separating the
+ * two functions is that we'd need roots to _not_ be empty for the visit by startListeners, but the class should still
+ * be considered a root for propagateRootsElements. We'd thus need to make them call different methods for the visit.
  */
 // XXX: SetProxy is not entirely
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
@@ -68,6 +68,7 @@ class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Tra
   //IncrementalResult which depends on this object.
   //The same holds for propagateRootsElements, but for a more complex reason: notifications for elements already present
   //are not propagated, since they are considered duplicate.
+  override def isRoot = true
   override def roots = Seq.empty
   //From SetProxy
   override def self = set.keySet
