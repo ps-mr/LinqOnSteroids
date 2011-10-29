@@ -11,7 +11,7 @@ import collection.mutable.HashMap
 object IncrementalResult {
   // Given e.g. coll2 = MapOp(coll@IncHashSet(_), FuncExp(...)), coll2 is the child and coll is the parent (here, the root).
   //XXX: this code could maybe be typechecked using a typelist like HList.
-  def findRoots(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
+  def findRoots(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]], onlyRoots: Boolean): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
     if (e.roots.isEmpty)
       Seq((child, e))
     else {
@@ -21,7 +21,7 @@ object IncrementalResult {
         else None //child //returning child causes run-time type errors (ClassCastExceptions).
       //XXX: The initial Seq() part is needed, as it makes sense now and as shown through test-cases. Rewrite the recursion structure please with sth. like Exp.visitPreorder
       //Seq((child, e)) ++ (e.roots flatMap ((x: Exp[_]) => findRoots(newParent, x.asInstanceOf[Exp[Traversable[_]]])))
-      (e.roots flatMap ((x: Exp[_]) => findRoots(newParent, x.asInstanceOf[Exp[Traversable[_]]]))) ++ Seq((child, e))
+      (if (onlyRoots) Seq() else Seq((child, e))) ++ (e.roots flatMap ((x: Exp[_]) => findRoots(newParent, x.asInstanceOf[Exp[Traversable[_]]], onlyRoots)))
     }
   }
 
@@ -36,21 +36,27 @@ object IncrementalResult {
    */
   def startListeners(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
-    val roots = findRoots(Some(initialChild), initialRoot) //Instead, fix startListener.
-    for ((Some(c), root: Exp[Traversable[t]]) <- roots) {
+    val childrenParentCouples = findRoots(Some(initialChild), initialRoot, onlyRoots = false) //Instead, fix startListener.
+    for ((Some(c), root: Exp[Traversable[t]]) <- childrenParentCouples) {
       c match {
-        //Have a suitable method on Exp, implemented by e.g. Maintainer.  
+        //Have a suitable method on Exp, implemented by e.g. Maintainer.
         //case child: MsgSeqSubscriber[Traversable[`t`], Exp[Traversable[`t`]]] => //XXX: broken, but no counterexamples yet.
-        case child: Maintainer[_, Traversable[`t`]] => //XXX: bounds on Maintainer
+
+        //XXX: bounds on Maintainer guarantee that this pattern match is
+        // safe in spite of erasure
+        case child: Maintainer[_, Traversable[`t`]] =>
           child startListeningOn root
-          //root subscribe child
       }
     }
+  }
 
+  def propagateRootsElements(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
+    val roots = findRoots(Some(initialChild), initialRoot, onlyRoots = true)
     for ((Some(c), root: Exp[Traversable[t]]) <- roots) {
       c match {
-        case child: Maintainer[_, Traversable[`t`]] => //XXX: bounds on Maintainer
-          child notify (root, root.interpret().toSeq.map(Include(_))) //This line is correct, but implies that child is
+        case child: Maintainer[_, Traversable[`t`]] =>
+          child notify (root, root.interpret().toSeq.map(Include(_)))
+          //The above line is correct, but implies that child is
           // a direct child of root, so that child accepts notifications from it.
           // This constraint is not reflected in the type, thus we can write a version of findRoots
           // causing run-time type errors.
@@ -75,8 +81,15 @@ class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Tra
   import IncrementalResult._
   var set = new HashMap[T, Int]
   base subscribe this
+  //initializes listeners in the contained expression and makes initial elements flow through the query tree.
   startListeners(this, base)
+  propagateRootsElements(this, base)
 
+  //Our constructor calls startListeners(this, base); thus, base should not be visited again when creating another
+  //IncrementalResult which depends on this object.
+  //The same holds for propagateRootsElements, but for a more complex reason: notifications for elements already present
+  //are not propagated, since they are considered duplicate.
+  override def roots = Seq.empty
   //From SetProxy
   override def self = set.keySet
 
@@ -113,7 +126,6 @@ class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Tra
         // The handling here is valid more in general, but no batching is done.
         case Update(old, curr) =>
           notify(pub, Seq(Remove(old), Include(curr)))
-        //case Script(msgs @ _*) => msgs foreach (notify(pub, _))
       }
     }
   }
