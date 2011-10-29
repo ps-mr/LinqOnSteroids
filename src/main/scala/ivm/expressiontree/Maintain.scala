@@ -60,8 +60,8 @@ trait FilterMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
   def pInt: T => Boolean
   override def transformedMessages(evt: TravMessage[T]) = {
     evt match {
-      case Include(v) => if (pInt(v)) Seq(Include(v)) else Seq.empty
-      case Remove(v) => if (pInt(v)) Seq(Remove(v)) else Seq.empty
+      case Include(v) => if (pInt(v)) Seq(evt) else Seq.empty
+      case Remove(v) => if (pInt(v)) Seq(evt) else Seq.empty
       case _ => defTransformedMessages(evt)
     }
   }
