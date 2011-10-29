@@ -11,9 +11,9 @@ import collection.mutable.HashMap
 private[expressiontree] object IncrementalResult {
   // Given e.g. coll2 = MapOp(coll@IncHashSet(_), FuncExp(...)), coll2 is the child and coll is the parent (here, the root).
   //XXX: this code could maybe be typechecked using a typelist like HList.
-  def findRoots(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
+  def findRoots(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[Exp[Traversable[_]]] = {
     if (e.roots.isEmpty)
-      Seq((child, e))
+      child.toSeq
     else {
       val newParent =
         if (e.isInstanceOf[MsgSeqSubscriber[_, _]])
@@ -39,7 +39,7 @@ private[expressiontree] object IncrementalResult {
   def propagateRootsElements(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
     val roots = findRoots(Some(initialChild), initialRoot)
-    for ((Some(c), _) <- roots) {
+    for (c <- roots) {
       c match {
         case child: Maintainer[_, _, _] =>
           child propagate()
