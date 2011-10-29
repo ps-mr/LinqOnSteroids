@@ -32,7 +32,7 @@ private[expressiontree] object IncrementalResult {
    * the containing IncrementalResult will contain the right elements: only their presence count will be too high, so we
    * need to remove the initial elements to show the problem. Add a test for this.
    */
-  def startListeners(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
+  def startListeners(initialRoot: Exp[_]) {
     initialRoot.visitPreorderRoots(_ activateIVM())
   }
 
@@ -59,7 +59,7 @@ class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Tra
   var set = new HashMap[T, Int]
   base subscribe this
   //initializes listeners in the contained expression and makes initial elements flow through the query tree.
-  startListeners(this, base)
+  startListeners(base)
   propagateRootsElements(this, base)
 
   //Our constructor calls startListeners(this, base); thus, base should not be visited again when creating another
