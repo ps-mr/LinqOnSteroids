@@ -37,14 +37,8 @@ object IncrementalResult {
   def startListeners(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
     val childrenParentCouples = findRoots(Some(initialChild), initialRoot, onlyRoots = false) //Instead, fix startListener.
-    for ((Some(c), _) <- childrenParentCouples) {
-      c match {
-        // Have a suitable method on Exp with an empty implementation to remove this pattern match,
-        // so that Maintainer (and others) have only the implementation.
-        case child: Maintainer[_, _] =>
-          child startListening
-      }
-    }
+    for ((Some(c), _) <- childrenParentCouples)
+      c startListening()
   }
 
   def propagateRootsElements(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {

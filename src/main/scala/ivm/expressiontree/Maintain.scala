@@ -129,7 +129,7 @@ trait Maintainer[+T, U <: Traversable[_]] extends MsgSeqSubscriber[U, Exp[U]] wi
   type RootType = U
   private[ivm] override def roots = Seq(base)
 
-  def startListening() = startListeningOn(base)
+  override def startListening() = startListeningOn(base)
   def startListeningOn(root: Exp[U]) {
     if (Debug.verbose) {
       //println("Maintainer(col = %s) startListening" format col)
