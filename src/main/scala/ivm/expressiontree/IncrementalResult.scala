@@ -39,10 +39,11 @@ private[expressiontree] object IncrementalResult {
   def propagateRootsElements(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
     val roots = findRoots(Some(initialChild), initialRoot)
-    for ((Some(c), root: Exp[Traversable[t]]) <- roots) {
+    for ((Some(c), _) <- roots) {
       c match {
-        case child: Maintainer[_, Traversable[`t`]] =>
-          child notify (root, root.interpret().toSeq.map(Include(_)))
+        case child: Maintainer[_, _, _] =>
+          child propagate()
+          //child notify (root, root.interpret().toSeq.map(Include(_)))
           //The above line is correct, but implies that child is
           // a direct child of root, so that child accepts notifications from it.
           // This constraint is not reflected in the type, thus we can write a version of findRoots
@@ -60,7 +61,7 @@ private[expressiontree] object IncrementalResult {
 class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Traversable[T]]
   with TravMsgSeqSubscriber[T, Exp[Traversable[T]]]
   with Queryable[T, collection.SetProxy[T]]
-  with Maintainer[Traversable[T], Traversable[T]]
+  with Maintainer[Traversable[T], T, Traversable[T]]
   with collection.SetProxy[T] //I mean immutable.SetProxy[T], but that requires an underlying immutable Set.
   // I'll probably end up with forwarding most basic methods manually, and implementing the others through SetLike.
   // Or we'll just support incremental query update for all methods.
