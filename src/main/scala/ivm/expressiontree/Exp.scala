@@ -5,6 +5,9 @@ trait Exp[+T] extends MsgSeqPublisher[T] {
   type RootType
   private[ivm] def activateIVM() {}
 
+  //XXX: does this really belong here?
+  private[ivm] def propagate() {}
+
   def interpret(): T
   private[ivm] def children: Seq[Exp[_]]
 //  private[ivm] def closedTermChildren: Seq[Exp[_]] = children

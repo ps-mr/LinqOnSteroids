@@ -126,7 +126,7 @@ trait Maintainer[+T, UBase, U <: Traversable[UBase]] extends TravMsgSeqSubscribe
   type RootType = U
   private[ivm] override def roots = Seq(base)
 
-  override def activateIVM() = startListeningOn(base)
+  private[ivm] override def activateIVM() = startListeningOn(base)
   def startListeningOn(root: Exp[U]) {
     if (Debug.verbose) {
       //println("Maintainer(col = %s) startListening" format col)
@@ -140,7 +140,7 @@ trait Maintainer[+T, UBase, U <: Traversable[UBase]] extends TravMsgSeqSubscribe
     }
     root subscribe this
   }
-  def propagate() {
+  private[ivm] override def propagate() {
     notify (base, base.interpret().toSeq.map(Include(_)))
   }
 }

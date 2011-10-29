@@ -37,14 +37,8 @@ private[expressiontree] object IncrementalResult {
   }
 
   def propagateRootsElements(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
-    //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
-    val childrenOfRoots = findChildrenOfRoots(Some(initialChild), initialRoot)
-    for (c <- childrenOfRoots) {
-      c match {
-        case child: Maintainer[_, _, _] =>
-          child propagate()
-      }
-    }
+    for (child <- findChildrenOfRoots(Some(initialChild), initialRoot))
+      child propagate()
   }
 }
 /**
