@@ -44,6 +44,12 @@ object IncrementalResult {
         case child: Maintainer[_, Traversable[`t`]] => //XXX: bounds on Maintainer
           child startListeningOn root
           //root subscribe child
+      }
+    }
+
+    for ((Some(c), root: Exp[Traversable[t]]) <- roots) {
+      c match {
+        case child: Maintainer[_, Traversable[`t`]] => //XXX: bounds on Maintainer
           child notify (root, root.interpret().toSeq.map(Include(_))) //This line is correct, but implies that child is
           // a direct child of root, so that child accepts notifications from it.
           // This constraint is not reflected in the type, thus we can write a version of findRoots
