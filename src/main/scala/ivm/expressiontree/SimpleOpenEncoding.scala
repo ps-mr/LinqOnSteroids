@@ -102,7 +102,7 @@ object SimpleOpenEncoding {
 
   trait TraversableOps {
     import OpsExpressionTree._
-    def newWithFilter[T, Repr <: TraversableLike[T, Repr] with Traversable[T]](base: Exp[Repr],
+    def newWithFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr],
                                                         f: FuncExp[T, Boolean]) =
       new FilterMaintainerExp(View[T, Repr](base), f)
     def newMapOp[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]](base: Exp[Repr],
@@ -174,7 +174,7 @@ object SimpleOpenEncoding {
         newWithFilter(this.t, FuncExp(f))
     }
 
-    trait TraversableLikeOps[T, Repr <: TraversableLike[T, Repr] with Traversable[T]] extends FilterMonadicOpsLike[T, Repr] {
+    trait TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends FilterMonadicOpsLike[T, Repr] {
       def collect[U, That <: Traversable[U]](f: Exp[T] => Exp[Option[U]])
                    (implicit c: CanBuildFrom[TraversableView[T,Repr], U, That]): Exp[That] = {
          new MapOpMaintainerExp(new FilterMaintainerExp[T, TraversableView[T, Repr]](View[T, Repr](this.t),
@@ -203,7 +203,7 @@ object SimpleOpenEncoding {
 
     trait TraversableViewLikeOps[
         T,
-        Repr <: TraversableLike[T, Repr] with Traversable[T],
+        Repr <: Traversable[T] with TraversableLike[T, Repr],
         ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
       extends TraversableLikeOps[T, ViewColl] with WithFilterable[T, Repr]
     {

@@ -129,6 +129,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
   }
 }
 
+//XXX: Fix names and order of type parameters, it's really counterintuitive
 trait Maintainer[+T, UBase, U <: Traversable[UBase]] extends TravMsgSeqSubscriber[UBase, Exp[U]] with Exp[T] {
   val base: Exp[U]
   type RootType = U
@@ -181,6 +182,9 @@ class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr
   override def pInt = p.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = new FilterMaintainerExp[T, Repr](base, f)
 }
+
+//XXX: where does this belong to? I was talking about materialization of updates (i.e. IncrementalResult -> Force) and
+//"maintenance of unification" (???).
 // Probably they can be both implemented together. Look into the other implementation, use bags or sth.
 // There was a use-case I forget where other context information, other than a simple count, had to be stored.
 // Was it a path in a hierarchical index?

@@ -23,7 +23,7 @@ case class MapOp[T, Repr <: FilterMonadic[T, Repr],
   override def copy(base: Exp[Repr], f: FuncExp[T, U]) = MapOp[T, Repr, U, That](base, f)
 }
 
-case class Filter[T, Repr <: TraversableLike[T,Repr]](base: Exp[Repr],
+case class Filter[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr],
                                                       f: FuncExp[T, Boolean]) extends BinaryOp[Exp[Repr], FuncExp[T, Boolean], Repr](base, f) {
   override def interpret = base.interpret filter f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = Filter(base, f)
@@ -41,7 +41,7 @@ case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr]) extends Un
   override def copy(base: Exp[Repr]) = View[T, Repr](base)
 }
 
-case class Force[T, Repr <: TraversableLike[T, Repr] with Traversable[T],
+case class Force[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl], That]
                 (base: Exp[ViewColl])(implicit protected[this] val bf: CanBuildFrom[Repr, T, That]) extends UnaryOpExp[ViewColl, That](base) {
   override def interpret = base.interpret.force
