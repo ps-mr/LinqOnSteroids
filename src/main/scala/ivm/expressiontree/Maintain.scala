@@ -139,7 +139,7 @@ trait Maintainer[+T, UBase, U <: Traversable[UBase]] extends TravMsgSeqSubscribe
     }
     root subscribe this
   }
-  private[ivm] override def propagate() {
+  private[ivm] override def pullAndPropagateContent() {
     notify (base, base.interpret().toSeq.map(Include(_)))
   }
 }

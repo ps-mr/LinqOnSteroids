@@ -39,7 +39,7 @@ private[expressiontree] object IncrementalResult {
 
   def propagateRootsElements(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
     for (child <- findChildrenOfRoots(Some(initialChild), initialRoot))
-      child propagate()
+      child pullAndPropagateContent()
   }
 }
 /**
