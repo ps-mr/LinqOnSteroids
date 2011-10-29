@@ -12,9 +12,10 @@ private[expressiontree] object IncrementalResult {
   // Given e.g. coll2 = MapOp(coll@IncHashSet(_), FuncExp(...)), coll2 is the child and coll is the parent (here, the root).
   //XXX: this code could maybe be typechecked using a typelist like HList.
   def findChildrenOfRoots(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[Exp[Traversable[_]]] = {
-    if (e.roots.isEmpty)
+    (if (e.isRoot)
       child.toSeq
-    else {
+    else
+      Seq.empty) ++ {
       val newParent =
         if (e.isInstanceOf[MsgSeqSubscriber[_, _]])
           Some(e.asInstanceOf[Exp[Traversable[_]]])

@@ -7,6 +7,7 @@ trait Exp[+T] extends MsgSeqPublisher[T] {
 
   //XXX: does this really belong here?
   private[ivm] def propagate() {}
+  private[ivm] def isRoot = roots.isEmpty
 
   def interpret(): T
   private[ivm] def children: Seq[Exp[_]]
