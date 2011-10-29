@@ -186,7 +186,7 @@ object SimpleOpenEncoding {
         new FilterMaintainerExp(this.t, FuncExp(f))
 
       def union[U >: T, That](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-        Union[T,Repr,U,That](this.t, that)
+        Union[U, Repr, That](this.t, that)
 
       def view: Exp[TraversableView[T, Repr]] = View[T, Repr](this.t)
 
