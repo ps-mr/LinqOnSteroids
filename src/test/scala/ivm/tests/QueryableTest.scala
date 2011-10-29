@@ -174,6 +174,27 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     show("res", res)
   }
 
+  def testFlatMap2(working: Boolean) {
+    //val v = Seq(1, 2, 3)
+    val v = IncHashSet[Int]()
+    if (!working)
+      v ++= Seq(10, 20, 30)
+    val v2 = IncHashSet(4, 5, 6)
+
+    //Illegal term
+    //val res = new IncrementalResult[Int](v.asQueryable.flatMap(i => new IncrementalResult(v2.asQueryable.map(j => i + j))))
+    val res = new IncrementalResult[Int](v.asQueryable.flatMap(i => v2.asQueryable.map(j => i + j).map(_ + 1)))
+
+    show("res", res)
+    if (working)
+      v ++= Seq(10, 20, 30)
+    show("res", res)
+    v += 40
+    show("res", res)
+    v2 += 7
+    show("res", res)
+  }
+
   @Test
   def testFlatMapWorking() {
     testFlatMap(working = true)
@@ -182,6 +203,16 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
   @Test
   def testFlatMapNotWorking() {
     testFlatMap(working = false)
+  }
+
+  @Test
+  def testFlatMapWorking2() {
+    testFlatMap2(working = true)
+  }
+
+  @Test
+  def testFlatMapNotWorking2() {
+    testFlatMap2(working = false)
   }
 
   @Ignore @Test def flatMap2V1 = testFlatMap2(0)
