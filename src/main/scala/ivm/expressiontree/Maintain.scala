@@ -67,6 +67,15 @@ trait FilterMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
   }
 }
 
+trait UnionMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
+  override def transformedMessages(evt: TravMessage[T]) = {
+    evt match {
+      case Include(_) | Remove(_) => Seq(evt)
+      case _ => defTransformedMessages(evt)
+    }
+  }
+}
+
 //Trait implementing incremental view maintenance for FlatMap operations.
 trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransformer[T, U, Repr] {
   self: Exp[Traversable[U]] => //? [T]? That's needed for the subscribe.
@@ -172,9 +181,14 @@ class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr
   override def pInt = p.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = new FilterMaintainerExp[T, Repr](base, f)
 }
-// TODO: add a trait which implements maintenance of union.
 // Probably they can be both implemented together. Look into the other implementation, use bags or sth.
 // There was a use-case I forget where other context information, other than a simple count, had to be stored.
 // Was it a path in a hierarchical index?
+
+class UnionMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr], That <: Traversable[T]](base: Exp[Repr], that: Exp[Traversable[T]])
+  (implicit c: CanBuildFrom[Repr, T, That]) extends
+  Union[T, Repr, That](base, that)(c) with UnionMaintainer[T, Exp[Repr]] with Maintainer[That, T, Repr] {
+  override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = new UnionMaintainerExp[T, Repr, That](base, that)
+}
 
 // vim: set ts=4 sw=4 et:

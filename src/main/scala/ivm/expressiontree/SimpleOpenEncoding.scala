@@ -185,8 +185,8 @@ object SimpleOpenEncoding {
       def filter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
         new FilterMaintainerExp(this.t, FuncExp(f))
 
-      def union[U >: T, That](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-        Union[U, Repr, That](this.t, that)
+      def union[U >: T, That <: Traversable[U]](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+        new UnionMaintainerExp[U, Repr, That](this.t, that)
 
       def view: Exp[TraversableView[T, Repr]] = View[T, Repr](this.t)
 
