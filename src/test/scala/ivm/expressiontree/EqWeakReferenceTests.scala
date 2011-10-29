@@ -10,6 +10,7 @@ import ref.WeakReference
 */
 
 class EqWeakReferenceTests extends JUnitSuite with ShouldMatchersForJUnit {
+  //Should be part of ScalaTest.
   def assertEqualsAndSameHash[T](l: T, r: T) {
     l should be === (r)
     l.hashCode should be === (r.hashCode)
