@@ -14,9 +14,6 @@ class EqWeakReferenceTests extends JUnitSuite with ShouldMatchersForJUnit {
     l should be === (r)
     l.hashCode should be === (r.hashCode)
   }
-  def assertDiffers[T](l: T, r: T) {
-    l should not be === (r)
-  }
 
   val o = new AnyRef()
   @Test
@@ -26,8 +23,8 @@ class EqWeakReferenceTests extends JUnitSuite with ShouldMatchersForJUnit {
     assertEqualsAndSameHash(refO1, refO2)
 
     val nullRef1 = new EqWeakReference(null)
-    assertDiffers(refO1, nullRef1)
-    assertDiffers(nullRef1, refO1)
+    refO1 should not be === (nullRef1)
+    nullRef1 should not be === (refO1)
 
     val nullRef2 = new EqWeakReference(null)
     assertEqualsAndSameHash(nullRef1, nullRef2)
@@ -37,7 +34,7 @@ class EqWeakReferenceTests extends JUnitSuite with ShouldMatchersForJUnit {
   def eqWeakReferenceDiffersFromWeakReference() {
     val eqWeakRef = new EqWeakReference(o)
     val weakRef = new WeakReference(o) //Note that this is WeakReference, not EqWeakReference, and thus differs from a.
-    assertDiffers(eqWeakRef, weakRef)
-    assertDiffers(weakRef, eqWeakRef)
+    eqWeakRef should not be === (weakRef)
+    weakRef should not be === (eqWeakRef)
   }
 }
