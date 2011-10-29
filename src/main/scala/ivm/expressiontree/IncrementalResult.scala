@@ -43,6 +43,10 @@ private[expressiontree] object IncrementalResult {
 }
 /**
  * A class representing an intermediate or final result of an incremental query.
+ * XXX: This class mixes two roles - its constructor activates listeners for IVM, and its listener materialize the
+ * collection. We might need the second function without necessarily needing the first, but since its constructor calls
+ * base.interpret(), the constructor cannot be invoked on open terms - thus, it can't be used within the body of closures.
+ * Moreover, the first function does not seem to conceptually require a new class.
  */
 // XXX: SetProxy is not entirely
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
