@@ -71,7 +71,7 @@ class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Tra
   override def self = set.keySet
 
   private[this] def count(v: T) = set.getOrElse(v, 0)
-  private[this] def logPublish(evt: TravMessage[T]) {
+  private[this] def logAndPublish(evt: TravMessage[T]) {
     if (Debug.verbose)
       println("publish(%s)" format evt)
     publish(evt)
@@ -85,19 +85,19 @@ class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Tra
         case Include(v) =>
           val vCount = count(v)
           if (vCount == 0)
-            logPublish(evt)
+            logAndPublish(evt)
           set(v) = vCount + 1
         case Remove(v) =>
           val vCount = count(v) - 1
           if (vCount > 0)
             set(v) = vCount
           else {
-            logPublish(evt)
+            logAndPublish(evt)
             set -= v
           }
 
         case Reset() =>
-          logPublish(evt)
+          logAndPublish(evt)
           set.clear()
         // These two cases are quite common: they basically mean that no special handling is provided for bulk events.
         // The handling here is valid more in general, but no batching is done.
