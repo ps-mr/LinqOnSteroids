@@ -66,7 +66,6 @@ class Optimization {
         // is described here: https://issues.scala-lang.org/browse/SI-4757
         col.asInstanceOf[Exp[_]]
       case MapOp(col, FuncExpBody(x)) =>
-        //println(x) //XXX why?
         e
       case _ => e
     }

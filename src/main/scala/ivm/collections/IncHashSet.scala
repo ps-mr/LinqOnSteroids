@@ -69,8 +69,8 @@ class IncHashSet[T] extends HashSet[T]
 object IncHashSet extends MutableSetFactory[IncHashSet] {
   implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, IncHashSet[A]] = setCanBuildFrom[A]
   override def empty[A] = new IncHashSet[A]
-  // XXX: without the above definition the code compiles, but empty is defined through newBuilder, and newBuilder
+  // Without the above definition the code compiles, but empty is defined through newBuilder, and newBuilder
   // through empty, because one of the two is supposed to be overriden; not doing so results in infinite recursion.
-  // TODO: write test for that.
+  // Thus there's a test for that in QueryableTest.emptyIncHashSet.
 }
 
