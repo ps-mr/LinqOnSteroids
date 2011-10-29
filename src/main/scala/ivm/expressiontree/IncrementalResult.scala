@@ -8,10 +8,10 @@ import collection.mutable.HashMap
  * Date: 27/8/2011
  */
 
-object IncrementalResult {
+private[expressiontree] object IncrementalResult {
   // Given e.g. coll2 = MapOp(coll@IncHashSet(_), FuncExp(...)), coll2 is the child and coll is the parent (here, the root).
   //XXX: this code could maybe be typechecked using a typelist like HList.
-  def findRoots(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]], onlyRoots: Boolean): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
+  def findRoots(child: Option[Exp[Traversable[_]]], e: Exp[Traversable[_]]): Seq[(Option[Exp[Traversable[_]]], Exp[Traversable[_]])] = {
     if (e.roots.isEmpty)
       Seq((child, e))
     else {
@@ -19,9 +19,7 @@ object IncrementalResult {
         if (e.isInstanceOf[MsgSeqSubscriber[_, _]])
           Some(e.asInstanceOf[Exp[Traversable[_]]])
         else None //child //returning child causes run-time type errors (ClassCastExceptions).
-      //XXX: The initial Seq() part is needed, as it makes sense now and as shown through test-cases. Rewrite the recursion structure please with sth. like Exp.visitPreorder
-      //Seq((child, e)) ++ (e.roots flatMap ((x: Exp[_]) => findRoots(newParent, x.asInstanceOf[Exp[Traversable[_]]])))
-      (if (onlyRoots) Seq() else Seq((child, e))) ++ (e.roots flatMap ((x: Exp[_]) => findRoots(newParent, x.asInstanceOf[Exp[Traversable[_]]], onlyRoots)))
+      e.roots flatMap ((x: Exp[_]) => findRoots(newParent, x.asInstanceOf[Exp[Traversable[_]]]))
     }
   }
 
@@ -40,7 +38,7 @@ object IncrementalResult {
 
   def propagateRootsElements(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
-    val roots = findRoots(Some(initialChild), initialRoot, onlyRoots = true)
+    val roots = findRoots(Some(initialChild), initialRoot)
     for ((Some(c), root: Exp[Traversable[t]]) <- roots) {
       c match {
         case child: Maintainer[_, Traversable[`t`]] =>
