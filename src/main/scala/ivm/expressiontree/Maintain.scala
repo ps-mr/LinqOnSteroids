@@ -90,8 +90,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
   private def process(v: T) = {
     val fV = cache.getOrElseUpdate(v, fInt(v))
     fV subscribe subCollListener
-    //XXX What if fV is not an atomic collection? We need to reuse the infrastructure in IncrementalResult!
-    fV activateIVM()
+    IncrementalResult.startListeners(fV)
     fV.interpret().toSeq map (Include(_))
   }
   //To be invoked by the constructor with the initial elements.
