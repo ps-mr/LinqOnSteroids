@@ -1,7 +1,13 @@
 *_managed
-LinqOnSteroids.iml
 .idea/misc.xml
 .idea/workspace.xml
 .svn
 *.class
 .*.swp
+*.aux
+*.log
+*.out
+src-mess
+*.pdf
+DB-Book
+various
