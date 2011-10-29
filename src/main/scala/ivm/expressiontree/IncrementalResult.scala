@@ -33,7 +33,7 @@ private[expressiontree] object IncrementalResult {
    * need to remove the initial elements to show the problem. Add a test for this.
    */
   def startListeners(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
-   initialRoot.visitPreorderRoots(_ activateIVM())
+    initialRoot.visitPreorderRoots(_ activateIVM())
   }
 
   def propagateRootsElements(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {
