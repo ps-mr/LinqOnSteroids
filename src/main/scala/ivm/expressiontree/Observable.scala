@@ -81,6 +81,27 @@ trait ObservableSet[T] extends Set[T] with TravMsgSeqPublisher[T] {
     //We need to prefilter elements, to avoid Remove'ing elements which are
     //already not there.
     val newEls = (for (x <- xs; if this contains x) yield x).toSeq
+    if (true)//(newEls.size > size/2) //True is there for testing only.
+      doRemoveAndRebuild(newEls) //We could use xs directly here, and save computing newEls - but we need that for the
+      // heuristic
+    else
+      doRemoveAndNotify(newEls)
+    this
+  }
+
+  private def doRemoveAndRebuild(newEls: Seq[T]) {
+    publish(Reset())
+    publish((this -- newEls).toSeq map (Include(_))) // Here we compute this -- newEls and throw it away;
+    // doing the notification afterwards
+    assert(silenceNotifications == false)
+    //super.--= is defined in terms of -=, so we want to prevent -= from
+    //publishing updates.
+    silenceNotifications = true
+    val res = super.--=(newEls)
+    silenceNotifications = false
+  }
+
+  private def doRemoveAndNotify(newEls: Seq[T]) {
     publish(newEls map (Remove(_)))
     assert(silenceNotifications == false)
     //super.--= is defined in terms of -=, so we want to prevent -= from
@@ -88,6 +109,5 @@ trait ObservableSet[T] extends Set[T] with TravMsgSeqPublisher[T] {
     silenceNotifications = true
     val res = super.--=(newEls)
     silenceNotifications = false
-    res
   }
 }
