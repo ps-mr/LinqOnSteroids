@@ -92,7 +92,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
     fV subscribe subCollListener
     //What if fV is not an atomic collection? We need to reuse the infrastructure in IncrementalResult!
     fV match {
-      case m: Maintainer[_, _] => m.startListening()
+      case m: Maintainer[_, _] => m.activateIVM()
       case _ => //XXX: wasn't there before, will cause problems, but is needed! Therefore we must rewrite this code some other way
     }
     fV.interpret().toSeq map (Include(_))
@@ -129,7 +129,7 @@ trait Maintainer[+T, U <: Traversable[_]] extends MsgSeqSubscriber[U, Exp[U]] wi
   type RootType = U
   private[ivm] override def roots = Seq(base)
 
-  override def startListening() = startListeningOn(base)
+  override def activateIVM() = startListeningOn(base)
   def startListeningOn(root: Exp[U]) {
     if (Debug.verbose) {
       //println("Maintainer(col = %s) startListening" format col)

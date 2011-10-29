@@ -38,7 +38,7 @@ object IncrementalResult {
     //XXX: what if a collection appears multiple times in the tree? Solution: we get it with multiple children.
     val childrenParentCouples = findRoots(Some(initialChild), initialRoot, onlyRoots = false) //Instead, fix startListener.
     for ((Some(c), _) <- childrenParentCouples)
-      c startListening()
+      c activateIVM()
   }
 
   def propagateRootsElements(initialChild: Exp[Traversable[_]], initialRoot: Exp[Traversable[_]]) {

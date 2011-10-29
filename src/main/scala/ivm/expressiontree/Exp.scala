@@ -3,7 +3,7 @@ package ivm.expressiontree
 trait Exp[+T] extends MsgSeqPublisher[T] {
   type Pub <: Exp[T]
   type RootType
-  private[ivm] def startListening() {}
+  private[ivm] def activateIVM() {}
 
   def interpret(): T
   private[ivm] def children: Seq[Exp[_]]
