@@ -36,5 +36,7 @@ class TransformTest extends JUnitSuite with ShouldMatchersForJUnit {
     testTransforms(for (c <- l if c + 3 is 7; if c + 8 is 19) yield c)
     testTransforms(for (c <- l if (c + 3 is 7) && (c + 8 is 19)) yield c)
     testTransforms(for (k <- l; k2 <- l2 if k + k2 is k2 + k) yield k+k2)
+    testTransforms(for (k <- l; k2 <- l2 if k + k2 is k2 + k) yield k*k2)
+    testTransforms(for (c <- l if c * 3 is 7; if c + 8 is 19) yield c)
   }
 }

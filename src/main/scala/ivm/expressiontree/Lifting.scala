@@ -19,6 +19,7 @@ object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.OpsExpr
 
   class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
+    def *(that: Exp[T]): Exp[T] = Times(this.t, that)
   }
 
   class OrderingOps[T: Ordering](t: Exp[T]) {
