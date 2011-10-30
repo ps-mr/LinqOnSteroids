@@ -8,10 +8,15 @@ import org.scalatest.junit.ShouldMatchersForJUnit
 import collections.{IncHashSet, IncArrayBuffer}
 import collection.mutable.{HashSet, ArrayBuffer}
 import org.junit.{Ignore, Test}
+import optimization.Optimization
 
 class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
   import Lifting._
 
+  class Materializable[T](t: Exp[Traversable[T]]) {
+    def materialize = new IncrementalResult(t)
+  }
+  implicit def toMaterializable[T](t: Exp[Traversable[T]]) = new Materializable(t)
   @Test
   def emptyIncHashSet() {
     val a = IncHashSet.empty
@@ -174,6 +179,30 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
     show("res", res)
   }
 
+  def testFlatMapJoin(working: Boolean) {
+    //val v = Seq(1, 2, 3)
+    val v = IncHashSet[Int]()
+    if (!working)
+      v ++= Seq(10, 20, 30)
+    val v2 = IncHashSet(20, 40)
+
+    val res = new IncrementalResult[Int](for (i <- v.asQueryable; j <- v2.asQueryable; if 2 * i is j) yield i + j)
+    val res2 = new IncrementalResult[Int](Optimization.optimize(for (i <- v.asQueryable; j <- v2.asQueryable; if 2 * i is j) yield i + j))
+    def out() {
+      show("res", res)
+      show("res2", res2)
+    }
+
+    out()
+    if (working)
+      v ++= Seq(10, 20, 30)
+    out()
+    v += 40
+    out()
+    v2 += 60
+    out()
+  }
+
   def testFlatMap2(working: Boolean) {
     //val v = Seq(1, 2, 3)
     val v = IncHashSet[Int]()
@@ -214,6 +243,9 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit {
   def testFlatMapNotWorking2() {
     testFlatMap2(working = false)
   }
+
+  @Test def testFlatMapJoinWorking() = testFlatMapJoin(true)
+  @Test def testFlatMapJoinNonWorking() = testFlatMapJoin(false)
 
   @Ignore @Test def flatMap2V1 = testFlatMap2(0)
   @Ignore @Test def flatMap2V2 = testFlatMap2(1)
