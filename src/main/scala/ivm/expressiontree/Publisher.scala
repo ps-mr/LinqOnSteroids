@@ -87,7 +87,6 @@ trait DefaultPublisher[+Evt] extends Publisher[Evt] {
   //XXX: If Pub were a (covariant) type parameter, then we could just write (I expect) selfAsPub: Pub => at the beginning, instead of
   //such an ugly cast. However, Pub appears in Subscriber in a contravariant position, so that's not so easily possible.
 
-  //XXX: I believe that we need to filter out duplicate elements - I'd need a WeakHashSet.
   private[this] var subscribers: Set[EqWeakReference[Sub]] = HashSet.empty
   def subscribe(sub: Sub) {
     subscribers += new EqWeakReference(sub)

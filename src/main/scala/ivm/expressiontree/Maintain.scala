@@ -90,7 +90,8 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
             case e@Remove(_) => publish(e)
             case e@Update(_, _) => publish(e)
             //XXX very important! This can only work because we send the
-            //modification before performing the update
+            //modification before performing the update. Otherwise, we could pack the list of elements within
+            //Reset notifications
             case Reset() => publish(pub.interpret().toSeq map (Remove(_)))
           }
         }
