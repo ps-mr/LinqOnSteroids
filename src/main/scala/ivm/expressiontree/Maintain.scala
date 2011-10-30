@@ -67,7 +67,18 @@ trait FilterMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
   }
 }
 
-trait UnionMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
+trait UnionMaintainer[T, Repr <: Exp[Traversable[T]]] extends EvtTransformer[T, T, Repr] {
+  //XXX: the fact that transformedMessages does not get pub is broken.
+  override def notify(pub: Repr, evts: Seq[TravMessage[T]]) = {
+    val fixedEvts = for (evt <- evts)
+      yield
+      evt match {
+        case Reset() => pub.interpret().toSeq map (Remove(_))
+        case _ => Seq(evt)
+      }
+    super.notify(pub, fixedEvts.flatten)
+  }
+
   override def transformedMessages(evt: TravMessage[T]) = {
     evt match {
       case Include(_) | Remove(_) => Seq(evt)
