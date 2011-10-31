@@ -60,8 +60,8 @@ object SimpleOpenEncoding {
     implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
 
     implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
-      x => f match {
-        case FuncExp(fe) => fe(x) //This line should be dropped, but then we'll need to introduce a beta-reducer.
+      f match {
+        case FuncExp(fe) => fe(_) //This line should be dropped, but then we'll need to introduce a beta-reducer.
                                   // KO: Why do we need a beta-reducer? Since we use HOAS this is just Scala function application
                                   // and already available in App.interpret
                                   // But it may still make sense to evaluate such applications right away
@@ -70,7 +70,7 @@ object SimpleOpenEncoding {
                                   // because it would show up only after reduction.
                                   // I believe we want to have App for the same exact reason not all function calls are
                                   // inlined: preventing code size explosion.
-        case _ => App(f, x)
+        case _ => App(f, _)
       }
 
     def liftCall[A0, Res](id: Symbol, callfunc: A0 => Res, arg0: Exp[A0]) = new Call1(id,callfunc, arg0)
