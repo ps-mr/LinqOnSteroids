@@ -22,13 +22,16 @@ class EvalOpalTests {
   //"Defining and Continuous Checking of Structural Program Dependencies", ICSE '08.
   def continuousCheckingPaper() {
     //XXX bug: we should have Set here!
-    def sourceElems(Types: Exp[Traversable[ClassFile]]) = Types union (Types flatMap (_.methods)) union (Types flatMap (_.fields))
+    def sourceElems(Types: Exp[Set[ClassFile]]) = Types union (Types flatMap (_.methods)) union (Types flatMap (_.fields))
 
     //Listing 3:
-    val Types = for {
+    //Alternatives, to get Exp[Set[ClassFile]] as result type:
+    //val Types = queryData filter (classFile => classFile.thisClass.packageName === "bat.type")
+    val Types = queryData withFilter (classFile => classFile.thisClass.packageName === "bat.type") force
+    /*val Types = (for {
       classFile <- queryData
       if classFile.thisClass.packageName === "bat.type"
-    } yield classFile
+    } yield classFile) force*/
     val TypesEnsemble = sourceElems(Types)
     val TypesFlyweightFactoryEnsemble = sourceElems(queryData filter (x => x.thisClass.packageName === "bat.type" && x.thisClass.simpleName === "TypeFactory"))
     val tmp = queryData filter (x => x.thisClass.packageName === "bat.type" && x.thisClass.simpleName === "IType")
@@ -56,9 +59,7 @@ class EvalOpalTests {
       el <- uses
       t <- TypesFlyweightCreationEnsemble
       if el._2 === t
-      //I'm stuck here, since I can't express !(a contains b) yet.
-      s <- TypesFlyweightFactoryEnsemble
-      if el._1 !== s
+      if !TypesFlyweightFactoryEnsemble(el._1)
     } yield null
   }
 }
