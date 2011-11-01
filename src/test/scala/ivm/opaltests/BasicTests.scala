@@ -28,7 +28,18 @@ import performancetests.Benchmarking._
 object BATLifting {
   implicit def expToClassFileOps(t: Exp[ClassFile]) = new ClassFileOps(t)
   class ClassFileOps(t: Exp[ClassFile]) {
-       def methods = onExp(t)('methods, _.methods)
+    def methods = onExp(t)('methods, _.methods)
+    def fields = onExp(t)('methods, _.fields)
+    def thisClass = onExp(t)('thisClass, _.thisClass)
+    def superClass = onExp(t)('superClass, _.superClass)
+    def interfaces = onExp(t)('interfaces, _.interfaces)
+  }
+
+  implicit def expToObjectTypeOps(t: Exp[ObjectType]) = new ObjectTypeOps(t)
+
+  class ObjectTypeOps(t: Exp[ObjectType]) {
+    def simpleName = onExp(t)('simpleName, _.simpleName)
+    def packageName = onExp(t)('packageName, _.packageName)
   }
 
   implicit def expToAttributeOps(t: Exp[Method_Info]) = new Method_InfoOps(t)
@@ -95,22 +106,23 @@ object BATLiftingExperimental {
 }
   /* end of boilerplate code */
 
-class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
+object OpalTestData {
   def getTestData = {
     val file = new File("lib/scalatest-1.6.1.jar")
     val zipfile = new ZipFile(file)
     val zipentries = zipfile.entries().filter( (file) => !(file.isDirectory()) && file.getName().endsWith(".class"))
     enumerationAsScalaIterator(zipentries)
-       .map( zipfile.getInputStream(_))
-       .map( (is) => Java6Framework.ClassFile( () => is))
+       .map(zipfile.getInputStream(_))
+       .map(is => Java6Framework.ClassFile(() => is))
   }
-
-
-
+  val testdata  = getTestData.toSet
+  val queryData = toExp(testdata)
   val warmUpLoops = 1 //100
   val sampleLoops = 2 //20
+}
 
-  val testdata  = getTestData.toSet
+class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
+  import OpalTestData._
 
   //A simple query, which does not use pattern matching.
   @Test def basicQuery() {
@@ -126,7 +138,6 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     // using reified query
     import BATLifting._
-    val queryData = toExp(testdata)
 
     val methodsQuery =
       for (cf <- queryData;
@@ -164,7 +175,6 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     import BATLifting._
     import BATLiftingExperimental._
 
-    val queryData = toExp(testdata)
     //The pattern-matches used are unsound.
 
     val methods2 = for (cf <- queryData;
@@ -273,7 +283,5 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
       m7Int = methods7.interpret()
     }
     methods should equal (m7Int)
-
-
   }
 }
