@@ -41,7 +41,7 @@ class EvalOpalTests {
       ancestorInterface <- classFile.interfaces
       if ancestorInterface === cf2 //we do need a contains method!
       method <- classFile.methods
-    } yield method
+    } yield method: AnyRef //Generalize type so that anything can be tested for membership
 
     //Listing 5:
     val uses: Exp[Set[(AnyRef, AnyRef)]] = null
@@ -57,9 +57,8 @@ class EvalOpalTests {
     //Rewrite to avoid using non-working pattern matching, ugly unliftPair and non-working value definitions
     for {
       el <- uses
-      t <- TypesFlyweightCreationEnsemble
-      if el._2 === t
+      if TypesFlyweightCreationEnsemble(el._2)
       if !TypesFlyweightFactoryEnsemble(el._1)
-    } yield null
+    } yield el
   }
 }
