@@ -43,7 +43,7 @@ class EvalOpalTests {
       method <- classFile.methods
     } yield method: AnyRef //Generalize type so that anything can be tested for membership
 
-    //Listing 5:
+    //Listing 4:
     val uses: Exp[Set[(AnyRef, AnyRef)]] = null
     /*
     for {
