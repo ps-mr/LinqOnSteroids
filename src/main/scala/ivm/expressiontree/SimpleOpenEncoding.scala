@@ -255,6 +255,14 @@ object SimpleOpenEncoding {
       expToMapExp(t)
   }
 
+  trait SetOps extends TraversableOps {
+    import OpsExpressionTree.toExp
+
+    class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set[T]] with WithFilterImpl[T, Set[T], Set[T]]
+    implicit def expToSetExp[T](t: Exp[Set[T]]): SetOps[T] = new SetOps(t)
+    implicit def tToSetExp[T](t: Set[T]): SetOps[T] = expToSetExp(t)
+  }
+
   trait TypeFilterOps extends TraversableOps {
     import OpsExpressionTree._
     case class GroupByType[T, C[X] <: Traversable[X],D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends BinaryOpExp[C[D[T]],D[T]=>T, TypeMapping[C,D]](base,f) {
