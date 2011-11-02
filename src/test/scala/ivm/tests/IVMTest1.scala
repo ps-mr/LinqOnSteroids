@@ -37,12 +37,11 @@ class IVMTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
     val vQueryablePlusOnePlusOne = new IncrementalResult(vQueryablePlusOne.map(_ + 1))
     //val vQueryablePOIRPlusOne = new IncrementalResult(vQueryablePlusOneIncRes.map(_ + 1)) //Compiles, but not what we want - the standard map is invoked!
     val vQueryablePOIRPlusOne = new IncrementalResult(vQueryablePlusOneIncRes.asQueryable.map(_ + 1))
-    //val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 * i) //XXX can't use *, not defined, nor asQueryable.
-    val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 + i)
+    val vIncUpdTimes2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 * i)
 
     def out() {
       show("vIncUpd", vIncUpd)
-      show("vIncUpdPlus2", vIncUpdPlus2)
+      show("vIncUpdTimes2", vIncUpdTimes2)
       show("vQueryablePlusOnePlusOne", vQueryablePlusOnePlusOne)
       show("vQueryablePOIRPlusOne", vQueryablePOIRPlusOne)
     }
