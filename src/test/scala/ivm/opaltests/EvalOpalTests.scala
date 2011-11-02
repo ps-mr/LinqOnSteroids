@@ -25,13 +25,24 @@ class EvalOpalTests {
     def sourceElems(Types: Exp[Set[ClassFile]]) = Types union (Types flatMap (_.methods)) union (Types flatMap (_.fields))
 
     //Listing 3:
-    //Alternatives, to get Exp[Set[ClassFile]] as result type:
+    //Working alternatives, to get Exp[Set[ClassFile]] as result type:
     //val Types = queryData filter (classFile => classFile.thisClass.packageName === "bat.type")
     val Types = queryData withFilter (classFile => classFile.thisClass.packageName === "bat.type") force
-    /*val Types = (for {
+    //Non-working alternatives:
+    /*
+    val Types = (for {
       classFile <- queryData
       if classFile.thisClass.packageName === "bat.type"
-    } yield classFile) force*/
+    } yield classFile) force
+    */
+    //This desugars to:
+    //val Types = queryData withFilter (classFile => classFile.thisClass.packageName === "bat.type") map identity force
+
+    //And the problem is in the parameter for the call to map - since CanBuildFrom instances are not available very
+    //precisely on TraversableView[T, Repr] (for different Repr). Maybe it'll be enough to have some for the non-view
+    //version of the collection (Repr), at least surely for the type; we can then reuse
+    //TraversableView/SeqView.canBuildFrom.
+
     val TypesEnsemble = sourceElems(Types)
     val TypesFlyweightFactoryEnsemble = sourceElems(queryData filter (x => x.thisClass.packageName === "bat.type" && x.thisClass.simpleName === "TypeFactory"))
     val tmp = queryData filter (x => x.thisClass.packageName === "bat.type" && x.thisClass.simpleName === "IType")
