@@ -26,11 +26,11 @@ object Benchmarking {
    * @param warmuUpLoops: Warm up the VM - should be more
    * @param sampleLoops Iterations to measure variance.
    */
-  def benchMark(name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true)
+  def benchMark(name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true, doPrint: Boolean = false)
                (toBench: => Unit): Double = {
     for (i <- 1 to warmUpLoops)
       toBench
-    if (verbose)
+    if (doPrint)
       println()
 
     val stats = new VarianceCalc
