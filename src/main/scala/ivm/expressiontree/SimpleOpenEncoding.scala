@@ -227,10 +227,10 @@ object SimpleOpenEncoding {
     implicit def expToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Exp[TraversableView[T, Repr]]): TraversableViewOps[T, Repr] = new TraversableViewOps(t)
     implicit def tToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
 
-    implicit def expToTravViewExp2[T](t: Exp[TraversableView[T, Traversable[_]]]): TraversableViewOps[T, Traversable[T]] = expToTravViewExp(
-      t.asInstanceOf[Exp[TraversableView[T, Traversable[T]]]])
+    implicit def expToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: Exp[TraversableView[T, C[_]]]): TraversableViewOps[T, C[T]] = expToTravViewExp(
+      t.asInstanceOf[Exp[TraversableView[T, C[T]]]])
     //XXX
-    implicit def tToTravViewExp2[T](t: TraversableView[T, Traversable[_]]): TraversableViewOps[T, Traversable[T]] = expToTravViewExp2(t)
+    implicit def tToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
   }
 
   /**
