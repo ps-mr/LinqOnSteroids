@@ -20,13 +20,16 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
   val warmUpLoops = 100
   val sampleLoops = 50
 
+  val toAdd = Array[Int]((1 to 10 * 1000): _*)
+  val toAddDel = Array[Int]((100 * 1000 to 100 * 1000 + 1000): _*)
+
   @Test
   def aNative() {
     val v = new mutable.HashSet[Int]
     var res: mutable.HashSet[Int] = null
     benchMark("nativeMap", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
       v.clear()
-      v ++= 1 until 10 * 1000
+      v ++= toAdd
       res = v map (_ + 1)
     }
   }
@@ -34,10 +37,11 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
   def testFillAndUpdate(title: String, v: IncHashSet[Int]) {
     benchMark(title, warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
       v.clear()
-      v ++= 1 until 10 * 1000
+      v ++= toAdd
     }
     benchMark(title + " - upd", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-      v += 1
+      v ++= toAddDel
+      v --= toAddDel
     }
   }
 
