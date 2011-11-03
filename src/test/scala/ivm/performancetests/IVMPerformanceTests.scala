@@ -79,13 +79,7 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
     val vQueryablePOIRPlusOne = new IncrementalResult(vQueryablePlusOneIncRes.asQueryable.map(_ + 1))
     val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 + i)
 
-    benchMark("various queries", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-      v.clear()
-      v ++= 1 until 10 * 1000
-    }
+    testFillAndUpdate("various queries", v)
     vQueryablePlusOneIncRes.interpret() should be (vQueryablePlusOneIncRes.base.interpret())
-    benchMark("various queries - upd", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-      v += 1
-    }
   }
 }
