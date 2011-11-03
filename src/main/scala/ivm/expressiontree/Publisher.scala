@@ -18,7 +18,7 @@ case class Include[+T](t: T) extends TravMessage[T]
 }*/
 case class Remove[+T](t: T) extends TravMessage[T]
 case class Update[+T](old: T, curr: T) extends TravMessage[T]
-case class Reset() extends TravMessage[Nothing]
+case object Reset extends TravMessage[Nothing]
 // XXX: A union class will have a hard time handling a Reset event. Maybe it's better to just batch Remove messages for
 // a Reset? That's a problem when reset is O(1); maybe that must be done by intermediate nodes, which don't have however
 // the elements anyway, because they have not been transformed.
@@ -118,7 +118,7 @@ trait EvtTransformer[-T, +U, -Repr] extends TravMsgSeqSubscriber[T, Repr] with T
   //Precondition: only ever pass Reset or Update nodes.
   protected def defTransformedMessages(v: TravMessage[T]): Seq[TravMessage[U]] = {
     v match {
-      case Reset() => Seq(Reset())
+      case Reset => Seq(Reset)
       case Update(old, curr) =>
         Seq(Remove(old), Include(curr)) flatMap transformedMessages
       case _ =>

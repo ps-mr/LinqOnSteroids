@@ -73,7 +73,7 @@ trait UnionMaintainer[T, Repr <: Exp[Traversable[T]]] extends EvtTransformer[T, 
     val fixedEvts = for (evt <- evts)
       yield
       evt match {
-        case Reset() => pub.interpret().toSeq map (Remove(_))
+        case Reset => pub.interpret().toSeq map (Remove(_))
         case _ => Seq(evt)
       }
     super.notify(pub, fixedEvts.flatten)
@@ -103,7 +103,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
             //XXX very important! This can only work because we send the
             //modification before performing the update. Otherwise, we could pack the list of elements within
             //Reset notifications
-            case Reset() => publish(pub.interpret().toSeq map (Remove(_)))
+            case Reset => publish(pub.interpret().toSeq map (Remove(_)))
           }
         }
       }

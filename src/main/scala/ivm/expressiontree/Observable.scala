@@ -8,7 +8,7 @@ trait ObservableBuffer[T] extends Buffer[T] with TravMsgSeqPublisher[T] {
   type Pub <: ObservableBuffer[T]
   abstract override def clear() = {
     //publish(Script(this.map(Remove(_))))
-    publish(Reset())
+    publish(Reset)
     super.clear()
   }
   abstract override def += (el: T) = {
@@ -45,7 +45,7 @@ trait ObservableSet[T] extends Set[T] with TravMsgSeqPublisher[T] {
   abstract override def clear() = {
     //publish(Script(this.map(Remove(_))))
     if (!silenceNotifications)
-      publish(Reset())
+      publish(Reset)
     super.clear()
   }
   abstract override def += (el: T) = {
@@ -92,7 +92,7 @@ trait ObservableSet[T] extends Set[T] with TravMsgSeqPublisher[T] {
   }
 
   private def doRemoveAndRebuild(newEls: Seq[T]) {
-    publish(Reset())
+    publish(Reset)
     publish((this -- newEls).toSeq map (Include(_))) // Here we compute this -- newEls and throw it away;
     // doing the notification afterwards
     assert(silenceNotifications == false)

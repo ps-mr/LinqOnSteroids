@@ -98,7 +98,7 @@ class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Tra
             set -= v
           }
 
-        case Reset() =>
+        case Reset =>
           logAndPublish(evt)
           set.clear()
         // These two cases are quite common: they basically mean that no special handling is provided for bulk events.
