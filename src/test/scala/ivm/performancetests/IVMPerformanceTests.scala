@@ -53,37 +53,18 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
     incrementalResult.interpret() should be (incrementalResult.base.interpret())
   }
 
-  @Test def with1Mapping() {
+  @Test def withNMappings() {
     val v = new IncHashSet[Int]
 
-    val incrementalResult = new IncrementalResult(v.asQueryable.map(_ + 1))
-    testFillAndUpdate("IncHashSet & Inc Res(map(_ + 1))", v)
-    incrementalResult.interpret() should be (incrementalResult.base.interpret())
-  }
-
-  @Test def with2Mapping() {
-    val v = new IncHashSet[Int]
-
-    val incrementalResult = new IncrementalResult(v.asQueryable.map(_ + 1).map(_ + 1))
-    testFillAndUpdate("IncHashSet & Inc Res(map(_ + 1).map(_ + 1))", v)
-    incrementalResult.interpret() should be (incrementalResult.base.interpret())
-  }
-
-
-  @Test def with3Mapping() {
-    val v = new IncHashSet[Int]
-
-    val incrementalResult = new IncrementalResult(v.asQueryable.map(_ + 1).map(_ + 1).map(_ + 1))
-    testFillAndUpdate("IncHashSet & Inc Res(map(_ + 1).map(_ + 1).map(_ + 1))", v)
-    incrementalResult.interpret() should be (incrementalResult.base.interpret())
-  }
-
-  @Test def with4Mapping() {
-    val v = new IncHashSet[Int]
-
-    val incrementalResult = new IncrementalResult(v.asQueryable.map(_ + 1).map(_ + 1).map(_ + 1).map(_ + 1))
-    testFillAndUpdate("IncHashSet & Inc Res(map(_ + 1).map(_ + 1).map(_ + 1).map(_ + 1))", v)
-    incrementalResult.interpret() should be (incrementalResult.base.interpret())
+    for (n <- 1 to 10) {
+      var query = v.asQueryable
+      for (i <- 1 to n) {
+        query = query.map(_ + 1)
+      }
+      val incrementalResult = new IncrementalResult(query)
+      testFillAndUpdate("IncHashSet & Inc Res(%d times map(_ + 1))" format n, v)
+      incrementalResult.interpret() should be (incrementalResult.base.interpret())
+    }
   }
 
   @Test def zManyQueries() {
