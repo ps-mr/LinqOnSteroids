@@ -99,7 +99,7 @@ trait ObservableSet[T] extends Set[T] with TravMsgSeqPublisher[T] {
     //super.--= is defined in terms of -=, so we want to prevent -= from
     //publishing updates.
     silenceNotifications = true
-    val res = super.--=(newEls)
+    super.--=(newEls)
     silenceNotifications = false
   }
 
@@ -109,7 +109,7 @@ trait ObservableSet[T] extends Set[T] with TravMsgSeqPublisher[T] {
     //super.--= is defined in terms of -=, so we want to prevent -= from
     //publishing updates.
     silenceNotifications = true
-    val res = super.--=(newEls)
+    super.--=(newEls)
     silenceNotifications = false
   }
 }
