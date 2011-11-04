@@ -60,9 +60,9 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
   }
 
   @Test def withNMappingsArr() {
-    val v = new IncArrayBuffer[Int]
-
     for (n <- 1 to 10) {
+      val v = new IncArrayBuffer[Int]
+
       var query = v.asQueryable
       for (i <- 1 to n) {
         query = query.map(_ + 1)
@@ -74,9 +74,9 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
   }
 
   @Test def withNMappings() {
-    val v = new IncHashSet[Int]
-
     for (n <- 1 to 10) {
+      val v = new IncHashSet[Int]
+
       var query = v.asQueryable
       for (i <- 1 to n) {
         query = query.map(_ + 1)
