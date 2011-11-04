@@ -6,6 +6,14 @@ import collection.mutable.{Buffer, Set}
 // On the one hand, this interface matches a relation in the closest way.
 trait ObservableBuffer[T] extends Buffer[T] with TravMsgSeqPublisher[T] {
   type Pub <: ObservableBuffer[T]
+  //XXX: we might want to make this still less ad-hoc
+  private[this] var silenceNotifications = false
+
+  override protected[this] def publish(evt: Seq[Message[Traversable[T]]]) {
+    if (!silenceNotifications)
+      super.publish(evt)
+  }
+
   abstract override def clear() = {
     //publish(Script(this.map(Remove(_))))
     publish(Reset)
@@ -33,6 +41,35 @@ trait ObservableBuffer[T] extends Buffer[T] with TravMsgSeqPublisher[T] {
     val seq = iter.toSeq
     publish(seq.map(Include(_)))
     super.insertAll(n, seq)
+  }
+  /*
+  We need to override also ++=, whose implementation uses += only sometimes. Since this implementation is inspired by
+  ObservableBuffer, we also reproduce a bug of it [1] - arguably, it's rather a bug in the specs for ArrayBuffer, which
+  does not explain how to handle this.
+  [1] https://issues.scala-lang.org/browse/SI-4461
+  From ArrayBuffer:
+  override def ++=(xs: TraversableOnce[A]): this.type = xs match {
+    case v: collection.IndexedSeqLike[_, _] =>
+      val n = v.length
+      ensureSize(size0 + n)
+      v.copyToArray(array.asInstanceOf[scala.Array[Any]], size0, n)
+      size0 += n
+      this
+    case _ =>
+      super.++=(xs)
+  }
+  super.++= invokes
+  */
+  abstract override def ++=(xs: TraversableOnce[T]): this.type = {
+    val seq = xs.toSeq
+    publish(seq map (Include(_)))
+    assert(silenceNotifications == false)
+    //super.++= is defined in terms of +=, so we want to prevent += from
+    //publishing updates.
+    silenceNotifications = true
+    val res = super.++=(seq)
+    silenceNotifications = false
+    res
   }
 }
 
