@@ -2,14 +2,16 @@ package ivm
 package performancetests
 
 import org.scalatest.junit.{JUnitSuite, ShouldMatchersForJUnit}
-import org.junit.Test
+import org.junit.{Ignore, Test}
 import collection.mutable
 
 import performancetests.Benchmarking._
 import tests.IVMTestUtil
+
 import expressiontree._
 import Lifting._
-import collections.IncHashSet
+import collections.{IncArrayBuffer, IncHashSet}
+import collection.generic.{Growable, Shrinkable}
 
 /**
  * User: pgiarrusso
@@ -34,7 +36,7 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
     }
   }
 
-  def testFillAndUpdate(title: String, v: IncHashSet[Int]) {
+  def testFillAndUpdate(title: String, v: Growable[Int] with Shrinkable[Int]) {
     benchMark(title, warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
       v.clear()
       v ++= toAdd
@@ -55,6 +57,20 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
     val incrementalResult = new IncrementalResult[Int](v)
     testFillAndUpdate("IncHashSet & IncRes", v)
     incrementalResult.interpret() should be (incrementalResult.base.interpret())
+  }
+
+  @Test def withNMappingsArr() {
+    val v = new IncArrayBuffer[Int]
+
+    for (n <- 1 to 10) {
+      var query = v.asQueryable
+      for (i <- 1 to n) {
+        query = query.map(_ + 1)
+      }
+      val incrementalResult = new IncrementalResult(query)
+      testFillAndUpdate("IncArrayBuffer & Inc Res(%d times map(_ + 1))" format n, v)
+      incrementalResult.interpret() should be (incrementalResult.base.interpret().toSet)
+    }
   }
 
   @Test def withNMappings() {
