@@ -20,11 +20,12 @@ import collection.generic.{Growable, Shrinkable}
  */
 
 class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
-  val warmUpLoops = 100
-  val sampleLoops = 50
+  val debug = false
+  val warmUpLoops = if (debug) 1 else 100
+  val sampleLoops = if (debug) 1 else 50
 
   val toAdd = Array[Int]((1 to 10 * 1000): _*)
-  val toAddDel = Array[Int]((100 * 1000 to 100 * 1000 + 1000): _*)
+  val toAddDel = if (debug) Array(1) else Array[Int]((100 * 1000 to 100 * 1000 + 1000): _*)
 
   @Test
   def aNative() {
