@@ -56,6 +56,7 @@ class EvalOpalTests {
 
     //Listing 4:
     val uses: Exp[Set[(AnyRef, AnyRef)]] = null
+    //Without Exp[Set].apply = Exp[Set].contains
     /*
     for {
       el <- uses
@@ -63,12 +64,29 @@ class EvalOpalTests {
       t1 <- TypesFlyweightCreationEnsemble
       if t === t1
       //I'm stuck here, since I can't express !(a contains b)
-    } yield null
+    } yield el
+    //Use lifted Exp[Set].apply
+    for {
+      el <- uses
+      val (s, t) = unliftPair(el)
+      if TypesFlyweightCreationEnsemble(t)
+      if !TypesFlyweightFactoryEnsemble(s)
+    } yield el
     */
-    //Rewrite to avoid using non-working pattern matching, ugly unliftPair and non-working value definitions
+    //Rewrite to avoid using ugly unliftPair or non-working value definitions, which rely on non-working pattern
+    //matching
     for {
       el <- uses
       if TypesFlyweightCreationEnsemble(el._2)
+      if !TypesFlyweightFactoryEnsemble(el._1)
+    } yield el
+    //This query is an anti-join between sets. Can it be computed more quickly than with a single loop?
+    // There's a VLDB paper about algorithms for fast set intersection - the natural lower boundary is the
+    // result size, not the sum of the input sizes
+    //An alternative rewriting would be this one:
+    for {
+      t <- TypesFlyweightCreationEnsemble
+      el <- for (el <- uses if el._2 === t) yield el
       if !TypesFlyweightFactoryEnsemble(el._1)
     } yield el
   }
