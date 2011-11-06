@@ -20,6 +20,8 @@ abstract class FuncExpBase[-S, +T, +Type] extends CheckingExp[Type] with Equals 
     "(%s) %s %s" format (xName, arrowString, body)
   def arrowString: String
 
+  //Note that thanks to this line and to copy(), we can perform optimization within function bodies, which is notable
+  //(even if probably not a contribution)!
   private[ivm] override def children = Seq(body)
   //private[ivm] override def closedTermChildren: Seq[Exp[_]] = Seq()
   //Copied from UnaryOpTrait:

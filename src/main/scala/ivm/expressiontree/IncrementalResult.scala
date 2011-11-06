@@ -48,7 +48,7 @@ private[expressiontree] object IncrementalResult {
 // XXX: SetProxy is not entirely
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
 // same type. OTOH, this methods allows accessing the underlying data at all.
-class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Traversable[T]]
+class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Traversable[T]] //The use of NullaryExp is fishy.
   with TravMsgSeqSubscriber[T, Exp[Traversable[T]]]
   with Queryable[T, collection.SetProxy[T]]
   with Maintainer[Traversable[T], T, Traversable[T]]
