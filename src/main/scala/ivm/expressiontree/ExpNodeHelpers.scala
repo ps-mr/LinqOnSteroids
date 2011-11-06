@@ -10,7 +10,7 @@ trait CheckingExp[+R] extends Exp[R] {
   def nodeArity: Int
   protected def checkedGenericConstructor: Seq[Exp[_]] => Exp[R]
 
-  def genericConstructor = v =>
+  private[ivm] def genericConstructor(v: Seq[Exp[_]]) =
     if (v.length == nodeArity)
       checkedGenericConstructor(v)
     else

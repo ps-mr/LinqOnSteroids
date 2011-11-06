@@ -14,7 +14,7 @@ trait Exp[+T] extends MsgSeqPublisher[T] {
 //  private[ivm] def closedTermChildren: Seq[Exp[_]] = children
   private[ivm] def roots: Seq[Exp[RootType]] = Seq.empty
   //The arity is not specified.
-  private[ivm] def genericConstructor: Seq[Exp[_]] => Exp[T]
+  private[ivm] def genericConstructor(v: Seq[Exp[_]]): Exp[T]
   // some child management auxiliary functions
 
   private[ivm] def visitPreorder(visitor: Exp[_] => Unit, childSelector: Exp[_] => Seq[Exp[_]]) {
