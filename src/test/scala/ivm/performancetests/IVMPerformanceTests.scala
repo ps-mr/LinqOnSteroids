@@ -5,6 +5,7 @@ import org.scalatest.junit.{JUnitSuite, ShouldMatchersForJUnit}
 import org.junit.{Ignore, Test}
 import collection.mutable
 
+import mutable.Buffer
 import performancetests.Benchmarking._
 import tests.IVMTestUtil
 
@@ -47,6 +48,20 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
     }
   }
 
+  def testFillAndUpdateArr(title: String, v: Buffer[Int]) {
+    benchMark(title, warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      v.clear()
+      v ++= toAdd
+    }
+    benchMark(title + " - upd", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      v ++= toAddDel
+      //v trimEnd toAddDel.size
+      //XXX: again, ArrayBuffer is too "optimized" and does not propagate change - for now inline the standard defs
+      //of trimEnd and remove(Int, Int).
+      val lastPos = v.size - toAddDel.size
+      for (i <- 0 until toAddDel.size) v remove lastPos
+    }
+  }
   @Test def incHashSet() {
     val v = new IncHashSet[Int]
     testFillAndUpdate("IncHashSet", v)
@@ -68,7 +83,7 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
         query = query.map(_ + 1)
       }
       val incrementalResult = new IncrementalResult(query)
-      testFillAndUpdate("IncArrayBuffer & Inc Res(%d times map(_ + 1))" format n, v)
+      testFillAndUpdateArr("IncArrayBuffer & Inc Res(%d times map(_ + 1))" format n, v)
       incrementalResult.interpret() should be (incrementalResult.base.interpret().toSet)
     }
   }
