@@ -84,6 +84,14 @@ class Optimization {
       case _ => e
     }
 
+  //XXX: This is a hack tailored to IVMPerformanceTests. OTOH, implementing the proper version seems just engineering
+  val mergeOps: Exp[_] => Exp[_] =
+    e => e match {
+      case p@Plus(Plus(a, Const(b)), Const(c)) =>
+        mergeOps(Plus(a, p.isNum.plus(b, c))(p.isNum))
+      case _ => e
+    }
+
   val mergeFilters: Exp[_] => Exp[_] =
     e => e match {
       case Filter(Filter(col2: Exp[Traversable[_]], f2), f) =>
@@ -134,9 +142,13 @@ object Optimization {
 
   def optimize[T](exp: Exp[T]): Exp[T] = {
     shareSubqueries(
-     mergeFilters(
-      optimizeCartProdToJoin(exp)))
+     mergeOps(
+      mergeMaps(
+       mergeFilters(
+        optimizeCartProdToJoin(exp)))))
   }
+
+  def mergeOps[T](exp: Exp[T]): Exp[T] = exp.transform(opt.mergeOps)
 
   def mergeMaps[T](exp: Exp[T]): Exp[T] = exp.transform(opt.mergeMaps)
 
