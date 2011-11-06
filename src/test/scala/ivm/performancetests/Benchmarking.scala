@@ -26,12 +26,14 @@ object Benchmarking {
    * @param warmuUpLoops: Warm up the VM - should be more
    * @param sampleLoops Iterations to measure variance.
    */
-  def benchMark(name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true, doPrint: Boolean = false)
+  def benchMark(name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => Unit): Double = {
     for (i <- 1 to warmUpLoops)
       toBench
-    if (doPrint)
+    if (hasConsoleOutput)
       println()
+    else
+      print(">>> Name = %s, time = " format name)
 
     val stats = new VarianceCalc
     for (i <- 1 to sampleLoops) {
@@ -45,7 +47,9 @@ object Benchmarking {
       val devStd = math.sqrt(stats.variance) / math.pow(10,6)
       //The error of the measured average as an estimator of the average of the underlying random variable
       val stdErr = devStd / math.sqrt(sampleLoops)
-      println(">>> Name = %s, time = %.3f +- %.3f" format (name, avg, stdErr))
+      if (hasConsoleOutput)
+        print(">>> Name = %s, time = " format name)
+      println("%.3f +- %.3f (stdErr = %.3f)" format (avg, devStd, stdErr))
     }
     avg
   }
