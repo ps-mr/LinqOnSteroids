@@ -84,9 +84,9 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
   def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[Option[T]]])
 }
 
-case class IsDefinedAt[S,T](f: Exp[PartialFunction[S,T]], a: Exp[S]) extends BinaryOpExp[PartialFunction[S,T], S, Boolean](f, a){
+case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends BinaryOpExp[PartialFunction[S,T], S, Boolean](f, a) {
   def interpret = f.interpret().isDefinedAt(a.interpret())
-  override def copy(f: Exp[PartialFunction[S,T]], a: Exp[S]) = IsDefinedAt(f, a)
+  override def copy(f: Exp[PartialFunction[S, T]], a: Exp[S]) = IsDefinedAt(f, a)
 }
 
 object FuncExp {

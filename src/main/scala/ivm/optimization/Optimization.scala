@@ -130,7 +130,7 @@ object Optimization {
     }
 
   val opt = new Optimization()
-  val subqueries : Map[Exp[_],Any] = Map.empty
+  val subqueries: Map[Exp[_], Any] = Map.empty
   def addSubQuery[T](query: Exp[T]) {
     val optquery = optimize(query)  // TODO: Reconsider whether it is a good idea to optimize here
     subqueries += optquery -> optquery.interpret()
