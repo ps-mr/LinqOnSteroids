@@ -23,7 +23,7 @@ import optimization.Optimization
 class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
   val debug = false
   val warmUpLoops = if (debug) 1 else 100
-  val sampleLoops = if (debug) 1 else 50
+  val sampleLoops = if (debug) 2 else 50
   val maxN = if (debug) 5 else 8
 
   val toAdd = Array[Int]((1 to 10 * 1000): _*)
