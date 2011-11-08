@@ -13,6 +13,7 @@ import expressiontree._
 import Lifting._
 import collections.{IncArrayBuffer, IncHashSet}
 import collection.generic.{Growable, Shrinkable}
+import optimization.Optimization
 
 /**
  * User: pgiarrusso
@@ -23,6 +24,7 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
   val debug = false
   val warmUpLoops = if (debug) 1 else 100
   val sampleLoops = if (debug) 1 else 50
+  val maxN = if (debug) 5 else 8
 
   val toAdd = Array[Int]((1 to 10 * 1000): _*)
   val toAddDel = if (debug) Array(1) else Array[Int]((100 * 1000 to 100 * 1000 + 1000): _*)
@@ -75,16 +77,29 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
     incrementalResult.interpret() should be (incrementalResult.base.interpret())
   }
 
-  @Test def withNMappingsArr() {
-    for (n <- 1 to 10) {
+  //First results show that map fusion reduces performance. After adding a specialized version of constant-folding (an hack)
+  @Test def withNMappingsArrOptimize = withNMappingsArr(true)
+  @Test def withNMappingsArrNoOptimize = withNMappingsArr(false)
+  @Test def withNMappingsArrNoOptimizeMap2 = withNMappingsArr(false, true)
+  @Test def withNMappingsArrOptimizeMap2 = withNMappingsArr(true, true)
+
+  def withNMappingsArr(optimize: Boolean, useMap2: Boolean = false) {
+    for (n <- 1 to maxN) {
       val v = new IncArrayBuffer[Int]
 
       var query = v.asQueryable
       for (i <- 1 to n) {
-        query = query.map(_ + 1)
+        if (useMap2)
+          query = query.map2(_ + 1)
+        else
+          query = query.map(_ + 1)
       }
+      if (optimize)
+        query = Optimization.optimize(query)
       val incrementalResult = new IncrementalResult(query)
-      testFillAndUpdateArr("IncArrayBuffer & Inc Res(%d times map(_ + 1))" format n, v)
+      println(query)
+      testFillAndUpdateArr("IncArrayBuffer & Inc Res(%d times map(_ + 1)) - opt %b, useMap2 %b" format
+        (n, optimize, useMap2), v)
       incrementalResult.interpret() should be (incrementalResult.base.interpret().toSet)
     }
   }

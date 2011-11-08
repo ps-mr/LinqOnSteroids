@@ -117,6 +117,8 @@ object SimpleOpenEncoding {
       val t: Exp[Repr]
       def map[U, That <: Traversable[U]](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         new MapOpMaintainerExp[T, Repr, U, That](this.t, FuncExp(f))
+      def map2[U, That <: Traversable[U]](f: T => U)(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+        new MapOpMaintainerExp[T, Repr, U, That](this.t, FuncExp(f: Exp[T => U]))
       def flatMap[U, That <: Traversable[U]](f: Exp[T] => Exp[TraversableOnce[U]])
                           (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         new FlatMapMaintainerExp[T, Repr, U, That](this.t, FuncExp(f))
