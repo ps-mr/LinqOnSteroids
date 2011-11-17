@@ -1,6 +1,7 @@
 package ivm.expressiontree
 
 import collection.mutable.HashMap
+import actors.threadpool.AtomicInteger
 
 // Not exactly sure what I should use to represent applications, but this is the standard App node, well known from
 // encodings of the STLC (simply typed lambda calculus).
@@ -129,9 +130,9 @@ case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends B
 }
 
 object FuncExp {
-  private val varCounter = new ScalaThreadLocal(0);
+  private val varCounter = new AtomicInteger(0)
   val varzero = gensym()
-  def gensymId(): Int = { varCounter modify (1 +); varCounter.get }
+  def gensymId(): Int = varCounter.incrementAndGet()
   //def gensym(): Var = Var(gensymId())
   def gensym[T](): TypedVar[T] = TypedVar[T](gensymId())
 
