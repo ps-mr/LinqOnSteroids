@@ -8,6 +8,7 @@ import expressiontree.Exp
 import expressiontree.Lifting._
 import optimization.Optimization
 import performancetests.Benchmarking.benchMark
+import collection.mutable.ArrayBuffer
 
 
 /**
@@ -21,8 +22,8 @@ class TransformTest extends JUnitSuite with ShouldMatchersForJUnit {
   val sampleLoops = if (debug) 2 else 50
   val execLoops = 10
   val collSize = if (debug) 10 else 100
-  val l: Exp[Traversable[Int]] = toExp(Vector.range(1, collSize))
-  val l2: Exp[Traversable[Int]] = toExp(Vector.range(1, collSize))
+  val l: Exp[Traversable[Int]] = toExp(ArrayBuffer.range(1, collSize))
+  val l2: Exp[Traversable[Int]] = toExp(ArrayBuffer.range(1, collSize))
 
   def testRebuild[T](t: Exp[T]) = {
     val tTransf = t transform identity
