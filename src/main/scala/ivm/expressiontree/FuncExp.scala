@@ -92,7 +92,7 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
 
 //The higher-order representation is constructed and passed to FuncExp to share code.
 class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, T](FuncExp.closeOver(foasBody, v)) {
-  override def arrowString = "=i>"
+  override def arrowString = "=i=>"
 
   //The following two lines must be enabled together, I believe:
   override def x = v
@@ -108,7 +108,7 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
     }
 }
 object FuncExpInt {
-  val env = new ScalaThreadLocal(new HashMap[Int, Any]())
+  private[expressiontree] val env = new ScalaThreadLocal(new HashMap[Int, Any]())
 }
 
 class ScalaThreadLocal[T](v: => T) extends ThreadLocal[T] {
