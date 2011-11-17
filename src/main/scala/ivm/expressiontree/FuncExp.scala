@@ -93,12 +93,11 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
 //The higher-order representation is constructed and passed to FuncExp to share code.
 class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, T](FuncExp.closeOver(foasBody, v)) {
   override def arrowString = "=i>"
-  /*
-  //The following three lines must be enabled together, I believe:
-  override def children = Seq(foasBody)
+
+  //The following two lines must be enabled together, I believe:
   override def x = v
   override def body = foasBody
-  */
+
   override def interpret(): S => T =
     z => {
       import FuncExpInt._
