@@ -118,6 +118,9 @@ object FuncExpInt {
 
 class ScalaThreadLocal[T](v: => T) extends ThreadLocal[T] {
   override def initialValue() = v
+  def modify(f: T => T) {
+    set(f(get()))
+  }
 }
 
 case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends BinaryOpExp[PartialFunction[S,T], S, Boolean](f, a) {
@@ -126,9 +129,9 @@ case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends B
 }
 
 object FuncExp {
-  private var varCounter: Int = 0;
+  private val varCounter = new ScalaThreadLocal(0);
   val varzero = gensym()
-  def gensymId() = { varCounter += 1; varCounter }
+  def gensymId(): Int = { varCounter modify (1 +); varCounter.get }
   //def gensym(): Var = Var(gensymId())
   def gensym[T](): TypedVar[T] = TypedVar[T](gensymId())
 
