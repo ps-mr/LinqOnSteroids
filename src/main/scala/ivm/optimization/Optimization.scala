@@ -95,8 +95,6 @@ class Optimization {
   val mergeFilters: Exp[_] => Exp[_] =
     e => e match {
       case Filter(Filter(col2: Exp[Traversable[_]], f2), f) =>
-        // Here, the cast is needed to make the type to match the one of the implicit conversion and thus to enable the
-        // latter.
         mergeFilters(
           col2.withFilter{
             (x: Exp[_]) => And(f2(x), f(x))
