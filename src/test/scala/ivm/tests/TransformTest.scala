@@ -17,7 +17,7 @@ import performancetests.Benchmarking.benchMark
 
 class TransformTest extends JUnitSuite with ShouldMatchersForJUnit {
   val debug = false
-  val warmUpLoops = if (debug) 1 else 2000
+  val warmUpLoops = if (debug) 1 else 4000
   val sampleLoops = if (debug) 2 else 50
   val execLoops = 10
   val collSize = if (debug) 10 else 100
@@ -39,23 +39,26 @@ class TransformTest extends JUnitSuite with ShouldMatchersForJUnit {
 
   def testBenchmarkTransforms[T](t: Exp[T]) {
     val (_, tTransf) = testRebuild(t)
-    benchMark("base", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("base #1", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
       t.interpret()
     }
-    benchMark("base again", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("base #2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
       t.interpret()
     }
-    benchMark("after transform identity", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("after transform identity #1", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
       tTransf.interpret()
     }
-    benchMark("after transform identity, again", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("after transform identity #2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+      tTransf.interpret()
+    }
+    benchMark("after transform identity #3", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
       tTransf.interpret()
     }
     val tOptim = Optimization.optimize(t)
-    benchMark("after optimization", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("after optimization #1", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
       tOptim.interpret()
     }
-    benchMark("after optimization, again", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("after optimization #2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
       tOptim.interpret()
     }
     println(t)
