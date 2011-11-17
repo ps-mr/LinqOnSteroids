@@ -102,14 +102,18 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
   override def interpret(): S => T =
     z => {
       import FuncExpInt._
-      env(v.id) = z
+      env.get()(v.id) = z
       val res = foasBody.interpret()
-      env -= v.id
+      env.get() -= v.id
       res
     }
 }
 object FuncExpInt {
-  val env = new HashMap[Int, Any]()
+  val env = new ScalaThreadLocal(new HashMap[Int, Any]())
+}
+
+class ScalaThreadLocal[T](v: => T) extends ThreadLocal[T] {
+  override def initialValue() = v
 }
 
 case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends BinaryOpExp[PartialFunction[S,T], S, Boolean](f, a) {
