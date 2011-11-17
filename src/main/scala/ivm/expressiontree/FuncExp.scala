@@ -109,6 +109,11 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
 }
 object FuncExpInt {
   private[expressiontree] val env = new ScalaThreadLocal(new HashMap[Int, Any]())
+  //Write down a constructor of FuncExpInt from HOAS
+  def apply[S, T](f: Exp[S] => Exp[T]) = {
+    val v = FuncExp.gensym[S]()
+    new FuncExpInt(f(v), v)
+  }
 }
 
 class ScalaThreadLocal[T](v: => T) extends ThreadLocal[T] {
