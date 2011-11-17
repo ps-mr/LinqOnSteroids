@@ -131,10 +131,11 @@ case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends B
 
 object FuncExp {
   private val varCounter = new AtomicInteger(0)
-  val varzero = gensym()
   def gensymId(): Int = varCounter.incrementAndGet()
   //def gensym(): Var = Var(gensymId())
   def gensym[T](): TypedVar[T] = TypedVar[T](gensymId())
+
+  val varzero = gensym()
 
   def closeOver[S, T](e: Exp[T], v: TypedVar[S]): Exp[S] => Exp[T] = x => e.substVar(v.id, x)
   //def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = FuncExp(closeOver(e, v))
