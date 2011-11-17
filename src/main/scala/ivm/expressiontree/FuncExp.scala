@@ -1,5 +1,7 @@
 package ivm.expressiontree
 
+import collection.mutable.HashMap
+
 // Not exactly sure what I should use to represent applications, but this is the standard App node, well known from
 // encodings of the STLC (simply typed lambda calculus).
 //Having explicit App nodes for application can be useful to represent application instead of computing it,
@@ -14,8 +16,12 @@ abstract class FuncExpBase[-S, +T, +Type] extends CheckingExp[Type] with Equals 
   val f: Exp[S] => Exp[T]
 
   def xName = x.name
-  lazy val x = gensym()
-  lazy val body = f(x)
+  protected[this] lazy val internX = gensym[S]()
+  def x: TypedVar[_] = internX //Since functions are contravariant in S, so TypedVar[S] cannot be a return type for a public method.
+
+  lazy val lazyBody: Exp[T] = f(internX)
+  def body: Exp[T] = lazyBody
+
   override def toString() =
     "(%s) %s %s" format (xName, arrowString, body)
   def arrowString: String
@@ -84,6 +90,28 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
   def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[Option[T]]])
 }
 
+//The higher-order representation is constructed and passed to FuncExp to share code.
+class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, T](FuncExp.closeOver(foasBody, v)) {
+  override def arrowString = "=i>"
+  /*
+  //The following three lines must be enabled together, I believe:
+  override def children = Seq(foasBody)
+  override def x = v
+  override def body = foasBody
+  */
+  override def interpret(): S => T =
+    z => {
+      import FuncExpInt._
+      env(v.id) = z
+      val res = foasBody.interpret()
+      env -= v.id
+      res
+    }
+}
+object FuncExpInt {
+  val env = new HashMap[Int, Any]()
+}
+
 case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends BinaryOpExp[PartialFunction[S,T], S, Boolean](f, a) {
   def interpret = f.interpret().isDefinedAt(a.interpret())
   override def copy(f: Exp[PartialFunction[S, T]], a: Exp[S]) = IsDefinedAt(f, a)
@@ -93,10 +121,20 @@ object FuncExp {
   private var varCounter: Int = 0;
   val varzero = gensym()
   def gensymId() = { varCounter += 1; varCounter }
-  def gensym(): Var = Var(gensymId())
-  def closeOver[S, T](e: Exp[T], v: Var): Exp[S] => Exp[T] = x => e.substVar(v.id, x)
-  def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = FuncExp(closeOver(e, v))
-  def makePartialFun[S, T](e: Exp[Option[T]], v: Var): PartialFuncExp[S, T] = PartialFuncExp(closeOver(e, v))
-  def makepairfun[S1, S2, T](e: Exp[T], v1: Var, v2: Var): FuncExp[(S1, S2), T] =
+  //def gensym(): Var = Var(gensymId())
+  def gensym[T](): TypedVar[T] = TypedVar[T](gensymId())
+
+  def closeOver[S, T](e: Exp[T], v: TypedVar[S]): Exp[S] => Exp[T] = x => e.substVar(v.id, x)
+  //def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = FuncExp(closeOver(e, v))
+  //def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = new FuncExpInt(e, v)
+  def makefun[S, T](e: Exp[T], v: TypedVar[/*S*/_]): FuncExp[S, T] = new FuncExpInt(e, v)
+
+  def makePartialFun[S, T](e: Exp[Option[T]], v: TypedVar[S]): PartialFuncExp[S, T] = PartialFuncExp(closeOver(e, v))
+  def makepairfun[S1, S2, T](e: Exp[T], v1: TypedVar[/*S1*/_], v2: TypedVar[/*S2*/_]): FuncExp[(S1, S2), T] =
     FuncExp(p => e.substVar(v1.id, Proj1(p)).substVar(v2.id, Proj2(p)))
+
+  //The idea here is similar to normalization-by-evaluation
+  def normalize[S, T](f: Exp[S] => Exp[T], x: TypedVar[/*S*/_] = gensym[S]()) = {
+    makefun(f(x.asInstanceOf[Exp[S]]), x)
+  }
 }

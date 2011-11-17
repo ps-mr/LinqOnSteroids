@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
-case class Var(id: Int) extends NullaryExp[Nothing] {
-  def name = "v" + id
-  override def toString() = name
-  def interpret() = throw new Exception("interpret on var")
+object Var {
+  def apply(id: Int) = TypedVar[Nothing](id)
+  def unapply(x: TypedVar[_]): Option[Int] = TypedVar.unapply(x)
 }
+//case class Var(override val id: Int) extends TypedVar[Nothing](id)

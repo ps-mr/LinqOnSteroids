@@ -43,7 +43,7 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
      }
    }
 
-  private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: Var) : Exp[FilterMonadic[T, Traversable[T]]] = {
+  private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]) : Exp[FilterMonadic[T, Traversable[T]]] = {
     if (conds.isEmpty) return e
     val residualcond : Exp[Boolean] = conds.reduce( (x,y) => And(x,y))
     e.withFilter(FuncExp.makefun[T,Boolean](residualcond,v))
