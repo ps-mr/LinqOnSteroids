@@ -33,6 +33,7 @@ object Benchmarking {
 
     for (i <- 1 to warmUpLoops)
       toBench
+    System.gc()
 
     if (hasConsoleOutput)
       println()
