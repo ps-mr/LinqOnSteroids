@@ -21,7 +21,7 @@ class Optimization {
     import Optimization.stripView
 
     stripView(fmColl).join(
-      stripView(wfColl),
+      stripView(wfColl))(
       FuncExp.makefun[T, TKey](lhs, fmFun.x).f,
       FuncExp.makefun[S, TKey](rhs, wfFun.x).f,
       FuncExp.makepairfun[T, S, TResult](

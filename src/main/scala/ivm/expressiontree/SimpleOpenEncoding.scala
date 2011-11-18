@@ -195,12 +195,12 @@ object SimpleOpenEncoding {
       def groupBy[K](f: Exp[T] => Exp[K]): Exp[Map[K, Repr]] =
         GroupBy(this.t, FuncExp(f))
 
-      def join[S, TKey, TResult, That](outercol: Exp[Traversable[S]],
-                                       outerKeySelector: Exp[T] => Exp[TKey],
+      def join[S, TKey, TResult, That](innerColl: Exp[Traversable[S]]) //Split argument list to help type inference deduce S and use it after.
+                                      (outerKeySelector: Exp[T] => Exp[TKey],
                                        innerKeySelector: Exp[S] => Exp[TKey],
                                        resultSelector: Exp[(T, S)] => Exp[TResult])
                                       (implicit cbf: CanBuildFrom[Repr, TResult, That]): Exp[That]
-      = Join(this.t, outercol, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
+      = Join(this.t, innerColl, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
     }
 
     trait TraversableViewLikeOps[

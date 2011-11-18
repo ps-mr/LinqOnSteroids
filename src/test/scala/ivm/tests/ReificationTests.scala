@@ -26,7 +26,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   }
   @Test
   def testr() {
-    optimize(r) should equal (l.join(j, (x) => x, (y: Exp[Int]) => y, (p: Exp[(Int,Int)]) => (p._1 + p._2)))
+    optimize(r) should equal (l.join(j)(x => x, y => y, p => (p._1 + p._2)))
   }
 
   @Test
@@ -41,7 +41,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   
   @Test
   def testr3() {
-    optimize(r3) should equal (l.join(j,(x) => liftCall('foo$Int,foo,x),(y:Exp[Int]) => liftCall('bar$Int,bar,y),(p: Exp[(Int,Int)]) => (p._1,p._2)))
+    optimize(r3) should equal (l.join(j)(x => liftCall('foo$Int,foo,x), y => liftCall('bar$Int, bar, y), p => (p._1, p._2)))
   }
   
   @Test 
