@@ -12,10 +12,6 @@ import org.junit.Test
 class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
   import Lifting._
 
-  class Materializable[T](t: Exp[Traversable[T]]) {
-    def materialize = new IncrementalResult(t)
-  }
-  implicit def toMaterializable[T](t: Exp[Traversable[T]]) = new Materializable(t)
   @Test
   def emptyIncHashSet() {
     val a = IncHashSet.empty
