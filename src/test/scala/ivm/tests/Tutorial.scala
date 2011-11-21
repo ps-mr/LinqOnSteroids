@@ -36,6 +36,10 @@ trait SmartIVMAPI {
   //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
   def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = (f: Exp[T => U])(t)
   def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
+
+  //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
+  //parameter of Exp here.
+  def asExp[T](t: Exp[T]) = t
 }
 
 trait TestUtil {
@@ -127,16 +131,11 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
       if (libDev == dev.name)
     } yield (lib, dev)
     println(LibrariesAndHackersBase)
+
     def checkResult(res: Exp[Traversable[(Library, Developer)]]) {
       LibrariesAndHackersBase should be (res.interpret())
       LibrariesAndHackersBase should be (Optimization.optimize(res).interpret())
     } //XXX: we want Seq here, not Traversable.
-
-    val LibrariesAndHackersTest = for {
-      lib <- testLibs.asSmartCollection //change 1
-      libDev <- lib.developers
-      dev <- testHackers //change 2 (not really needed here, but...)
-    } yield (lib, dev)
 
     val LibrariesAndHackersSmart = for {
       lib <- testLibs.asSmartCollection //change 1
@@ -166,6 +165,25 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     //Let us do the same on a Set, and get a Set out! XXX TODO
     //TODO: paste SimpleOpenEncoding here
     //Let us see that we can also perform interesting optimizations manually, or have them performed by an optimizer.
+  }
+
+  @Test def mistakesWithForComprehensions() {
+    //Demonstrate a problem: here we need to explicitly convert the second collection; automatic conversions happen only
+    val LibrariesAndHackersTest = for {
+      lib <- testLibs.asSmartCollection //change 1
+      libDev <- lib.developers
+      dev <- testHackers //change 2 (not really needed here, but...)
+    } yield (lib, dev)
+    //Ugly type:
+    assertType[Exp[Traversable[(ivm.expressiontree.Exp[Library], Developer)]]](LibrariesAndHackersTest)
+    //checkResult(LibrariesAndHackersTest) //Can't be called
+    val LibrariesAndHackersTest2 = for {
+      lib <- testLibs.asSmartCollection //change 1
+      libDev <- lib.developers
+      dev <- testHackers //change 2 (not really needed here, but...)
+    } yield asExp((lib, asExp(dev)))
+    //Ugly type:
+    assertType[Exp[Traversable[ivm.expressiontree.Exp[(Library, Developer)]]]](LibrariesAndHackersTest2)
   }
 
   @Test
