@@ -9,7 +9,13 @@ import optimization.Optimization
 import collection.{mutable, TraversableView}
 
 trait SmartIVMAPI {
+  class ToQueryable[T](t: Traversable[T]) {
+    def asQueryable: Exp[Traversable[T]] = Const(t)
+  }
+  implicit def toQueryable[T](t: Traversable[T]) = new ToQueryable(t)
+
   class Pimper[T](t: T) {
+    //XXX: duplicates (with a better name) ToQueryable.asQueryable.
     def asSmartCollection = t: Exp[T]
   }
   implicit def lift[T](t: T) = new Pimper(t)
@@ -26,12 +32,32 @@ trait SmartIVMAPI {
     def materialize = new IncrementalResult(t)
   }
   implicit def toMaterializable[T](t: Exp[Traversable[T]]) = new Materializable(t)
+
+  //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
+  def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = (f: Exp[T => U])(t)
+  def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
 }
 
 trait TestUtil {
   def showExp[T](t: Exp[T], message: String = "") {
     println("Query name: %s\n *\tstructure:\n\t%s\n *\tvalue:\n\t%s" format (message, t, t.interpret()))
-  }  
+  }
+
+  def show(name: String, v: Any) {
+    print(name + ": ")
+    println(v)
+  }
+
+  /*
+  def showInterp(name: String, v: Exp[_]) {
+    show(name, v)
+    show(name + ".interpret", v.interpret)
+  }
+  */
+
+  def showInterp(name: String, v: Exp[_]) {
+    showExp(v, name)
+  }
 }
 /**
  * User: pgiarrusso
@@ -39,6 +65,8 @@ trait TestUtil {
  */
 
 class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI with TestUtil {
+  import Util._
+
   /*
    * This tutorial introduces the features of our DSEL for queries on collections.
    * We show
@@ -89,6 +117,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     val coll3 = for (c <- coll) yield c + 1
     showExp(coll3, "map with for-comprehension syntax")
   }
+
   @Test
   def exampleWithOptims() {
     val LibrariesAndHackersBase = for {
@@ -138,24 +167,8 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     //TODO: paste SimpleOpenEncoding here
     //Let us see that we can also perform interesting optimizations manually, or have them performed by an optimizer.
   }
-}
 
-object SimpleOpenEncoding {
-  class ToQueryable[T](t: Traversable[T]) {
-    def asQueryable: Exp[Traversable[T]] = Const(t)
-  }
-  implicit def toQueryable[T](t: Traversable[T]) = new ToQueryable(t)
-
-  def show(name: String, v: Any) {
-    print(name + ": ")
-    println(v)
-  }
-
-  def showInterp(name: String, v: Exp[_]) {
-    show(name, v)
-    show(name + ".interpret", v.interpret)
-  }
-
+  @Test
   def moreTests() {
     println("testBug:")
 
@@ -185,12 +198,9 @@ object SimpleOpenEncoding {
     show("(like a3) toExpTempl(Seq(1, 2, 3, 5))", toExpTempl(Seq(1, 2, 3, 5)))
     //show("toExpTempl(Seq(1, 2, 3, 5))(canBuildExpTrav)", toExpTempl(Seq(1, 2, 3, 5))(canBuildExpTrav))
     show("toExpTempl(Seq(1, 2, 3, 5).toTraversable)(canBuildExpTrav)", toExpTempl(Seq(1, 2, 3, 5).toTraversable)(canBuildExpTrav))*/
-
-    println()
   }
 
-  import Util.assertType
-
+  @Test
   def testInadequate(c: Exp[Map[Int, Int]]) {
     val e: Exp[Map[Int, Int]] = c map (_ match {
       case Pair(a, b) => (a, b + 1) //Inadequate term, even if it's the first I wrote; it causes a crash
@@ -199,6 +209,7 @@ object SimpleOpenEncoding {
     showInterp("e", e)
   }
 
+  @Test
   def testTraversableView(exp: Exp[Traversable[Int]]) {
     val a = exp.view
     showInterp("a", a)
@@ -232,6 +243,7 @@ object SimpleOpenEncoding {
     //val mutExp: Exp[Traversable[Int]] = mutableD
   }
 
+  @Test
   def testMap() {
     val c: Exp[Map[Int, Int]] = Map(1 -> 2, 2 -> 4, 3 -> 4)
     showInterp("c", c)
@@ -272,14 +284,10 @@ object SimpleOpenEncoding {
     val d8 = d7(4)
     assertType[Exp[Map[Int, Int]]](d8)
     showInterp("d8", d8)
-
-    testInadequate(c)
   }
 
+  @Test
   def testTraversable() {
-    moreTests()
-    testNoMutableConst()
-
     val data = Seq(1, 2, 2, 3, 5, 5, 3)
     val a: Exp[Seq[Int]] = data
     val a2 = data.asQueryable
@@ -293,16 +301,10 @@ object SimpleOpenEncoding {
     val b4 = a groupBy identity
     assertType[Exp[Map[Int, Traversable[Int]]]](b4)
     showInterp("b4", b4)
-
-    testTraversableView(a)
-    testMap()
   }
 
-  //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
-  def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = (f: Exp[T => U])(t)
-  def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
-
-  def main(args: Array[String]) {
+  @Test
+  def main() {
     val a: Exp[Int] = 1
     val b = a + 2
     //With a smart signatures, type inference works:
@@ -313,6 +315,5 @@ object SimpleOpenEncoding {
     println(b)
     println(c2)
     println(c3)
-    testTraversable()
   }
 }
