@@ -427,24 +427,7 @@ object SimpleOpenEncoding {
       //val mutExp: Exp[Traversable[Int]] = mutableD
     }
 
-    def testTraversable() {
-      moreTests()
-      testNoMutableConst()
-
-      val data = Seq(1, 2, 2, 3, 5, 5, 3)
-      val a: Exp[Traversable[Int]] = data
-      val a2 = data.asQueryable
-      assertType[Exp[Traversable[Int]]](a2)
-      val b1 = a.map(_ + 1)
-      val b2 = a2.map(1 + _)
-      val b3 = b1.map(2 + _)
-      showInterp("b1", b1)
-      showInterp("b2", b2)
-      showInterp("b3", b3)
-      val b4 = a groupBy identity
-      assertType[Exp[Map[Int, Traversable[Int]]]](b4)
-      showInterp("b4", b4)
-
+    def testMap() {
       val c: Exp[Map[Int, Int]] = Map(1 -> 2, 2 -> 4, 3 -> 4)
       showInterp("c", c)
       // Type annotations on the results of map below are not needed to get the correct result, they just check that the
@@ -485,8 +468,29 @@ object SimpleOpenEncoding {
       assertType[Exp[Map[Int, Int]]](d8)
       showInterp("d8", d8)
 
-      testTraversableView(a)
       testInadequate(c)
+    }
+
+    def testTraversable() {
+      moreTests()
+      testNoMutableConst()
+
+      val data = Seq(1, 2, 2, 3, 5, 5, 3)
+      val a: Exp[Seq[Int]] = data
+      val a2 = data.asQueryable
+      assertType[Exp[Traversable[Int]]](a2) //assertType[Exp[Seq[Int]]](a2)
+      val b1 = a.map(_ + 1)
+      val b2 = a2.map(1 + _)
+      val b3 = b1.map(2 + _)
+      showInterp("b1", b1)
+      showInterp("b2", b2)
+      showInterp("b3", b3)
+      val b4 = a groupBy identity
+      assertType[Exp[Map[Int, Traversable[Int]]]](b4)
+      showInterp("b4", b4)
+
+      testTraversableView(a)
+      testMap()
     }
 
     //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
