@@ -194,11 +194,10 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     show("i", i)
     val i1: Exp[Int] = 1
     show("i1", i1)
-    //One of the syntaxes we want to support - both ones just fail, with "could not find implicit value for parameter cTTE: ivm.expressiontree.OpenEncoding.CanBuildExp[Int,ExpT]"
-    //val a0: Exp[Traversable[Int]] = Seq(1, 2, 3, 5)
-    //val a0: Exp[Traversable[Int]] = Seq(1, 2, 3, 5).toTraversable
-    val a0: Exp[Seq[Int]] = Seq(1, 2, 3, 5)
+    val a0: Exp[Traversable[Int]] = Seq(1, 2, 3, 5)
+    val a1: Exp[Seq[Int]] = Seq(1, 2, 3, 5)
     show("a0", a0)
+    show("a1", a1)
 
     /*val a1 = toExpTempl(Seq(1, 2, 3, 5)) //Doesn't work well - canBuildExp[Seq[Int]]: CanBuildExp[Seq[Int], Exp[Seq[Int]]] is preferred to canBuildExpTrav[Int, NumExp[Int]]: CanBuildExp[Traversable[Int], TraversableExp[Int]].
     show("a1", a1)
@@ -235,7 +234,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     assertType[Exp[TraversableView[Int, Traversable[Int]]]](a)
     val b = a.map(_ + 1)
     assertType[Exp[Traversable[Int]]](b)
-    // The underscore is due to the type of TraversableView.canBuildFrom. However, it doesn't really matter - see the
+    // The wildcard in the type is due to the type of TraversableView.canBuildFrom. However, it doesn't really matter - see the
     // type of forcedB
     assertType[Exp[TraversableView[Int, Traversable[_]]]](b)
     //assertType[Exp[TraversableView[Int, Traversable[Int]]]](b)
