@@ -361,7 +361,7 @@ object SimpleOpenEncoding {
       //One of the syntaxes we want to support - both ones just fail, with "could not find implicit value for parameter cTTE: ivm.expressiontree.OpenEncoding.CanBuildExp[Int,ExpT]"
       //val a0: Exp[Traversable[Int]] = Seq(1, 2, 3, 5)
       //val a0: Exp[Traversable[Int]] = Seq(1, 2, 3, 5).toTraversable
-      val a0: Exp[Traversable[Int]] = Seq(1, 2, 3, 5)
+      val a0: Exp[Seq[Int]] = Seq(1, 2, 3, 5)
       show("a0", a0)
 
       /*val a1 = toExpTempl(Seq(1, 2, 3, 5)) //Doesn't work well - canBuildExp[Seq[Int]]: CanBuildExp[Seq[Int], Exp[Seq[Int]]] is preferred to canBuildExpTrav[Int, NumExp[Int]]: CanBuildExp[Traversable[Int], TraversableExp[Int]].
@@ -494,7 +494,7 @@ object SimpleOpenEncoding {
     }
 
     //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
-    def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = App(f, t)
+    def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = (f: Exp[T => U])(t)
     def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
 
     def main(args: Array[String]) {
