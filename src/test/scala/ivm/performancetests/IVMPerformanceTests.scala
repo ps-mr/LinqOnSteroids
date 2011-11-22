@@ -104,7 +104,7 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
     val v = new IncHashSet[Int]
     val incrementalResult = new IncrementalResult[Int](v)
     testFillAndUpdateHashSet("IncHashSet & IncRes", v)
-    incrementalResult.interpret() should be (incrementalResult.base.interpret())
+    checkIncRes(incrementalResult)
   }
 
   //First results show that map fusion reduces performance. After adding a specialized version of constant-folding (an hack)
@@ -146,7 +146,7 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
       }
       val incrementalResult = new IncrementalResult(query)
       testFillAndUpdateHashSet("IncHashSet & Inc Res(%d times map(_ + 1))" format n, v)
-      incrementalResult.interpret() should be (incrementalResult.base.interpret())
+      checkIncRes(incrementalResult)
     }
   }
 
@@ -164,6 +164,9 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
     val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 + i)
 
     testFillAndUpdateHashSet("various queries", v)
-    vQueryablePlusOneIncRes.interpret() should be (vQueryablePlusOneIncRes.base.interpret())
+    checkIncRes(vQueryablePlusOneIncRes)
+    checkIncRes(vQueryablePlusOnePlusOne)
+    checkIncRes(vQueryablePOIRPlusOne)
+    checkIncRes(vIncUpdPlus2)
   }
 }

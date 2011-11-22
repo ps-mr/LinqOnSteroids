@@ -10,9 +10,13 @@ import org.scalatest.junit.ShouldMatchersForJUnit
 
 trait IVMTestUtil {
   this: ShouldMatchersForJUnit =>
-  def show[T: Ordering](name: String, v: IncrementalResult[T]) {
+  def checkIncRes[T](coll: IncrementalResult[T]) {
+    coll.interpret() should be (coll.base.interpret())
+  }
+
+  def show[T: Ordering](name: String, coll: IncrementalResult[T]) {
     println()
-    println("%s: after sorting\t\t%s, before\t\t%s; query:\n%s" format(name, v.toSeq.sorted, v, v.base))
-    v.interpret() should be (v.base.interpret())
+    println("%s: after sorting\t\t%s, before\t\t%s; query:\n%s" format(name, coll.toSeq.sorted, coll, coll.base))
+    checkIncRes(coll)
   }
 }
