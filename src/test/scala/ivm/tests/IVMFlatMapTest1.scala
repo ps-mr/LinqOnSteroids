@@ -102,8 +102,9 @@ class IVMFlatMapTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTes
     testFlatMap2(working = false)
   }
 
-  @Test def testFlatMapJoinWorking() = testFlatMapJoin(true)
-  @Test def testFlatMapJoinNonWorking() = testFlatMapJoin(false)
+  //IVM for Join is not yet implemented.
+  @Ignore @Test def testFlatMapJoinWorking() = testFlatMapJoin(true)
+  @Ignore @Test def testFlatMapJoinNonWorking() = testFlatMapJoin(false)
 
   @Ignore @Test def flatMap2V1 = testFlatMap2(0)
   @Ignore @Test def flatMap2V2 = testFlatMap2(1)
