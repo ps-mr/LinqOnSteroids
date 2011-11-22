@@ -24,23 +24,50 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
   val debug = false
   val warmUpLoops = if (debug) 1 else 100
   val sampleLoops = if (debug) 2 else 50
-  val maxN = if (debug) 5 else 8
+  val maxN = if (debug) 9 else 17
+  val mapCounts = (1 until (maxN, 4)) :+ maxN
 
   val toAdd = Array[Int]((1 to 10 * 1000): _*)
-  val toAddDel = if (debug) Array(1) else Array[Int]((100 * 1000 to 100 * 1000 + 1000): _*)
+  val updSize = 1000
+  val toAddDel = if (debug) Array(1) else Array[Int]((100 * 1000 to 100 * 1000 + updSize): _*)
 
   @Test
-  def aNative() {
+  def nativeMappingHashSet() {
     val v = new mutable.HashSet[Int]
     var res: mutable.HashSet[Int] = null
-    benchMark("nativeMap", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+    benchMark("nativeMap on HashSet", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
       v.clear()
       v ++= toAdd
       res = v map (_ + 1)
     }
+    benchMark("nativeMap on HashSet - update and recompute", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      v.clear()
+      v ++= toAdd
+      v ++= toAddDel
+      res = v map (_ + 1)
+    }
   }
 
-  def testFillAndUpdate(title: String, v: Growable[Int] with Shrinkable[Int]) {
+  @Test
+  def nativeMappingArrayBuffer() {
+    val v = new mutable.ArrayBuffer[Int]
+    var res: mutable.ArrayBuffer[Int] = null
+    benchMark("nativeMap on ArrayBuffer", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      v.clear()
+      v ++= toAdd
+      res = v map (_ + 1)
+    }
+    benchMark("nativeMap on ArrayBuffer - update and recompute", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      v ++= toAddDel
+      res = v map (_ + 1)
+      //XXX: use code comparable to testFillAndUpdateArrayBuffer - or actually do the proper fix.
+      //v trimEnd toAddDel.size
+      val lastPos = v.size - toAddDel.size
+      for (i <- 0 until toAddDel.size) v remove lastPos
+    }
+  }
+
+  def testFillAndUpdateHashSet(title: String, v: Growable[Int] with Shrinkable[Int]) {
     benchMark(title, warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
       v.clear()
       v ++= toAdd
@@ -49,9 +76,10 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
       v ++= toAddDel
       v --= toAddDel
     }
+    println()
   }
 
-  def testFillAndUpdateArr(title: String, v: Buffer[Int]) {
+  def testFillAndUpdateArrayBuffer(title: String, v: Buffer[Int]) {
     benchMark(title, warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
       v.clear()
       v ++= toAdd
@@ -64,16 +92,18 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
       val lastPos = v.size - toAddDel.size
       for (i <- 0 until toAddDel.size) v remove lastPos
     }
+    println()
   }
+
   @Test def incHashSet() {
     val v = new IncHashSet[Int]
-    testFillAndUpdate("IncHashSet", v)
+    testFillAndUpdateHashSet("IncHashSet", v)
   }
 
   @Test def incHashSetAndIncRes() {
     val v = new IncHashSet[Int]
     val incrementalResult = new IncrementalResult[Int](v)
-    testFillAndUpdate("IncHashSet & IncRes", v)
+    testFillAndUpdateHashSet("IncHashSet & IncRes", v)
     incrementalResult.interpret() should be (incrementalResult.base.interpret())
   }
 
@@ -84,7 +114,8 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
   @Test def withNMappingsArrOptimizeMap2 = withNMappingsArr(true, true)
 
   def withNMappingsArr(optimize: Boolean, useMap2: Boolean = false) {
-    for (n <- 1 to maxN) {
+    println(); println()
+    for (n <- mapCounts) {
       val v = new IncArrayBuffer[Int]
 
       var query = v.asQueryable
@@ -98,14 +129,15 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
         query = Optimization.optimize(query)
       val incrementalResult = new IncrementalResult(query)
       println(query)
-      testFillAndUpdateArr("IncArrayBuffer & Inc Res(%d times map(_ + 1)) - opt %b, useMap2 %b" format
+      testFillAndUpdateArrayBuffer("IncArrayBuffer & Inc Res(%d times map(_ + 1)) - opt %b, useMap2 %b" format
         (n, optimize, useMap2), v)
       incrementalResult.interpret() should be (incrementalResult.base.interpret().toSet)
     }
   }
 
   @Test def withNMappings() {
-    for (n <- 1 to 10) {
+    println(); println()
+    for (n <- mapCounts) {
       val v = new IncHashSet[Int]
 
       var query = v.asQueryable
@@ -113,12 +145,13 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
         query = query.map(_ + 1)
       }
       val incrementalResult = new IncrementalResult(query)
-      testFillAndUpdate("IncHashSet & Inc Res(%d times map(_ + 1))" format n, v)
+      testFillAndUpdateHashSet("IncHashSet & Inc Res(%d times map(_ + 1))" format n, v)
       incrementalResult.interpret() should be (incrementalResult.base.interpret())
     }
   }
 
   @Test def zManyQueries() {
+    println(); println()
     val v = new IncHashSet[Int]
     val vIncUpd = new IncrementalResult[Int](v)
 
@@ -130,7 +163,7 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
     val vQueryablePOIRPlusOne = new IncrementalResult(vQueryablePlusOneIncRes.asQueryable.map(_ + 1))
     val vIncUpdPlus2 = new IncrementalResult(for (i <- vIncUpd.asQueryable) yield 2 + i)
 
-    testFillAndUpdate("various queries", v)
+    testFillAndUpdateHashSet("various queries", v)
     vQueryablePlusOneIncRes.interpret() should be (vQueryablePlusOneIncRes.base.interpret())
   }
 }
