@@ -37,7 +37,7 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
      val groupedBy = c.groupBy[T2](FuncExp.makefun[T, T2](rhs, f.x).f)
 
      assertType[Exp[T2 => Traversable[T]]](groupedBy) //Just for documentation.
-     subqueries.get(groupedBy) match {
+     subqueries.get(Optimization.normalize(groupedBy)) match {
        case Some(t) => Some(App(Const(t.asInstanceOf[T2 => Traversable[T]]), lhs))
        case None => None
      }
