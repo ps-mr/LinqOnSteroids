@@ -197,7 +197,9 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
       case Pair(a, b) => (a, b + 1) //Inadequate term, even if it's the first I wrote; it causes a crash
     })
     assertType[Exp[Map[Int, Int]]](e)
-    showInterp("e", e)
+    intercept[MatchError] {
+      showInterp("e", e)
+    }
   }
 
   def testTraversableView(exp: Exp[Traversable[Int]]) {
@@ -294,6 +296,23 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     assertType[Exp[Map[Int, Traversable[Int]]]](b4)
     showInterp("b4", b4)
     testTraversableView(a)
+  }
+  
+  @Test
+  def testSet() {
+    val data = Set(1, 2, 3, 5)
+    val a: Exp[Set[Int]] = data
+    val a2 = data.asSmartCollection
+    assertType[Exp[Set[Int]]](a2) //assertType[Exp[Set[Int]]](a2)
+    val b1 = a.map(_ + 1)
+    val b2 = a2.map(1 + _)
+    val b3 = b1.map(2 + _)
+    showInterp("b1", b1)
+    showInterp("b2", b2)
+    showInterp("b3", b3)
+    val b4 = a groupBy identity
+    assertType[Exp[Map[Int, Set[Int]]]](b4)
+    showInterp("b4", b4)
   }
 
   @Test
