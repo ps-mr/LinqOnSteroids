@@ -3,6 +3,7 @@ package opaltests
 
 import expressiontree.{Lifting, Exp}
 import Lifting._
+
 import de.tud.cs.st.bat.resolved
 import resolved.reader.Java6Framework
 import resolved._
@@ -21,7 +22,6 @@ class EvalOpalTests {
   //Michael Eichberg, Sven Kloppenburg, Karl Klose and Mira Mezini,
   //"Defining and Continuous Checking of Structural Program Dependencies", ICSE '08.
   def continuousCheckingPaper() {
-    //XXX bug: we should have Set here!
     def sourceElems(Types: Exp[Set[ClassFile]]) = Types union (Types flatMap (_.methods)) union (Types flatMap (_.fields))
 
     //Listing 3:
@@ -55,7 +55,7 @@ class EvalOpalTests {
     } yield method: AnyRef //Generalize type so that anything can be tested for membership
 
     //Listing 4:
-    val uses: Exp[Set[(AnyRef, AnyRef)]] = null
+    val uses: Exp[Set[(AnyRef, AnyRef)]] = null //Set.empty
     //Without Exp[Set].apply = Exp[Set].contains
     /*
     for {
