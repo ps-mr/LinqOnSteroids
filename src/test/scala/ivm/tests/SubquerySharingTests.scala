@@ -34,7 +34,25 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   }
 
   @Test def testIndexing {
-    val index = l.groupBy(p => p._2 + p._1)
+    val index = l.groupBy(p => p._1 + p._2)
+    val indexres = index.interpret()
+    val subqueries : Map[Exp[_],_] = Map(index -> indexres)
+    val testquery = l.withFilter(p => p._1 + p._2 is 5)
+    val optimized = new SubquerySharing(subqueries).shareSubqueries(testquery)
+    optimized should equal (App(Const(indexres),Const(5)))
+  }
+
+  @Test def testIndexingQueryNorm() {
+    val index = l.groupBy(p => p._1 + p._2)
+    val indexres = index.interpret()
+    val subqueries : Map[Exp[_],_] = Map(index -> indexres)
+    val testquery = l.withFilter(p => p._2 + p._1 is 5)
+    val optimized = new SubquerySharing(subqueries).shareSubqueries(testquery)
+    optimized should equal (App(Const(indexres),Const(5)))
+  }
+
+  @Test def testIndexingIndexNorm() {
+    val index = l.groupBy(p => p._2 + p._1) //The index should be normalized, test this
     val indexres = index.interpret()
     val subqueries : Map[Exp[_],_] = Map(index -> indexres)
     val testquery = l.withFilter(p => p._1 + p._2 is 5)
