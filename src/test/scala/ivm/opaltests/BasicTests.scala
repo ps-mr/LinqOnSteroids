@@ -29,7 +29,7 @@ object BATLifting {
   implicit def expToClassFileOps(t: Exp[ClassFile]) = new ClassFileOps(t)
   class ClassFileOps(t: Exp[ClassFile]) {
     def methods = onExp(t)('methods, _.methods)
-    def fields = onExp(t)('methods, _.fields)
+    def fields = onExp(t)('fields, _.fields)
     def thisClass = onExp(t)('thisClass, _.thisClass)
     def superClass = onExp(t)('superClass, _.superClass)
     def interfaces = onExp(t)('interfaces, _.interfaces)
