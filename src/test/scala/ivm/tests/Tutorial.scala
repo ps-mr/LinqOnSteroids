@@ -192,7 +192,6 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     show("a1", a1)
   }
 
-  @Test
   def testInadequate(c: Exp[Map[Int, Int]]) {
     val e: Exp[Map[Int, Int]] = c map (_ match {
       case Pair(a, b) => (a, b + 1) //Inadequate term, even if it's the first I wrote; it causes a crash
@@ -201,7 +200,6 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     showInterp("e", e)
   }
 
-  @Test
   def testTraversableView(exp: Exp[Traversable[Int]]) {
     val a = exp.view
     showInterp("a", a)
@@ -276,6 +274,8 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     val d8 = d7(4)
     assertType[Exp[Map[Int, Int]]](d8)
     showInterp("d8", d8)
+
+    testInadequate(c)
   }
 
   @Test
@@ -293,6 +293,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     val b4 = a groupBy identity
     assertType[Exp[Map[Int, Traversable[Int]]]](b4)
     showInterp("b4", b4)
+    testTraversableView(a)
   }
 
   @Test
