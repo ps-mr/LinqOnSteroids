@@ -9,22 +9,16 @@ import optimization.Optimization
 import collection.{mutable, TraversableView}
 
 trait SmartIVMAPI {
-  class ToQueryable[T](t: Traversable[T]) {
-    def asQueryable: Exp[Traversable[T]] = Const(t)
-  }
-  implicit def toQueryable[T](t: Traversable[T]) = new ToQueryable(t)
-
   class Pimper[T](t: T) {
-    //XXX: duplicates (with a better name) ToQueryable.asQueryable.
     def asSmartCollection = t: Exp[T]
   }
-  implicit def lift[T](t: T) = new Pimper(t)
+  implicit def toPimper[T](t: T) = new Pimper(t)
 
   class ArrayPimper[T](t: Array[T]) {
     def asSmartCollection = t: Exp[Seq[T]]
   }
-  implicit def lift2[T](t: Array[T]) = new ArrayPimper(t)
-  //Either we use ArrayPimper, or we add the final cast to TraverableOps[T] here.
+  implicit def toArrayPimper[T](t: Array[T]) = new ArrayPimper(t)
+  //Either we use ArrayPimper, or we create an implicit conversion from Exp[Array[T]] to TraverableOps[T] by adding the final cast to TraversableOps[T] here.
   //Since this is an implicit conversion, we can't just return Exp[Seq[T]] and rely on an additional implicit conversion to supply lifted collection methods.
   //implicit def expArrayToExpSeq[T](x: Exp[Array[T]]) = onExp(x)('castToSeq, x => x: Seq[T]): TraversableOps[T]
 
@@ -188,8 +182,6 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
 
   @Test
   def moreTests() {
-    println("testBug:")
-
     val i: Exp[Int] = 1
     show("i", i)
     val i1: Exp[Int] = 1
@@ -198,23 +190,6 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     val a1: Exp[Seq[Int]] = Seq(1, 2, 3, 5)
     show("a0", a0)
     show("a1", a1)
-
-    /*val a1 = toExpTempl(Seq(1, 2, 3, 5)) //Doesn't work well - canBuildExp[Seq[Int]]: CanBuildExp[Seq[Int], Exp[Seq[Int]]] is preferred to canBuildExpTrav[Int, NumExp[Int]]: CanBuildExp[Traversable[Int], TraversableExp[Int]].
-    show("a1", a1)
-    val a2 = toExpTempl(Seq(1, 2, 3, 5).toTraversable) //Doesn't work well either
-    show("a2", a2)
-    val a3: Any = toExpTempl(Seq(1, 2, 3, 5)) //Works better
-    show("a3", a3)
-    val a4: Exp[Seq[Int]] = toExpTempl(Seq(1, 2, 3, 5)) //Doesn't work well - that's equivalent to a1
-    show("a4", a4)
-    val a5: Exp[Traversable[Int]] = toExpTempl(Seq(1, 2, 3, 5)) //Works well apparently.
-    show("a5", a5)
-    val a6: TraversableExp[Int, NumExp[Int]] = Seq(1, 2, 3, 5) //This one obviously works.
-    show("a6", a6)
-
-    show("(like a3) toExpTempl(Seq(1, 2, 3, 5))", toExpTempl(Seq(1, 2, 3, 5)))
-    //show("toExpTempl(Seq(1, 2, 3, 5))(canBuildExpTrav)", toExpTempl(Seq(1, 2, 3, 5))(canBuildExpTrav))
-    show("toExpTempl(Seq(1, 2, 3, 5).toTraversable)(canBuildExpTrav)", toExpTempl(Seq(1, 2, 3, 5).toTraversable)(canBuildExpTrav))*/
   }
 
   @Test
@@ -307,7 +282,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
   def testTraversable() {
     val data = Seq(1, 2, 2, 3, 5, 5, 3)
     val a: Exp[Seq[Int]] = data
-    val a2 = data.asQueryable
+    val a2 = data.asSmartCollection
     assertType[Exp[Traversable[Int]]](a2) //assertType[Exp[Seq[Int]]](a2)
     val b1 = a.map(_ + 1)
     val b2 = a2.map(1 + _)
