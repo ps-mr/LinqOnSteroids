@@ -129,13 +129,21 @@ object Optimization {
 
   val opt = new Optimization()
   val subqueries: Map[Exp[_], Any] = Map.empty
+
   def addSubQuery[T](query: Exp[T]) {
-    val optquery = optimize(query)  // TODO: Reconsider whether it is a good idea to optimize here
-    subqueries += optquery -> optquery.interpret()
+    val optquery = optimize(query)
+    val intQuery = optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret again!
+    //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the optimizer.
+    // TODO: Reconsider again whether this is a good idea.
+    subqueries += normalize(query) -> intQuery
+    subqueries += normalize(optquery) -> intQuery
   }
+
   def removeSubQuery[T](query: Exp[T]) {
-    subqueries -=  query
+    subqueries -= normalize(query)
+    subqueries -= normalize(optimize(query))
   }
+
   def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(opt.cartProdToJoin)
 
   def optimize[T](exp: Exp[T]): Exp[T] = {
