@@ -110,10 +110,10 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     //Let us define a special collection for our purposes.
     val coll = Array.range(1, 10).asSmartCollection
     //Now, we can define queries on it
-    val coll2 = coll.map(_ + 1)
-    showExp(coll2, "map")
-    val coll3 = for (c <- coll) yield c + 1
-    showExp(coll3, "map with for-comprehension syntax")
+    val coll2 = for (c <- coll) yield c + 1
+    showExp(coll2, "map with for-comprehension syntax")
+    val coll3 = coll.map(c => c + 1)
+    showExp(coll3, "map after desugaring")
   }
 
   @Test
@@ -134,8 +134,8 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     val LibrariesAndHackersSmart = for {
       lib <- testLibs.asSmartCollection //change 1
       libDev <- lib.developers
-      dev <- testHackers.asSmartCollection //change 2 (actually really needed here!)
-      if (libDev is dev.name) //if (libDev == dev.name) //Change 3: use 'is' instead of ==
+      dev <- testHackers.asSmartCollection //change 2 (really needed here, unlike I thought!)
+      if (libDev === dev.name) //if (libDev == dev.name) //Change 3: use '===' instead of ==
     } yield (lib, dev)
     checkResult(LibrariesAndHackersSmart)
     showExp(LibrariesAndHackersSmart, "for comprehension over libraries and developers")
@@ -143,8 +143,8 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
 
     val LibrariesAndHackersSmartNested = for {
       libDevPair <- for (lib <- testLibs.asSmartCollection; libDev <- lib.developers) yield (lib, libDev)
-      dev <- testHackers.asSmartCollection //change 2 (actually really needed here!)
-      if (libDevPair._2 is dev.name) //if (libDev == dev.name) //Change 3: use 'is' instead of ==
+      dev <- testHackers.asSmartCollection //change 2 (really needed here, unlike I thought!)
+      if (libDevPair._2 === dev.name) //if (libDev == dev.name) //Change 3: use '===' instead of ==
     } yield (libDevPair._1, dev)
     checkResult(LibrariesAndHackersSmartNested)
 
