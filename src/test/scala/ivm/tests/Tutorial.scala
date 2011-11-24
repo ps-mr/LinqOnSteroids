@@ -38,7 +38,7 @@ trait SmartIVMAPI {
 
 trait TestUtil {
   def showExp[T](t: Exp[T], message: String = "") {
-    println("Query name: %s\n *\tstructure:\n\t%s\n *\tvalue:\n\t%s" format (message, t, t.interpret()))
+    print("\nQuery name: %s\n *\tstructure:\n\t%s\n *\tvalue:\n\t%s\n\n" format (message, t, t.interpret()))
   }
 
   def show(name: String, v: Any) {
@@ -124,7 +124,8 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
       dev <- testHackers
       if (libDev == dev.name)
     } yield (lib, dev)
-    println(LibrariesAndHackersBase)
+    assertType[Seq[(Library, Developer)]](LibrariesAndHackersBase)
+    println("Result of native query: " format LibrariesAndHackersBase)
 
     def checkResult(res: Exp[Traversable[(Library, Developer)]]) {
       LibrariesAndHackersBase should be (res.interpret())
