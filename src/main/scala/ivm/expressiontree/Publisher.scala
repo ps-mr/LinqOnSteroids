@@ -19,6 +19,10 @@ case class Include[+T](t: T) extends TravMessage[T]
 case class Remove[+T](t: T) extends TravMessage[T]
 case class Update[+T](old: T, curr: T) extends TravMessage[T]
 case object Reset extends TravMessage[Nothing]
+
+//Allow updating single elements (e.g. the result of folds)!
+case class UpdateEl[T](oldV: T, newV: T) extends Message[T]
+
 // XXX: A union class will have a hard time handling a Reset event. Maybe it's better to just batch Remove messages for
 // a Reset? That's a problem when reset is O(1); maybe that must be done by intermediate nodes, which don't have however
 // the elements anyway, because they have not been transformed.
