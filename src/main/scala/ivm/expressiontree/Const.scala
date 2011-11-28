@@ -9,7 +9,7 @@ case class Const[T](x: T) extends NullaryExp[T] {
       //Of course, this does not work when x is not a collection but e.g. contains one, or when for any reason toString()
       //takes a lot of time for any reason. Still, better than nothing.
       case coll: Traversable[_] =>
-        coll.take(3).toString()
+        coll.take(3).toString() + (if (coll.size > 3) "..." else "")
       case _ =>
         x.toString
     }
