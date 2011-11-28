@@ -272,6 +272,7 @@ object SimpleOpenEncoding {
 
     class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set[T]] with WithFilterImpl[T, Set[T], Set[T]] {
       def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
+      def contains(el: Exp[T]) = apply(el)
     }
     implicit def expToSetExp[T](t: Exp[Set[T]]): SetOps[T] = new SetOps(t)
     implicit def tToSetExp[T](t: Set[T]): SetOps[T] = expToSetExp(t)
