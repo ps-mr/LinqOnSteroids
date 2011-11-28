@@ -265,7 +265,14 @@ object SimpleOpenEncoding {
   trait SetOps extends TraversableOps {
     import OpsExpressionTree.toExp
 
-    class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set[T]] with WithFilterImpl[T, Set[T], Set[T]]
+    case class Contains[T](set: Exp[Set[T]], v: Exp[T]) extends BinaryOpExp[Set[T], T, Boolean](set, v) {
+      def interpret() = set.interpret().contains(v.interpret())
+      def copy(set: Exp[Set[T]], v: Exp[T]) = Contains(set: Exp[Set[T]], v: Exp[T])
+    }
+
+    class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set[T]] with WithFilterImpl[T, Set[T], Set[T]] {
+      def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
+    }
     implicit def expToSetExp[T](t: Exp[Set[T]]): SetOps[T] = new SetOps(t)
     implicit def tToSetExp[T](t: Set[T]): SetOps[T] = expToSetExp(t)
   }

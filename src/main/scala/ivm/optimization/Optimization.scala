@@ -102,6 +102,24 @@ class Optimization {
       case _ => e
     }
 
+  //Recognize relational-algebra set operations; they can be executed more efficiently if one of the two members is indexed.
+  //However, sets are always indexed.
+  val setIntersection: Exp[_] => Exp[_] =
+    e => e match {
+      case Filter(col, predFun @ FuncExpBody(Contains(col2, x))) if (x == predFun.x) =>
+        e //Intersect(col, col2)
+      case _ => e
+    }
+
+  //We want to support anti-joins. Is this one? This is an anti-join where a set is involved!
+  val setDifference: Exp[_] => Exp[_] =
+    e => e match {
+      case Filter(col, predFun @ FuncExpBody(Not(Contains(col2, x)))) if (x == predFun.x) =>
+        e //Diff(col, col2)
+      case _ => e
+    }
+
+  //Fuse multiple views
   val mergeViews: Exp[_] => Exp[_] =
     e => e match {
       case View(coll @ View(_)) =>
