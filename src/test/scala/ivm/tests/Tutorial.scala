@@ -157,9 +157,8 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     showExp(LibrariesAndHackersExplicitJoin, "explicit join")
     showExp(Optimization.optimize(LibrariesAndHackersExplicitJoin), "optimized explicit join")
     checkResult(LibrariesAndHackersExplicitJoin)
-    //Let us do the same on a Set, and get a Set out! XXX TODO
-    //TODO: paste SimpleOpenEncoding here
-    //Let us see that we can also perform interesting optimizations manually, or have them performed by an optimizer.
+    //TODO: Let us do the same on a Set, and get a Set out!
+    //XXX: Let us see that we can also perform interesting optimizations manually, or have them performed by an optimizer.
   }
 
   @Test def mistakesWithForComprehensions() {

@@ -84,6 +84,8 @@ object FoldOperators {
       }
     }
   }
+  //TODO: Forall and exists only require counting the number of false (respectively, true) values, and they are implementable in term of one another, given a notification-propagating Not.
+
   //Here I accept a primitive function because I believe the overhead for expression trees would be too significant, especially with all the wrapping and unwrapping done by convertBinFunInternal.
   //However, normalization-by-evaluation and a two-argument version of FuncExpInt could come to the rescue!
   case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: Option[T] = None) extends UnaryOpExp[Traversable[T], T](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T] { //BinaryOpExp[Traversable[T], (T, T) => T, T](coll, f) {
@@ -126,6 +128,7 @@ object FoldOperators {
               val pair = tree(i)
               tree += Buffer(f(pair(0), pair(1)))
             }
+            //XXX: Remove requires an underlying bag!
           case _ =>
         }
       }
