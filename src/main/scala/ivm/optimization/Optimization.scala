@@ -71,7 +71,7 @@ class Optimization {
     }
 
   private def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: FuncExp[T, U], g: FuncExp[U, V]) =
-    coll.map(f.f andThen g.f)
+    coll.map(FuncExp.normalize(f.f andThen g.f, f.x))
     //coll.map(g.f andThen f.f) //Here the typechecker can reject this line.
   
 
