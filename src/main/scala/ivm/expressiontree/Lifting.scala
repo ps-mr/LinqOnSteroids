@@ -8,23 +8,23 @@ object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps 
   class NumericOps[T: Numeric](t: Exp[T]) {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
     def *(that: Exp[T]): Exp[T] = Times(this.t, that)
-    def -(that: Exp[T]): Exp[T] = onExp(this.t, that)('NumericOps$minus, implicitly[Numeric[T]].minus(_, _))
+    def -(that: Exp[T]): Exp[T] = onExp(implicitly[Numeric[T]], this.t, that)('NumericOps$minus, _.minus(_, _))
   }
 
   class FractionalOps[T: Fractional](t: Exp[T]) {
-    def /(that: Exp[T]): Exp[T] = onExp(this.t, that)('FractionalOps$div, implicitly[Fractional[T]].div(_, _))
+    def /(that: Exp[T]): Exp[T] = onExp(implicitly[Fractional[T]], this.t, that)('FractionalOps$div, _.div(_, _))
   }
 
   class IntegralOps[T: Integral](t: Exp[T]) {
-    def %(that: Exp[T]): Exp[T] = onExp(this.t, that)('IntegralOps$mod, implicitly[Integral[T]].rem(_, _))
+    def %(that: Exp[T]): Exp[T] = onExp(implicitly[Integral[T]], this.t, that)('IntegralOps$mod, _.rem(_, _))
   }
 
   class OrderingOps[T: Ordering](t: Exp[T]) {
     //XXX: we probably need to use distinguished nodes for these operations, to be able to use indexes for them.
     def <=(that: Exp[T]): Exp[Boolean] = LEq(this.t, that)
-    def <(that: Exp[T]): Exp[Boolean] = onExp(this.t, that)('OrderingOps$lt, implicitly[Ordering[T]].lt(_, _))
-    def >(that: Exp[T]): Exp[Boolean] = onExp(this.t, that)('OrderingOps$gt, implicitly[Ordering[T]].gt(_, _))
-    def >=(that: Exp[T]): Exp[Boolean] = onExp(this.t, that)('OrderingOps$gteq, implicitly[Ordering[T]].gteq(_, _))
+    def <(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$lt, _.lt(_, _))
+    def >(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$gt, _.gt(_, _))
+    def >=(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$gteq, _.gteq(_, _))
   }
 
   class StringOps(t: Exp[String]) {
