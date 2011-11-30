@@ -86,6 +86,7 @@ object SimpleOpenEncoding {
       new Call5(id,callfunc, arg0, arg1, arg2, arg3, arg4)
 
     def onExp[A0, Res](t: Exp[A0])(id: Symbol, f: A0 => Res): Exp[Res] = liftCall(id, f, t)
+    def onExp[A0, A1, Res](a0: Exp[A0], a1: Exp[A1])(id: Symbol, f: (A0, A1) => Res): Exp[Res] = liftCall(id, f, a0, a1)
   }
   object OpsExpressionTree extends OpsExpressionTreeTrait
 

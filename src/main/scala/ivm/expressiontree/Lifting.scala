@@ -5,13 +5,26 @@ object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps 
 
   implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
 
-  class NumOps[T](val t: Exp[T])(implicit val isNum: Numeric[T]) {
+  class NumericOps[T: Numeric](t: Exp[T]) {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
     def *(that: Exp[T]): Exp[T] = Times(this.t, that)
+    def -(that: Exp[T]): Exp[T] = onExp(this.t, that)('NumericOps$minus, implicitly[Numeric[T]].minus(_, _))
+  }
+
+  class FractionalOps[T: Fractional](t: Exp[T]) {
+    def /(that: Exp[T]): Exp[T] = onExp(this.t, that)('FractionalOps$div, implicitly[Fractional[T]].div(_, _))
+  }
+
+  class IntegralOps[T: Integral](t: Exp[T]) {
+    def %(that: Exp[T]): Exp[T] = onExp(this.t, that)('IntegralOps$mod, implicitly[Integral[T]].rem(_, _))
   }
 
   class OrderingOps[T: Ordering](t: Exp[T]) {
-    def <=(that: Exp[T]) = LEq(t, that)
+    //XXX: we probably need to use distinguished nodes for these operations, to be able to use indexes for them.
+    def <=(that: Exp[T]): Exp[Boolean] = LEq(this.t, that)
+    def <(that: Exp[T]): Exp[Boolean] = onExp(this.t, that)('OrderingOps$lt, implicitly[Ordering[T]].lt(_, _))
+    def >(that: Exp[T]): Exp[Boolean] = onExp(this.t, that)('OrderingOps$gt, implicitly[Ordering[T]].gt(_, _))
+    def >=(that: Exp[T]): Exp[Boolean] = onExp(this.t, that)('OrderingOps$gteq, implicitly[Ordering[T]].gteq(_, _))
   }
 
   class StringOps(t: Exp[String]) {
@@ -24,7 +37,8 @@ object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps 
     def unary_! = Not(b)
   }
 
-  implicit def expToNumOps[T: Numeric](t: Exp[T]) = new NumOps(t)
+  implicit def expToNumOps[T: Numeric](t: Exp[T]) = new NumericOps(t)
+  implicit def expToIntegralOps[T: Integral](t: Exp[T]) = new IntegralOps(t)
   implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
   implicit def expToStringOps(t: Exp[String]) = new StringOps(t)
   implicit def expToBooleanOps(t: Exp[Boolean]) = new BooleanOps(t)
@@ -38,7 +52,7 @@ object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps 
   implicit def toNumOps[T: Numeric](t: T) = expToNumOps(t)
   implicit def toOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
   // These definitions work even if both liftOrd and liftNum are declared.
-  /*implicit def toNumOps[T: Numeric](t: T): NumOps[T] = Const(t)
+  /*implicit def toNumOps[T: Numeric](t: T): NumericOps[T] = Const(t)
   implicit def toOrderingOps[T: Ordering](t: T): OrderingOps[T] = Const(t)*/
   implicit def toStringOps(t: String) = expToStringOps(t)
   implicit def toBooleanOps(t: Boolean) = expToBooleanOps(t)
