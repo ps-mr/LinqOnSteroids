@@ -73,8 +73,19 @@ object SimpleOpenEncoding {
         case _ => App(f, _)
       }
 
+    // these functions are explicitly not implicit :)
+    def liftCall[Res](id: Symbol, callfunc: () => Res) = new Call0(id,callfunc)
     def liftCall[A0, Res](id: Symbol, callfunc: A0 => Res, arg0: Exp[A0]) = new Call1(id,callfunc, arg0)
-    def onExp[T, U](t: Exp[T])(id: Symbol, f: T => U): Exp[U] = liftCall(id, f, t)
+    def liftCall[A0, A1, Res](id: Symbol, callfunc: (A0, A1) => Res, arg0: Exp[A0], arg1: Exp[A1]) =
+      new Call2(id,callfunc, arg0, arg1)
+    def liftCall[A0, A1, A2, Res](id: Symbol, callfunc: (A0, A1, A2) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2]) =
+      new Call3(id,callfunc, arg0, arg1, arg2)
+    def liftCall[A0, A1, A2, A3, Res](id: Symbol, callfunc: (A0, A1, A2, A3) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3]) =
+      new Call4(id,callfunc, arg0, arg1, arg2, arg3)
+    def liftCall[A0, A1, A2, A3, A4, Res](id: Symbol, callfunc: (A0, A1, A2, A3, A4) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3], arg4: Exp[A4]) =
+      new Call5(id,callfunc, arg0, arg1, arg2, arg3, arg4)
+
+    def onExp[A0, Res](t: Exp[A0])(id: Symbol, f: A0 => Res): Exp[Res] = liftCall(id, f, t)
   }
   object OpsExpressionTree extends OpsExpressionTreeTrait
 
