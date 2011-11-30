@@ -61,26 +61,75 @@ object FoldOperators {
     TreeFold[T](coll, f, Some(z))
 
   def foldl[Out, In](coll: Exp[Traversable[In]])(f: IncBinOpC[Out, In], z: Out) = Foldl(coll, f, z)
-  case class Foldl[Out, In](coll: Exp[Traversable[In]], f: IncBinOpC[Out, In], z: Out) extends UnaryOpExp[Traversable[In], Out](coll) with TravMsgSeqSubscriber[In, Traversable[In]] with MsgSeqPublisher[Out] {
+  def not(v: Exp[Boolean]) = new Mynot(v)
+  def forall[T](coll: Exp[Traversable[T]])(f: Exp[T] => Exp[Boolean]) = Forall(coll, FuncExp(f))
+  def exists[T](coll: Exp[Traversable[T]])(f: Exp[T] => Exp[Boolean]) = not(Forall(coll, FuncExp(f andThen (new Mynot(_)))))
+
+  case class Foldl[Out, In](coll: Exp[Traversable[In]], f: IncBinOpC[Out, In], z: Out) extends UnaryOpExp[Traversable[In], Out](coll) with EvtTransformerEl[Traversable[In], Out, Traversable[In]] {
     var res: Out = _
     override def interpret() = {
+      //XXX: we should get the initial status otherwise. When we'll get notifications about the existing elements, this will become wrong.
       res = coll.interpret().foldLeft(z)(f)
       res
     }
 
     override def copy(coll: Exp[Traversable[In]]) = Foldl(coll, f, z)
-    override def notify(pub: Traversable[In], evts: Seq[Message[Traversable[In]]]) {
-      for (evt <- evts) {
-        evt match {
-          case Include(v) =>
-            res = f(res, v)
-          case Remove(v) =>
-            res = f.remove(res, v)
-          case Update(oldV, newV) =>
-            res = f.update(res, oldV, newV)
-          case Reset =>
-            res = z
-        }
+    override def result = res
+    override def notifyEv(pub: Traversable[In], evt: Message[Traversable[In]]) {
+      evt match {
+        case Include(v) =>
+          res = f(res, v)
+        case Remove(v) =>
+          res = f.remove(res, v)
+        case Update(oldV, newV) =>
+          res = f.update(res, oldV, newV)
+        case Reset =>
+          res = z
+      }
+    }
+  }
+
+  trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U] {
+    def notifyEv(pub: Repr, evt: Message[T])
+    def result: U
+    override def notify(pub: Repr, evts: Seq[Message[T]]) {
+      val oldRes = result
+      evts foreach (notifyEv(pub, _))
+      publish(UpdateEl(oldRes, result))
+    }
+  }
+
+  class Mynot(v: Exp[Boolean]) extends Not(v) with EvtTransformerEl[Boolean, Boolean, Exp[Boolean]] {
+    var result: Boolean = _
+    def notifyEv(pub: Exp[Boolean], evt: Message[Boolean]) {
+      evt match {
+        case UpdateEl(_, v) =>
+          result = !v
+      }
+    }
+  }
+
+  case class Forall[T](coll: Exp[Traversable[T]], f: FuncExp[T, Boolean]) extends UnaryOpExp[Traversable[T], Boolean](coll) with EvtTransformerEl[Traversable[T], Boolean, Traversable[T]] {
+    var countFalse: Int = 0
+    override def interpret() = {
+      //XXX: we should get the initial status otherwise.
+      countFalse = coll.interpret().count(x => !f.interpret()(x))
+      result
+    }
+
+    override def copy(coll: Exp[Traversable[T]]) = Forall(coll, f)
+    override def result = countFalse == 0
+    override def notifyEv(pub: Traversable[T], evt: Message[Traversable[T]]) {
+      evt match {
+        case Include(v) =>
+          countFalse += (if (!f.interpret()(v)) 1 else 0)
+        case Remove(v) =>
+          countFalse -= (if (!f.interpret()(v)) 1 else 0)
+        case Update(oldV, newV) =>
+          notifyEv(pub, Remove(oldV))
+          notifyEv(pub, Include(newV))
+        case Reset =>
+          countFalse = 0
       }
     }
   }
@@ -128,7 +177,7 @@ object FoldOperators {
               val pair = tree(i)
               tree += Buffer(f(pair(0), pair(1)))
             }
-            //XXX: Remove requires an underlying bag!
+            //XXX: Remove requires an underlying bag to find the element!
           case _ =>
         }
       }
@@ -152,6 +201,19 @@ object FoldOperators {
 
   def main(args: Array[String]) {
     import Lifting._
+    for (n <- 1 to 5) {
+      val coll = Seq.fill(n)((math.random * 2).toInt)
+      println(coll)
+      val res = coll.forall(_ % 2 == 0)
+      val res2 = coll.exists(_ % 2 == 0)
+      println("%s %s" format (res, res2))
+      val query = forall(coll)(_ % 2 is 0)
+      val query2 = exists(coll)(_ % 2 is 0)
+      println(query)
+      println(query2)
+      assert(query.interpret() == res)
+      assert(query2.interpret() == res2)
+    }
     for (n <- 1 to 17) {
       val (_, res) = treeFold((1 to n).toBuffer)(Some(0), _ + _)
       assert(res == (1 to n).sum)
@@ -159,8 +221,8 @@ object FoldOperators {
       val res2 = treeReduce((1 to n): Exp[Traversable[Int]])(_ + _)
       println(res2)
       assert(res2.interpret() == (1 to n).sum)
-      println("Exp.treeFold(1 .. %d) == %d" format (n, res2.interpret()))
-      println()
+      //println("Exp.treeFold(1 .. %d) == %d" format (n, res2.interpret()))
+      //println()
     }
     {
       val incBuf: IncArrayBuffer[Int] = IncArrayBuffer(1)
@@ -172,7 +234,7 @@ object FoldOperators {
       assert(res.res == 1)
       for (n <- 2 to 17) {
         incBuf += n
-        println("Adding n = %d, res.res = %d" format (n, res.res))
+        //println("Adding n = %d, res.res = %d" format (n, res.res))
         assert(res.res == (1 to n).sum)
       }
     }
@@ -186,6 +248,42 @@ object FoldOperators {
       for (n <- 1 to 17) {
         incBuf += n
         assert(res.res == (1 to n).sum)
+      }
+    }
+    {
+      val incBuf: IncArrayBuffer[Int] = IncArrayBuffer.empty[Int]
+      //val coll = Buffer.fill(n)((math.random * 2).toInt)
+      //println(coll)
+      //val res = incBuf.forall(_ % 2 == 0)
+      //println(res)
+      val query = forall(incBuf)(_ % 2 is 0)
+      val query2 = exists(incBuf)(_ % 2 is 0)
+      incBuf.subscribe(query)
+      val query2Content = query2.x.asInstanceOf[Forall[Int]]
+      incBuf.subscribe(query2Content)
+      query2Content.subscribe(query2)
+      println(query)
+      for (n <- 0 to (4, 2)) {
+        incBuf += n
+        assert(query.result == incBuf.forall(_ % 2 == 0))
+        assert(query2.result == incBuf.exists(_ % 2 == 0))
+        println("%s %s %s" format (incBuf, query.result, query2.result))
+      }
+      for (n <- 1 to (5, 2)) {
+        incBuf += n
+        assert(query.result == incBuf.forall(_ % 2 == 0))
+        assert(query2.result == incBuf.exists(_ % 2 == 0))
+        println("%s %s %s" format (incBuf, query.result, query2.result))
+      }
+      incBuf.clear()
+      assert(query.result == incBuf.forall(_ % 2 == 0))
+      assert(query2.result == incBuf.exists(_ % 2 == 0))
+      println("%s %s %s" format (incBuf, query.result, query2.result))
+      for (n <- 1 to 5) {
+        incBuf += (math.random * 4).toInt
+        assert(query.result == incBuf.forall(_ % 2 == 0))
+        assert(query2.result == incBuf.exists(_ % 2 == 0))
+        println("%s %s %s" format (incBuf, query.result, query2.result))
       }
     }
   }
