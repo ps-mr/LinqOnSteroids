@@ -49,7 +49,7 @@ case class Force[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
 }
 
 case class Union[T, Repr <: TraversableLike[T, Repr], That](base: Exp[Repr], that: Exp[Traversable[T]])
-                                   (implicit c: CanBuildFrom[Repr, T, That]) extends BinaryOpExp[Repr, Traversable[T], That](base, that) {
+                                   (implicit protected[this] val c: CanBuildFrom[Repr, T, That]) extends BinaryOpExp[Repr, Traversable[T], That](base, that) {
   override def interpret = base.interpret ++ that.interpret
   override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = Union[T, Repr, That](base, that)
 }
