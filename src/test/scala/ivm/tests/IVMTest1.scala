@@ -13,7 +13,7 @@ import expressiontree.{Lifting, Exp, Queryable, IncrementalResult}
  * Date: 31/10/2011
  */
 
-class IVMTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
+class IVMTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil with SmartIVMAPI {
   import Lifting._
 
   @Test
@@ -79,5 +79,20 @@ class IVMTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
     val vCollPlusOne: HashSet[Int] = vColl.map(_ + 1) //Here, the resulting object has actually HashSet as dynamic type.
     //Since vColl has a different static type, a different implicit is passed here.
     println("vCollPlusOne: %s, type: %s" format (vCollPlusOne, vCollPlusOne.getClass.getName))
+  }
+
+  @Test
+  def testUnion() {
+    val v1 = new IncHashSet[Int]
+    val v2 = new IncHashSet[Int]
+    val union = v1.asQueryable.union(v2)
+    val res = union.materialize
+
+    def out() { show("res", res) }
+    out()
+    v1 ++= Seq(1, 2, 3)
+    out()
+    v2 ++= Seq(4, 5, 6)
+    out()
   }
 }
