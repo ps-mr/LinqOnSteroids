@@ -81,10 +81,12 @@ class IVMTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil w
     println("vCollPlusOne: %s, type: %s" format (vCollPlusOne, vCollPlusOne.getClass.getName))
   }
 
-  @Test
-  def testUnion() {
+  def testUnion(queryWithExistingContent: Boolean) {
     val v1 = new IncHashSet[Int]
     val v2 = new IncHashSet[Int]
+    if (queryWithExistingContent)
+      v2 ++= Seq(4, 5, 6)
+
     val union = v1.asQueryable.union(v2)
     val res = union.materialize
 
@@ -92,7 +94,20 @@ class IVMTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil w
     out()
     v1 ++= Seq(1, 2, 3)
     out()
-    v2 ++= Seq(4, 5, 6)
+    v1 --= Seq(1, 2, 3)
+    out()
+
+    v1 ++= Seq(1, 2, 3)
+    out()
+
+    if (!queryWithExistingContent) {
+      v2 ++= Seq(4, 5, 6)
+      out()
+    }
+    v2 --= Seq(4, 5, 6)
     out()
   }
+
+  @Test def testUnion1() {testUnion(true)}
+  @Test def testUnion2() {testUnion(false)}
 }
