@@ -10,11 +10,12 @@ import collection.mutable.HashMap
 
 private[expressiontree] object IncrementalResult {
   // Given e.g. coll2 = MapOp(coll@IncHashSet(_), FuncExp(...)), coll2 is the child and coll is the parent (here, the root).
-  def findChildrenOfRoots(child: Exp[_], e: Exp[_]): Seq[Exp[_]] = {
+  // Do not return duplicates!
+  def findChildrenOfRoots(child: Exp[_], e: Exp[_]): Set[Exp[_]] = {
     (if (e.isRoot)
-      Seq(child)
+      Set(child)
     else
-      Seq.empty) ++
+      Set.empty) ++
       (e.roots flatMap (findChildrenOfRoots(e, _)))
   }
 
@@ -32,7 +33,7 @@ private[expressiontree] object IncrementalResult {
   }
 
   def propagateRootsElements(initialChild: Exp[_], initialRoot: Exp[_]) {
-    for (child <- findChildrenOfRoots(initialChild, initialRoot).toSet[Exp[_]]) //Remove duplicates!
+    for (child <- findChildrenOfRoots(initialChild, initialRoot))
       child pullAndPropagateContent()
   }
 }
