@@ -8,14 +8,19 @@ import Lifting._
 import optimization.Optimization
 import collection.{mutable, TraversableView}
 
+//XXX: merge within Lifting
 trait SmartIVMAPI {
+  //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
+  //parameter of Exp here.
+  def asExp[T](t: Exp[T]) = t
+
   class Pimper[T](t: T) {
-    def asSmartCollection = t: Exp[T]
+    def asSmartCollection = asExp(t)
   }
   implicit def toPimper[T](t: T) = new Pimper(t)
 
   class ArrayPimper[T](t: Array[T]) {
-    def asSmartCollection = t: Exp[Seq[T]]
+    def asSmartCollection = asExp(t: Seq[T])
   }
   implicit def toArrayPimper[T](t: Array[T]) = new ArrayPimper(t)
   //Either we use ArrayPimper, or we create an implicit conversion from Exp[Array[T]] to TraverableOps[T] by adding the final cast to TraversableOps[T] here.
@@ -30,10 +35,6 @@ trait SmartIVMAPI {
   //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
   def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = (f: Exp[T => U])(t)
   def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
-
-  //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
-  //parameter of Exp here.
-  def asExp[T](t: Exp[T]) = t
 }
 
 trait TestUtil {
