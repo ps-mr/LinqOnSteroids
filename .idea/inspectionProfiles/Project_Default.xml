@@ -3,5 +3,7 @@
     <option name="myName" value="Project Default" />
     <option name="myLocal" value="false" />
     <inspection_tool class="Abstract Value in Trait" enabled="true" level="INFO" enabled_by_default="true" />
+    <inspection_tool class="File Name" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="Suspicious Inferred Type" enabled="true" level="WARNING" enabled_by_default="true" />
   </profile>
 </component>

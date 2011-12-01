@@ -30,7 +30,7 @@
     <orderEntry type="module-library" exported="" scope="TEST">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib_managed/scala_2.9.0-1/test/junit-4.8.2.jar!/" />
+          <root url="jar://$MODULE_DIR$/../lib/java/junit-4.8.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -74,6 +74,15 @@
     </orderEntry>
     <orderEntry type="library" name="scala-library-2.9.0.1" level="application" />
     <orderEntry type="library" name="buildScalaLocal" level="project" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/opal-0.7.0.final.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
 
