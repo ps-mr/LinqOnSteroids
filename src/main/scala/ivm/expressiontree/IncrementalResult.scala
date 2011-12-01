@@ -32,7 +32,7 @@ private[expressiontree] object IncrementalResult {
   }
 
   def propagateRootsElements(initialChild: Exp[_], initialRoot: Exp[_]) {
-    for (child <- findChildrenOfRoots(initialChild, initialRoot))
+    for (child <- findChildrenOfRoots(initialChild, initialRoot).toSet[Exp[_]]) //Remove duplicates!
       child pullAndPropagateContent()
   }
 }
