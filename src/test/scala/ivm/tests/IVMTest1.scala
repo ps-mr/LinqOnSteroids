@@ -104,6 +104,10 @@ class IVMTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil w
       v2 ++= Seq(4, 5, 6)
       out()
     }
+    v2 ++= Seq(7, 8, 9)
+    out()
+    v2 --= Seq(4, 5, 6)
+    out()
     v2 --= Seq(4, 5, 6)
     out()
   }
