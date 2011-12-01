@@ -49,9 +49,8 @@ private[expressiontree] object IncrementalResult {
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
 // same type. OTOH, this methods allows accessing the underlying data at all.
 class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Traversable[T]] //The use of NullaryExp is fishy.
-  with TravMsgSeqSubscriber[T, Exp[Traversable[T]]]
   with Queryable[T, collection.SetProxy[T]]
-  with TraversableMaintainer[Traversable[T], T, Traversable[T]]
+  with TraversableMaintainer[T, Traversable[T], Traversable[T]]
   with collection.SetProxy[T] //I mean immutable.SetProxy[T], but that requires an underlying immutable Set.
   // I'll probably end up with forwarding most basic methods manually, and implementing the others through SetLike.
   // Or we'll just support incremental query update for all methods.

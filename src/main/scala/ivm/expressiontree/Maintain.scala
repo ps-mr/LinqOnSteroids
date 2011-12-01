@@ -141,7 +141,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
   }
 }
 
-trait Maintainer[+Res, SrcMsgType, Src <: SrcMsgType] extends MsgSeqSubscriber[SrcMsgType, Exp[Src]] with Exp[Res] {
+trait Maintainer[SrcMsgType, Src <: SrcMsgType, +Res] extends MsgSeqSubscriber[SrcMsgType, Exp[Src]] with Exp[Res] {
   private[ivm] override def roots = Seq(base)
 
   val base: Exp[Src]
@@ -162,8 +162,9 @@ trait Maintainer[+Res, SrcMsgType, Src <: SrcMsgType] extends MsgSeqSubscriber[S
   }
 }
 
-//XXX: Fix names and order of type parameters, it's really counterintuitive
-trait TraversableMaintainer[+Res, SrcMsgType, Src <: Traversable[SrcMsgType]] extends Maintainer[Res, Traversable[SrcMsgType], Src] with TravMsgSeqSubscriber[SrcMsgType, Exp[Src]] with Exp[Res] {
+trait TraversableMaintainer[SrcMsgType, Src <: Traversable[SrcMsgType], +Res]
+  extends Maintainer[Traversable[SrcMsgType], Src, Res]
+{
   private[ivm] override def pullAndPropagateContent() {
     notify (base, base.interpret().toSeq.map(Include(_)))
   }
@@ -175,7 +176,7 @@ trait TraversableMaintainer[+Res, SrcMsgType, Src <: Traversable[SrcMsgType]] ex
 class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, U])
                          (implicit override protected val c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
-    with MapOpMaintainer[T, U, Exp[Repr]] with TraversableMaintainer[That, T, Repr] {
+    with MapOpMaintainer[T, U, Exp[Repr]] with TraversableMaintainer[T, Repr, That] {
   override def fInt = f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, U]) = new MapOpMaintainerExp[T, Repr, U, That](base, f)
 }
@@ -183,7 +184,7 @@ class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]
 class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
                          (implicit override protected val c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
-    with FlatMapMaintainer[T, U, Exp[Repr], That] with TraversableMaintainer[That, T, Repr] {
+    with FlatMapMaintainer[T, U, Exp[Repr], That] with TraversableMaintainer[T, Repr, That] {
   override def fInt: T => Exp[TraversableOnce[U]] = {
     import Lifting._
     f(_)
@@ -193,7 +194,7 @@ class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
 }
 
 class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: FuncExp[T, Boolean]) extends Filter[T, Repr](base, p)
-    with FilterMaintainer[T, Exp[Repr]] with TraversableMaintainer[Repr, T, Repr] {
+    with FilterMaintainer[T, Exp[Repr]] with TraversableMaintainer[T, Repr, Repr] {
   override def pInt = p.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = new FilterMaintainerExp[T, Repr](base, f)
 }
@@ -207,7 +208,7 @@ class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr
 //TODO: This will listen only to one collection!!!
 class UnionMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr], That <: Traversable[T]](base: Exp[Repr], that: Exp[Traversable[T]])
   (implicit c: CanBuildFrom[Repr, T, That]) extends
-  Union[T, Repr, That](base, that)(c) with UnionMaintainer[T, Exp[Repr]] with TraversableMaintainer[That, T, Repr] {
+  Union[T, Repr, That](base, that)(c) with UnionMaintainer[T, Exp[Repr]] with TraversableMaintainer[T, Repr, That] {
   override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = new UnionMaintainerExp[T, Repr, That](base, that)
 }
 
