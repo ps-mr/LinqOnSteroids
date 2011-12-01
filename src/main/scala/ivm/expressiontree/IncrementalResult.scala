@@ -67,7 +67,6 @@ class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Tra
   //The same holds for propagateRootsElements, but for a more complex reason: notifications for elements already present
   //are not propagated, since they are considered duplicate.
   override def isRoot = true
-  override def roots = Seq.empty
   //From SetProxy
   override def self = set.keySet
 
