@@ -141,7 +141,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
   }
 }
 
-trait Maintainer[SrcMsgType, Src <: SrcMsgType, +Res] extends MsgSeqSubscriber[SrcMsgType, Exp[Src]] with Exp[Res] {
+trait Maintainer[SrcMsg, Src <: SrcMsg, +Res] extends MsgSeqSubscriber[SrcMsg, Exp[Src]] with Exp[Res] {
   type RootType = Src
   private[ivm] override def activateIVM() { roots foreach (startListeningOn(_)) }
   def startListeningOn(root: Exp[Src]) {
@@ -158,9 +158,7 @@ trait Maintainer[SrcMsgType, Src <: SrcMsgType, +Res] extends MsgSeqSubscriber[S
   }
 }
 
-trait TraversableMaintainer[SrcMsgType, Src <: Traversable[SrcMsgType], +Res]
-  extends Maintainer[Traversable[SrcMsgType], Src, Res]
-{
+trait TraversableMaintainer[SrcMsg, Src <: Traversable[SrcMsg], +Res] extends Maintainer[Traversable[SrcMsg], Src, Res] {
   private[ivm] override def pullAndPropagateContent() {
     for (root <- roots) {
       notify (root, root.interpret().toSeq.map(Include(_)))
@@ -168,9 +166,7 @@ trait TraversableMaintainer[SrcMsgType, Src <: Traversable[SrcMsgType], +Res]
   }
 }
 
-trait OneRootTraversableMaintainer[SrcMsgType, Src <: Traversable[SrcMsgType], +Res]
-  extends TraversableMaintainer[SrcMsgType, Src, Res]
-{
+trait OneRootTraversableMaintainer[SrcMsg, Src <: Traversable[SrcMsg], +Res] extends TraversableMaintainer[SrcMsg, Src, Res] {
   val base: Exp[Src]
   private[ivm] override def roots = Seq(base)
 }
@@ -213,7 +209,8 @@ class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr
 //TODO: This will listen only to one collection!!!
 class UnionMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr], That <: Traversable[T]](base: Exp[Repr], that: Exp[Traversable[T]])
   (implicit c: CanBuildFrom[Repr, T, That]) extends
-  Union[T, Repr, That](base, that)(c) with UnionMaintainer[T, Exp[Traversable[T]]] with TraversableMaintainer[T, Traversable[T], That] {
+  Union[T, Repr, That](base, that)(c) with UnionMaintainer[T, Exp[Traversable[T]]] with TraversableMaintainer[T, Traversable[T], That]
+{
   private[ivm] override def roots = Seq(base, that)
   override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = new UnionMaintainerExp[T, Repr, That](base, that)
 }
