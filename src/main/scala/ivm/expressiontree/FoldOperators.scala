@@ -139,10 +139,19 @@ object FoldOperators {
   //However, normalization-by-evaluation and a two-argument version of FuncExpInt could come to the rescue!
   case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: Option[T] = None) extends UnaryOpExp[Traversable[T], T](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T] { //BinaryOpExp[Traversable[T], (T, T) => T, T](coll, f) {
     private var tree: Buffer[Buffer[T]] = _
+    private var positions: Map[T, Buffer[Int]] = _
+    private var freePositions: ArrayBuffer[Int] = new ArrayBuffer
     var res: T = _
     override def interpret() = {
       //Do we actually need to recompute the tree? Won't it have been updated by IVM? Hmm... you never know... especially since this is not IncrementalResult and it thus doesn't include the needed machinery for listener setup!
-      val (lTree, lRes) = treeFold(coll.interpret().toBuffer)(z, f)
+      val interpColl = coll.interpret().toBuffer
+      val (lTree, lRes) = treeFold(interpColl)(z, f)
+      //XXX: It would be nice to be able to write something like this, and it should be possible, but unfortunately it isn't. Report it as a Scala bug!
+      //var positions: Map[T, Int] = interpColl.zipWithIndex(Map.canBuildFrom[T, Int])
+      //What is accepted instead is this:
+      //var positions: Map[T, Int] = interpColl.zipWithIndex.toMap
+      //But actually, we need the list of positions, i.e. this ugly statement:
+      positions = interpColl.zipWithIndex.groupBy(_._1).map(v => (v._1, v._2.map(_._2)))
       tree = lTree
       res = lRes
       res
@@ -153,6 +162,14 @@ object FoldOperators {
       for (evt <- evts) {
         evt match {
           case Include(v) =>
+            if (freePositions.nonEmpty) {
+              val pos = freePositions.head
+              freePositions.remove(0)
+              tree(0)(pos) = z.get
+              updateTreeFromPos(pos)
+
+              return
+            }
             //XXX: this code is much trickier than functional code and than most other code I have. Try to find a way to simplify it!
             tree(0) += v
             var i = 0
@@ -177,13 +194,31 @@ object FoldOperators {
               val pair = tree(i)
               tree += Buffer(f(pair(0), pair(1)))
             }
-            //XXX: Remove requires an underlying bag to find the element!
+            ()
+          //XXX: Remove requires an underlying bag to find the element! Or an additional map for that.
+          //TODO: add test for this
+          case Remove(v) =>
+            val pos = positions(v).head
+            positions(v).remove(0)
+            tree(0)(pos) = z.get
+            freePositions += pos
+            updateTreeFromPos(pos)
           case _ =>
         }
       }
       res = tree.last.headOption.orElse(z).get
 
       publish(UpdateEl(oldRes, res))
+    }
+
+    def updateTreeFromPos(_pos: Int) {
+      var currPos = _pos
+      var i = 0
+      while (i + 1 < tree.size) {
+        currPos = currPos / 2
+        tree(i + 1)(currPos) = f(tree(i)(2 * currPos), tree(i)(2 * currPos + 1))
+        i += 1
+      }
     }
   }
 
@@ -247,6 +282,14 @@ object FoldOperators {
       res.interpret()
       for (n <- 1 to 17) {
         incBuf += n
+        assert(res.res == (1 to n).sum)
+        incBuf -= 1
+        assert(res.res == (2 to n).sum)
+        incBuf += n
+        assert(res.res == (2 to n).sum + n)
+        incBuf -= n
+        assert(res.res == (2 to n).sum)
+        incBuf += 1
         assert(res.res == (1 to n).sum)
       }
     }
