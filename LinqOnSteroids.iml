@@ -27,46 +27,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library" exported="" scope="TEST">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../lib/java/junit-4.8.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="" scope="TEST">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib_managed/scala_2.9.0-1/test/junit-interface-0.5.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/scalatest-1.6.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib_managed/scala_2.9.0-1/compile/scalatest_2.9.0-1.6.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="" scope="TEST">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib_managed/scala_2.9.0-1/test/test-interface-0.5.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -78,6 +42,15 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/opal-0.7.0.final.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/junit-4.8.2.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
