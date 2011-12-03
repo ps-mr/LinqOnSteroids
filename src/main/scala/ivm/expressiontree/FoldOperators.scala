@@ -169,7 +169,7 @@ object FoldOperators {
               val pos = freePositions.head
               freePositions.remove(0)
               tree(0)(pos) = v
-              updateTreeFromPos(pos)
+              updateTreeFromPos(pos, update = true)
               pos
             } else {
               //XXX: this code is much trickier than functional code and than most other code I have. Try to find a way to simplify it!
@@ -215,7 +215,7 @@ object FoldOperators {
             positions(v).remove(0)
             tree(0)(pos) = z.get
             freePositions += pos
-            updateTreeFromPos(pos)
+            updateTreeFromPos(pos, update = true)
           case _ =>
         }
       }
@@ -224,7 +224,7 @@ object FoldOperators {
       publish(UpdateEl(oldRes, res))
     }
 
-    def updateTreeFromPos(_pos: Int) {
+    def updateTreeFromPos(_pos: Int, update: Boolean = false) {
       var currPos = _pos
       for (i <- 0 until tree.size - 1) {
         currPos = currPos / 2
@@ -235,7 +235,7 @@ object FoldOperators {
             tree(i)(2 * currPos)
 
           //f(tree(i)(2 * currPos), getOrElse(tree(i), 2 * currPos + 1, z.get))
-        if (tree(i + 1).size > currPos)
+        if (update || tree(i + 1).size > currPos)
           tree(i + 1)(currPos) = newVal
         else
           tree(i + 1) += newVal
