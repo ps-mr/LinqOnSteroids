@@ -337,17 +337,17 @@ object FoldOperators {
         incBuf += n
         assert(query.result == incBuf.forall(_ % 2 == 0))
         assert(query2.result == incBuf.exists(_ % 2 == 0))
-        println("%s %s %s" format (incBuf, query.result, query2.result))
+        println("%s, forall even: %s, exists even: %s" format (incBuf, query.result, query2.result))
       }
       incBuf.clear()
       assert(query.result == incBuf.forall(_ % 2 == 0))
       assert(query2.result == incBuf.exists(_ % 2 == 0))
-      println("%s %s %s" format (incBuf, query.result, query2.result))
+      println("%s, forall even: %s, exists even: %s" format (incBuf, query.result, query2.result))
       for (n <- 1 to 5) {
         incBuf += (math.random * 4).toInt
         assert(query.result == incBuf.forall(_ % 2 == 0))
         assert(query2.result == incBuf.exists(_ % 2 == 0))
-        println("%s %s %s" format (incBuf, query.result, query2.result))
+        println("%s, forall even: %s, exists even: %s" format (incBuf, query.result, query2.result))
       }
     }
   }
