@@ -176,8 +176,8 @@ object FoldOperators {
               val insertPos = tree(0).size
               tree(0) += v
               updateTreeFromPos(insertPos)
-              /*var i = 0
-              while (i + 1 < tree.size) {
+              /*
+              for (i <- 0 until tree.size - 1) {
                 if (tree(i).size % 2 == 1 && (tree(i).size + 1) / 2 >= tree(i + 1).size) {
                   tree(i + 1) += tree(i).last
                 } else {
@@ -197,8 +197,8 @@ object FoldOperators {
                 tree(i + 1)(destPos) = f(getOrElse(tree(i + 1), destPos, z.get), v)
                 //}}}
                 */
-                i += 1
-              }*/
+              }
+              */
               val i = tree.size - 1
               assert(tree(i).size <= 2)
               if (tree(i).size == 2) {
@@ -226,8 +226,7 @@ object FoldOperators {
 
     def updateTreeFromPos(_pos: Int) {
       var currPos = _pos
-      var i = 0
-      while (i + 1 < tree.size) {
+      for (i <- 0 until tree.size - 1) {
         currPos = currPos / 2
         val newVal =
           if (2 * currPos + 1 < tree(i).size)
@@ -240,7 +239,6 @@ object FoldOperators {
           tree(i + 1)(currPos) = newVal
         else
           tree(i + 1) += newVal
-        i += 1
       }
     }
   }
