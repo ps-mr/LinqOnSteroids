@@ -138,8 +138,11 @@ object FoldOperators {
   //Here I accept a primitive function because I believe the overhead for expression trees would be too significant, especially with all the wrapping and unwrapping done by convertBinFunInternal.
   //However, normalization-by-evaluation and a two-argument version of FuncExpInt could come to the rescue!
   case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: Option[T] = None) extends UnaryOpExp[Traversable[T], T](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T] { //BinaryOpExp[Traversable[T], (T, T) => T, T](coll, f) {
+    private def getOrElse(arr: Buffer[T], i: Int, default: T) = {
+      arr.orElse[Int, T]{ case _ => default }(i)
+    }
     private var tree: Buffer[Buffer[T]] = _
-    private var positions: Map[T, Buffer[Int]] = _
+    private var positions: mutable.Map[T, Buffer[Int]] = _
     private var freePositions: ArrayBuffer[Int] = new ArrayBuffer
     var res: T = _
     override def interpret() = {
@@ -151,7 +154,7 @@ object FoldOperators {
       //What is accepted instead is this:
       //var positions: Map[T, Int] = interpColl.zipWithIndex.toMap
       //But actually, we need the list of positions, i.e. this ugly statement:
-      positions = interpColl.zipWithIndex.groupBy(_._1).map(v => (v._1, v._2.map(_._2)))
+      positions = mutable.HashMap(interpColl.zipWithIndex.groupBy(_._1).toSeq: _*).map(v => (v._1, v._2.map(_._2)))
       tree = lTree
       res = lRes
       res
@@ -162,39 +165,49 @@ object FoldOperators {
       for (evt <- evts) {
         evt match {
           case Include(v) =>
-            if (freePositions.nonEmpty) {
+            val newPos = if (freePositions.nonEmpty) {
               val pos = freePositions.head
               freePositions.remove(0)
-              tree(0)(pos) = z.get
+              tree(0)(pos) = v
               updateTreeFromPos(pos)
-
-              return
-            }
-            //XXX: this code is much trickier than functional code and than most other code I have. Try to find a way to simplify it!
-            tree(0) += v
-            var i = 0
-            while (i + 1 < tree.size) {
-              if (tree(i).size % 2 == 1) {
-                tree(i + 1) += v
-              } else {
-                val lastIdx = tree(i + 1).size - 1
-                tree(i + 1)(lastIdx) = f(tree(i + 1)(lastIdx), v)
+              pos
+            } else {
+              //XXX: this code is much trickier than functional code and than most other code I have. Try to find a way to simplify it!
+              val insertPos = tree(0).size
+              tree(0) += v
+              updateTreeFromPos(insertPos)
+              /*var i = 0
+              while (i + 1 < tree.size) {
+                if (tree(i).size % 2 == 1 && (tree(i).size + 1) / 2 >= tree(i + 1).size) {
+                  tree(i + 1) += tree(i).last
+                } else {
+                  val lastIdx = tree(i + 1).size - 1
+                  //Similar to updateTreeFromPos:
+                  //tree(i + 1)(lastIdx) = f(tree(i)(2 * lastIdx), getOrElse(tree(i), 2 * lastIdx + 1, z.get))
+                  tree(i + 1)(lastIdx) =
+                    if (2 * lastIdx + 1 < tree(i).size)
+                      f(tree(i)(2 * lastIdx), tree(i)(2 * lastIdx + 1))
+                    else
+                      tree(i)(2 * lastIdx)
+                }
+                /*
+                //Old alternative, if the neutral element is always there - now the code is incorrect!
+                //{{{
+                val destPos = tree(i).size / 2 - 1
+                tree(i + 1)(destPos) = f(getOrElse(tree(i + 1), destPos, z.get), v)
+                //}}}
+                */
+                i += 1
+              }*/
+              val i = tree.size - 1
+              assert(tree(i).size <= 2)
+              if (tree(i).size == 2) {
+                val pair = tree(i)
+                tree += Buffer(f(pair(0), pair(1)))
               }
-              /*
-              //Alternative, if the neutral element is always there:
-              //{{{
-              val destPos = tree(i).size / 2 - 1
-              tree(i + 1)(destPos) = f(tree(i + 1).orElse[Int, T]{ case _ => z.get }(destPos), v)
-              //}}}
-              */
-              i += 1
+              insertPos
             }
-            assert(tree(i).size <= 2)
-            if (tree(i).size == 2) {
-              val pair = tree(i)
-              tree += Buffer(f(pair(0), pair(1)))
-            }
-            ()
+            positions.getOrElseUpdate(v, new ArrayBuffer[Int]()) += newPos
           //XXX: Remove requires an underlying bag to find the element! Or an additional map for that.
           //TODO: add test for this
           case Remove(v) =>
@@ -216,7 +229,17 @@ object FoldOperators {
       var i = 0
       while (i + 1 < tree.size) {
         currPos = currPos / 2
-        tree(i + 1)(currPos) = f(tree(i)(2 * currPos), tree(i)(2 * currPos + 1))
+        val newVal =
+          if (2 * currPos + 1 < tree(i).size)
+            f(tree(i)(2 * currPos), tree(i)(2 * currPos + 1))
+          else
+            tree(i)(2 * currPos)
+
+          //f(tree(i)(2 * currPos), getOrElse(tree(i), 2 * currPos + 1, z.get))
+        if (tree(i + 1).size > currPos)
+          tree(i + 1)(currPos) = newVal
+        else
+          tree(i + 1) += newVal
         i += 1
       }
     }
