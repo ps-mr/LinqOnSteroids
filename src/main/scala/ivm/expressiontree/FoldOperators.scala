@@ -54,11 +54,11 @@ object FoldOperators {
   //It creates autocompletion disasters!
   //implicit def convToSome[T] = Some[T] _
 
-  def treeReduce[T](coll: Exp[Traversable[T]])(f: (T, T) => T) = //: Exp[T] =
-    TreeFold[T](coll, f)
+  /*def treeReduce[T](coll: Exp[Traversable[T]])(f: (T, T) => T) = //: Exp[T] =
+    TreeFold[T](coll, f)*/
 
   def treeFold[T](coll: Exp[Traversable[T]])(z: T, f: (T, T) => T) = //: Exp[T] =
-    TreeFold[T](coll, f, Some(z))
+    TreeFold[T](coll, f, z)
 
   def foldl[Out, In](coll: Exp[Traversable[In]])(f: IncBinOpC[Out, In], z: Out) = Foldl(coll, f, z)
   def not(v: Exp[Boolean]) = new Mynot(v)
@@ -137,7 +137,7 @@ object FoldOperators {
 
   //Here I accept a primitive function because I believe the overhead for expression trees would be too significant, especially with all the wrapping and unwrapping done by convertBinFunInternal.
   //However, normalization-by-evaluation and a two-argument version of FuncExpInt could come to the rescue!
-  case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: Option[T] = None) extends UnaryOpExp[Traversable[T], T](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T] { //BinaryOpExp[Traversable[T], (T, T) => T, T](coll, f) {
+  case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: T) extends UnaryOpExp[Traversable[T], T](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T] { //BinaryOpExp[Traversable[T], (T, T) => T, T](coll, f) {
     private def getOrElse(arr: Buffer[T], i: Int, default: T) = {
       arr.orElse[Int, T]{ case _ => default }(i)
     }
@@ -213,13 +213,13 @@ object FoldOperators {
           case Remove(v) =>
             val pos = positions(v).head
             positions(v).remove(0)
-            tree(0)(pos) = z.get
+            tree(0)(pos) = z
             freePositions += pos
             updateTreeFromPos(pos, update = true)
           case _ =>
         }
       }
-      res = tree.last.headOption.orElse(z).get
+      res = tree.last.headOption.getOrElse(z)
 
       publish(UpdateEl(oldRes, res))
     }
@@ -244,7 +244,7 @@ object FoldOperators {
   }
 
   //Mmmh, for folds we might care about bags, to allow for repeated elements!
-  def treeFold[T](coll: Buffer[T])(z: Option[T] = None, f: (T, T) => T): (Buffer[Buffer[T]], T) = {
+  def treeFold[T](coll: Buffer[T])(z: T, f: (T, T) => T): (Buffer[Buffer[T]], T) = {
     var layer: Buffer[T] = coll
     var tree = new ArrayBuffer[Buffer[T]]
     tree += layer
@@ -252,7 +252,7 @@ object FoldOperators {
       layer = layer.grouped(2).map(pair => if (pair.size == 2) f(pair(0), pair(1)) else pair(0)).toBuffer
       tree += layer
     }
-    (tree, layer.headOption.orElse(z).get)
+    (tree, layer.headOption.getOrElse(z))
   }
 
   def main(args: Array[String]) {
@@ -271,10 +271,10 @@ object FoldOperators {
       assert(query2.interpret() == res2)
     }
     for (n <- 1 to 17) {
-      val (_, res) = treeFold((1 to n).toBuffer)(Some(0), _ + _)
+      val (_, res) = treeFold((1 to n).toBuffer)(0, _ + _)
       assert(res == (1 to n).sum)
       println("treeFold(1 .. %d)(0, +) == %d" format (n, res))
-      val res2 = treeReduce((1 to n): Exp[Traversable[Int]])(_ + _)
+      val res2 = treeFold((1 to n): Exp[Traversable[Int]])(0, _ + _)
       println(res2)
       assert(res2.interpret() == (1 to n).sum)
       //println("Exp.treeFold(1 .. %d) == %d" format (n, res2.interpret()))
@@ -284,7 +284,7 @@ object FoldOperators {
       val incBuf: IncArrayBuffer[Int] = IncArrayBuffer(1)
       //val res = treeReduce(incBuf.asQueryable)(_ + _) //Does work
       //val res = treeReduce[Int](incBuf)(_ + _) //Does not work
-      val res = treeReduce(incBuf: Exp[Traversable[Int]])(_ + _) //Does work
+      val res = treeFold(incBuf: Exp[Traversable[Int]])(0,  _ + _) //Does work
       incBuf.subscribe(res)
       res.interpret()
       assert(res.res == 1)
