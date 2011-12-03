@@ -175,10 +175,10 @@ object FoldOperators {
               //XXX: this code is much trickier than functional code and than most other code I have. Try to find a way to simplify it!
               val insertPos = tree(0).size
               tree(0) += v
-              updateTreeFromPos(insertPos)
-              /*
+              //updateTreeFromPos(insertPos)
+              ///*
               for (i <- 0 until tree.size - 1) {
-                if (tree(i).size % 2 == 1 && (tree(i).size + 1) / 2 >= tree(i + 1).size) {
+                if (tree(i).size % 2 == 1 && (tree(i).size + 1) / 2 > tree(i + 1).size) {
                   tree(i + 1) += tree(i).last
                 } else {
                   val lastIdx = tree(i + 1).size - 1
@@ -198,7 +198,7 @@ object FoldOperators {
                 //}}}
                 */
               }
-              */
+              //*/
               val lastLevel = tree.size - 1
               assert(tree(lastLevel).size <= 2)
               if (tree(lastLevel).size == 2) {
