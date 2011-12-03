@@ -199,10 +199,10 @@ object FoldOperators {
                 */
               }
               */
-              val i = tree.size - 1
-              assert(tree(i).size <= 2)
-              if (tree(i).size == 2) {
-                val pair = tree(i)
+              val lastLevel = tree.size - 1
+              assert(tree(lastLevel).size <= 2)
+              if (tree(lastLevel).size == 2) {
+                val pair = tree(lastLevel)
                 tree += Buffer(f(pair(0), pair(1)))
               }
               insertPos
