@@ -175,7 +175,7 @@ object FoldOperators {
               //XXX: this code is much trickier than functional code and than most other code I have. Try to find a way to simplify it!
               val insertPos = tree(0).size
               tree(0) += v
-              //updateTreeFromPos(insertPos)
+              //updateTreeFromPos(insertPos, update = false)
               ///*
               for (i <- 0 until tree.size - 1) {
                 if (tree(i).size % 2 == 1 && (tree(i).size + 1) / 2 > tree(i + 1).size) {
@@ -190,13 +190,6 @@ object FoldOperators {
                     else
                       tree(i)(2 * lastIdx)
                 }
-                /*
-                //Old alternative, if the neutral element is always there - now the code is incorrect!
-                //{{{
-                val destPos = tree(i).size / 2 - 1
-                tree(i + 1)(destPos) = f(getOrElse(tree(i + 1), destPos, z.get), v)
-                //}}}
-                */
               }
               //*/
               val lastLevel = tree.size - 1
@@ -208,8 +201,8 @@ object FoldOperators {
               insertPos
             }
             positions.getOrElseUpdate(v, new ArrayBuffer[Int]()) += newPos
-          //XXX: Remove requires an underlying bag to find the element! Or an additional map for that.
-          //TODO: add test for this
+          //Remove requires an underlying bag to find the element, or an additional map, like done here.
+          //XXX: implement a simpler Remove for Bags
           case Remove(v) =>
             val pos = positions(v).head
             positions(v).remove(0)
@@ -224,7 +217,7 @@ object FoldOperators {
       publish(UpdateEl(oldRes, res))
     }
 
-    def updateTreeFromPos(_pos: Int, update: Boolean = false) {
+    def updateTreeFromPos(_pos: Int, update: Boolean) {
       var currPos = _pos
       for (i <- 0 until tree.size - 1) {
         currPos = currPos / 2
