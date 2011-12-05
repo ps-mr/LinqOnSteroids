@@ -27,15 +27,6 @@ case class UpdateEl[T](oldV: T, newV: T) extends Message[T]
 // a Reset? That's a problem when reset is O(1); maybe that must be done by intermediate nodes, which don't have however
 // the elements anyway, because they have not been transformed.
 
-//XXX: We don't have (yet) a concept of Self-Maintenable View, which in databases saves IO and for us can allow
-// garbage-collecting the original collection. But they are problematic. Here's the problem and a potential solution.
-// Publishers hang onto their subscribers through weak references, hence each subscriber must keep the
-// previous one alive. We can allow only the original collection to be GC-ed, not the intermediate message transformers.
-// Hence the first-level intermediate nodes must use a weak reference to the original collection; other nodes have just
-// a strong reference.
-// XXX: a further problem is that if the original collection is GC-ed, it makes no more sense to keep the intermediate
-// nodes in memory. We need to listen with a referencequeue on the original collection.
-
 //Script nodes can be useful as a space optimization for Seq[Message[T]]; however, types become less perspicuous.
 //case class Script[T](changes: Message[T]*) extends Message[T]
 
@@ -84,6 +75,18 @@ trait IgnoringPublisher[+Evt] extends Publisher[Evt] {
   protected[this] def publish(evt: Evt) {}
 }
 
+/*
+ * DefaultPublisher hangs onto subscribers through weak references. The subscribers, instead, hang onto the nodes they
+ * listen to through strong references. This way, whenever a query result is thrown away, the intermediate nodes which
+ * were needed for it can be garbage collected.
+ * If the original collection is no more referenced elsewhere, the query results will keep it in scope. However, if it
+ * cannot be modified now, maybe one should allow it to be GC'ed? Not in general, because that would prevent reevaluation
+ * of the results. TODO: We could introduce an IncrementalResult.detach() method for these situations.
+ * The alternative would be that the intermediate nodes keep only a weak reference to the base collections - which is
+ * a special node anyway (it must be an incremental collection, like IncArrayBuffer or IncHashSet).
+ * Moreover, also self-maintainable nodes could hang onto their sources through weak references.
+ * But XXX: We don't have (yet) a concept of Self-Maintainable View (which exists in databases to save IO).
+ */
 trait DefaultPublisher[+Evt] extends Publisher[Evt] {
   type Pub <: DefaultPublisher[Evt]
 
