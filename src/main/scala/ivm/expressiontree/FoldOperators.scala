@@ -9,6 +9,26 @@ import ivm.collections.IncArrayBuffer
  * Date: 25/11/2011
  */
 
+trait WorkaroundExp[+T] extends Exp[T] {
+  protected[this] def cache_=(v: Option[T])
+}
+
+trait CachingExp[+T] extends WorkaroundExp[T] {
+  //This field is never set by Exp or CachingExp itself, only by result-caching nodes
+
+  //Note: this declaration overrides both getter and setter. Therefore, they both need to be already declared in parent
+  //types; therefore, we need to declare WorkaroundExp.
+  protected[this] override var cache: Option[T] = None
+
+  override def expResult(): T = cache match {
+    case None =>
+      val res = interpret()
+      cache = Some(res)
+      res
+    case Some(v) => v
+  }
+}
+
 object FoldOperators {
   type BinOp[Out, In] = (Out, In) => Out
 
@@ -65,7 +85,7 @@ object FoldOperators {
   def forall[T](coll: Exp[Traversable[T]])(f: Exp[T] => Exp[Boolean]) = Forall(coll, FuncExp(f))
   def exists[T](coll: Exp[Traversable[T]])(f: Exp[T] => Exp[Boolean]) = not(Forall(coll, FuncExp(f andThen (new Mynot(_)))))
 
-  case class Foldl[Out, In](coll: Exp[Traversable[In]], f: IncBinOpC[Out, In], z: Out) extends UnaryOpExp[Traversable[In], Out](coll) with EvtTransformerEl[Traversable[In], Out, Traversable[In]] {
+  case class Foldl[Out, In](coll: Exp[Traversable[In]], f: IncBinOpC[Out, In], z: Out) extends UnaryOpExp[Traversable[In], Out](coll) with EvtTransformerEl[Traversable[In], Out, Traversable[In]] with CachingExp[Out] {
     override def interpret() = {
       //XXX: we should get the initial status otherwise. When we'll get notifications about the existing elements, this will become wrong.
       val res = coll.interpret().foldLeft(z)(f)
@@ -93,21 +113,20 @@ object FoldOperators {
   trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U, Exp[U]] {
     this: Exp[U] =>
     def notifyEv(pub: Repr, evt: Message[T])
-    def getCache = cache
     override def notify(pub: Repr, evts: Seq[Message[T]]) {
-      val oldRes = getCache
+      val oldRes = cache
       evts foreach (notifyEv(pub, _))
-      assert(getCache.isDefined)
+      assert(cache.isDefined)
       oldRes match {
         case Some(oldVal) =>
-          publish(UpdateVal(oldVal, getCache.get))
+          publish(UpdateVal(oldVal, cache.get))
         case None =>
-          publish(NewVal(getCache.get))
+          publish(NewVal(cache.get))
       }
     }
   }
 
-  class Mynot(b: Exp[Boolean]) extends Not(b) with EvtTransformerEl[Boolean, Boolean, Exp[Boolean]] {
+  class Mynot(b: Exp[Boolean]) extends Not(b) with EvtTransformerEl[Boolean, Boolean, Exp[Boolean]] with CachingExp[Boolean] {
     def notifyEv(pub: Exp[Boolean], evt: Message[Boolean]) {
       evt match {
         case NewVal(v) =>
@@ -123,14 +142,13 @@ object FoldOperators {
     override def interpret() = {
       //XXX: we should get the initial status otherwise.
       countFalse = coll.interpret().count(x => !f.interpret()(x))
-      calcResult
+      expResult()
     }
 
     override def copy(coll: Exp[Traversable[T]]) = Forall(coll, f)
 
-    def calcResult = countFalse == 0
-    override def getCache = Some(calcResult) //We probably need to make the cache _field_ optional.
-    override def expResult() = calcResult //The result is always valid here.
+    override def cache = Some(expResult()) //We probably need to make the cache _field_ optional.
+    override def expResult() = countFalse == 0 //The result is always valid here.
 
     override def notifyEv(pub: Traversable[T], evt: Message[Traversable[T]]) {
       evt match {

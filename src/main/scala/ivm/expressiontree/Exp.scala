@@ -8,17 +8,13 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   private[ivm] def pullAndPropagateContent() {}
   private[ivm] def isRoot = roots.isEmpty
 
+  //This method recomputes the contained value
   private[ivm] def interpret(): T
-  //This field is never set by Exp itself, only by result-caching nodes
-  protected[this] var cache: Option[T] = None
 
-  def expResult(): T = cache match {
-    case None =>
-      val res = interpret()
-      cache = Some(res)
-      res
-    case Some(v) => v
-  }
+  //This method returns the cached value (if any) or invokes interpret().
+  def expResult(): T = interpret()
+
+  protected[this] def cache: Option[T] = None
 
   def nodeArity: Int
 
