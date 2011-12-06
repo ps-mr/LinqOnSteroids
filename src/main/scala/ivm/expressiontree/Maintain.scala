@@ -91,7 +91,7 @@ trait UnionMaintainer[T, Repr <: Exp[Traversable[T]]] extends EvtTransformer[T, 
 trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransformer[T, U, Repr] {
   self: Exp[Traversable[U]] => //? [T]? That's needed for the subscribe.
   def fInt: T => Exp[TraversableOnce[U]]
-  var cache = new HashMap[T, Exp[TraversableOnce[U]]]
+  var subCollCache = new HashMap[T, Exp[TraversableOnce[U]]]
   val subCollListener: MsgSeqSubscriber[TraversableOnce[U], Exp[TraversableOnce[U]]] =
     new MsgSeqSubscriber[TraversableOnce[U], Exp[TraversableOnce[U]]] {
       override def notify(pub: Exp[TraversableOnce[U]], evts: Seq[Message[TraversableOnce[U]]]) = {
@@ -109,7 +109,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
       }
     }
   private def process(v: T) = {
-    val fV = cache.getOrElseUpdate(v, fInt(v))
+    val fV = subCollCache.getOrElseUpdate(v, fInt(v))
     fV subscribe subCollListener
     IncrementalResult.startListeners(fV)
     fV.interpret().toSeq map (Include(_))
@@ -128,7 +128,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
         //val fV = fInt(v) //fV will not always return the _same_ result. We
         //need a map from v to the returned collection - as done in LiveLinq
         //anyway.
-        val fV = cache(v)
+        val fV = subCollCache(v)
         //cache -= v //This might actually be incorrect, if v is included twice in the collection. This is a problem!
         fV removeSubscription subCollListener
         fV.interpret().toSeq map (Remove(_))
