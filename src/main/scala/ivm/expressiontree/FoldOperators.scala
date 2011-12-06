@@ -172,6 +172,12 @@ object FoldOperators {
     private def getOrElse(arr: Buffer[T], i: Int, default: T) = {
       arr.orElse[Int, T]{ case _ => default }(i)
     }
+    private def combineIfAvailable(el: T, arr: Buffer[T], i: Int) =
+      if (i < arr.size)
+        f(el, arr(i))
+      else
+        el
+
     private var tree: Buffer[Buffer[T]] = _
     private var positions: mutable.Map[T, Buffer[Int]] = _
     private var freePositions: ArrayBuffer[Int] = new ArrayBuffer
@@ -215,11 +221,7 @@ object FoldOperators {
                   val lastIdx = tree(i + 1).size - 1
                   //Similar to updateTreeFromPos:
                   //tree(i + 1)(lastIdx) = f(tree(i)(2 * lastIdx), getOrElse(tree(i), 2 * lastIdx + 1, z.get))
-                  tree(i + 1)(lastIdx) =
-                    if (2 * lastIdx + 1 < tree(i).size)
-                      f(tree(i)(2 * lastIdx), tree(i)(2 * lastIdx + 1))
-                    else
-                      tree(i)(2 * lastIdx)
+                  tree(i + 1)(lastIdx) = combineIfAvailable(tree(i)(2 * lastIdx), tree(i), 2 * lastIdx + 1)
                 }
               }
               //*/
@@ -252,11 +254,7 @@ object FoldOperators {
       var currPos = _pos
       for (i <- 0 until tree.size - 1) {
         currPos = currPos / 2
-        val newVal =
-          if (2 * currPos + 1 < tree(i).size)
-            f(tree(i)(2 * currPos), tree(i)(2 * currPos + 1))
-          else
-            tree(i)(2 * currPos)
+        val newVal = combineIfAvailable(tree(i)(2 * currPos), tree(i), 2 * currPos + 1)
 
           //f(tree(i)(2 * currPos), getOrElse(tree(i), 2 * currPos + 1, z.get))
         if (update || tree(i + 1).size > currPos)
