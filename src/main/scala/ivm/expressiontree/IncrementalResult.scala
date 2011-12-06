@@ -58,7 +58,7 @@ class IncrementalResult[T](val base: Exp[Traversable[T]]) extends NullaryExp[Tra
 {
   import IncrementalResult._
   var set = new HashMap[T, Int]
-  base subscribe this
+  base addSubscriber this
   //initializes listeners in the contained expression and makes initial elements flow through the query tree.
   startListeners(base)
   propagateRootsElements(this, base)

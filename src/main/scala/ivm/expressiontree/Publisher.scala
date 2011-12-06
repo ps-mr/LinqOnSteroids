@@ -64,14 +64,14 @@ class EqWeakReference[+T >: Null <: AnyRef](t: T) extends WeakReference[T](t: T)
 trait Publisher[+Evt, +Pub <: Publisher[Evt, Pub]] {
   type Sub = Subscriber[Evt, Pub]
 
-  def subscribe(sub: Sub)
-  def removeSubscription(sub: Sub)
+  def addSubscriber(sub: Sub)
+  def removeSubscriber(sub: Sub)
   protected[this] def publish(evt: Evt)
 }
 
 trait IgnoringPublisher[+Evt, +Pub <: Publisher[Evt, Pub]] extends Publisher[Evt, Pub] {
-  def subscribe(sub: Sub) {}
-  def removeSubscription(sub: Sub) {}
+  def addSubscriber(sub: Sub) {}
+  def removeSubscriber(sub: Sub) {}
   protected[this] def publish(evt: Evt) {}
 }
 
@@ -91,10 +91,10 @@ trait DefaultPublisher[+Evt, +Pub <: DefaultPublisher[Evt, Pub]] extends Publish
   selfAsPub: Pub =>
 
   private[this] var subscribers: Set[EqWeakReference[Sub]] = HashSet.empty
-  def subscribe(sub: Sub) {
+  def addSubscriber(sub: Sub) {
     subscribers += new EqWeakReference(sub)
   }
-  def removeSubscription(sub: Sub) {
+  def removeSubscriber(sub: Sub) {
     subscribers -= new EqWeakReference(sub)
   }
 

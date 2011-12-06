@@ -89,7 +89,7 @@ trait UnionMaintainer[T, Repr <: Exp[Traversable[T]]] extends EvtTransformer[T, 
 
 //Trait implementing incremental view maintenance for FlatMap operations.
 trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransformer[T, U, Repr] {
-  self: Exp[Traversable[U]] => //? [T]? That's needed for the subscribe.
+  self: Exp[Traversable[U]] => //? [T]? That's needed to subscribe.
   def fInt: T => Exp[TraversableOnce[U]]
   var subCollCache = new HashMap[T, Exp[TraversableOnce[U]]]
   val subCollListener: MsgSeqSubscriber[TraversableOnce[U], Exp[TraversableOnce[U]]] =
@@ -110,7 +110,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
     }
   private def process(v: T) = {
     val fV = subCollCache.getOrElseUpdate(v, fInt(v))
-    fV subscribe subCollListener
+    fV addSubscriber subCollListener
     IncrementalResult.startListeners(fV)
     fV.interpret().toSeq map (Include(_))
   }
@@ -130,7 +130,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
         //anyway.
         val fV = subCollCache(v)
         //cache -= v //This might actually be incorrect, if v is included twice in the collection. This is a problem!
-        fV removeSubscription subCollListener
+        fV removeSubscriber subCollListener
         fV.interpret().toSeq map (Remove(_))
       case _ => defTransformedMessages(evt)
       /*
@@ -154,7 +154,7 @@ trait Maintainer[SrcMsg, Src <: SrcMsg, +Res] extends MsgSeqSubscriber[SrcMsg, E
         }
       println("%s startListeningOn %s" format (asString, root))
     }
-    root subscribe this
+    root addSubscriber this
   }
 }
 

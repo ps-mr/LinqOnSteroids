@@ -291,7 +291,7 @@ object FoldOperators {
       //val res = treeReduce(incBuf.asQueryable)(_ + _) //Does work
       //val res = treeReduce[Int](incBuf)(_ + _) //Does not work
       val res = treeFold(incBuf: Exp[Traversable[Int]])(0,  _ + _) //Does work
-      incBuf.subscribe(res)
+      incBuf.addSubscriber(res)
       res.interpret()
       assert(res.res == 1)
       for (n <- 2 to 17) {
@@ -305,7 +305,7 @@ object FoldOperators {
       //val res = treeReduce(incBuf.asQueryable)(_ + _) //Does work
       //val res = treeReduce[Int](incBuf)(_ + _) //Does not work
       val res = treeFold(incBuf: Exp[Traversable[Int]])(0, _ + _) //Does work
-      incBuf.subscribe(res)
+      incBuf.addSubscriber(res)
       res.interpret()
       for (n <- 1 to 17) {
         incBuf += n
@@ -328,10 +328,10 @@ object FoldOperators {
       //println(res)
       val query = forall(incBuf)(_ % 2 is 0)
       val query2 = exists(incBuf)(_ % 2 is 0)
-      incBuf.subscribe(query)
+      incBuf.addSubscriber(query)
       val query2Content = query2.x.asInstanceOf[Forall[Int]]
-      incBuf.subscribe(query2Content)
-      query2Content.subscribe(query2)
+      incBuf.addSubscriber(query2Content)
+      query2Content.addSubscriber(query2)
       println(query)
       for (n <- 0 to (4, 2)) {
         incBuf += n
