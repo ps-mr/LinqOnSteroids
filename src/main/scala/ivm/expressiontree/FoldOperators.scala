@@ -66,44 +66,52 @@ object FoldOperators {
   def exists[T](coll: Exp[Traversable[T]])(f: Exp[T] => Exp[Boolean]) = not(Forall(coll, FuncExp(f andThen (new Mynot(_)))))
 
   case class Foldl[Out, In](coll: Exp[Traversable[In]], f: IncBinOpC[Out, In], z: Out) extends UnaryOpExp[Traversable[In], Out](coll) with EvtTransformerEl[Traversable[In], Out, Traversable[In]] {
-    var res: Out = _
     override def interpret() = {
       //XXX: we should get the initial status otherwise. When we'll get notifications about the existing elements, this will become wrong.
-      res = coll.interpret().foldLeft(z)(f)
+      val res = coll.interpret().foldLeft(z)(f)
+      cache = Some(res)
       res
     }
 
     override def copy(coll: Exp[Traversable[In]]) = Foldl(coll, f, z)
-    override def result = res
     override def notifyEv(pub: Traversable[In], evt: Message[Traversable[In]]) {
+      cache = Some(
       evt match {
         case Include(v) =>
-          res = f(res, v)
+          f(cache.get, v)
         case Remove(v) =>
-          res = f.remove(res, v)
+          f.remove(cache.get, v)
         case Update(oldV, newV) =>
-          res = f.update(res, oldV, newV)
+          f.update(cache.get, oldV, newV)
         case Reset =>
-          res = z
+          z
       }
+      )
     }
   }
 
   trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U, Exp[U]] {
     this: Exp[U] =>
     def notifyEv(pub: Repr, evt: Message[T])
-    def result: U
+    def getCache = cache
     override def notify(pub: Repr, evts: Seq[Message[T]]) {
-      val oldRes = result
+      val oldRes = getCache
       evts foreach (notifyEv(pub, _))
-      publish(UpdateVal(oldRes, result))
+      assert(getCache.isDefined)
+      oldRes match {
+        case Some(oldVal) =>
+          publish(UpdateVal(oldVal, getCache.get))
+        case None =>
+          publish(NewVal(getCache.get))
+      }
     }
   }
 
-  class Mynot(v: Exp[Boolean]) extends Not(v) with EvtTransformerEl[Boolean, Boolean, Exp[Boolean]] {
-    def result = cache.getOrElse(false) //XXX - needing to provide a result value sounds bad!
+  class Mynot(b: Exp[Boolean]) extends Not(b) with EvtTransformerEl[Boolean, Boolean, Exp[Boolean]] {
     def notifyEv(pub: Exp[Boolean], evt: Message[Boolean]) {
       evt match {
+        case NewVal(v) =>
+          cache = Some(!v)
         case UpdateVal(_, v) =>
           cache = Some(!v)
       }
@@ -115,11 +123,15 @@ object FoldOperators {
     override def interpret() = {
       //XXX: we should get the initial status otherwise.
       countFalse = coll.interpret().count(x => !f.interpret()(x))
-      result
+      calcResult
     }
 
     override def copy(coll: Exp[Traversable[T]]) = Forall(coll, f)
-    override def result = countFalse == 0
+
+    def calcResult = countFalse == 0
+    override def getCache = Some(calcResult) //We probably need to make the cache _field_ optional.
+    override def expResult() = calcResult //The result is always valid here.
+
     override def notifyEv(pub: Traversable[T], evt: Message[Traversable[T]]) {
       evt match {
         case Include(v) =>
@@ -323,25 +335,25 @@ object FoldOperators {
       println(query)
       for (n <- 0 to (4, 2)) {
         incBuf += n
-        assert(query.result == incBuf.forall(_ % 2 == 0))
-        assert(query2.result == incBuf.exists(_ % 2 == 0))
-        println("%s, forall even: %s, exists even: %s" format (incBuf, query.result, query2.result))
+        assert(query.expResult == incBuf.forall(_ % 2 == 0))
+        assert(query2.expResult == incBuf.exists(_ % 2 == 0))
+        println("%s, forall even: %s, exists even: %s" format (incBuf, query.expResult, query2.expResult))
       }
       for (n <- 1 to (5, 2)) {
         incBuf += n
-        assert(query.result == incBuf.forall(_ % 2 == 0))
-        assert(query2.result == incBuf.exists(_ % 2 == 0))
-        println("%s, forall even: %s, exists even: %s" format (incBuf, query.result, query2.result))
+        assert(query.expResult == incBuf.forall(_ % 2 == 0))
+        assert(query2.expResult == incBuf.exists(_ % 2 == 0))
+        println("%s, forall even: %s, exists even: %s" format (incBuf, query.expResult, query2.expResult))
       }
       incBuf.clear()
-      assert(query.result == incBuf.forall(_ % 2 == 0))
-      assert(query2.result == incBuf.exists(_ % 2 == 0))
-      println("%s, forall even: %s, exists even: %s" format (incBuf, query.result, query2.result))
+      assert(query.expResult == incBuf.forall(_ % 2 == 0))
+      assert(query2.expResult == incBuf.exists(_ % 2 == 0))
+      println("%s, forall even: %s, exists even: %s" format (incBuf, query.expResult, query2.expResult))
       for (n <- 1 to 5) {
         incBuf += (math.random * 4).toInt
-        assert(query.result == incBuf.forall(_ % 2 == 0))
-        assert(query2.result == incBuf.exists(_ % 2 == 0))
-        println("%s, forall even: %s, exists even: %s" format (incBuf, query.result, query2.result))
+        assert(query.expResult == incBuf.forall(_ % 2 == 0))
+        assert(query2.expResult == incBuf.exists(_ % 2 == 0))
+        println("%s, forall even: %s, exists even: %s" format (incBuf, query.expResult, query2.expResult))
       }
     }
   }
