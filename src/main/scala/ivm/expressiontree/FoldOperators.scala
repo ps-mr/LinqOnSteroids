@@ -101,11 +101,11 @@ object FoldOperators {
   }
 
   class Mynot(v: Exp[Boolean]) extends Not(v) with EvtTransformerEl[Boolean, Boolean, Exp[Boolean]] {
-    var result: Boolean = _
+    def result = cache.getOrElse(false) //XXX - needing to provide a result value sounds bad!
     def notifyEv(pub: Exp[Boolean], evt: Message[Boolean]) {
       evt match {
         case UpdateEl(_, v) =>
-          result = !v
+          cache = Some(!v)
       }
     }
   }
