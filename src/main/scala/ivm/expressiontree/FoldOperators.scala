@@ -96,7 +96,7 @@ object FoldOperators {
     override def notify(pub: Repr, evts: Seq[Message[T]]) {
       val oldRes = result
       evts foreach (notifyEv(pub, _))
-      publish(UpdateEl(oldRes, result))
+      publish(UpdateVal(oldRes, result))
     }
   }
 
@@ -104,7 +104,7 @@ object FoldOperators {
     def result = cache.getOrElse(false) //XXX - needing to provide a result value sounds bad!
     def notifyEv(pub: Exp[Boolean], evt: Message[Boolean]) {
       evt match {
-        case UpdateEl(_, v) =>
+        case UpdateVal(_, v) =>
           cache = Some(!v)
       }
     }
@@ -215,7 +215,7 @@ object FoldOperators {
       }
       res = tree.last.headOption.getOrElse(z)
 
-      publish(UpdateEl(oldRes, res))
+      publish(UpdateVal(oldRes, res))
     }
 
     def updateTreeFromPos(_pos: Int, update: Boolean) {
