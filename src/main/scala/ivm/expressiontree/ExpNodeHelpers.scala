@@ -6,16 +6,7 @@ package ivm.expressiontree
  * User: pgiarrusso
  * Date: 1/9/2011
  */
-trait CheckingExp[+R] extends Exp[R] {
-  def nodeArity: Int
-  protected def checkedGenericConstructor: Seq[Exp[_]] => Exp[R]
-
-  private[ivm] def genericConstructor(v: Seq[Exp[_]]) =
-    if (v.length == nodeArity)
-      checkedGenericConstructor(v)
-    else
-      throw new IllegalArgumentException()
-}
+trait CheckingExp[+R] extends Exp[R]
 
 trait NullaryExpTrait[+R] extends CheckingExp[R] {
   override def nodeArity = 0

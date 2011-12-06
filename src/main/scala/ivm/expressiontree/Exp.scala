@@ -9,11 +9,18 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   private[ivm] def isRoot = roots.isEmpty
 
   def interpret(): T
+  def nodeArity: Int
+
   private[ivm] def children: Seq[Exp[_]]
-//  private[ivm] def closedTermChildren: Seq[Exp[_]] = children
   private[ivm] def roots: Seq[Exp[RootType]] = Seq.empty
-  //The arity is not specified.
-  private[ivm] def genericConstructor(v: Seq[Exp[_]]): Exp[T]
+  protected def checkedGenericConstructor: Seq[Exp[_]] => Exp[R]
+
+  private[ivm] def genericConstructor(v: Seq[Exp[_]]): Exp[T] =
+    if (v.length == nodeArity)
+      checkedGenericConstructor(v)
+    else
+      throw new IllegalArgumentException()
+
   // some child management auxiliary functions
 
   private[ivm] def visitPreorder(visitor: Exp[_] => Unit, childSelector: Exp[_] => Seq[Exp[_]]) {
