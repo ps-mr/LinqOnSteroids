@@ -115,10 +115,16 @@ trait MsgSeqPublisher[+T, +Pub <: MsgSeqPublisher[T, Pub]] extends DefaultPublis
 
 trait MsgSeqSubscriber[-T, -Repr] extends Subscriber[Seq[Message[T]], Repr]
 
-trait EvtTransformer[-T, +U, -Repr] extends TravMsgSeqSubscriber[T, Repr] with TravMsgSeqPublisher[U, EvtTransformer[T, U, Repr]] {
-  //Contract: transforms messages, potentially executes them.
-  def transformedMessages(v: TravMessage[T]): Seq[TravMessage[U]]
+trait EvtTransformerBase[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U, EvtTransformerBase[T, U, Repr]] {
+  //Contract: transforms messages, potentially executes them. XXX: pub is not passed
+  def transformedMessages(v: Message[T]): Seq[Message[U]]
 
+  override def notify(pub: Repr, evts: Seq[Message[T]]) {
+    publish(evts flatMap transformedMessages)
+  }
+}
+
+trait EvtTransformer[-T, +U, -Repr] extends EvtTransformerBase[Traversable[T], Traversable[U], Repr] {
   //Precondition: only ever pass Reset or Update nodes.
   protected def defTransformedMessages(v: TravMessage[T]): Seq[TravMessage[U]] = {
     v match {
@@ -133,12 +139,6 @@ trait EvtTransformer[-T, +U, -Repr] extends TravMsgSeqSubscriber[T, Repr] with T
     }
   }
 
-  override def notify(pub: Repr, evts: Seq[TravMessage[T]]) = {
-    val res = evts flatMap transformedMessages
-    if (Debug.verbose)
-      println("%s notify(\n  pub = %s,\n  evts = %s\n) = %s" format (this, pub, evts, res))
-    publish(res)
-  }
 }
 
 object Debug {
