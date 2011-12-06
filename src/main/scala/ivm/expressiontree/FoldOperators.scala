@@ -96,17 +96,16 @@ object FoldOperators {
     override def copy(coll: Exp[Traversable[In]]) = Foldl(coll, f, z)
     override def notifyEv(pub: Traversable[In], evt: Message[Traversable[In]]) {
       cache = Some(
-      evt match {
-        case Include(v) =>
-          f(cache.get, v)
-        case Remove(v) =>
-          f.remove(cache.get, v)
-        case Update(oldV, newV) =>
-          f.update(cache.get, oldV, newV)
-        case Reset =>
-          z
-      }
-      )
+        evt match {
+          case Include(v) =>
+            f(cache.get, v)
+          case Remove(v) =>
+            f.remove(cache.get, v)
+          case Update(oldV, newV) =>
+            f.update(cache.get, oldV, newV)
+          case Reset =>
+            z
+        })
     }
   }
 
