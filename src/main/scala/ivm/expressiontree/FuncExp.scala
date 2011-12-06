@@ -12,7 +12,7 @@ case class App[T, U](f: Exp[T => U], t: Exp[T]) extends BinaryOpExp[T => U, T, U
   override def copy(f: Exp[T => U], t: Exp[T]) = App(f, t)
 }
 
-abstract class FuncExpBase[-S, +T, +Type] extends CheckingExp[Type] with Equals {
+abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
   import FuncExp._
   val f: Exp[S] => Exp[T]
 

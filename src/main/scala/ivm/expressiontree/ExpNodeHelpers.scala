@@ -6,16 +6,15 @@ package ivm.expressiontree
  * User: pgiarrusso
  * Date: 1/9/2011
  */
-trait CheckingExp[+R] extends Exp[R]
 
-trait NullaryExpTrait[+R] extends CheckingExp[R] {
+trait NullaryExpTrait[+R] extends Exp[R] {
   override def nodeArity = 0
   def children = Seq()
   def checkedGenericConstructor = _ => this
 }
 abstract class NullaryExp[+R] extends NullaryExpTrait[R]
 
-trait UnaryOpTrait[T1 <: Exp[_], +R] extends CheckingExp[R] {
+trait UnaryOpTrait[T1 <: Exp[_], +R] extends Exp[R] {
   def t1: T1
   override def nodeArity = 1
   def children = Seq(t1)
@@ -27,7 +26,7 @@ abstract class UnaryOp[T1 <: Exp[_], +R](val t1: T1) extends UnaryOpTrait[T1, R]
 
 abstract class UnaryOpExp[T1, R](t1: Exp[T1]) extends UnaryOp[Exp[T1], R](t1)
 
-trait BinaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], +R] extends CheckingExp[R] {
+trait BinaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], +R] extends Exp[R] {
   def t1: T1
   def t2: T2
   override def nodeArity = 2
@@ -46,7 +45,7 @@ trait BinaryOpExpTrait[T1, T2, +R] extends BinaryOpTrait[Exp[T1], Exp[T2], R]
 abstract class BinaryOpExp[T1, T2, +R](t1: Exp[T1], t2: Exp[T2]) extends BinaryOp[Exp[T1], Exp[T2], R](t1, t2)
 abstract class BinaryOpSymmExp[Arg, +R](t1: Exp[Arg], t2: Exp[Arg]) extends BinaryOpExp[Arg, Arg, R](t1, t2)
 
-trait TernaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R] extends CheckingExp[R] {
+trait TernaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R] extends Exp[R] {
   def t1: T1
   def t2: T2
   def t3: T3
@@ -65,7 +64,7 @@ abstract class TernaryOpExp[T1, T2, T3, +R](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3
 
 //For Call4
 abstract class QuaternaryOp[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], +R](t1: T1, t2: T2, t3: T3, t4: T4)
-                                                                                        extends CheckingExp[R] {
+                                                                                        extends Exp[R] {
   override def nodeArity = 4
   def children = Seq(t1, t2, t3, t4)
   def checkedGenericConstructor =
@@ -83,7 +82,7 @@ abstract class QuaternaryOpExp[T1, T2, T3, T4, +R](t1: Exp[T1], t2: Exp[T2], t3:
 
 //For Join and Call5
 abstract class QuinaryOp[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], T5 <: Exp[_], +R](t1: T1, t2: T2, t3: T3, t4: T4, t5: T5)
-                                                                                                  extends CheckingExp[R] {
+                                                                                                  extends Exp[R] {
   override def nodeArity = 5
   def children = Seq(t1, t2, t3, t4, t5)
   def checkedGenericConstructor =
