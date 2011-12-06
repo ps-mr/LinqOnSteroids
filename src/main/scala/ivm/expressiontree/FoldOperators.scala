@@ -169,14 +169,11 @@ object FoldOperators {
   //Here I accept a primitive function because I believe the overhead for expression trees would be too significant, especially with all the wrapping and unwrapping done by convertBinFunInternal.
   //However, normalization-by-evaluation and a two-argument version of FuncExpInt could come to the rescue!
   case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: T) extends UnaryOpExp[Traversable[T], T](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T, Exp[T]] { //BinaryOpExp[Traversable[T], (T, T) => T, T](coll, f) {
-    private def getOrElse(arr: Buffer[T], i: Int, default: T) = {
-      arr.orElse[Int, T]{ case _ => default }(i)
-    }
-    private def combineIfAvailable(el: T, arr: Buffer[T], i: Int) =
-      if (i < arr.size)
-        f(el, arr(i))
+    private def combineIfAvailable(arr: Buffer[T], i: Int) =
+      if (i + 1 < arr.size)
+        f(arr(i), arr(i + 1))
       else
-        el
+        arr(i)
 
     private var tree: Buffer[Buffer[T]] = _
     private var positions: mutable.Map[T, Buffer[Int]] = _
@@ -219,9 +216,7 @@ object FoldOperators {
                   tree(i + 1) += tree(i).last
                 } else {
                   val lastIdx = tree(i + 1).size - 1
-                  //Similar to updateTreeFromPos:
-                  //tree(i + 1)(lastIdx) = f(tree(i)(2 * lastIdx), getOrElse(tree(i), 2 * lastIdx + 1, z.get))
-                  tree(i + 1)(lastIdx) = combineIfAvailable(tree(i)(2 * lastIdx), tree(i), 2 * lastIdx + 1)
+                  tree(i + 1)(lastIdx) = combineIfAvailable(tree(i), 2 * lastIdx)
                 }
               }
               //*/
@@ -254,9 +249,8 @@ object FoldOperators {
       var currPos = _pos
       for (i <- 0 until tree.size - 1) {
         currPos = currPos / 2
-        val newVal = combineIfAvailable(tree(i)(2 * currPos), tree(i), 2 * currPos + 1)
+        val newVal = combineIfAvailable(tree(i), 2 * currPos)
 
-          //f(tree(i)(2 * currPos), getOrElse(tree(i), 2 * currPos + 1, z.get))
         if (update || tree(i + 1).size > currPos)
           tree(i + 1)(currPos) = newVal
         else
