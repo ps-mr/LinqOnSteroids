@@ -20,5 +20,5 @@ trait Call[Res] extends CheckingExp[Res] {
       case _ =>
         false
   }
-  override def hashCode = 41*id.hashCode + children.hashCode
+  override def hashCode = 41 * id.hashCode + children.hashCode
 }
