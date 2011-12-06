@@ -60,8 +60,7 @@ class EqWeakReference[+T >: Null <: AnyRef](t: T) extends WeakReference[T](t: T)
   // but call it on the actual object, not on some Option wrapper.
 }
 
-trait Publisher[+Evt] {
-  type Pub <: Publisher[Evt]
+trait Publisher[+Evt, +Pub <: Publisher[Evt, Pub]] {
   type Sub = Subscriber[Evt, Pub]
 
   def subscribe(sub: Sub)
@@ -69,7 +68,7 @@ trait Publisher[+Evt] {
   protected[this] def publish(evt: Evt)
 }
 
-trait IgnoringPublisher[+Evt] extends Publisher[Evt] {
+trait IgnoringPublisher[+Evt, +Pub <: Publisher[Evt, Pub]] extends Publisher[Evt, Pub] {
   def subscribe(sub: Sub) {}
   def removeSubscription(sub: Sub) {}
   protected[this] def publish(evt: Evt) {}
@@ -87,12 +86,8 @@ trait IgnoringPublisher[+Evt] extends Publisher[Evt] {
  * Moreover, also self-maintainable nodes could hang onto their sources through weak references.
  * But XXX: We don't have (yet) a concept of Self-Maintainable View (which exists in databases to save IO).
  */
-trait DefaultPublisher[+Evt] extends Publisher[Evt] {
-  type Pub <: DefaultPublisher[Evt]
-
-  protected def selfAsPub: Pub = this.asInstanceOf[Pub]
-  //XXX: If Pub were a (covariant) type parameter, then we could just write (I expect) selfAsPub: Pub => at the beginning, instead of
-  //such an ugly cast. However, Pub appears in Subscriber in a contravariant position, so that's not so easily possible.
+trait DefaultPublisher[+Evt, +Pub <: DefaultPublisher[Evt, Pub]] extends Publisher[Evt, Pub] {
+  selfAsPub: Pub =>
 
   private[this] var subscribers: Set[EqWeakReference[Sub]] = HashSet.empty
   def subscribe(sub: Sub) {
@@ -110,7 +105,8 @@ trait DefaultPublisher[+Evt] extends Publisher[Evt] {
   }
 }
 
-trait MsgSeqPublisher[+T] extends DefaultPublisher[Seq[Message[T]]] {
+trait MsgSeqPublisher[+T, +Pub <: MsgSeqPublisher[T, Pub]] extends DefaultPublisher[Seq[Message[T]], Pub] {
+  selfAsPub: Pub =>
   protected[this] def publish(evt: Message[T]) {
     publish(Seq(evt))
   }
@@ -118,7 +114,7 @@ trait MsgSeqPublisher[+T] extends DefaultPublisher[Seq[Message[T]]] {
 
 trait MsgSeqSubscriber[-T, -Repr] extends Subscriber[Seq[Message[T]], Repr]
 
-trait EvtTransformer[-T, +U, -Repr] extends TravMsgSeqSubscriber[T, Repr] with TravMsgSeqPublisher[U] {
+trait EvtTransformer[-T, +U, -Repr] extends TravMsgSeqSubscriber[T, Repr] with TravMsgSeqPublisher[U, EvtTransformer[T, U, Repr]] {
   //Contract: transforms messages, potentially executes them.
   def transformedMessages(v: TravMessage[T]): Seq[TravMessage[U]]
 

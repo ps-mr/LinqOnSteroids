@@ -4,8 +4,8 @@ import collection.mutable.{Buffer, Set}
 
 // This is for a modifiable sequence. Actually, it's a problem since we don't preserve ordering, but we should.
 // On the one hand, this interface matches a relation in the closest way.
-trait ObservableBuffer[T] extends Buffer[T] with TravMsgSeqPublisher[T] {
-  type Pub <: ObservableBuffer[T]
+trait ObservableBuffer[T] extends Buffer[T] with TravMsgSeqPublisher[T, ObservableBuffer[T]] {
+  //type Pub <: ObservableBuffer[T]
   //XXX: we might want to make this still less ad-hoc
   private[this] var silenceNotifications = false
 
@@ -75,8 +75,8 @@ trait ObservableBuffer[T] extends Buffer[T] with TravMsgSeqPublisher[T] {
 
 // Here we don't get info about replaced elements. However, for observable elements, we should still register ourselves
 // to forward them.
-trait ObservableSet[T] extends Set[T] with TravMsgSeqPublisher[T] {
-  type Pub <: ObservableSet[T]
+trait ObservableSet[T] extends Set[T] with TravMsgSeqPublisher[T, ObservableSet[T]] {
+  //type Pub <: ObservableSet[T]
   //XXX: we might want to make this less ad-hoc
   private[this] var silenceNotifications = false
   abstract override def clear() = {

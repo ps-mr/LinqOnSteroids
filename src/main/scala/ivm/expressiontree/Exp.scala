@@ -1,7 +1,6 @@
 package ivm.expressiontree
 
-trait Exp[+T] extends MsgSeqPublisher[T] {
-  type Pub <: Exp[T]
+trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   type RootType
   private[ivm] def activateIVM() {}
 

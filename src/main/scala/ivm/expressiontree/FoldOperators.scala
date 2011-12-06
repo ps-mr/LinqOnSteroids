@@ -89,7 +89,8 @@ object FoldOperators {
     }
   }
 
-  trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U] {
+  trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U, Exp[U]] {
+    this: Exp[U] =>
     def notifyEv(pub: Repr, evt: Message[T])
     def result: U
     override def notify(pub: Repr, evts: Seq[Message[T]]) {
@@ -137,7 +138,7 @@ object FoldOperators {
 
   //Here I accept a primitive function because I believe the overhead for expression trees would be too significant, especially with all the wrapping and unwrapping done by convertBinFunInternal.
   //However, normalization-by-evaluation and a two-argument version of FuncExpInt could come to the rescue!
-  case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: T) extends UnaryOpExp[Traversable[T], T](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T] { //BinaryOpExp[Traversable[T], (T, T) => T, T](coll, f) {
+  case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: T) extends UnaryOpExp[Traversable[T], T](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T, Exp[T]] { //BinaryOpExp[Traversable[T], (T, T) => T, T](coll, f) {
     private def getOrElse(arr: Buffer[T], i: Int, default: T) = {
       arr.orElse[Int, T]{ case _ => default }(i)
     }
