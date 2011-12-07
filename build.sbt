@@ -20,8 +20,11 @@ scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes")
 
 //scalacOptions <+= scalaSource in Compile map { "-P:sxr:base-directory:" + _.getAbsolutePath }
 
-//Would run again the same tests. Would be useful if we ever used pure JUnit
+//JUnit integration. It is disabled because our tests are both JUnit tests and
+//ScalaTest ones, so it would run again the same tests.
+//This integration would be useful if we ever used pure JUnit
 //tests.
 //libraryDependencies += "com.novocode" % "junit-interface" % "0.5" % "test->default"
 
+// This enables test integration with Jenkins, following instructions from https://github.com/ijuma/junit_xml_listener#readme
 testListeners <<= target.map(t => Seq(new eu.henkelmann.sbt.JUnitXmlTestsListener(t.getAbsolutePath)))
