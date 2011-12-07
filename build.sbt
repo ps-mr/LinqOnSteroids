@@ -23,3 +23,5 @@ scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes")
 //Would run again the same tests. Would be useful if we ever used pure JUnit
 //tests.
 //libraryDependencies += "com.novocode" % "junit-interface" % "0.5" % "test->default"
+
+testListeners <<= target.map(t => Seq(new eu.henkelmann.sbt.JUnitXmlTestsListener(t.getAbsolutePath)))
