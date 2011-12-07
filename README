@@ -1,11 +1,16 @@
 == Compilation instructions ==
-To compile this project, you can either use Sbt or load the project into Eclipse or IDEA.
-The IDEA project files might refer to libraries downloaded through Sbt, and requires the IDEA Scala plugin. Similarly, the Eclipse project relies on the Eclipse Scala plugin - which however is rather troublesome to use.
+To compile this project, you can use SBT.
 
-1) To install Sbt 0.7.7, follow instructions on this page:
-  http://code.google.com/p/simple-build-tool/wiki/Setup
-Ignore the redirect to Github, as documentation there describes the new and incompatible Sbt 0.10.x.
-2) After installing sbt, cd into this folder and launch sbt. It will find the build instructions in the 'project' folder. During the first execution it will auto-download various dependencies needed for itself (including the Scala compiler).
+You can edit the project using Eclipse or IDEA, but they are only partially supported; in particular, they are not supported for compiling. I use daily IDEA for editing, running and testing though.
+
+The IDEA project files requires the IDEA Scala plugin.
+Similarly, the Eclipse project relies on the Eclipse Scala plugin - which however is rather troublesome to use (as I last tested it).
+
+The project uses SBT 0.10.1 - you need to install that or a later version of SBT; a pre-installed SBT 0.7.x will not work.
+1) To install Sbt, follow instructions on this page:
+  https://github.com/harrah/xsbt/wiki/Getting-Started-Setup
+2) After installing sbt, cd into this folder and launch sbt. It will find the build instructions in build.sbt. During the first execution it will auto-download various dependencies needed for itself (including the Scala compiler).
 3) Then, at the sbt prompt, type the update command (simply "update" without quotes, and then enter). This step downloads external libraries and needs not be repeated afterwards, unless new external libraries are added.
-4) Finally, you can similarly run any command between "compile", "test-compile" (also compiles tests) and "test" (which additionally _runs_ the tests - they include performance tests and take some time).
 
+4) Finally, you can similarly run any command between "compile", "test:compile" (also compiles tests) and "test" (which additionally _runs_ the tests - they include performance tests and take some time). I usually run tests using IntelliJ IDEA to specify which one I am interested in, even if I do not use it for compilation.
+In particular, tests in the ivm.performancetests package take considerable time.
