@@ -208,7 +208,6 @@ class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr
 // There was a use-case I forget where other context information, other than a simple count, had to be stored.
 // Was it a path in a hierarchical index?
 
-//TODO: This will listen only to one collection!!!
 class UnionMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr], That <: Traversable[T]](base: Exp[Repr], that: Exp[Traversable[T]])
   (implicit c: CanBuildFrom[Repr, T, That]) extends
   Union[T, Repr, That](base, that)(c) with UnionMaintainer[T, Exp[Traversable[T]]] with TraversableMaintainer[T, Traversable[T], That]
