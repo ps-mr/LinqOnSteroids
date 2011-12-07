@@ -4,6 +4,8 @@ package optimization
 import expressiontree._
 import Lifting._
 import collection.GenTraversableOnce
+
+//Pattern-matchers for simplifying writing patterns
 object FuncExpBody {
   def unapply[S, T](f: FuncExp[S, T]): Option[Exp[T]] = Some(f.body)
 }
@@ -11,7 +13,11 @@ object FuncExpBody {
 object FuncExpIdentity {
   def unapply[S, T](f: FuncExp[S, T]): Boolean = f.body == f.x
 }
+
+//Pattern match to connect two conditions
 object & { def unapply[A](a: A) = Some(a, a) }
+
+
 class Optimization {
   private def buildJoin[T, S, TKey, TResult](fmColl: Exp[Traversable[T]],
                                                   wfColl: Exp[Traversable[S]],
@@ -65,11 +71,12 @@ class Optimization {
         // shows up when recompiling this class but not MapOp. Another (now fixed) bug with separate compilation
         // is described here: https://issues.scala-lang.org/browse/SI-4757
         col.asInstanceOf[Exp[_]]
-      case MapOp(col, FuncExpBody(x)) =>
+      case MapOp(col, FuncExpBody(x)) => //XXX: Why this case?
         e
       case _ => e
     }
 
+  //XXX: use normalization more often (e.g., whenever building a FuncExp, or whenever building a FuncExpInt?)
   private def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: FuncExp[T, U], g: FuncExp[U, V]) =
     coll.map(FuncExp.normalize(f.f andThen g.f, f.x))
     //coll.map(g.f andThen f.f) //Here the typechecker can reject this line.
