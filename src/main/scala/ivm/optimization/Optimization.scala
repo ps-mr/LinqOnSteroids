@@ -67,10 +67,7 @@ class Optimization {
   val removeIdentityMaps: Exp[_] => Exp[_] =
     e => e match {
       case MapOp(col, FuncExpIdentity()) =>
-        // XXX: the cast in the line below is only needed because of a compiler bug (yet to report), which only
-        // shows up when recompiling this class but not MapOp. Another (now fixed) bug with separate compilation
-        // is described here: https://issues.scala-lang.org/browse/SI-4757
-        col.asInstanceOf[Exp[_]]
+        col
       case _ => e
     }
 
