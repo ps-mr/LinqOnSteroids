@@ -64,7 +64,8 @@ class IncHashSet[T] extends HashSet[T]
 
 // Next TODO: try to hide from the public interface of IncHashSet the methods from HashSet, so that people must call
 // asCollection. Not sure whether it's a good idea. A possibly more sensible alternative is to hide methods from
-// QueryReifier, so that people have to call asQueryable to get them.
+// Exp[Traversable[T]], so that people have to call asQueryable to get them. Indeed, the type Queryable provides only
+// methods from Exp[T], and one needs to call asCollection to access methods from the underlying collection.
 
 object IncHashSet extends MutableSetFactory[IncHashSet] {
   implicit def canBuildFrom[A]: CanBuildFrom[Coll, A, IncHashSet[A]] = setCanBuildFrom[A]

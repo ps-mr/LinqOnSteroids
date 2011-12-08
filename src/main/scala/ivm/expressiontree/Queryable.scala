@@ -24,7 +24,6 @@ package expressiontree
 
 //Probably Repr is also needed, especially if the produced Iterable must also offer stronger
 //interfaces.
-//TODO: add notification interface!
 trait Queryable[T, Repr] extends NullaryExpTrait[Traversable[T]] {
   self: Traversable[T] with Repr =>
   //type Pub = Queryable[T, Repr] //XXX? Should this be defined here already? Or should Pub be even more specific?

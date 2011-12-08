@@ -163,7 +163,6 @@ object FoldOperators {
       }
     }
   }
-  //TODO: Forall and exists only require counting the number of false (respectively, true) values, and they are implementable in term of one another, given a notification-propagating Not.
 
   //Here I accept a primitive function because I believe the overhead for expression trees would be too significant, especially with all the wrapping and unwrapping done by convertBinFunInternal.
   //However, normalization-by-evaluation and a two-argument version of FuncExpInt could come to the rescue!

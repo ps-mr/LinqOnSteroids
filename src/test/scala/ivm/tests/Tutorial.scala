@@ -158,7 +158,6 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     showExp(LibrariesAndHackersExplicitJoin, "explicit join")
     showExp(Optimization.optimize(LibrariesAndHackersExplicitJoin), "optimized explicit join")
     checkResult(LibrariesAndHackersExplicitJoin)
-    //TODO: Let us do the same on a Set, and get a Set out!
     //XXX: Let us see that we can also perform interesting optimizations manually, or have them performed by an optimizer.
   }
 
@@ -304,7 +303,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI w
     val data = Set(1, 2, 3, 5)
     val a: Exp[Set[Int]] = data
     val a2 = data.asSmartCollection
-    assertType[Exp[Set[Int]]](a2) //assertType[Exp[Set[Int]]](a2)
+    assertType[Exp[Set[Int]]](a2)
     val b1 = a.map(_ + 1)
     val b2 = a2.map(1 + _)
     val b3 = b1.map(2 + _)
