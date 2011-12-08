@@ -71,8 +71,6 @@ class Optimization {
         // shows up when recompiling this class but not MapOp. Another (now fixed) bug with separate compilation
         // is described here: https://issues.scala-lang.org/browse/SI-4757
         col.asInstanceOf[Exp[_]]
-      case MapOp(col, FuncExpBody(x)) => //XXX: Why this case?
-        e
       case _ => e
     }
 
