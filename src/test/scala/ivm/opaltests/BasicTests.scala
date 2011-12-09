@@ -276,6 +276,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     val methodsLos6 = expToTypeMappingAppOps[Set, PartialApply1Of2[Tuple2, Method_Info]#Apply](evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
     //If I omit type parameters, not type inference, but typechecking here fails after figuring the right type, even if expToTypeMappingAppOps is explicitly called.
     //As you see, it fails to unify D[_] with [B](de.tud.cs.st.bat.resolved.Method_Info, B).
+    //This is documented as https://issues.scala-lang.org/browse/SI-5075
     /*
 [error] /Users/pgiarrusso/Documents/Research/Sorgenti/SAE-privGit/linqonsteroids/src/test/scala/ivm/opaltests/BasicTests.scala:228: no type parameters for method expToTypeMappingAppOps: (t: ivm.expressiontree.Exp[ivm.collections.TypeMapping[C,D]])ivm.expressiontree.Lifting.TypeMappingAppOps[C,D] exist so that it can be applied to arguments (ivm.expressiontree.Exp[ivm.collections.TypeMapping[Traversable,[B](de.tud.cs.st.bat.resolved.Method_Info, B)]])
 [error]  --- because ---
