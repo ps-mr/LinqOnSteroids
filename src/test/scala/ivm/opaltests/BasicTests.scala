@@ -160,53 +160,53 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     // native Scala for-comprehension
 
-    var methods: Set[String] = null
+    var methodsNative: Set[String] = null
     benchMark("native", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-      methods  = for (cf <- testdata;
+      methodsNative  = for (cf <- testdata;
                       m <- cf.methods;
                       Code_attribute(_,_,code,_,_) <- m.attributes;
                       INSTANCEOF(_) <- code) yield m.name
     }
     //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
     //Not very pretty, but better than nothing
-    methods.size should be (84)
+    methodsNative.size should be (84)
 
     // using reified query; INSTANCEOF is here shadowed.
     import BATLifting._
     import BATLiftingExperimental._
 
     //The pattern-matches used here are unsound:
-    val methods2 = for (cf <- queryData;
+    val methodsLos1 = for (cf <- queryData;
                         m <- cf.methods;
                         Code_attribute(_,_,code,_,_) <- m.attributes;
                         INSTANCEOF(_) <- code) yield m.name
 
     intercept[ExoticTermException] {
-      println(methods2) //Fails because the terms are inadequate
+      println(methodsLos1) //Fails because the terms are inadequate
     }
 
-    var m2Int: Traversable[String] = null
-    benchMark("los", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-      m2Int = methods2.interpret()
+    var m1Int: Traversable[String] = null
+    benchMark("los1", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      m1Int = methodsLos1.interpret()
     }
-    methods should equal (m2Int)
+    methodsNative should equal (m1Int)
 
-    val methods3 = queryData.flatMap( cf => cf.methods
+    val methodsLos2 = queryData.flatMap( cf => cf.methods
       .flatMap( m => m.attributes
       .collect( x => x.ifInstanceOf[Code_attribute])
       .flatMap( c => c.code)
       .collect( i => i.ifInstanceOf[INSTANCEOF])
       .map( _ => m.name)))
 
-    var m3Int: Traversable[String] = null
+    var m2Int: Traversable[String] = null
     benchMark("los2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-      m3Int = methods3.interpret()
+      m2Int = methodsLos2.interpret()
     }
-    methods should equal (m3Int)
+    methodsNative should equal (m2Int)
 
     //This is twice as slow as the other los solutions, except methods3.
     //My guess is that this is because collect applies the given function twice.
-    val methods4 = queryData.flatMap( cf => cf.methods
+    val methodsLos3 = queryData.flatMap( cf => cf.methods
       .flatMap( m => m.attributes
       .collect(
       a => onExp(a)('instanceOf$Code_attribute,
@@ -218,14 +218,14 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
       .filter( a => onExp(a)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF]))
       .map( _ => m.name)))
 
-    var m4Int: Traversable[String] = null
+    var m3Int: Traversable[String] = null
     benchMark("los3", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-      m4Int = methods4.interpret()
+      m3Int = methodsLos3.interpret()
     }
-    methods should equal (m4Int)
+    methodsNative should equal (m3Int)
 
     //Best performance and quite clear code.
-    val methods5 =
+    val methodsLos4 =
       for {
         cf <- queryData
         m <- cf.methods
@@ -234,23 +234,23 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
         i <- a.asInstanceOf[Exp[Code_attribute]].code //This cast works perfectly
         if onExp(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
       } yield m.name
-    var m5Int: Traversable[String] = null
+    var m4Int: Traversable[String] = null
     benchMark("los4", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-      m5Int = methods5.interpret()
+      m4Int = methodsLos4.interpret()
     }
-    methods should equal (m5Int)
+    methodsNative should equal (m4Int)
 
     type ID[T] = T
 
-    val methods6 =  for (cf <- queryData;
+    val methodsLos5 =  for (cf <- queryData;
                          m <- cf.methods;
                          ca <- m.attributes.typeFilter[Code_attribute];
                          io <- ca.code.typeFilter[INSTANCEOF]) yield m.name
-    var m6Int: Traversable[String] = null
+    var m5Int: Traversable[String] = null
     benchMark("los5", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-      m6Int = methods6.interpret()
+      m5Int = methodsLos5.interpret()
     }
-    methods should equal (m6Int)
+    methodsNative should equal (m5Int)
 
     // another version using type index but manual index application
     // (need to code this into optimizer - not quite obvious how to do it)
@@ -268,12 +268,12 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     val evaluatedtypeindex = typeindex.interpret()
     //println(evaluatedtypeindex.map.keys)
 
-    //val methods7 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
+    //val methodsLos6 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
     //XXX this code, instead of using typeindex: Exp[...], uses toExp(typeindex.interpret()), which is a hack. The goal
     //is to have the index evaluated at all - otherwise there would be no speed-up. However, the proper solution is to
     //wrap the query result in something similar to IncrementalResult's constructor: Exp[T] -> Exp[T] - so that the result
     //is materialized and incrementally maintained.
-    val methods7 = expToTypeMappingAppOps[Set, PartialApply1Of2[Tuple2, Method_Info]#Apply](evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
+    val methodsLos6 = expToTypeMappingAppOps[Set, PartialApply1Of2[Tuple2, Method_Info]#Apply](evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
     //If I omit type parameters, not type inference, but typechecking here fails after figuring the right type, even if expToTypeMappingAppOps is explicitly called.
     //As you see, it fails to unify D[_] with [B](de.tud.cs.st.bat.resolved.Method_Info, B).
     /*
@@ -282,12 +282,12 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 [error] argument expression's type is not compatible with formal parameter type;
 [error]  found   : ivm.expressiontree.Exp[ivm.collections.TypeMapping[Traversable,[B](de.tud.cs.st.bat.resolved.Method_Info, B)]]
 [error]  required: ivm.expressiontree.Exp[ivm.collections.TypeMapping[?0C,?0D]]
-[error]      val methods7 = expToTypeMappingAppOps(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
+[error]      val methodsLos6 = expToTypeMappingAppOps(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
     */
     var m7Int: Traversable[String] = null
-    benchMark("los6", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-      m7Int = methods7.interpret()
+    benchMark("los6 (with index)", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      m7Int = methodsLos6.interpret()
     }
-    methods should equal (m7Int)
+    methodsNative should equal (m7Int)
   }
 }
