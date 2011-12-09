@@ -175,14 +175,16 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     import BATLifting._
     import BATLiftingExperimental._
 
-    //The pattern-matches used are unsound.
-
+    //The pattern-matches used here are unsound:
     val methods2 = for (cf <- queryData;
                         m <- cf.methods;
                         Code_attribute(_,_,code,_,_) <- m.attributes;
                         INSTANCEOF(_) <- code) yield m.name
 
-    //println(methods2) //goes OOM!
+    intercept[ExoticTermException] {
+      println(methods2) //Fails because the terms are inadequate
+    }
+
     var m2Int: Traversable[String] = null
     benchMark("los", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
       m2Int = methods2.interpret()
