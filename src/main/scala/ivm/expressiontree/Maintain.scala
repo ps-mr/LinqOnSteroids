@@ -32,7 +32,7 @@ import collection.TraversableLike
 //Trait implementing incremental view maintenance for MapOp operations
 trait MapOpMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   def fInt: T => U
-  override def transformedMessages(evt: TravMessage[T]) = {
+  override def transformedMessages(pub: Repr, evt: TravMessage[T]) = {
     evt match {
       case Include(v) => Seq(Include(fInt(v)))
       case Remove(v) => Seq(Remove(fInt(v)))
@@ -43,7 +43,7 @@ trait MapOpMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
       //If listeners also listen on the element itself, they are gonna get too many notifications.
       //Otherwise, they might ignore the notification from us... it's not clear.
 
-      case _ => defTransformedMessages(evt)
+      case _ => defTransformedMessages(pub, evt)
     }
   }
 }
@@ -58,11 +58,11 @@ trait MapOpMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
 // Do we get a problem because of the different properties of subtraction?
 trait FilterMaintainer[T, Repr] extends EvtTransformer[T, T, Repr] {
   def pInt: T => Boolean
-  override def transformedMessages(evt: TravMessage[T]) = {
+  override def transformedMessages(pub: Repr, evt: TravMessage[T]) = {
     evt match {
       case Include(v) => if (pInt(v)) Seq(evt) else Seq.empty
       case Remove(v) => if (pInt(v)) Seq(evt) else Seq.empty
-      case _ => defTransformedMessages(evt)
+      case _ => defTransformedMessages(pub, evt)
     }
   }
 }
@@ -79,10 +79,10 @@ trait UnionMaintainer[T, Repr <: Exp[Traversable[T]]] extends EvtTransformer[T, 
     super.notify(pub, fixedEvts.flatten)
   }
 
-  override def transformedMessages(evt: TravMessage[T]) = {
+  override def transformedMessages(pub: Repr, evt: TravMessage[T]) = {
     evt match {
       case Include(_) | Remove(_) => Seq(evt)
-      case _ => defTransformedMessages(evt)
+      case _ => defTransformedMessages(pub, evt)
     }
   }
 }
@@ -120,7 +120,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
       process(v)
     }
   }
-  override def transformedMessages(evt: TravMessage[T]) = {
+  override def transformedMessages(pub: Repr, evt: TravMessage[T]) = {
     evt match {
       case Include(v) =>
         process(v)
@@ -132,7 +132,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
         //cache -= v //This might actually be incorrect, if v is included twice in the collection. This is a problem!
         fV removeSubscriber subCollListener
         fV.interpret().toSeq map (Remove(_))
-      case _ => defTransformedMessages(evt)
+      case _ => defTransformedMessages(pub, evt)
       /*
       //Here we cannot implement an update by sending an update of the mapped element. But we should.
       //case Update(old, curr) => publish(Update(f(old), f(curr)))

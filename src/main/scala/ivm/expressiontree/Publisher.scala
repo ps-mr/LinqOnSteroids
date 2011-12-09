@@ -116,21 +116,21 @@ trait MsgSeqPublisher[+T, +Pub <: MsgSeqPublisher[T, Pub]] extends DefaultPublis
 trait MsgSeqSubscriber[-T, -Repr] extends Subscriber[Seq[Message[T]], Repr]
 
 trait EvtTransformerBase[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U, EvtTransformerBase[T, U, Repr]] {
-  //Contract: transforms messages, potentially executes them. XXX: pub is not passed
-  def transformedMessages(v: Message[T]): Seq[Message[U]]
+  //Contract: transforms messages, potentially executes them.
+  def transformedMessages(pub: Repr, v: Message[T]): Seq[Message[U]]
 
   override def notify(pub: Repr, evts: Seq[Message[T]]) {
-    publish(evts flatMap transformedMessages)
+    publish(evts flatMap (transformedMessages(pub, _)))
   }
 }
 
 trait EvtTransformer[-T, +U, -Repr] extends EvtTransformerBase[Traversable[T], Traversable[U], Repr] {
   //Precondition: only ever pass Reset or Update nodes.
-  protected def defTransformedMessages(v: TravMessage[T]): Seq[TravMessage[U]] = {
+  protected def defTransformedMessages(pub: Repr, v: TravMessage[T]): Seq[TravMessage[U]] = {
     v match {
       case Reset => Seq(Reset)
       case Update(old, curr) =>
-        Seq(Remove(old), Include(curr)) flatMap transformedMessages
+        Seq(Remove(old), Include(curr)) flatMap (transformedMessages(pub, _))
       case _ =>
         throw new IllegalArgumentException("Unexpected message in defTransformedMessages")
       /*case Script(msgs @ _*) =>
