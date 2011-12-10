@@ -47,8 +47,8 @@ import reader.Java6Framework
  *
  * @author Michael Eichberg
  */
-class Main
-object Main extends Main {
+
+object Main {
 
     private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
     import CountingPerformanceEvaluator._
@@ -84,14 +84,17 @@ object Main extends Main {
     def analyze(zipFiles: Array[String]) {
         val classHierarchy = new ClassHierarchy {}
 
-        var classFilesCount = 0
         val classFiles = time(t ⇒ println("Reading all class files took: " + nsToSecs(t))) {
-            for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield {
-                classFilesCount += 1
-                classHierarchy.update(classFile)
-                classFile
-            }
+            for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
         }
+        val classFilesCount = classFiles.length
+        // This operation is not incrementalizable by itself. If classHierarchy supports removing classes, we might
+        // provide a way to setup a listener easily.
+        for (classFile ← classFiles)
+          classHierarchy.update(classFile)
+        //As an alternative, classHierarchy might support IVM directly.
+        //classHierarchy.update(classFiles)
+
         val getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
         println("Number of class files: " + classFilesCount)
 
@@ -105,47 +108,44 @@ object Main extends Main {
         println("\tViolations: " + protectedFields.size)
 
         // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
-        var unusedFields: List[(ClassFile, Traversable[String])] = Nil
-        time(t ⇒ println("UUF_UNUSED_FIELD: " + nsToSecs(t))) {
-            for (classFile ← classFiles if !classFile.isInterfaceDeclaration) {
-                val declaringClass = classFile.thisClass
-                var privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
-                for (
-                    method ← classFile.methods if method.body.isDefined;
-                    instruction ← method.body.get.code
-                ) {
-                    instruction match {
-                        case GETFIELD(`declaringClass`, name, _)  ⇒ privateFields -= name
-                        case GETSTATIC(`declaringClass`, name, _) ⇒ privateFields -= name
-                        case _                                    ⇒
-                    }
-                }
-                if (privateFields.size > 0)
-                    unusedFields = (classFile, privateFields) :: unusedFields
-            }
+        val unusedFields: Seq[(ClassFile, Traversable[String])] = time(t ⇒ println("UUF_UNUSED_FIELD: " + nsToSecs(t))) {
+            for {
+              classFile ← classFiles if !classFile.isInterfaceDeclaration
+              instructions = for {
+                method ← classFile.methods if method.body.isDefined
+                instruction ← method.body.get.code
+              } yield instruction
+              declaringClass = classFile.thisClass
+              privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
+              excluded =
+                (for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) = instruction) yield name) union
+                (for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) = instruction) yield name)
+              privateFieldsFilt = privateFields -- excluded //for (field ← privateFields if !excluded.contains(field)) yield field
+              if privateFieldsFilt.size > 0
+            } yield (classFile, privateFields)
         }
         println("\tViolations: " + unusedFields.size)
 
         // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
-        var garbageCollectingMethods: List[(ClassFile, Method, Instruction)] = Nil
-        time(t ⇒ println("DM_GC: " + nsToSecs(t))) {
-            for (
+        val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = time(t ⇒ println("DM_GC: " + nsToSecs(t))) {
+            val instructions = for (
                 classFile ← classFiles;
                 method ← classFile.methods if method.body.isDefined;
                 instruction ← method.body.get.code
-            ) {
-                instruction match {
-                    case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
-                        INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒
-                        garbageCollectingMethods = (classFile, method, instruction) :: garbageCollectingMethods
-                    case _ ⇒
-                }
+            ) yield (classFile, method, instruction)
+            instructions.filter {
+                case (a, b, instruction) ⇒
+                    instruction match {
+                       case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
+                            INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒ true
+                       case _ ⇒ false
+                    }
             }
         }
         println("\tViolations: " + garbageCollectingMethods.size)
 
         // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
-        var classesWithPublicFinalizeMethods = time(t ⇒ println("FI_PUBLIC_SHOULD_BE_PROTECTED: " + nsToSecs(t))) {
+        val classesWithPublicFinalizeMethods = time(t ⇒ println("FI_PUBLIC_SHOULD_BE_PROTECTED: " + nsToSecs(t))) {
             for (
                 classFile ← classFiles if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
             ) yield classFile
