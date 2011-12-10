@@ -7,16 +7,16 @@ import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test
 
-class CallTests extends JUnitSuite with ShouldMatchersForJUnit  {
+class CallTests extends JUnitSuite with ShouldMatchersForJUnit {
   def test(x: Int, y: Int): Boolean = x+y == 12
   def foo(x: Int): Int = x
   def bar(x: Int): Int = x
-  val l1 = liftCall('test$Int$Int,test, 2,3)
-  val l2 = liftCall('test$Int$Int,test, 3,4)
-  val l3 = liftCall('test$Int$Int,test, 2,3)
-  val l4 = liftCall('bar$Int,bar, 3)
-  val l5 = liftCall('foo$Int,foo, 3)
-  val l6 = liftCall('foo$Int,bar, 3) // deliberate violation of the liftCall contract
+  val l1 = liftCall('test$Int$Int, test, 2, 3)
+  val l2 = liftCall('test$Int$Int,test, 3, 4)
+  val l3 = liftCall('test$Int$Int,test, 2, 3)
+  val l4 = liftCall('bar$Int, bar, 3)
+  val l5 = liftCall('foo$Int, foo, 3)
+  val l6 = liftCall('foo$Int, bar, 3) // deliberate violation of the liftCall contract
 
   @Test
   def testCalls() {
@@ -29,8 +29,6 @@ class CallTests extends JUnitSuite with ShouldMatchersForJUnit  {
     l6 should equal (l5)
     l5 should equal (l6)
     Set[Any](l1,l2,l3,l4,l5,l6) should equal (Set[Any](l2,l3,l4,l5))
-
   }
-
 }
 
