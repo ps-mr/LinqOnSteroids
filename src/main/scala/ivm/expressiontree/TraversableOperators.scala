@@ -54,7 +54,7 @@ case class Union[T, Repr <: TraversableLike[T, Repr], That](base: Exp[Repr], tha
   override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = Union[T, Repr, That](base, that)
 }
 
-case class TypeFilter[T, C[_] <: Traversable[_], D[_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T])
+case class TypeFilter[T, C[X] <: Traversable[X], D[_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T])
                                  (implicit cS: ClassManifest[S])
                                   extends BinaryOp[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]]](base, f) {
   private[this] val classS = cS.erasure
@@ -62,8 +62,8 @@ case class TypeFilter[T, C[_] <: Traversable[_], D[_], S /* is this too strict? 
   override def interpret = {
     val b: C[D[T]] = base.interpret()
     val ff: (D[T] => Boolean) => C[D[T]] =
-      f => b.filter((x: Any) => f(x.asInstanceOf[D[T]])).asInstanceOf[C[D[T]]]
-    ff((x: D[T]) => classS.isInstance(f.interpret()(x))).asInstanceOf[C[D[S]]]
+      f => b.filter(f).asInstanceOf[C[D[T]]]
+    ff(x => classS.isInstance(f.interpret()(x))).asInstanceOf[C[D[S]]]
   }
   override def copy(base: Exp[C[D[T]]], f: Exp[D[T]=>T]) = TypeFilter[T, C, D, S](base, f)
 }
