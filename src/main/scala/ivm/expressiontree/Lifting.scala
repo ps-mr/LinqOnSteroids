@@ -3,6 +3,32 @@ package ivm.expressiontree
 object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps with SimpleOpenEncoding.OpsExpressionTreeTrait with SimpleOpenEncoding.TypeFilterOps {
   def liftFunc[S, T](f: Exp[S] => Exp[T]): Exp[S => T] = FuncExp(f)
 
+  //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
+  //parameter of Exp here.
+  def asExp[T](t: Exp[T]) = t
+
+  class Pimper[T](t: T) {
+    def asSmartCollection = asExp(t)
+  }
+  implicit def toPimper[T](t: T) = new Pimper(t)
+
+  class ArrayPimper[T](t: Array[T]) {
+    def asSmartCollection = asExp(t: Seq[T])
+  }
+  implicit def toArrayPimper[T](t: Array[T]) = new ArrayPimper(t)
+  //Either we use ArrayPimper, or we create an implicit conversion from Exp[Array[T]] to TraverableOps[T] by adding the final cast to TraversableOps[T] here.
+  //Since this is an implicit conversion, we can't just return Exp[Seq[T]] and rely on an additional implicit conversion to supply lifted collection methods.
+  //implicit def expArrayToExpSeq[T](x: Exp[Array[T]]) = onExp(x)('castToSeq, x => x: Seq[T]): TraversableOps[T]
+
+  class Materializable[T](t: Exp[Traversable[T]]) {
+    def materialize = new IncrementalResult(t)
+  }
+  implicit def toMaterializable[T](t: Exp[Traversable[T]]) = new Materializable(t)
+
+  //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
+  def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = asExp(f)(t)
+  def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
+
   implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
 
   class NumericOps[T: Numeric](t: Exp[T]) {

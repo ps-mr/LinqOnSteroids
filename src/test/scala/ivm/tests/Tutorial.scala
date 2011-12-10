@@ -8,35 +8,6 @@ import Lifting._
 import optimization.Optimization
 import collection.{mutable, TraversableView}
 
-//XXX: merge within Lifting
-trait SmartIVMAPI {
-  //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
-  //parameter of Exp here.
-  def asExp[T](t: Exp[T]) = t
-
-  class Pimper[T](t: T) {
-    def asSmartCollection = asExp(t)
-  }
-  implicit def toPimper[T](t: T) = new Pimper(t)
-
-  class ArrayPimper[T](t: Array[T]) {
-    def asSmartCollection = asExp(t: Seq[T])
-  }
-  implicit def toArrayPimper[T](t: Array[T]) = new ArrayPimper(t)
-  //Either we use ArrayPimper, or we create an implicit conversion from Exp[Array[T]] to TraverableOps[T] by adding the final cast to TraversableOps[T] here.
-  //Since this is an implicit conversion, we can't just return Exp[Seq[T]] and rely on an additional implicit conversion to supply lifted collection methods.
-  //implicit def expArrayToExpSeq[T](x: Exp[Array[T]]) = onExp(x)('castToSeq, x => x: Seq[T]): TraversableOps[T]
-
-  class Materializable[T](t: Exp[Traversable[T]]) {
-    def materialize = new IncrementalResult(t)
-  }
-  implicit def toMaterializable[T](t: Exp[Traversable[T]]) = new Materializable(t)
-
-  //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
-  def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = asExp(f)(t)
-  def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
-}
-
 trait TestUtil {
   def showExp[T](t: Exp[T], message: String = "") {
     print("\nQuery name: %s\n *\tstructure:\n\t%s\n *\tvalue:\n\t%s\n\n" format (message, t, t.interpret()))
@@ -63,7 +34,7 @@ trait TestUtil {
  * Date: 18/11/2011
  */
 
-class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with SmartIVMAPI with TestUtil {
+class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   import Util._
 
   /*
