@@ -43,20 +43,19 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
     }
   }
 
-  private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]) : Exp[FilterMonadic[T, Traversable[T]]] = {
+  private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[FilterMonadic[T, Traversable[T]]] = {
     if (conds.isEmpty) return e
-    val residualcond : Exp[Boolean] = conds.reduce( (x,y) => And(x,y))
+    val residualcond: Exp[Boolean] = conds.reduce( (x,y) => And(x,y))
     e.withFilter(FuncExp.makefun[T,Boolean](residualcond,v))
   }
 
   private def tryGroupBy[T](c: Exp[Traversable[T]],
                                allConds: Set[Exp[Boolean]],
                                f: FuncExp[T,Boolean])
-                               (equ : Exp[Boolean])
-                                  : Option[Exp[FilterMonadic[T, Traversable[T]]]] = {
+                               (equ: Exp[Boolean]): Option[Exp[FilterMonadic[T, Traversable[T]]]] = {
     equ match {
-      case eq : Eq[t2] => {
-       val oq : Option[Exp[Traversable[T]]] =
+      case eq: Eq[t2] => {
+       val oq: Option[Exp[Traversable[T]]] =
         if (eq.x.isOrContains(f.x) && !eq.y.isOrContains(f.x))
                  groupByShareBody[T,t2](c, f, eq, eq.y, eq.x)
               else if (eq.y.isOrContains(f.x) && !eq.x.isOrContains(f.x))
@@ -71,9 +70,9 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
   val groupByShare2: Exp[_] => Exp[_] = {
    e => e match {
      case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _/*Boolean*/]) =>
-       val conds : Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
+       val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
        //Function.unlift is expensive.
-       val optimized : Option[Exp[_]]=
+       val optimized: Option[Exp[_]]=
          conds.collectFirst( Function.unlift( tryGroupBy(Optimization.stripView(c.asInstanceOf[Exp[Traversable[t]]]),conds,f)))
        optimized.getOrElse(e)
      case _ => e
@@ -95,7 +94,7 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
     }
   }
 
-  def shareSubqueries[T](query: Exp[T]) : Exp[T] = {
+  def shareSubqueries[T](query: Exp[T]): Exp[T] = {
     query.transform(directsubqueryShare.andThen(groupByShare2))
   }
 }
