@@ -88,7 +88,10 @@ object FoldOperators {
   def forall[T](coll: Exp[Traversable[T]])(f: Exp[T] => Exp[Boolean]) = Forall(coll, FuncExp(f))
   def exists[T](coll: Exp[Traversable[T]])(f: Exp[T] => Exp[Boolean]) = not(Forall(coll, FuncExp(f andThen (new NotMaintainerExp(_)))))
 
-  case class Foldl[Out, In](coll: Exp[Traversable[In]], f: IncBinOpC[Out, In], z: Out) extends UnaryOpExp[Traversable[In], Out](coll) with EvtTransformerEl[Traversable[In], Out, Traversable[In]] with CachingExp[Out] {
+  case class Foldl[Out, In](coll: Exp[Traversable[In]], f: IncBinOpC[Out, In], z: Out)
+    extends UnaryOpExp[Traversable[In], Out](coll) with EvtTransformerEl[Traversable[In], Out, Traversable[In]]
+    with CachingExp[Out]
+  {
     override def interpret() = {
       //XXX: we should get the initial status otherwise. When we'll get notifications about the existing elements, this will become wrong.
       val res = coll.interpret().foldLeft(z)(f)
@@ -140,7 +143,10 @@ object FoldOperators {
     }
   }
 
-  case class Forall[T](coll: Exp[Traversable[T]], f: FuncExp[T, Boolean]) extends UnaryOpExp[Traversable[T], Boolean](coll) with EvtTransformerEl[Traversable[T], Boolean, Traversable[T]] with ExpWithCache[Boolean] {
+  case class Forall[T](coll: Exp[Traversable[T]], f: FuncExp[T, Boolean])
+    extends UnaryOpExp[Traversable[T], Boolean](coll) with EvtTransformerEl[Traversable[T], Boolean, Traversable[T]]
+    with ExpWithCache[Boolean]
+  {
     var countFalse: Int = 0
     override def interpret() = {
       //XXX: we should get the initial status otherwise.
