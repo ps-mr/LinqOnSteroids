@@ -26,6 +26,7 @@ object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps 
   implicit def toMaterializable[T](t: Exp[Traversable[T]]) = new Materializable(t)
 
   //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
+  @deprecated("Use onExp and provide an ID", "")
   def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = asExp(f)(t)
   def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
 

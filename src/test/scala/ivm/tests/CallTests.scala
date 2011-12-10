@@ -30,5 +30,13 @@ class CallTests extends JUnitSuite with ShouldMatchersForJUnit {
     l5 should equal (l6)
     Set[Any](l1,l2,l3,l4,l5,l6) should equal (Set[Any](l2,l3,l4,l5))
   }
+
+  @Test @SuppressWarnings(Array("deprecation"))
+  def testWithExp() {
+    val a = withExp(1)(1 +)
+    val b = withExp(1)(1 +)
+    //a and b are semantically equal, but unfortunately they
+    a should not equal (b)
+  }
 }
 

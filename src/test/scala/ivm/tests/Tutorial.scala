@@ -291,7 +291,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     val a: Exp[Int] = 1
     val b = a + 2
     //With a smart signatures, type inference works:
-    val c2 = withExp(1)(_ + 1)
+    val c2 = onExp(1)('plusOne, _ + 1)
     val c3 = withExpFunc(1)(_ + 1)
 
     println(a)
