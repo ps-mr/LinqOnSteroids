@@ -14,8 +14,6 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   //This method returns the cached value (if any) or invokes interpret().
   def expResult(): T = interpret()
 
-  protected[this] def cache: Option[T] = None
-
   def nodeArity: Int
 
   private[ivm] def children: Seq[Exp[_]]

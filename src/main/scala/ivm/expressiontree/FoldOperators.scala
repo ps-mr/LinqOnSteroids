@@ -111,6 +111,8 @@ object FoldOperators {
 
   trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U, Exp[U]] {
     this: Exp[U] =>
+    protected[this] def cache: Option[U] = None
+
     def notifyEv(pub: Repr, evt: Message[T])
     override def notify(pub: Repr, evts: Seq[Message[T]]) {
       val oldRes = cache
