@@ -42,8 +42,8 @@ object BATLifting {
     def packageName = onExp(t)('packageName, _.packageName)
   }
 
-  implicit def expToAttributeOps(t: Exp[Method_Info]) = new Method_InfoOps(t)
-  class Method_InfoOps(t: Exp[Method_Info]) {
+  implicit def expToAttributeOps(t: Exp[Method]) = new Method_InfoOps(t)
+  class Method_InfoOps(t: Exp[Method]) {
        def attributes = onExp(t)('attributes, _.attributes)
        def name = onExp(t)('name, _.name)
   }
@@ -273,7 +273,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     //is to have the index evaluated at all - otherwise there would be no speed-up. However, the proper solution is to
     //wrap the query result in something similar to IncrementalResult's constructor: Exp[T] -> Exp[T] - so that the result
     //is materialized and incrementally maintained.
-    val methodsLos6 = expToTypeMappingAppOps[Set, PartialApply1Of2[Tuple2, Method_Info]#Apply](evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
+    val methodsLos6 = expToTypeMappingAppOps[Set, PartialApply1Of2[Tuple2, Method]#Apply](evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
     //If I omit type parameters, not type inference, but typechecking here fails after figuring the right type, even if expToTypeMappingAppOps is explicitly called.
     //As you see, it fails to unify D[_] with [B](de.tud.cs.st.bat.resolved.Method_Info, B).
     //This is documented as https://issues.scala-lang.org/browse/SI-5075

@@ -55,7 +55,7 @@ class EvalOpalTests {
     } yield method: AnyRef //Generalize type so that anything can be tested for membership
 
     //Listing 4:
-    val uses: Exp[Set[(AnyRef, AnyRef)]] = null //Set.empty
+    val uses: Exp[Set[(Product with Serializable with CommonAttributes, AnyRef)]] = null //Set.empty
     //Without Exp[Set].apply = Exp[Set].contains
     /*
     for {
