@@ -327,20 +327,20 @@ object SimpleOpenEncoding {
       }
 
     }
-    class TypeFilterOps[T,C[X] <: Traversable[X],D[_]](val t: Exp[C[D[T]]]) {
-      def typeFilterWith[S](f: Exp[D[T]]=>Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T,C,D,S](t,FuncExp(f))
+    class TypeFilterOps[T, C[X] <: Traversable[X], D[_]](val t: Exp[C[D[T]]]) {
+      def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T, C, D, S](t, FuncExp(f))
       def groupByType(f: Exp[D[T]] => Exp[T]) =  GroupByType(this.t, FuncExp(f))
     }
-    class SimpleTypeFilterOps[T,C[X] <: Traversable[X]](val t: Exp[C[T]]) {
+    class SimpleTypeFilterOps[T, C[X] <: Traversable[X]](val t: Exp[C[T]]) {
       type ID[T] = T
-      def typeFilter[S](implicit cS: ClassManifest[S]) = TypeFilter[T,C,ID,S](t,FuncExp(identity))
+      def typeFilter[S](implicit cS: ClassManifest[S]) = TypeFilter[T, C, ID, S](t, FuncExp(identity))
     }
-    class TypeMappingAppOps[C[X] <: Traversable[X], D[_]](val t: Exp[TypeMapping[C,D]]) {
-      def get[S](implicit cS: ClassManifest[S]) = TypeMappingApp[C,D,S](t)
+    class TypeMappingAppOps[C[X] <: Traversable[X], D[_]](val t: Exp[TypeMapping[C, D]]) {
+      def get[S](implicit cS: ClassManifest[S]) = TypeMappingApp[C, D, S](t)
     }
-    implicit def expToTypeFilterOps[T,C[X] <: Traversable[X],D[_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T,C,D](t)
-    implicit def expToSimpleTypeFilterOps[T,C[X] <: Traversable[X]](t: Exp[C[T]]) = new SimpleTypeFilterOps[T,C](t)
-    implicit def expToTypeMappingAppOps[C[X] <: Traversable[X], D[_]](t: Exp[TypeMapping[C,D]]) = new TypeMappingAppOps[C,D](t)
+    implicit def expToTypeFilterOps[T, C[X] <: Traversable[X], D[_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T, C, D](t)
+    implicit def expToSimpleTypeFilterOps[T, C[X] <: Traversable[X]](t: Exp[C[T]]) = new SimpleTypeFilterOps[T, C](t)
+    implicit def expToTypeMappingAppOps[C[X] <: Traversable[X], D[_]](t: Exp[TypeMapping[C, D]]) = new TypeMappingAppOps[C, D](t)
     //Experiments
     class GroupByTupleType[U, C[X] <: Traversable[X]](val t: Exp[C[U]]) {
       def groupByTupleType[T, D[_]](typeEqual: U =:= D[T])(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t map (x => onExp(x)('foo, typeEqual)), FuncExp(f))
