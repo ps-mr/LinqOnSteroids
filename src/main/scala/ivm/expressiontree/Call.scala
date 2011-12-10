@@ -21,4 +21,6 @@ trait Call[Res] extends Exp[Res] {
         false
   }
   override def hashCode = 41 * id.hashCode + children.hashCode
+  private def baseName(str: String) = str substring ((str lastIndexOf '.') + 1)
+  override def toString = "%s(%s, %s)" format (baseName(getClass.getName), id, children mkString ", ")
 }
