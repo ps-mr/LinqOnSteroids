@@ -352,13 +352,10 @@ object SimpleOpenEncoding {
       type Flip[B] = T[B, A]
     }
 
-    class GroupByTupleType1[T, U, C[X] <: Traversable[X]](val t: Exp[C[(T, U)]]) {
+    class GroupByTupleTypeOps[T, U, C[X] <: Traversable[X]](val t: Exp[C[(T, U)]]) {
       def groupByTupleType1 /*(f: Exp[(T, U)] => Exp[T]) */ =  GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, FuncExp(_._1))
-    }
-    class GroupByTupleType2[T, U, C[X] <: Traversable[X]](val t: Exp[C[(T, U)]]) {
       def groupByTupleType2 /*(f: Exp[(T, U)] => Exp[U]) */ =  GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, FuncExp(_._2))
     }
-    implicit def expToGroupByTupleType1[T, U, C[X] <: Traversable[X]](t: Exp[C[(T, U)]]) = new GroupByTupleType1(t)
-    implicit def expToGroupByTupleType2[T, U, C[X] <: Traversable[X]](t: Exp[C[(T, U)]]) = new GroupByTupleType2(t)
+    implicit def expToGroupByTupleType[T, U, C[X] <: Traversable[X]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps(t)
   }
 }
