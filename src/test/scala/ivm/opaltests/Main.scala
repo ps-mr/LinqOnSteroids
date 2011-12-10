@@ -117,11 +117,11 @@ object Main {
               } yield instruction
               declaringClass = classFile.thisClass
               privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
-              excluded =
+              usedPrivateFields =
                 (for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) = instruction) yield name) union
                 (for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) = instruction) yield name)
-              privateFieldsFilt = privateFields -- excluded //for (field ← privateFields if !excluded.contains(field)) yield field
-              if privateFieldsFilt.size > 0
+              unusedPrivateFields = privateFields -- usedPrivateFields //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+              if unusedPrivateFields.size > 0
             } yield (classFile, privateFields)
         }
         println("\tViolations: " + unusedFields.size)
