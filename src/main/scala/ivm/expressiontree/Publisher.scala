@@ -13,7 +13,7 @@ import collection.immutable.HashSet
 
 sealed trait Message[+T]
 case class Include[+T](t: T) extends TravMessage[T]
-/*class Include[T](_t : => T) extends Message[T] {
+/*class Include[T](_t: => T) extends Message[T] {
   lazy val t = _t
 }*/
 case class Remove[+T](t: T) extends TravMessage[T]

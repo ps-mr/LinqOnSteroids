@@ -7,7 +7,7 @@ import Lifting._
 class BooleanOperatorTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test
   def testcnfconversion() {
-    val o : Exp[Boolean] = true
+    val o: Exp[Boolean] = true
     val res = BooleanOperators.cnf(o)
     res should  be (Set(Const(true)))
 
@@ -16,7 +16,7 @@ class BooleanOperatorTests extends JUnitSuite with ShouldMatchersForJUnit {
     r2 should be (Set(Or(Var(0),Var(1))))
 
 
-    val o3 : Exp[Boolean] = Not(Or(Not(And(Var(0), Not(And(Var(1),Var(2))))), Not(Var(0))))
+    val o3: Exp[Boolean] = Not(Or(Not(And(Var(0), Not(And(Var(1),Var(2))))), Not(Var(0))))
     val r3 = BooleanOperators.cnf(o3)
     r3 should be (Set(Var(0), Or(Not(Var(1)),Not(Var(2)))))
   }

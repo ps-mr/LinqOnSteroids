@@ -81,7 +81,7 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   final def !==[S >: T](that: Exp[S]): Exp[Boolean] = Not(this === that)
   final def !==(that: Null): Exp[Boolean] = Not(this === that)
 
-  def ifInstanceOf[S:ClassManifest] : Exp[Option[S]] = IfInstanceOf(this)
+  def ifInstanceOf[S:ClassManifest]: Exp[Option[S]] = IfInstanceOf(this)
 
 }
 
@@ -89,6 +89,6 @@ private[ivm] object Exp {
   private def ordering[T] = new Ordering[Exp[T]] {
     override def compare(a: Exp[T], b: Exp[T]): Int = a.toString compareTo b.toString
   }
-  def min[T](a: Exp[T], b: Exp[T]) : Exp[T] = ordering.min(a,b)
-  def max[T](a: Exp[T], b: Exp[T]) : Exp[T] = ordering.max(a,b)
+  def min[T](a: Exp[T], b: Exp[T]): Exp[T] = ordering.min(a,b)
+  def max[T](a: Exp[T], b: Exp[T]): Exp[T] = ordering.max(a,b)
 }

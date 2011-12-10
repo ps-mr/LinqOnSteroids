@@ -61,7 +61,7 @@ object BATLiftingExperimental {
     // We need to specify Exp[Seq[Instruction]] instead of Exp[Array[Instruction]] because one cannot convert
     // Exp[Array[T]] to Exp[Seq[T]], so we must request here an implicit conversion (LowPriorityImplicits.wrapRefArray)
     // before wrapping everything within Exp.
-    def unapply(t: Exp[_]) : Option[(Exp[Int], Exp[Int],
+    def unapply(t: Exp[_]): Option[(Exp[Int], Exp[Int],
       Exp[Seq[Instruction]], //doing something special here!
       Exp[ExceptionTable],
       Exp[Attributes])] = {
@@ -96,7 +96,7 @@ object BATLiftingExperimental {
     }
   }
   object INSTANCEOF {
-    def unapply(t: Exp[_]) : Option[Exp[ReferenceType]] = {
+    def unapply(t: Exp[_]): Option[Exp[ReferenceType]] = {
       if ((t ne null) && t.interpret().isInstanceOf[INSTANCEOF])
         Some(onExp(t.asInstanceOf[Exp[INSTANCEOF]])('referenceType, _.referenceType))
       else None

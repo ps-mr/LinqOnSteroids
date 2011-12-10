@@ -186,7 +186,7 @@ object Optimization {
 
   def removeIdentityMaps[T](exp: Exp[T]): Exp[T] = exp.transform(opt.removeIdentityMaps)
 
-  def shareSubqueries[T](query: Exp[T]) : Exp[T] = {
+  def shareSubqueries[T](query: Exp[T]): Exp[T] = {
       new SubquerySharing(subqueries).shareSubqueries(query)
   }
 

@@ -8,9 +8,9 @@ import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test
 
 class CallTests extends JUnitSuite with ShouldMatchersForJUnit  {
-  def test(x: Int, y: Int) : Boolean = x+y == 12
-  def foo(x: Int) : Int = x
-  def bar(x: Int) : Int = x
+  def test(x: Int, y: Int): Boolean = x+y == 12
+  def foo(x: Int): Int = x
+  def bar(x: Int): Int = x
   val l1 = liftCall('test$Int$Int,test, 2,3)
   val l2 = liftCall('test$Int$Int,test, 3,4)
   val l3 = liftCall('test$Int$Int,test, 2,3)

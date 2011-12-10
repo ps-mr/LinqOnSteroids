@@ -60,8 +60,8 @@ case class TypeFilter[T, C[_] <: Traversable[_],D[_], S /* is this too strict? <
   private[this] val classS = cS.erasure
 
   override def interpret = {
-    val b : C[D[T]] = base.interpret()
-    val ff : (D[T] => Boolean) => C[D[T]] = f => b.filter( (x: Any) => f(x.asInstanceOf[D[T]])).asInstanceOf[C[D[T]]]
+    val b: C[D[T]] = base.interpret()
+    val ff: (D[T] => Boolean) => C[D[T]] = f => b.filter( (x: Any) => f(x.asInstanceOf[D[T]])).asInstanceOf[C[D[T]]]
     ff( (x: D[T]) => classS.isInstance(f.interpret()(x))).asInstanceOf[C[D[S]]]
 
   }
