@@ -9,17 +9,19 @@ import ivm.collections.IncArrayBuffer
  * Date: 25/11/2011
  */
 
-trait WorkaroundExp[+T] extends Exp[T] {
+//Interface used by EvtTransformerEl
+trait ExpWithCache[+T] extends Exp[T] {
   protected[this] def cache: Option[T]
-  protected[this] def cache_=(v: Option[T])
 }
 
-trait CachingExp[+T] extends WorkaroundExp[T] {
+// Cache the computed result value of an expression.
+// One reusable implementation of the EvtTransformerEl interface
+trait CachingExp[+T] extends ExpWithCache[T] {
   //This field is never set by Exp or CachingExp itself, only by result-caching nodes
 
   //Note: this declaration overrides both getter and setter. Therefore, they both need to be already declared in parent
   //types; therefore, we need to declare WorkaroundExp.
-  protected[this] override var cache: Option[T] = None
+  protected[this] var cache: Option[T] = None
 
   override def expResult(): T = cache match {
     case None =>
@@ -111,8 +113,7 @@ object FoldOperators {
   }
 
   trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U, Exp[U]] {
-    this: Exp[U] =>
-    protected[this] def cache: Option[U]
+    this: ExpWithCache[U] =>
 
     def notifyEv(pub: Repr, evt: Message[T])
     override def notify(pub: Repr, evts: Seq[Message[T]]) {
@@ -139,7 +140,7 @@ object FoldOperators {
     }
   }
 
-  case class Forall[T](coll: Exp[Traversable[T]], f: FuncExp[T, Boolean]) extends UnaryOpExp[Traversable[T], Boolean](coll) with EvtTransformerEl[Traversable[T], Boolean, Traversable[T]] {
+  case class Forall[T](coll: Exp[Traversable[T]], f: FuncExp[T, Boolean]) extends UnaryOpExp[Traversable[T], Boolean](coll) with EvtTransformerEl[Traversable[T], Boolean, Traversable[T]] with ExpWithCache[Boolean] {
     var countFalse: Int = 0
     override def interpret() = {
       //XXX: we should get the initial status otherwise.
