@@ -10,6 +10,7 @@ import ivm.collections.IncArrayBuffer
  */
 
 trait WorkaroundExp[+T] extends Exp[T] {
+  protected[this] def cache: Option[T]
   protected[this] def cache_=(v: Option[T])
 }
 
@@ -111,7 +112,7 @@ object FoldOperators {
 
   trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U, Exp[U]] {
     this: Exp[U] =>
-    protected[this] def cache: Option[U] = None
+    protected[this] def cache: Option[U]
 
     def notifyEv(pub: Repr, evt: Message[T])
     override def notify(pub: Repr, evts: Seq[Message[T]]) {
