@@ -31,12 +31,22 @@ class CallTests extends JUnitSuite with ShouldMatchersForJUnit {
     Set[Any](l1,l2,l3,l4,l5,l6) should equal (Set[Any](l2,l3,l4,l5))
   }
 
-  @Test @SuppressWarnings(Array("deprecation"))
+  @Test
   def testWithExp() {
+    //Normally use onExp instead - we want to show the problem with this definition.
+    def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = asExp(f)(t)
+
     val a = withExp(1)(1 +)
     val b = withExp(1)(1 +)
-    //a and b are semantically equal, but unfortunately they
+
+    //a and b are semantically equal, but unfortunately they are not recognized as such, thus we cannot use such a simple
+    //definition 
     a should not equal (b)
+
+    val c = onExp(1)('plusOne, 1 +)
+    val d = onExp(1)('plusOne, 1 +)
+    
+    c should equal (d)
   }
 }
 
