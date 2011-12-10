@@ -81,9 +81,9 @@ object FoldOperators {
     TreeFold[T](coll, f, z)
 
   def foldl[Out, In](coll: Exp[Traversable[In]])(f: IncBinOpC[Out, In], z: Out) = Foldl(coll, f, z)
-  def not(v: Exp[Boolean]) = new Mynot(v)
+  def not(v: Exp[Boolean]) = new NotMaintainerExp(v)
   def forall[T](coll: Exp[Traversable[T]])(f: Exp[T] => Exp[Boolean]) = Forall(coll, FuncExp(f))
-  def exists[T](coll: Exp[Traversable[T]])(f: Exp[T] => Exp[Boolean]) = not(Forall(coll, FuncExp(f andThen (new Mynot(_)))))
+  def exists[T](coll: Exp[Traversable[T]])(f: Exp[T] => Exp[Boolean]) = not(Forall(coll, FuncExp(f andThen (new NotMaintainerExp(_)))))
 
   case class Foldl[Out, In](coll: Exp[Traversable[In]], f: IncBinOpC[Out, In], z: Out) extends UnaryOpExp[Traversable[In], Out](coll) with EvtTransformerEl[Traversable[In], Out, Traversable[In]] with CachingExp[Out] {
     override def interpret() = {
@@ -127,7 +127,7 @@ object FoldOperators {
     }
   }
 
-  class Mynot(b: Exp[Boolean]) extends Not(b) with EvtTransformerEl[Boolean, Boolean, Exp[Boolean]] with CachingExp[Boolean] {
+  class NotMaintainerExp(b: Exp[Boolean]) extends Not(b) with EvtTransformerEl[Boolean, Boolean, Exp[Boolean]] with CachingExp[Boolean] {
     def notifyEv(pub: Exp[Boolean], evt: Message[Boolean]) {
       evt match {
         case NewVal(v) =>
