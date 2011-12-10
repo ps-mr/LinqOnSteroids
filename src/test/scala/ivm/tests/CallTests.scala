@@ -12,8 +12,8 @@ class CallTests extends JUnitSuite with ShouldMatchersForJUnit {
   def foo(x: Int): Int = x
   def bar(x: Int): Int = x
   val l1 = liftCall('test$Int$Int, test, 2, 3)
-  val l2 = liftCall('test$Int$Int,test, 3, 4)
-  val l3 = liftCall('test$Int$Int,test, 2, 3)
+  val l2 = liftCall('test$Int$Int, test, 3, 4)
+  val l3 = liftCall('test$Int$Int, test, 2, 3)
   val l4 = liftCall('bar$Int, bar, 3)
   val l5 = liftCall('foo$Int, foo, 3)
   val l6 = liftCall('foo$Int, bar, 3) // deliberate violation of the liftCall contract

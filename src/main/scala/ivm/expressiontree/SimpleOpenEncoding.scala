@@ -37,7 +37,7 @@ object SimpleOpenEncoding {
     implicit def liftBool(x: Boolean): Exp[Boolean] = Const(x)
     implicit def liftString(x: String): Exp[String] = Const(x)*/
 
-    implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A,B](pair._1, pair._2)
+    implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A, B](pair._1, pair._2)
 
     //To "unlift" a pair, here's my first solution:
     /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
@@ -45,7 +45,7 @@ object SimpleOpenEncoding {
     //Unfortunately this conversion is not redundant; we may want to have a special node to support this, or to
     //remove Pair constructors applied on top of other pair constructors.
     implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): Pair[A, B] =
-      (Pair[A,B] _).tupled(unliftPair(pair))
+      (Pair[A, B] _).tupled(unliftPair(pair))
     */
 
     //Here's the second one, adapted from Klaus code. It represents but does not build a tuple (once one adds lazy vals).
@@ -74,16 +74,16 @@ object SimpleOpenEncoding {
       }
 
     // these functions are explicitly not implicit :)
-    def liftCall[Res](id: Symbol, callfunc: () => Res) = new Call0(id,callfunc)
-    def liftCall[A0, Res](id: Symbol, callfunc: A0 => Res, arg0: Exp[A0]) = new Call1(id,callfunc, arg0)
+    def liftCall[Res](id: Symbol, callfunc: () => Res) = new Call0(id, callfunc)
+    def liftCall[A0, Res](id: Symbol, callfunc: A0 => Res, arg0: Exp[A0]) = new Call1(id, callfunc, arg0)
     def liftCall[A0, A1, Res](id: Symbol, callfunc: (A0, A1) => Res, arg0: Exp[A0], arg1: Exp[A1]) =
-      new Call2(id,callfunc, arg0, arg1)
+      new Call2(id, callfunc, arg0, arg1)
     def liftCall[A0, A1, A2, Res](id: Symbol, callfunc: (A0, A1, A2) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2]) =
-      new Call3(id,callfunc, arg0, arg1, arg2)
+      new Call3(id, callfunc, arg0, arg1, arg2)
     def liftCall[A0, A1, A2, A3, Res](id: Symbol, callfunc: (A0, A1, A2, A3) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3]) =
-      new Call4(id,callfunc, arg0, arg1, arg2, arg3)
+      new Call4(id, callfunc, arg0, arg1, arg2, arg3)
     def liftCall[A0, A1, A2, A3, A4, Res](id: Symbol, callfunc: (A0, A1, A2, A3, A4) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3], arg4: Exp[A4]) =
-      new Call5(id,callfunc, arg0, arg1, arg2, arg3, arg4)
+      new Call5(id, callfunc, arg0, arg1, arg2, arg3, arg4)
 
     def onExp[A0, Res](t: Exp[A0])(id: Symbol, f: A0 => Res): Exp[Res] = liftCall(id, f, t)
     def onExp[A0, A1, Res](a0: Exp[A0], a1: Exp[A1])(id: Symbol, f: (A0, A1) => Res): Exp[Res] = liftCall(id, f, a0, a1)
@@ -141,14 +141,14 @@ object SimpleOpenEncoding {
         new FlatMapMaintainerExp[T, Repr, U, That](this.t, FuncExp(f))
     }
 
-    case class GroupBy[T, Repr <: TraversableLike[T,Repr],K](base: Exp[Repr], f: Exp[T => K]) extends BinaryOpExp[Repr,
+    case class GroupBy[T, Repr <: TraversableLike[T, Repr], K](base: Exp[Repr], f: Exp[T => K]) extends BinaryOpExp[Repr,
       T => K, Map[K, Repr]](base, f) {
       override def interpret = base.interpret groupBy f.interpret()
       override def copy(base: Exp[Repr], f: Exp[T => K]) = GroupBy(base, f)
     }
 
 
-    case class Join[T, Repr <: TraversableLike[T,Repr],S, TKey, TResult, That](colouter: Exp[Repr],
+    case class Join[T, Repr <: TraversableLike[T, Repr], S, TKey, TResult, That](colouter: Exp[Repr],
                                          colinner: Exp[Traversable[S]],
                                          outerKeySelector: FuncExp[T, TKey],
                                          innerKeySelector: FuncExp[S, TKey],
@@ -200,7 +200,7 @@ object SimpleOpenEncoding {
 
     trait TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends FilterMonadicOpsLike[T, Repr] {
       def collect[U, That <: Traversable[U]](f: Exp[T] => Exp[Option[U]])
-                   (implicit c: CanBuildFrom[TraversableView[T,Repr], U, That]): Exp[That] = {
+                   (implicit c: CanBuildFrom[TraversableView[T, Repr], U, That]): Exp[That] = {
          new MapOpMaintainerExp(new FilterMaintainerExp[T, TraversableView[T, Repr]](View[T, Repr](this.t),
            FuncExp((x: Exp[T]) => IsDefinedAt(PartialFuncExp(f), x))),
            FuncExp((x: Exp[T]) => App(PartialFuncExp(f), x)))(c)
@@ -297,31 +297,31 @@ object SimpleOpenEncoding {
 
   trait TypeFilterOps extends TraversableOps {
     import OpsExpressionTree._
-    case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends BinaryOpExp[C[D[T]], D[T]=>T, TypeMapping[C, D]](base, f) {
+    case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends BinaryOpExp[C[D[T]], D[T] => T, TypeMapping[C, D]](base, f) {
       override def interpret = {
         val x: C[D[T]] = base.interpret()
         val g: D[T] => T = f.interpret()
 
-        new TypeMapping[C,D](x.groupBy
+        new TypeMapping[C, D](x.groupBy
           ((x: D[T] /* T */) => ClassManifest.fromClass(g(x).getClass)).asInstanceOf[Map[ClassManifest[_], C[D[_]]]])
       }
-      override def copy(base: Exp[C[D[T]]], f: Exp[D[T]=>T]) = GroupByType[T,C,D](base,f)
+      override def copy(base: Exp[C[D[T]]], f: Exp[D[T]=>T]) = GroupByType[T, C, D](base, f)
     }
 
     /*
      * failed attempt to code GroupByType without type cast
-      case class GroupByType[T, C[X] <: Traversable[X], Repr <: TraversableLike[T,Repr]](base: Exp[C[T] with Repr]) extends UnaryOpExp[C[T] with Repr, TypeMapping[C]](base) {
+      case class GroupByType[T, C[X] <: Traversable[X], Repr <: TraversableLike[T, Repr]](base: Exp[C[T] with Repr]) extends UnaryOpExp[C[T] with Repr, TypeMapping[C]](base) {
       override def interpret = {
         val x: C[T] with Repr = base.interpret()
         new TypeMapping[C](x.groupBy[ClassManifest[_]]( (_: Any) => ClassManifest.Int).asInstanceOf[Map[ClassManifest[_], C[_]]])
         //x.groupBy[ClassManifest[_]]( (x:C[T])  => ClassManifest.fromClass(x.getClass).asInstanceOf[ClassManifest[_]])
       }
-      override def copy(base: Exp[C[T] with Repr]) = GroupByType[T,C,Repr](base)
+      override def copy(base: Exp[C[T] with Repr]) = GroupByType[T, C, Repr](base)
     }
    */
-    case class TypeMappingApp[C[X] <: TraversableLike[X, C[X]],D[_],S](base: Exp[TypeMapping[C,D]])(implicit cS: ClassManifest[S])
-       extends UnaryOpExp[TypeMapping[C,D],C[D[S]]](base) {
-      override def copy(base: Exp[TypeMapping[C,D]]) = TypeMappingApp[C,D,S](base)
+    case class TypeMappingApp[C[X] <: TraversableLike[X, C[X]], D[_], S](base: Exp[TypeMapping[C, D]])(implicit cS: ClassManifest[S])
+       extends UnaryOpExp[TypeMapping[C, D], C[D[S]]](base) {
+      override def copy(base: Exp[TypeMapping[C, D]]) = TypeMappingApp[C, D, S](base)
       override def interpret = {
         base.interpret.get[S]
       }
@@ -329,7 +329,7 @@ object SimpleOpenEncoding {
     }
     class TypeFilterOps[T, C[X] <: TraversableLike[X, C[X]], D[_]](val t: Exp[C[D[T]]]) {
       def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T, C, D, S](t, FuncExp(f))
-      def groupByType(f: Exp[D[T]] => Exp[T]) =  GroupByType(this.t, FuncExp(f))
+      def groupByType(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t, FuncExp(f))
     }
     class SimpleTypeFilterOps[T, C[X] <: TraversableLike[X, C[X]]](val t: Exp[C[T]]) {
       type ID[T] = T
