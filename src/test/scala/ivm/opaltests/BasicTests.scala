@@ -15,17 +15,21 @@ import resolved.reader.Java6Framework
 import resolved._
 import Lifting._
 import Java6Framework.ClassFile
-import resolved.TypeAliases.Attributes
-import resolved.TypeAliases.Methods
+import resolved.Attributes
 import java.util.zip.ZipFile
-import java.util.zip.ZipEntry
-import java.io.{InputStream, File}
-import resolved.TypeAliases.ExceptionTable
+import java.io.File
 import performancetests.Benchmarking._
 
+trait OptionLifting {
+  implicit def expToOptionOps[T](t: Exp[Option[T]]) = new OptionOps(t)
+  class OptionOps[T](t: Exp[Option[T]]) {
+    def isDefined = onExp(t)('isDefined, _.isDefined)
+    def get = onExp(t)('get, _.get)
+  }
+}
 /* (Very incomplete) boilerplate code for making use of BAT types convenient in queries.
  * This code should be generated */
-object BATLifting {
+object BATLifting extends OptionLifting {
   implicit def expToClassFileOps(t: Exp[ClassFile]) = new ClassFileOps(t)
   class ClassFileOps(t: Exp[ClassFile]) {
     def methods = onExp(t)('methods, _.methods)
@@ -42,13 +46,14 @@ object BATLifting {
     def packageName = onExp(t)('packageName, _.packageName)
   }
 
-  implicit def expToAttributeOps(t: Exp[Method]) = new Method_InfoOps(t)
-  class Method_InfoOps(t: Exp[Method]) {
-       def attributes = onExp(t)('attributes, _.attributes)
-       def name = onExp(t)('name, _.name)
+  implicit def expToAttributeOps(t: Exp[Method]) = new MethodOps(t)
+  class MethodOps(t: Exp[Method]) {
+    def attributes = onExp(t)('attributes, _.attributes)
+    def name = onExp(t)('name, _.name)
+    def body = onExp(t)('body, _.body)
   }
-  implicit def expToCode_attributeOps(t: Exp[Code_attribute]) = new Code_attributeOps(t)
-  class Code_attributeOps(t: Exp[Code_attribute]) {
+  implicit def expToCodeAttributeOps(t: Exp[CodeAttribute]) = new CodeAttributeOps(t)
+  class CodeAttributeOps(t: Exp[CodeAttribute]) {
     def code: Exp[Seq[Instruction]] = onExp(t)('code, _.code)
   }
 }
@@ -57,7 +62,7 @@ object BATLifting {
  * More experimental boilerplate code - this needs to evolve into something that we can generate.
  */
 object BATLiftingExperimental {
-  object Code_attribute {
+  object CodeAttribute {
     // We need to specify Exp[Seq[Instruction]] instead of Exp[Array[Instruction]] because one cannot convert
     // Exp[Array[T]] to Exp[Seq[T]], so we must request here an implicit conversion (LowPriorityImplicits.wrapRefArray)
     // before wrapping everything within Exp.
@@ -68,7 +73,7 @@ object BATLiftingExperimental {
       if (t ne null) {
         //Calling interpret here makes the result an exotic term - doesn't it?
         t.interpret() match {
-          case ca: Code_attribute =>
+          case ca: CodeAttribute =>
             assert(ca != null) //This is satisfied because of the pattern match.
             Some((ca.maxStack, ca.maxLocals,
               ca.code, ca.exceptionTable, ca.attributes))
@@ -155,16 +160,59 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     //>>> Name = los simple, time = 59.698 +- 2.857
   }
 
+  // compute all method names that make an instance-of check in their body, using the .code member.
+  @Test def testOpalNewStyle() {
+    var methodsNative: Set[String] = null
+    benchMark("native-new", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      methodsNative = for (cf <- testdata;
+                           m <- cf.methods if m.body.isDefined;
+                           INSTANCEOF(_) <- m.body.get.code) yield m.name
+    }
+    //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
+    //Not very pretty, but better than nothing
+    methodsNative.size should be (84)
+
+    // using reified query; INSTANCEOF is here shadowed.
+    import BATLifting._
+    import BATLiftingExperimental._
+
+    //The pattern-matches used here are unsound:
+    val methodsLos1 =
+      for (cf <- queryData;
+           m <- cf.methods if m.body.isDefined;
+           INSTANCEOF(_) <- m.body.get.code) yield m.name
+
+    intercept[ExoticTermException] {
+      println(methodsLos1) //Fails because the terms are inadequate
+    }
+
+    var m1Int: Traversable[String] = null
+    benchMark("los1-new", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      m1Int = methodsLos1.interpret()
+    }
+    methodsNative should equal (m1Int)
+
+    val methodsLos2 = queryData.flatMap(cf => cf.methods
+      .withFilter(m => m.body.isDefined)
+      .flatMap(m => m.body.get.code
+      .collect(i => i.ifInstanceOf[INSTANCEOF])
+      .map(_ => m.name)))
+
+    var m2Int: Traversable[String] = null
+    benchMark("los2-new", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      m2Int = methodsLos2.interpret()
+    }
+    methodsNative should equal (m2Int)
+  }
   @Test def testOpal() {
     // computing all method names that make an instance-of check in their body
 
     // native Scala for-comprehension
-
     var methodsNative: Set[String] = null
     benchMark("native", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
       methodsNative  = for (cf <- testdata;
                       m <- cf.methods;
-                      Code_attribute(_,_,code,_,_) <- m.attributes;
+                      CodeAttribute(_,_,code,_,_) <- m.attributes;
                       INSTANCEOF(_) <- code) yield m.name
     }
     //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
@@ -178,7 +226,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     //The pattern-matches used here are unsound:
     val methodsLos1 = for (cf <- queryData;
                         m <- cf.methods;
-                        Code_attribute(_,_,code,_,_) <- m.attributes;
+                        CodeAttribute(_,_,code,_,_) <- m.attributes;
                         INSTANCEOF(_) <- code) yield m.name
 
     intercept[ExoticTermException] {
@@ -193,7 +241,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val methodsLos2 = queryData.flatMap( cf => cf.methods
       .flatMap( m => m.attributes
-      .collect( x => x.ifInstanceOf[Code_attribute])
+      .collect( x => x.ifInstanceOf[CodeAttribute])
       .flatMap( c => c.code)
       .collect( i => i.ifInstanceOf[INSTANCEOF])
       .map( _ => m.name)))
@@ -209,10 +257,10 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     val methodsLos3 = queryData.flatMap( cf => cf.methods
       .flatMap( m => m.attributes
       .collect(
-      a => onExp(a)('instanceOf$Code_attribute,
+      a => onExp(a)('instanceOf$CodeAttribute,
         x =>
-          if (x.isInstanceOf[Code_attribute])
-            Some(x.asInstanceOf[Code_attribute])
+          if (x.isInstanceOf[CodeAttribute])
+            Some(x.asInstanceOf[CodeAttribute])
           else None))
       .flatMap( c => c.code)
       .filter( a => onExp(a)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF]))
@@ -230,8 +278,8 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
         cf <- queryData
         m <- cf.methods
         a <- m.attributes
-        if onExp(a)('instanceOf$Code_attribute, _.isInstanceOf[Code_attribute])
-        i <- a.asInstanceOf[Exp[Code_attribute]].code //This cast works perfectly
+        if onExp(a)('instanceOf$CodeAttribute, _.isInstanceOf[CodeAttribute])
+        i <- a.asInstanceOf[Exp[CodeAttribute]].code //This cast works perfectly
         if onExp(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
       } yield m.name
     var m4Int: Traversable[String] = null
@@ -244,7 +292,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val methodsLos5 =  for (cf <- queryData;
                          m <- cf.methods;
-                         ca <- m.attributes.typeFilter[Code_attribute];
+                         ca <- m.attributes.typeFilter[CodeAttribute];
                          io <- ca.code.typeFilter[INSTANCEOF]) yield m.name
     var m5Int: Traversable[String] = null
     benchMark("los5", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
@@ -257,7 +305,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val q = for (cf <- queryData;
                  m <- cf.methods;
-                 ca <- m.attributes.typeFilter[Code_attribute];
+                 ca <- m.attributes.typeFilter[CodeAttribute];
                  i <- ca.code if i !== null      // the null check is not very nice...any ideas?
     ) yield (m, i)
     //Util.assertType[Exp[Set[SND[Instruction]]]](q) //Does not compile because there is no lifting Set[T] => Exp[Set[T]]
