@@ -284,25 +284,28 @@ object SimpleOpenEncoding {
     import OpsExpressionTree.toExp
     //We want this lifting to apply to all Sets, not just the immutable ones, so that we can call map also on IncHashSet
     //and get the right type.
-    import collection.Set
+    import collection.{Set => GenSet}
 
-    case class Contains[T](set: Exp[Set[T]], v: Exp[T]) extends BinaryOpExp[Set[T], T, Boolean](set, v) {
+    case class Contains[T](set: Exp[GenSet[T]], v: Exp[T]) extends BinaryOpExp[GenSet[T], T, Boolean](set, v) {
       def interpret() = set.interpret().contains(v.interpret())
-      def copy(set: Exp[Set[T]], v: Exp[T]) = Contains(set: Exp[Set[T]], v: Exp[T])
+      def copy(set: Exp[GenSet[T]], v: Exp[T]) = Contains(set: Exp[GenSet[T]], v: Exp[T])
     }
 
-    class CollectionSetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set[T]] with WithFilterImpl[T, Set[T], Set[T]] {
+    class CollectionGenSetOps[T](val t: Exp[GenSet[T]]) extends TraversableLikeOps[T, GenSet[T]] with WithFilterImpl[T, GenSet[T], GenSet[T]] {
       def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
       def contains(el: Exp[T]) = apply(el)
     }
-    implicit def expToCollectionSetExp[T](t: Exp[Set[T]]): CollectionSetOps[T] = new CollectionSetOps(t)
-    implicit def tToCollectionSetExp[T](t: Set[T]): CollectionSetOps[T] = expToCollectionSetExp(t)
+    implicit def expToCollectionGenSetExp[T](t: Exp[GenSet[T]]): CollectionGenSetOps[T] = new CollectionGenSetOps(t)
+    implicit def tToCollectionGenSetExp[T](t: GenSet[T]): CollectionGenSetOps[T] = expToCollectionGenSetExp(t)
   }
 
   trait SetOps extends CollectionSetOps {
     import OpsExpressionTree.toExp
     //For convenience, also have a lifting for scala.Set = scala.collection.immutable.Set.
 
+    // This class differs from CollectionSetOps because it extends TraversableLikeOps[T, collection.immutable.Set[T]]
+    // instead of TraversableLikeOps[T, collection.Set[T]].
+    // XXX: abstract the commonalities in SetLikeOps, even if for now it takes more code than it saves.
     class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set[T]] with WithFilterImpl[T, Set[T], Set[T]] {
       def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
       def contains(el: Exp[T]) = apply(el)
