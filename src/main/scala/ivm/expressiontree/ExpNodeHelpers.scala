@@ -7,12 +7,11 @@ package ivm.expressiontree
  * Date: 1/9/2011
  */
 
-trait NullaryExpTrait[+R] extends Exp[R] {
+trait NullaryExp[+R] extends Exp[R] {
   override def nodeArity = 0
   def children = Seq()
   def checkedGenericConstructor = _ => this
 }
-abstract class NullaryExp[+R] extends NullaryExpTrait[R]
 
 trait UnaryOpTrait[T1 <: Exp[_], +R] extends Exp[R] {
   def t1: T1
