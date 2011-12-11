@@ -319,7 +319,7 @@ object SimpleOpenEncoding {
   trait TypeFilterOps extends TraversableOps {
     import OpsExpressionTree._
     case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends BinaryOpExp[C[D[T]], D[T] => T, TypeMapping[C, D]](base, f) {
-      override def interpret = {
+      override def interpret() = {
         val x: C[D[T]] = base.interpret()
         val g: D[T] => T = f.interpret()
 
