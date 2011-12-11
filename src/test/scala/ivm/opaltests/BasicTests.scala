@@ -174,11 +174,11 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
       typesQueryable.flatMap(classFile => classFile.interfaces.map(superClass => (superClass, classFile.thisClass))) union
         typesQueryable.map(classFile => (classFile.superClass.get, classFile.thisClass))
     val superClassesMap: Exp[Map[ObjectType, CSet[ObjectType]]] = superClasses
-      .groupBy(pair => pair._2)
-      .map(x => (x._1, x._2.map(_._1))) //This pattern should be integrated into a generalization of groupBy.
+      .groupBySel(_._2, _._1)
+      //.map(x => (x._1, x._2.map(_._1))) //This pattern should be integrated into a generalization of groupBy.
     val subClassesMap: Exp[Map[ObjectType, CSet[ObjectType]]] = superClasses
-      .groupBy(pair => pair._1)
-      .map(x => (x._1, x._2.map(_._2)))
+      .groupBySel(_._1, _._2)
+      //.map(x => (x._1, x._2.map(_._2)))
   }
 
   // compute all method names that make an instance-of check in their body, using the .code member.

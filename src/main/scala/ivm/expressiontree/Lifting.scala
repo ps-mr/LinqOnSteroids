@@ -1,7 +1,26 @@
 package ivm.expressiontree
 
+import collection.TraversableLike
+import collection.generic.CanBuildFrom
+
 object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps with SimpleOpenEncoding.OpsExpressionTreeTrait with SimpleOpenEncoding.TypeFilterOps {
   def liftFunc[S, T](f: Exp[S] => Exp[T]): Exp[S => T] = FuncExp(f)
+
+  def groupBySelImpl[T, Repr <: Traversable[T] with
+    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],
+                                             g: Exp[T] => Exp[Rest])(
+    implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
+  {
+    implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr]) =
+      new TraversableLikeOps[T, Repr] {val t = v}
+
+    //val tmp: Exp[Map[K, Repr]] = t.groupBy(f) //can't write this, because we have no lifting for TraversableLike
+    //val tmp: Exp[Map[K, Repr]] = GroupBy(t, FuncExp(f))
+    val tmp: Exp[Map[K, Repr]] = expToTraversableLikeOps[T, Repr](t).groupBy(f)
+    //tmp.map(v => (v._1, MapOp(v._2, FuncExp(g)))) //This uses MapOp directly, but map could return other nodes
+    tmp.map(v => (v._1, expToTraversableLikeOps[T, Repr](v._2).map(g)(c)))
+  }
+
 
   //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
   //parameter of Exp here.

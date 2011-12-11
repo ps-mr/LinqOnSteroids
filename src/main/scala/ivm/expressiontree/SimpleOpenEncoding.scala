@@ -198,6 +198,11 @@ object SimpleOpenEncoding {
         newWithFilter(this.t, FuncExp(f))
     }
 
+    def groupBySelImpl[T, Repr <: Traversable[T] with
+      TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],
+                                               g: Exp[T] => Exp[Rest])(
+      implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
+
     trait TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends FilterMonadicOpsLike[T, Repr] {
       def collect[U, That <: Traversable[U]](f: Exp[T] => Exp[Option[U]])
                    (implicit c: CanBuildFrom[TraversableView[T, Repr], U, That]): Exp[That] = {
@@ -216,6 +221,9 @@ object SimpleOpenEncoding {
 
       def groupBy[K](f: Exp[T] => Exp[K]): Exp[Map[K, Repr]] =
         GroupBy(this.t, FuncExp(f))
+
+      def groupBySel[K, Rest, That <: Traversable[Rest]](f: Exp[T] => Exp[K], g: Exp[T] => Exp[Rest])(implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
+        groupBySelImpl(this.t, f, g)(c)
 
       def join[S, TKey, TResult, That](innerColl: Exp[Traversable[S]]) //Split argument list to help type inference deduce S and use it after.
                                       (outerKeySelector: Exp[T] => Exp[TKey],
