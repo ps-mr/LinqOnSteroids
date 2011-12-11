@@ -19,6 +19,7 @@ import resolved.Attributes
 import java.util.zip.ZipFile
 import java.io.File
 import performancetests.Benchmarking._
+import collections.IncHashSet
 
 trait OptionLifting {
   implicit def expToOptionOps[T](t: Exp[Option[T]]) = new OptionOps(t)
@@ -160,6 +161,18 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     //Result on my system (PG - Core 2 @2.66 GHz):
     //>>> Name = native simple, time = 55.415 +- 1.225
     //>>> Name = los simple, time = 59.698 +- 2.857
+  }
+
+  def testBuildTypeHierarchy() {
+    import BATLifting._
+
+    val types = IncHashSet[ClassFile]()
+    //Pair of form (type, direct supertype)
+    val superClasses: Exp[Traversable[(ObjectType, ObjectType)]] =
+      types.asQueryable.flatMap(classFile => classFile.interfaces.map(superClass => (superClass, classFile.thisClass))) union
+        types.asQueryable.map(classFile => (classFile.superClass.get, classFile.thisClass))
+    val superClassesMap: Exp[Map[ObjectType, Traversable[(ObjectType, ObjectType)]]] = superClasses.groupBy(pair => pair._2)
+    val subClassesMap = superClasses.groupBy(pair => pair._1)
   }
 
   // compute all method names that make an instance-of check in their body, using the .code member.
