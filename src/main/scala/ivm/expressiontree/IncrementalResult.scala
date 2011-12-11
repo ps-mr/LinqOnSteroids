@@ -49,7 +49,7 @@ private[expressiontree] object IncrementalResult {
 // XXX: SetProxy is not entirely
 // satisfactory - we want maybe something more like SetForwarder, which does not forward calls creating sequences of the
 // same type. OTOH, this methods allows accessing the underlying data at all.
-class IncrementalResult[T](val base: Exp[Traversable[T]])
+class IncrementalResultBase[T](val base: Exp[Traversable[T]])
   extends Queryable[T, Traversable, collection.SetProxy[T]]
   with OneRootTraversableMaintainer[T, Traversable[T], Traversable[T]]
   with collection.SetProxy[T] //I mean immutable.SetProxy[T], but that requires an underlying immutable Set.
@@ -109,3 +109,18 @@ class IncrementalResult[T](val base: Exp[Traversable[T]])
   }
   override def toString() = "IncrementalResult(" + self.toString + ")"
 }
+
+/*
+ * This seems a hack. If I extended Queryable[..., collection.Set, ...], instead of Queryable[..., Traversable, ...],
+ * directly in IncrementalResultBase, publish inside its body would not accept Seq[Message[Traversable[T]]]. But I can
+ * use the more specific type here, and everything works - arguably because both definitions of publish are in scope.
+ * Moreover, what would have happened if I upcast this to a supertype, and then call the more generic publish method?
+ * The code should pass the typechecker; to make it safe, publish should be implemented in the bytecode with a parameter
+ * type of Object! That's indeed what happens with generic anyway most of the time... but methods inherited from traits
+ * must be copied, sometimes with fixed types, and those could usually get more specific types defined.
+ *
+ * Note that the strangeness stems from the fact that since publish is protected[this], its argument type is allowed to
+ * be covariant.
+ */
+class IncrementalResult[T](base: Exp[Traversable[T]])
+  extends IncrementalResultBase(base) with Queryable[T, collection.Set, collection.SetProxy[T]]
