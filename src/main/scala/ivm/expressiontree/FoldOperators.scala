@@ -196,7 +196,7 @@ object FoldOperators {
       //What is accepted instead is this:
       //var positions: Map[T, Int] = interpColl.zipWithIndex.toMap
       //But actually, we need the list of positions, i.e. this ugly statement:
-      positions = mutable.HashMap(interpColl.zipWithIndex.groupBy(_._1).toSeq: _*).map(v => (v._1, v._2.map(_._2)))
+      positions = mutable.HashMap.empty ++ interpColl.zipWithIndex.groupBy(_._1).map(v => (v._1, v._2.map(_._2)))
       tree = lTree
       res = lRes
       res
