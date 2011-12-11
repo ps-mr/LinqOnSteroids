@@ -179,9 +179,8 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val typesQueryable = queryData
     //Pair of form (type, direct supertype)
-    val superClasses: Exp[CSet[(ObjectType, ObjectType)]] =
-      typesQueryable.flatMap(classFile => classFile.interfaces.map(superClass => (superClass, classFile.thisClass))
-          :+ (classFile.superClass.get, classFile.thisClass))
+    val superClasses: Exp[CSet[(ObjectType, ObjectType)]] = typesQueryable.flatMap(classFile =>
+        (for (superClass <- classFile.interfaces) yield (superClass, classFile.thisClass)) :+ (classFile.superClass.get, classFile.thisClass))
     val superClassesMap: Exp[Map[ObjectType, CSet[ObjectType]]] = superClasses.groupBySel(_._2, _._1)
     val subClassesMap: Exp[Map[ObjectType, CSet[ObjectType]]] = superClasses.groupBySel(_._1, _._2)
     superClassesMap.interpret()
