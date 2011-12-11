@@ -165,14 +165,20 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   def testBuildTypeHierarchy() {
     import BATLifting._
+    import collection.{Set => CSet}
 
     val types = IncHashSet[ClassFile]()
+    val typesQueryable = types.asQueryable
     //Pair of form (type, direct supertype)
-    val superClasses: Exp[collection.Set[(ObjectType, ObjectType)]] =
-      types.asQueryable.flatMap(classFile => classFile.interfaces.map(superClass => (superClass, classFile.thisClass))) union
-        types.asQueryable.map(classFile => (classFile.superClass.get, classFile.thisClass))
-    val superClassesMap: Exp[Map[ObjectType, Traversable[(ObjectType, ObjectType)]]] = superClasses.groupBy(pair => pair._2)
-    val subClassesMap = superClasses.groupBy(pair => pair._1)
+    val superClasses: Exp[CSet[(ObjectType, ObjectType)]] =
+      typesQueryable.flatMap(classFile => classFile.interfaces.map(superClass => (superClass, classFile.thisClass))) union
+        typesQueryable.map(classFile => (classFile.superClass.get, classFile.thisClass))
+    val superClassesMap: Exp[Map[ObjectType, CSet[ObjectType]]] = superClasses
+      .groupBy(pair => pair._2)
+      .map(x => (x._1, x._2.map(_._1))) //This pattern should be integrated into a generalization of groupBy.
+    val subClassesMap: Exp[Map[ObjectType, CSet[ObjectType]]] = superClasses
+      .groupBy(pair => pair._1)
+      .map(x => (x._1, x._2.map(_._2)))
   }
 
   // compute all method names that make an instance-of check in their body, using the .code member.
