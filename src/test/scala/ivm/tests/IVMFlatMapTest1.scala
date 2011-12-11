@@ -115,7 +115,7 @@ class IVMFlatMapTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTes
     val vArr = Array(IncHashSet(40, 50, 60), IncHashSet(40, 50, 60), IncHashSet(40, 50, 60), IncHashSet(40, 50, 60))
 
     /*
-    // This term is exotic because of its use of interpret - which can be avoided, now that map is available on
+    // This term is exotic because of its use of interpret() - which can be avoided, now that map is available on
     // Exp[Traversable[T]], rather than only on QueryReifier[T].
     val resOld = new IncrementalResult[Int](for (i <- v.asQueryable;
                                               j <- liftCall('dontknow,

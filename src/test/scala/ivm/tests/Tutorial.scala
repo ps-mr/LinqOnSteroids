@@ -21,7 +21,7 @@ trait TestUtil {
   /*
   def showInterp(name: String, v: Exp[_]) {
     show(name, v)
-    show(name + ".interpret", v.interpret)
+    show(name + ".interpret()", v.interpret())
   }
   */
 

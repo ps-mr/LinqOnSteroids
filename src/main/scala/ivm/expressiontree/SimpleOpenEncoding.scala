@@ -143,7 +143,7 @@ object SimpleOpenEncoding {
 
     case class GroupBy[T, Repr <: TraversableLike[T, Repr], K](base: Exp[Repr], f: Exp[T => K]) extends BinaryOpExp[Repr,
       T => K, Map[K, Repr]](base, f) {
-      override def interpret = base.interpret groupBy f.interpret()
+      override def interpret() = base.interpret() groupBy f.interpret()
       override def copy(base: Exp[Repr], f: Exp[T => K]) = GroupBy(base, f)
     }
 
@@ -330,7 +330,7 @@ object SimpleOpenEncoding {
     /*
      * failed attempt to code GroupByType without type cast
       case class GroupByType[T, C[X] <: Traversable[X], Repr <: TraversableLike[T, Repr]](base: Exp[C[T] with Repr]) extends UnaryOpExp[C[T] with Repr, TypeMapping[C]](base) {
-      override def interpret = {
+      override def interpret() = {
         val x: C[T] with Repr = base.interpret()
         new TypeMapping[C](x.groupBy[ClassManifest[_]]( (_: Any) => ClassManifest.Int).asInstanceOf[Map[ClassManifest[_], C[_]]])
         //x.groupBy[ClassManifest[_]]( (x:C[T])  => ClassManifest.fromClass(x.getClass).asInstanceOf[ClassManifest[_]])
@@ -341,8 +341,8 @@ object SimpleOpenEncoding {
     case class TypeMappingApp[C[X] <: TraversableLike[X, C[X]], D[_], S](base: Exp[TypeMapping[C, D]])(implicit cS: ClassManifest[S])
        extends UnaryOpExp[TypeMapping[C, D], C[D[S]]](base) {
       override def copy(base: Exp[TypeMapping[C, D]]) = TypeMappingApp[C, D, S](base)
-      override def interpret = {
-        base.interpret.get[S]
+      override def interpret() = {
+        base.interpret().get[S]
       }
 
     }

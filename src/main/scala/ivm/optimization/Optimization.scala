@@ -152,7 +152,7 @@ object Optimization {
 
   def addSubQuery[T](query: Exp[T]) {
     val optquery = optimize(query)
-    val intQuery = optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret again!
+    val intQuery = optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret() again!
     //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the optimizer.
     // TODO: Reconsider again whether this is a good idea.
     subqueries += normalize(query) -> intQuery

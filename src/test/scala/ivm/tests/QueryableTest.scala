@@ -71,7 +71,7 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit with IVMTestU
     println("vQueryable: " + vQueryable)
     println("vPlusOne: " + vPlusOne)
     println("vQueryablePlusOne: " + vQueryablePlusOne)
-    println("vQueryablePlusOne.interpret: " + vQueryablePlusOne.interpret)
+    println("vQueryablePlusOne.interpret(): " + vQueryablePlusOne.interpret())
 
     val vColl: ArrayBuffer[Int] = v.asCollection
     println("vColl: " + vColl)

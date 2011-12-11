@@ -69,8 +69,8 @@ object Benchmarking {
   def printRes[T](v: Exp[T]) {
     println("v:\t\t" + v)
     println("optimize(v):\t" + optimize(v))
-    println("v.interpret:\t" + v.interpret)
-    //println("optimize(v).interpret:\t" + optimize(v).interpret)
+    println("v.interpret():\t" + v.interpret())
+    //println("optimize(v).interpret():\t" + optimize(v).interpret())
     println()
   }
 
