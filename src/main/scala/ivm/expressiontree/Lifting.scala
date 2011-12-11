@@ -11,14 +11,14 @@ object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps 
                                              g: Exp[T] => Exp[Rest])(
     implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
   {
-    implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr]) =
+    implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
       new TraversableLikeOps[T, Repr] {val t = v}
 
     //val tmp: Exp[Map[K, Repr]] = t.groupBy(f) //can't write this, because we have no lifting for TraversableLike
     //val tmp: Exp[Map[K, Repr]] = GroupBy(t, FuncExp(f))
-    val tmp: Exp[Map[K, Repr]] = expToTraversableLikeOps[T, Repr](t).groupBy(f)
+    val tmp: Exp[Map[K, Repr]] = expToTraversableLikeOps(t).groupBy(f)
     //tmp.map(v => (v._1, MapOp(v._2, FuncExp(g)))) //This uses MapOp directly, but map could return other nodes
-    tmp.map(v => (v._1, expToTraversableLikeOps[T, Repr](v._2).map(g)(c)))
+    tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(c)))
   }
 
 
