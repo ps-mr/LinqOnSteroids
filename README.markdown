@@ -7,9 +7,9 @@ The project uses SBT 0.10.1 - you need to install that or a later version of SBT
 1) To install SBT, follow instructions on this page:
   <https://github.com/harrah/xsbt/wiki/Getting-Started-Setup>
 2) After installing SBT, cd into this folder and launch `sbt`. It will find the build instructions in `build.sbt`. During the first execution it will auto-download various dependencies needed for itself (including the Scala compiler).
-3) Then, at the SBT prompt, give the `update` command (simply `update` followed by newline). This step downloads external libraries and needs not be repeated afterwards, unless new external libraries are added.
+3) Then, at the SBT prompt, give the `update` command (simply `update` followed by newline). This step downloads external libraries and must only be repeated, when new external libraries are added.
 4) Finally, you can similarly run any command between `compile`, `test:compile` (which also compiles tests) and `test` (which additionally _runs_ the tests - they include performance tests and take some time). I usually run tests using IntelliJ IDEA to specify which one I am interested in, even if I do not use it for compilation.
-In particular, tests in the ivm.performancetests package take considerable time.
+In particular, tests in the `ivm.performancetests` package take considerable time.
 
 Note: this project incorporates `lib/bat-1.6.ALPHA.jar`, a compiled snapshot of
 BAT from <https://github.com/Delors/BAT>, commit
