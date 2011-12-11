@@ -286,13 +286,13 @@ object SimpleOpenEncoding {
     //and get the right type.
     import collection.Set
 
-    case class CollectionSetContains[T](set: Exp[Set[T]], v: Exp[T]) extends BinaryOpExp[Set[T], T, Boolean](set, v) {
+    case class Contains[T](set: Exp[Set[T]], v: Exp[T]) extends BinaryOpExp[Set[T], T, Boolean](set, v) {
       def interpret() = set.interpret().contains(v.interpret())
-      def copy(set: Exp[Set[T]], v: Exp[T]) = CollectionSetContains(set: Exp[Set[T]], v: Exp[T])
+      def copy(set: Exp[Set[T]], v: Exp[T]) = Contains(set: Exp[Set[T]], v: Exp[T])
     }
 
     class CollectionSetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set[T]] with WithFilterImpl[T, Set[T], Set[T]] {
-      def apply(el: Exp[T]): Exp[Boolean] = CollectionSetContains(t, el)
+      def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
       def contains(el: Exp[T]) = apply(el)
     }
     implicit def expToCollectionSetExp[T](t: Exp[Set[T]]): CollectionSetOps[T] = new CollectionSetOps(t)
@@ -302,11 +302,6 @@ object SimpleOpenEncoding {
   trait SetOps extends CollectionSetOps {
     import OpsExpressionTree.toExp
     //For convenience, also have a lifting for scala.Set = scala.collection.immutable.Set.
-
-    case class Contains[T](set: Exp[Set[T]], v: Exp[T]) extends BinaryOpExp[Set[T], T, Boolean](set, v) {
-      def interpret() = set.interpret().contains(v.interpret())
-      def copy(set: Exp[Set[T]], v: Exp[T]) = Contains(set: Exp[Set[T]], v: Exp[T])
-    }
 
     class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set[T]] with WithFilterImpl[T, Set[T], Set[T]] {
       def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
