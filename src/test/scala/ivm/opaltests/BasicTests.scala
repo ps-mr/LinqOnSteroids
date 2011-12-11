@@ -122,8 +122,10 @@ object OpalTestData {
   }
   val testdata  = getTestData.toSet
   val queryData = toExp(testdata)
-  val warmUpLoops = 1 //100
-  val sampleLoops = 2 //20
+
+  val debug = false
+  val warmUpLoops = if (debug) 1 else 100
+  val sampleLoops = if (debug) 2 else 50
 }
 
 class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
