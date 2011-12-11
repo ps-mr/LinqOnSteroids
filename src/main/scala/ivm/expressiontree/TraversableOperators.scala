@@ -36,14 +36,14 @@ case class WithFilter[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr],
   override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = WithFilter[T, Repr](base, f)
 }
 
-case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr]) extends UnaryOpExp[Repr, TraversableView[T, Repr]](base) {
+case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr with TraversableLike[T, Repr]]) extends UnaryOpExp[Repr, TraversableView[T, Repr]](base) {
   override def interpret() = base.interpret().view
-  override def copy(base: Exp[Repr]) = View[T, Repr](base)
+  override def copy(base: Exp[Repr]) = View(base)
 }
 
 case class Force[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl], That]
-                (base: Exp[ViewColl])(implicit protected[this] val bf: CanBuildFrom[Repr, T, That]) extends UnaryOpExp[ViewColl, That](base) {
+                (base: Exp[ViewColl with TraversableViewLike[T, Repr, ViewColl]])(implicit protected[this] val bf: CanBuildFrom[Repr, T, That]) extends UnaryOpExp[ViewColl, That](base) {
   override def interpret() = base.interpret().force
   override def copy(base: Exp[ViewColl]) = Force[T, Repr, ViewColl, That](base)
 }
