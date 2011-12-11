@@ -10,7 +10,7 @@ import expressiontree.{TravMsgSeqPublisher, Queryable, ObservableBuffer}
  * for them are unclear.
  */
 class IncArrayBuffer[T] extends ArrayBuffer[T]
-  with Queryable[T, ArrayBuffer[T]] with ObservableBuffer[T]
+  with Queryable[T, Traversable, ArrayBuffer[T]] with ObservableBuffer[T]
   with TravMsgSeqPublisher[T, IncArrayBuffer[T]] //Two different definitions of Pub are inherited, this one is a common subtype.
   with GenericTraversableTemplate[T, IncArrayBuffer]
   with BufferLike[T, IncArrayBuffer[T]]

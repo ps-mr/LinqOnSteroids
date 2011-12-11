@@ -4,7 +4,7 @@ package collections
 import collection.GenSet
 import collection.mutable.{SetLike, HashSet, Set}
 import collection.generic.{GenericCompanion, CanBuildFrom, MutableSetFactory, GenericSetTemplate}
-import expressiontree.{TravMsgSeqPublisher, Queryable, ObservableSet}
+import expressiontree._
 
 
 /*
@@ -44,8 +44,8 @@ class IncHashSet[T] extends HashSet[T] with IncSetLike[T, HashSet[T]]
 //hacky (see companion = null) and complex - see the parameter bounds, often there to satisfy the bounds from the
 //Scala library. Should the Scala library change a bit, tis code will be very fragile.
 trait IncSetLike[T, CCThis[X] <: Set[X] with SetLike[X, CCThis[X]] with GenSet[X], BaseRepr]
-  extends ObservableSet[T] with Queryable[T, BaseRepr] with SetLike[T, CCThis[T]]
-  with GenericSetTemplate[T, CCThis] with TravMsgSeqPublisher[T, IncSetLike[T, CCThis, BaseRepr]]
+  extends ObservableSet[T] with Queryable[T, collection.Set, BaseRepr] with SetLike[T, CCThis[T]]
+  with GenericSetTemplate[T, CCThis] with MsgSeqPublisher[collection.Set[T], IncSetLike[T, CCThis, BaseRepr]]
 {
   this: BaseRepr with CCThis[T] =>
   //type Pub <: IncSetLike[T, CCThis, BaseRepr]
@@ -54,9 +54,12 @@ trait IncSetLike[T, CCThis[X] <: Set[X] with SetLike[X, CCThis[X]] with GenSet[X
   //so we fake it.
   override def companion: GenericCompanion[CCThis] = null
 }
+// XXX: How comes that the above definition of IncSetLike does not break down? Now we restricted the scope of the
+// publish method, by inheriting a stricter definition of MsgSeqPublisher. How come that ObservableSet can still publish
+// messages of type Seq[Message[Traversable[T]]] ?
 
 class IncHashSet[T] extends HashSet[T]
-   with IncSetLike[T, IncHashSet, HashSet[T]] with TravMsgSeqPublisher[T,  IncHashSet[T]]
+   with IncSetLike[T, IncHashSet, HashSet[T]] with MsgSeqPublisher[collection.Set[T], IncHashSet[T]]
 {
   //type Pub <: IncHashSet[T] //This definition is not required but simplifies the definition of Pub
   override def companion = IncHashSet

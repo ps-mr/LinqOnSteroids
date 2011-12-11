@@ -263,6 +263,7 @@ object SimpleOpenEncoding {
    * maintenance can subsume index update.
    */
 
+  //XXX: we'll probably have to duplicate this for Maps, as for Sets below.
   trait MapOps extends TraversableOps {
     import OpsExpressionTree._
     class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Map[K, V]] with WithFilterImpl[(K, V), Map[K, V], Map[K, V]] {
@@ -279,8 +280,28 @@ object SimpleOpenEncoding {
       expToMapExp(t)
   }
 
-  trait SetOps extends TraversableOps {
+  trait CollectionSetOps extends TraversableOps {
     import OpsExpressionTree.toExp
+    //We want this lifting to apply to all Sets, not just the immutable ones, so that we can call map also on IncHashSet
+    //and get the right type.
+    import collection.Set
+
+    case class CollectionSetContains[T](set: Exp[Set[T]], v: Exp[T]) extends BinaryOpExp[Set[T], T, Boolean](set, v) {
+      def interpret() = set.interpret().contains(v.interpret())
+      def copy(set: Exp[Set[T]], v: Exp[T]) = CollectionSetContains(set: Exp[Set[T]], v: Exp[T])
+    }
+
+    class CollectionSetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set[T]] with WithFilterImpl[T, Set[T], Set[T]] {
+      def apply(el: Exp[T]): Exp[Boolean] = CollectionSetContains(t, el)
+      def contains(el: Exp[T]) = apply(el)
+    }
+    implicit def expToCollectionSetExp[T](t: Exp[Set[T]]): CollectionSetOps[T] = new CollectionSetOps(t)
+    implicit def tToCollectionSetExp[T](t: Set[T]): CollectionSetOps[T] = expToCollectionSetExp(t)
+  }
+
+  trait SetOps extends CollectionSetOps {
+    import OpsExpressionTree.toExp
+    //For convenience, also have a lifting for scala.Set = scala.collection.immutable.Set.
 
     case class Contains[T](set: Exp[Set[T]], v: Exp[T]) extends BinaryOpExp[Set[T], T, Boolean](set, v) {
       def interpret() = set.interpret().contains(v.interpret())
