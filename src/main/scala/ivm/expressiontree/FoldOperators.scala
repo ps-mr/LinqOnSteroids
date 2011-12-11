@@ -1,8 +1,9 @@
 package ivm.expressiontree
 
-import collection.mutable
+import collection.{immutable, TraversableLike, mutable}
 import mutable.{Buffer, ArrayBuffer}
 import ivm.collections.IncArrayBuffer
+import collection.generic.CanBuildFrom
 
 /**
  * User: pgiarrusso
@@ -174,6 +175,12 @@ object FoldOperators {
     }
   }
 
+  implicit def pimpTravLike[T, Repr <: TraversableLike[T, Repr]](v: TraversableLike[T, Repr]) =
+    new {
+      def groupBySel[K, Rest, That](f: T => K, g: T => Rest)(implicit c: CanBuildFrom[Repr, Rest, That]): Map[K, That] =
+        v.groupBy(f).map(v => (v._1, v._2.map(g)))
+    }
+
   //Here I accept a primitive function because I believe the overhead for expression trees would be too significant, especially with all the wrapping and unwrapping done by convertBinFunInternal.
   //However, normalization-by-evaluation and a two-argument version of FuncExpInt could come to the rescue!
   case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: T) extends UnaryOpExp[Traversable[T], T](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T, Exp[T]] { //BinaryOpExp[Traversable[T], (T, T) => T, T](coll, f) {
@@ -196,7 +203,8 @@ object FoldOperators {
       //What is accepted instead is this:
       //var positions: Map[T, Int] = interpColl.zipWithIndex.toMap
       //But actually, we need the list of positions, i.e. this ugly statement:
-      positions = mutable.HashMap.empty ++ interpColl.zipWithIndex.groupBy(_._1).map(v => (v._1, v._2.map(_._2)))
+      //positions = mutable.HashMap.empty ++ interpColl.zipWithIndex.groupBy(_._1).map(v => (v._1, v._2.map(_._2)))
+      positions = mutable.HashMap.empty ++ interpColl.zipWithIndex.groupBySel(_._1, _._2)
       tree = lTree
       res = lRes
       res
