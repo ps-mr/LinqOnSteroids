@@ -23,9 +23,12 @@ import collections.IncHashSet
 
 trait OptionLifting {
   implicit def expToOptionOps[T](t: Exp[Option[T]]) = new OptionOps(t)
+  //Import this into the core!
   class OptionOps[T](t: Exp[Option[T]]) {
     def isDefined = onExp(t)('isDefined, _.isDefined)
     def get = onExp(t)('get, _.get)
+    def map[U](f: Exp[T] => Exp[U]) = onExp(t, FuncExp(f))('map, _ map _)
+    def flatMap[U](f: Exp[T] => Exp[Traversable[U]]) = onExp(t, FuncExp(f))('flatMap, (a, b) => (a: Iterable[T]) flatMap b)
   }
 }
 /* (Very incomplete) boilerplate code for making use of BAT types convenient in queries.
@@ -202,8 +205,9 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
       for {
         cf <- queryData
         m <- cf.methods
-        if m.body.isDefined
-        INSTANCEOF(_) <- m.body.get.code
+        mBody <- Let(m.body)
+        if mBody.isDefined
+        INSTANCEOF(_) <- mBody.get.code
       } yield m.name
 
     intercept[ExoticTermException] {
