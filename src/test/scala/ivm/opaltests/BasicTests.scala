@@ -199,9 +199,12 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     //The pattern-matches used here are unsound:
     val methodsLos1 =
-      for (cf <- queryData;
-           m <- cf.methods if m.body.isDefined;
-           INSTANCEOF(_) <- m.body.get.code) yield m.name
+      for {
+        cf <- queryData
+        m <- cf.methods
+        if m.body.isDefined
+        INSTANCEOF(_) <- m.body.get.code
+      } yield m.name
 
     intercept[ExoticTermException] {
       println(methodsLos1) //Fails because the terms are inadequate
