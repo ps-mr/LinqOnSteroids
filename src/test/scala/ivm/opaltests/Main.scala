@@ -129,14 +129,40 @@ class Main extends JUnitSuite with ShouldMatchersForJUnit {
               } yield instruction
               declaringClass = classFile.thisClass
               privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
-              usedPrivateFields =
-                (for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) = instruction) yield name) union
-                (for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) = instruction) yield name)
+              /*usedPrivateFields2 = //This seemed much slower in a quarter-of-scientific test - it's tested below!
+                (for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) <- Seq(instruction)) yield name) union
+                (for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) <- Seq(instruction)) yield name)*/
+              usedPrivateFields = instructions filter {
+                case GETFIELD(`declaringClass`, name, _) => true
+                case GETSTATIC(`declaringClass`, name, _) => true
+                case _ => false
+              } map {
+                case GETFIELD(`declaringClass`, name, _) => name
+                case GETSTATIC(`declaringClass`, name, _) => name
+              }
               unusedPrivateFields = privateFields -- usedPrivateFields //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
               if unusedPrivateFields.size > 0
             } yield (classFile, privateFields)
         }
         println("\tViolations: " + unusedFields.size)
+
+      val unusedFields2: Seq[(ClassFile, Traversable[String])] = benchMark("UUF_UNUSED_FIELD-2") {
+        for {
+          classFile ← classFiles if !classFile.isInterfaceDeclaration
+          instructions = for {
+            method ← classFile.methods if method.body.isDefined
+            instruction ← method.body.get.code
+          } yield instruction
+          declaringClass = classFile.thisClass
+          privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
+          usedPrivateFields = //This seemed much slower in a quarter-of-scientific test
+          (for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) <- Seq(instruction)) yield name) union
+            (for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) <- Seq(instruction)) yield name)
+          unusedPrivateFields = privateFields -- usedPrivateFields //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+          if unusedPrivateFields.size > 0
+        } yield (classFile, privateFields)
+      }
+      println("\tViolations: " + unusedFields2.size)
 
         // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
         val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
