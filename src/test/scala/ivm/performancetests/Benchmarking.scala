@@ -22,17 +22,31 @@ object Benchmarking {
     }
   }
 
+  def benchMarkTime(name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+                   (toBench: => Unit) = {
+    val (_, time) = benchMarkInternal(name, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)
+    time
+  }
+
+  def benchMark[T](name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+               (toBench: => T): T = {
+    val (ret, _) = benchMarkInternal(name, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)
+    ret
+  }
   /**
    * @param warmuUpLoops: Warm up the VM - should be more
    * @param sampleLoops Iterations to measure variance.
+   * @param toBench code to benchmark, which is supposed to always return the same value.
+   * @returns the value returned by toBench
    */
-  def benchMark(name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
-               (toBench: => Unit): Double = {
+  def benchMarkInternal[T](name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+               (toBench: => T): (T, Double) = {
+    var ret: T = null.asInstanceOf[T]
     if (!hasConsoleOutput)
       print(">>> Name = %s, starting warmup..." format name)
 
     for (i <- 1 to warmUpLoops)
-      toBench
+      ret = toBench
     System.gc()
 
     if (hasConsoleOutput)
@@ -59,11 +73,11 @@ object Benchmarking {
         print(">>> Name = %s, time = " format name)
       println("(%.3f +- %.3f (stdErr = %.3f)) ms" format (avgMs, devStdMs, stdErrMs))
     }
-    avgMs
+    (ret, avgMs)
   }
 
-  def silentBenchMark(name: String, execLoops: Int = 1, warmUpLoops: Int = 3, sampleLoops: Int = 3)
-                     (toBench: => Unit) =
+  def silentBenchMark[T](name: String, execLoops: Int = 1, warmUpLoops: Int = 3, sampleLoops: Int = 3)
+                     (toBench: => T): T =
     benchMark(name, execLoops, warmUpLoops, sampleLoops, false)(toBench)
 
   def printRes[T](v: Exp[T]) {

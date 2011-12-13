@@ -36,7 +36,7 @@ class JoinCreationTest extends JUnitSuite with ShouldMatchersForJUnit  {
     // RE: In my tests, I seldom get a difference, it is not significant, and seems to disappear
     // by enabling the Scala optimizer.
     assert(
-      benchMark("Non optimized")(notoptimized.interpret().size)
-      > (2 * benchMark("Optimized")(optimize(notoptimized).interpret().interpret().size)))
+      benchMarkTime("Non optimized")(notoptimized.interpret().size)
+      > (2 * benchMarkTime("Optimized")(optimize(notoptimized).interpret().interpret().size)))
   }
 }
