@@ -30,13 +30,20 @@
 *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 *  POSSIBILITY OF SUCH DAMAGE.
 */
-package de.tud.cs.st
-package bat.resolved
-package analyses
+package ivm
+package opaltests
+
+import de.tud.cs.st._
+import bat.resolved._
+import analyses._
 
 import util.perf.{ Counting, PerformanceEvaluation }
 import util.graphs.{ Node, toDot }
 import reader.Java6Framework
+import ivm.performancetests.Benchmarking.benchMark
+
+import org.junit.Test
+import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -48,18 +55,13 @@ import reader.Java6Framework
  * @author Michael Eichberg
  */
 
-object Main {
-
-    private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
-    import CountingPerformanceEvaluator._
-
+object Main extends Main {
     private def printUsage: Unit = {
-        println("Usage: java …ClassHierarchy <ZIP or JAR file containing class files>+")
+        println("Usage: java … ClassHierarchy <ZIP or JAR file containing class files>+")
         println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
     }
 
     def main(args: Array[String]) {
-
         if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
             printUsage
             sys.exit(1)
@@ -74,8 +76,18 @@ object Main {
             }
         }
 
-        analyze(args)
+        (new Main).analyze(args)
         sys.exit(0)
+    }
+}
+
+class Main extends JUnitSuite with ShouldMatchersForJUnit {
+    private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
+    import CountingPerformanceEvaluator._
+
+    @Test
+    def testAnalyze() {
+        analyze(Array("lib/scalatest-1.6.1.jar"))
     }
 
     // The following code is meant to show how easy it is to write analyses;
@@ -99,7 +111,7 @@ object Main {
         println("Number of class files: " + classFilesCount)
 
         // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
-        val protectedFields = time(t ⇒ println("CI_CONFUSED_INHERITANCE: " + nsToSecs(t))) {
+        val protectedFields = benchMark("CI_CONFUSED_INHERITANCE") {
             for (
                 classFile ← classFiles if classFile.isFinal;
                 field ← classFile.fields if field.isProtected
@@ -108,7 +120,7 @@ object Main {
         println("\tViolations: " + protectedFields.size)
 
         // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
-        val unusedFields: Seq[(ClassFile, Traversable[String])] = time(t ⇒ println("UUF_UNUSED_FIELD: " + nsToSecs(t))) {
+        val unusedFields: Seq[(ClassFile, Traversable[String])] = benchMark("UUF_UNUSED_FIELD") {
             for {
               classFile ← classFiles if !classFile.isInterfaceDeclaration
               instructions = for {
@@ -127,7 +139,7 @@ object Main {
         println("\tViolations: " + unusedFields.size)
 
         // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
-        val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = time(t ⇒ println("DM_GC: " + nsToSecs(t))) {
+        val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
             val instructions = for (
                 classFile ← classFiles;
                 method ← classFile.methods if method.body.isDefined;
@@ -145,7 +157,7 @@ object Main {
         println("\tViolations: " + garbageCollectingMethods.size)
 
         // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
-        val classesWithPublicFinalizeMethods = time(t ⇒ println("FI_PUBLIC_SHOULD_BE_PROTECTED: " + nsToSecs(t))) {
+        val classesWithPublicFinalizeMethods = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED") {
             for (
                 classFile ← classFiles if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
             ) yield classFile
@@ -154,7 +166,7 @@ object Main {
 
         // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
         val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable"))
-        val classesWithoutDefaultConstructor = time(t ⇒ println("SE_NO_SUITABLE_CONSTRUCTOR: " + nsToSecs(t))) {
+        val classesWithoutDefaultConstructor = benchMark("SE_NO_SUITABLE_CONSTRUCTOR") {
             for (
                 superclass ← classHierarchy.superclasses(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
                     {
@@ -168,7 +180,7 @@ object Main {
 
         // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
         val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
-        val catchesIllegalMonitorStateException = time(t ⇒ println("IMSE_DONT_CATCH_IMSE: " + nsToSecs(t))) {
+        val catchesIllegalMonitorStateException = benchMark("IMSE_DONT_CATCH_IMSE") {
             for (
                 classFile ← classFiles if classFile.isClassDeclaration;
                 method ← classFile.methods if method.body.isDefined;
