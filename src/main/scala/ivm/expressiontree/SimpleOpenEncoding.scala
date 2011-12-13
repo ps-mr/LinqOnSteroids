@@ -276,7 +276,8 @@ object SimpleOpenEncoding {
    * maintenance can subsume index update.
    */
 
-  //XXX: we'll probably have to duplicate this for Maps, as for Sets below.
+  //XXX: we'll probably have to duplicate this for Maps, as for Sets below. Or rather, we could drop this if we define
+  //implicit conversions for both WithFilterImpl and TraversableLikeOps.
   trait MapOps extends TraversableOps {
     import OpsExpressionTree._
     class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Map[K, V]] with WithFilterImpl[(K, V), Map[K, V], Map[K, V]] {
