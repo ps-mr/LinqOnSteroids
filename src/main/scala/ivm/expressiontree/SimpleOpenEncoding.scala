@@ -220,7 +220,7 @@ object SimpleOpenEncoding {
       // XXX: This cannot be called + to avoid ambiguity with the conversion to NumericOps - probably that's an artifact of it being
       // declared in a subclass
       def :+[U >: T, That <: Traversable[U]](that: Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-        this union onExp(that)('Traversable,Traversable(_))
+        this union onExp(that)('Traversable, Traversable(_))
 
       def view: Exp[TraversableView[T, Repr]] = View(this.t)
 
