@@ -288,7 +288,6 @@ object FoldOperators {
   }
 
   def main(args: Array[String]) {
-    import Lifting._
     for (n <- 1 to 5) {
       val coll = Seq.fill(n)((math.random * 2).toInt)
       println(coll)

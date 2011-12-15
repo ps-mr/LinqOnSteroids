@@ -2,7 +2,6 @@ package ivm
 package optimization
 
 import expressiontree._
-import Lifting._
 import collection.GenTraversableOnce
 
 //Pattern-matchers for simplifying writing patterns
