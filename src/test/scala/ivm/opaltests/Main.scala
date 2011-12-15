@@ -40,10 +40,11 @@ import analyses._
 import util.perf.{ Counting, PerformanceEvaluation }
 import util.graphs.{ Node, toDot }
 import reader.Java6Framework
-import ivm.performancetests.Benchmarking.benchMark
 
 import org.junit.Test
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import expressiontree.Lifting
+import Lifting._
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -85,6 +86,10 @@ class Main extends JUnitSuite with ShouldMatchersForJUnit {
   private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
   import CountingPerformanceEvaluator._
 
+  private def benchMark[T](msg: String)(t: => T): T = {
+    import ivm.performancetests.Benchmarking
+    Benchmarking.benchMark(msg /*, warmUpLoops = 0, sampleLoops = 1 */)(t)
+  }
   @Test
   def testAnalyze() {
     analyze(Array("lib/scalatest-1.6.1.jar"))
@@ -93,6 +98,39 @@ class Main extends JUnitSuite with ShouldMatchersForJUnit {
   // The following code is meant to show how easy it is to write analyses;
   // it is not meant to demonstrate how to write such analyses in an effecient
   // manner.
+  private def analyzeConfusedInheritance(classFiles: Array[ClassFile]) {
+    // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
+    val protectedFields = benchMark("CI_CONFUSED_INHERITANCE-Native") {
+      for (
+        classFile ← classFiles if classFile.isFinal;
+        field ← classFile.fields if field.isProtected
+      ) yield (classFile, field)
+    }
+    println("\tViolations: " + protectedFields.size)
+
+    import BATLifting._
+    val protectedFieldsLos = benchMark("CI_CONFUSED_INHERITANCE-Los-setup-materialize") {
+      (for (
+        classFile ← classFiles.asSmartCollection if classFile.isFinal;
+        field ← classFile.fields if field.isProtected
+      ) yield (classFile, field)) materialize
+    }
+    val protectedFieldsLosRes = benchMark("CI_CONFUSED_INHERITANCE-Los") {
+      protectedFieldsLos.interpret()
+    }
+    assert(protectedFieldsLosRes.size == protectedFields.size)
+    val protectedFieldsLos2 = benchMark("CI_CONFUSED_INHERITANCE-Los-setup") {
+      (for (
+        classFile ← classFiles.asSmartCollection if classFile.isFinal;
+        field ← classFile.fields if field.isProtected
+      ) yield (classFile, field))
+    }
+    val protectedFieldsLosRes2 = benchMark("CI_CONFUSED_INHERITANCE-Los") {
+      protectedFieldsLos2.interpret()
+    }
+    assert(protectedFieldsLosRes2.size == protectedFields.size)
+  }
+
   def analyze(zipFiles: Array[String]) {
     val classHierarchy = new ClassHierarchy {}
 
@@ -110,14 +148,7 @@ class Main extends JUnitSuite with ShouldMatchersForJUnit {
     val getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
     println("Number of class files: " + classFilesCount)
 
-    // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
-    val protectedFields = benchMark("CI_CONFUSED_INHERITANCE") {
-      for (
-        classFile ← classFiles if classFile.isFinal;
-        field ← classFile.fields if field.isProtected
-      ) yield (classFile, field)
-    }
-    println("\tViolations: " + protectedFields.size)
+    analyzeConfusedInheritance(classFiles)
 
     // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
     val unusedFields: Seq[(ClassFile, Traversable[String])] = benchMark("UUF_UNUSED_FIELD") {

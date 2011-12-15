@@ -47,16 +47,23 @@ object BATLifting extends OptionLifting {
     def thisClass = onExp(t)('thisClass, _.thisClass)
     def superClass = onExp(t)('superClass, _.superClass)
     def interfaces = onExp(t)('interfaces, _.interfaces)
+    def isFinal = onExp(t)('isFinal, _.isFinal)
   }
 
   implicit def expToObjectTypeOps(t: Exp[ObjectType]) = new ObjectTypeOps(t)
-
   class ObjectTypeOps(t: Exp[ObjectType]) {
     def simpleName = onExp(t)('simpleName, _.simpleName)
     def packageName = onExp(t)('packageName, _.packageName)
   }
 
-  implicit def expToAttributeOps(t: Exp[Method]) = new MethodOps(t)
+  implicit def expToFieldOps(t: Exp[Field]) = new FieldOps(t)
+  class FieldOps(t: Exp[Field]) {
+    def attributes = onExp(t)('attributes, _.attributes)
+    def name = onExp(t)('name, _.name)
+    def isProtected = onExp(t)('isProtected, _.isProtected)
+  }
+
+  implicit def expToMethodOps(t: Exp[Method]) = new MethodOps(t)
   class MethodOps(t: Exp[Method]) {
     def attributes = onExp(t)('attributes, _.attributes)
     def name = onExp(t)('name, _.name)
