@@ -56,7 +56,7 @@ import Lifting._
  * @author Michael Eichberg
  */
 
-object Main extends Main {
+object FindBugsAnalyses extends FindBugsAnalyses {
   private def printUsage: Unit = {
     println("Usage: java … ClassHierarchy <ZIP or JAR file containing class files>+")
     println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
@@ -77,12 +77,12 @@ object Main extends Main {
       }
     }
 
-    (new Main).analyze(args)
+    (new FindBugsAnalyses).analyze(args)
     sys.exit(0)
   }
 }
 
-class Main extends JUnitSuite with ShouldMatchersForJUnit {
+class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
   private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
   import CountingPerformanceEvaluator._
 
