@@ -45,7 +45,8 @@ object Benchmarking {
     if (!hasConsoleOutput)
       print(">>> Name = %s, starting warmup..." format name)
 
-    for (i <- 1 to warmUpLoops)
+    //We need at least one warmup loop to produce the result to return. That's not a perfect fix, but it doesn't matter.
+    for (i <- 1 to math.max(warmUpLoops, 1))
       ret = toBench
     System.gc()
 
