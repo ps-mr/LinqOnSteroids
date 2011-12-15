@@ -56,163 +56,163 @@ import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
  */
 
 object Main extends Main {
-    private def printUsage: Unit = {
-        println("Usage: java … ClassHierarchy <ZIP or JAR file containing class files>+")
-        println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+  private def printUsage: Unit = {
+    println("Usage: java … ClassHierarchy <ZIP or JAR file containing class files>+")
+    println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
+  }
+
+  def main(args: Array[String]) {
+    if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
+      printUsage
+      sys.exit(1)
     }
 
-    def main(args: Array[String]) {
-        if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
-            printUsage
-            sys.exit(1)
-        }
-
-        for (arg ← args) {
-            val file = new java.io.File(arg)
-            if (!file.canRead() || file.isDirectory()) {
-                println("The file: " + file + " cannot be read.");
-                printUsage
-                sys.exit(1)
-            }
-        }
-
-        (new Main).analyze(args)
-        sys.exit(0)
+    for (arg ← args) {
+      val file = new java.io.File(arg)
+      if (!file.canRead() || file.isDirectory()) {
+        println("The file: " + file + " cannot be read.");
+        printUsage
+        sys.exit(1)
+      }
     }
+
+    (new Main).analyze(args)
+    sys.exit(0)
+  }
 }
 
 class Main extends JUnitSuite with ShouldMatchersForJUnit {
-    private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
-    import CountingPerformanceEvaluator._
+  private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
+  import CountingPerformanceEvaluator._
 
-    @Test
-    def testAnalyze() {
-        analyze(Array("lib/scalatest-1.6.1.jar"))
+  @Test
+  def testAnalyze() {
+    analyze(Array("lib/scalatest-1.6.1.jar"))
+  }
+
+  // The following code is meant to show how easy it is to write analyses;
+  // it is not meant to demonstrate how to write such analyses in an effecient
+  // manner.
+  def analyze(zipFiles: Array[String]) {
+    val classHierarchy = new ClassHierarchy {}
+
+    val classFiles = time(t ⇒ println("Reading all class files took: " + nsToSecs(t))) {
+      for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
     }
+    val classFilesCount = classFiles.length
+    // This operation is not incrementalizable by itself. If classHierarchy supports removing classes, we might
+    // provide a way to setup a listener easily.
+    for (classFile ← classFiles)
+      classHierarchy.update(classFile)
+    //As an alternative, classHierarchy might support IVM directly.
+    //classHierarchy.update(classFiles)
 
-    // The following code is meant to show how easy it is to write analyses;
-    // it is not meant to demonstrate how to write such analyses in an effecient
-    // manner.
-    def analyze(zipFiles: Array[String]) {
-        val classHierarchy = new ClassHierarchy {}
+    val getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
+    println("Number of class files: " + classFilesCount)
 
-        val classFiles = time(t ⇒ println("Reading all class files took: " + nsToSecs(t))) {
-            for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
+    // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
+    val protectedFields = benchMark("CI_CONFUSED_INHERITANCE") {
+      for (
+        classFile ← classFiles if classFile.isFinal;
+        field ← classFile.fields if field.isProtected
+      ) yield (classFile, field)
+    }
+    println("\tViolations: " + protectedFields.size)
+
+    // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
+    val unusedFields: Seq[(ClassFile, Traversable[String])] = benchMark("UUF_UNUSED_FIELD") {
+      for {
+        classFile ← classFiles if !classFile.isInterfaceDeclaration
+        instructions = for {
+          method ← classFile.methods if method.body.isDefined
+          instruction ← method.body.get.code
+        } yield instruction
+        declaringClass = classFile.thisClass
+        privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
+        /*usedPrivateFields2 = //This seemed much slower in a quarter-of-scientific test - it's tested below!
+(for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) <- Seq(instruction)) yield name) union
+(for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) <- Seq(instruction)) yield name)*/
+        usedPrivateFields = instructions filter {
+          case GETFIELD(`declaringClass`, name, _) => true
+          case GETSTATIC(`declaringClass`, name, _) => true
+          case _ => false
+        } map {
+          case GETFIELD(`declaringClass`, name, _) => name
+          case GETSTATIC(`declaringClass`, name, _) => name
         }
-        val classFilesCount = classFiles.length
-        // This operation is not incrementalizable by itself. If classHierarchy supports removing classes, we might
-        // provide a way to setup a listener easily.
-        for (classFile ← classFiles)
-          classHierarchy.update(classFile)
-        //As an alternative, classHierarchy might support IVM directly.
-        //classHierarchy.update(classFiles)
+        unusedPrivateFields = privateFields -- usedPrivateFields //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, privateFields)
+    }
+    println("\tViolations: " + unusedFields.size)
 
-        val getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
-        println("Number of class files: " + classFilesCount)
+    val unusedFields2: Seq[(ClassFile, Traversable[String])] = benchMark("UUF_UNUSED_FIELD-2") {
+      for {
+        classFile ← classFiles if !classFile.isInterfaceDeclaration
+        instructions = for {
+          method ← classFile.methods if method.body.isDefined
+          instruction ← method.body.get.code
+        } yield instruction
+        declaringClass = classFile.thisClass
+        privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
+        usedPrivateFields = //This seemed much slower in a quarter-of-scientific test
+        (for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) <- Seq(instruction)) yield name) union
+          (for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) <- Seq(instruction)) yield name)
+        unusedPrivateFields = privateFields -- usedPrivateFields //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, privateFields)
+    }
+    println("\tViolations: " + unusedFields2.size)
 
-        // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
-        val protectedFields = benchMark("CI_CONFUSED_INHERITANCE") {
-            for (
-                classFile ← classFiles if classFile.isFinal;
-                field ← classFile.fields if field.isProtected
-            ) yield (classFile, field)
-        }
-        println("\tViolations: " + protectedFields.size)
-
-        // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
-        val unusedFields: Seq[(ClassFile, Traversable[String])] = benchMark("UUF_UNUSED_FIELD") {
-            for {
-              classFile ← classFiles if !classFile.isInterfaceDeclaration
-              instructions = for {
-                method ← classFile.methods if method.body.isDefined
-                instruction ← method.body.get.code
-              } yield instruction
-              declaringClass = classFile.thisClass
-              privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
-              /*usedPrivateFields2 = //This seemed much slower in a quarter-of-scientific test - it's tested below!
-                (for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) <- Seq(instruction)) yield name) union
-                (for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) <- Seq(instruction)) yield name)*/
-              usedPrivateFields = instructions filter {
-                case GETFIELD(`declaringClass`, name, _) => true
-                case GETSTATIC(`declaringClass`, name, _) => true
-                case _ => false
-              } map {
-                case GETFIELD(`declaringClass`, name, _) => name
-                case GETSTATIC(`declaringClass`, name, _) => name
-              }
-              unusedPrivateFields = privateFields -- usedPrivateFields //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
-              if unusedPrivateFields.size > 0
-            } yield (classFile, privateFields)
-        }
-        println("\tViolations: " + unusedFields.size)
-
-      val unusedFields2: Seq[(ClassFile, Traversable[String])] = benchMark("UUF_UNUSED_FIELD-2") {
-        for {
-          classFile ← classFiles if !classFile.isInterfaceDeclaration
-          instructions = for {
-            method ← classFile.methods if method.body.isDefined
-            instruction ← method.body.get.code
-          } yield instruction
-          declaringClass = classFile.thisClass
-          privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
-          usedPrivateFields = //This seemed much slower in a quarter-of-scientific test
-          (for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) <- Seq(instruction)) yield name) union
-            (for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) <- Seq(instruction)) yield name)
-          unusedPrivateFields = privateFields -- usedPrivateFields //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
-          if unusedPrivateFields.size > 0
-        } yield (classFile, privateFields)
+    // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
+    val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
+      val instructions = for (
+        classFile ← classFiles;
+        method ← classFile.methods if method.body.isDefined;
+        instruction ← method.body.get.code
+      ) yield (classFile, method, instruction)
+      instructions.filter {
+        case (a, b, instruction) ⇒
+          instruction match {
+            case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
+                 INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒ true
+            case _ ⇒ false
+          }
       }
-      println("\tViolations: " + unusedFields2.size)
-
-        // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
-        val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
-            val instructions = for (
-                classFile ← classFiles;
-                method ← classFile.methods if method.body.isDefined;
-                instruction ← method.body.get.code
-            ) yield (classFile, method, instruction)
-            instructions.filter {
-                case (a, b, instruction) ⇒
-                    instruction match {
-                       case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
-                            INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒ true
-                       case _ ⇒ false
-                    }
-            }
-        }
-        println("\tViolations: " + garbageCollectingMethods.size)
-
-        // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
-        val classesWithPublicFinalizeMethods = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED") {
-            for (
-                classFile ← classFiles if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
-            ) yield classFile
-        }
-        println("\tViolations: " + classesWithPublicFinalizeMethods.length)
-
-        // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
-        val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable"))
-        val classesWithoutDefaultConstructor = benchMark("SE_NO_SUITABLE_CONSTRUCTOR") {
-            for (
-                superclass ← classHierarchy.superclasses(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
-                    {
-                        val superClassFile = getClassFile(superclass)
-                        !superClassFile.isInterfaceDeclaration &&
-                            !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
-                    }
-            ) yield superclass // there can be at most one method
-        }
-        println("\tViolations: " + classesWithoutDefaultConstructor.size)
-
-        // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
-        val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
-        val catchesIllegalMonitorStateException = benchMark("IMSE_DONT_CATCH_IMSE") {
-            for (
-                classFile ← classFiles if classFile.isClassDeclaration;
-                method ← classFile.methods if method.body.isDefined;
-                exceptionHandler ← method.body.get.exceptionTable if exceptionHandler.catchType == IllegalMonitorStateExceptionType
-            ) yield (classFile, method)
-        }
-        println("\tViolations: " + catchesIllegalMonitorStateException.size)
     }
+    println("\tViolations: " + garbageCollectingMethods.size)
+
+    // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
+    val classesWithPublicFinalizeMethods = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED") {
+      for (
+        classFile ← classFiles if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
+      ) yield classFile
+    }
+    println("\tViolations: " + classesWithPublicFinalizeMethods.length)
+
+    // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
+    val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable"))
+    val classesWithoutDefaultConstructor = benchMark("SE_NO_SUITABLE_CONSTRUCTOR") {
+      for (
+        superclass ← classHierarchy.superclasses(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+        {
+          val superClassFile = getClassFile(superclass)
+          !superClassFile.isInterfaceDeclaration &&
+            !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
+        }
+      ) yield superclass // there can be at most one method
+    }
+    println("\tViolations: " + classesWithoutDefaultConstructor.size)
+
+    // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
+    val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
+    val catchesIllegalMonitorStateException = benchMark("IMSE_DONT_CATCH_IMSE") {
+      for (
+        classFile ← classFiles if classFile.isClassDeclaration;
+        method ← classFile.methods if method.body.isDefined;
+        exceptionHandler ← method.body.get.exceptionTable if exceptionHandler.catchType == IllegalMonitorStateExceptionType
+      ) yield (classFile, method)
+    }
+    println("\tViolations: " + catchesIllegalMonitorStateException.size)
+  }
 }
