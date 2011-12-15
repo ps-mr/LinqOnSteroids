@@ -3,7 +3,31 @@ package ivm.expressiontree
 import collection.TraversableLike
 import collection.generic.CanBuildFrom
 
-object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps with SimpleOpenEncoding.OpsExpressionTreeTrait with SimpleOpenEncoding.TypeFilterOps {
+trait OptionLifting extends SimpleOpenEncoding.OpsExpressionTreeTrait {
+  implicit def expToOptionOps[T](t: Exp[Option[T]]) = new OptionOps(t)
+  class OptionOps[T](t: Exp[Option[T]]) {
+    def isDefined = onExp(t)('isDefined, _.isDefined)
+    def get = onExp(t)('get, _.get)
+    //We do not use Option.withFilter because it returns a different type; we could provide operations
+    //for that type as well, but I do not see the point of doing that, especially for a side-effect-free predicate.
+    def withFilter(p: Exp[T] => Exp[Boolean]) = onExp(t, FuncExp(p))('map, _ filter _)
+    def map[U](f: Exp[T] => Exp[U]) = onExp(t, FuncExp(f))('map, _ map _)
+    def flatMap[U](f: Exp[T] => Exp[Traversable[U]]) = onExp(t, FuncExp(f))('flatMap, (a, b) => (a: Iterable[T]) flatMap b)
+  }
+
+  //Support let-bindings within for-comprehensions without relying on pattern-matching.
+  def Let[T](v: Exp[T]): Exp[Option[T]] = onExp(v)('Some, Some(_))
+
+  case class ExpSeq[T](children: Exp[T]*) extends Exp[Seq[T]] {
+    override def nodeArity = children.size
+    override protected def checkedGenericConstructor: Seq[Exp[_]] => Exp[Seq[T]] = v => ExpSeq((v.asInstanceOf[Seq[Exp[T]]]): _*)
+    override def interpret() = children.map(_.interpret())
+  }
+}
+
+object Lifting
+  extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps with SimpleOpenEncoding.OpsExpressionTreeTrait with SimpleOpenEncoding.TypeFilterOps with OptionLifting
+{
   def liftFunc[S, T](f: Exp[S] => Exp[T]): Exp[S => T] = FuncExp(f)
 
   def groupBySelImpl[T, Repr <: Traversable[T] with
@@ -20,7 +44,6 @@ object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps 
     //tmp.map(v => (v._1, MapOp(v._2, FuncExp(g)))) //This uses MapOp directly, but map could return other nodes
     tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(c)))
   }
-
 
   //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
   //parameter of Exp here.
