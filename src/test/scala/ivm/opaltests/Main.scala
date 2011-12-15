@@ -88,7 +88,8 @@ class Main extends JUnitSuite with ShouldMatchersForJUnit {
 
   private def benchMark[T](msg: String)(t: => T): T = {
     import ivm.performancetests.Benchmarking
-    Benchmarking.benchMark(msg /*, warmUpLoops = 0, sampleLoops = 1 */)(t)
+    val debug = false
+    Benchmarking.benchMark(msg, warmUpLoops = if (debug) 1 else 100, sampleLoops = if (debug) 2 else 50)(t)
   }
   @Test
   def testAnalyze() {
