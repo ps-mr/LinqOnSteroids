@@ -3,7 +3,7 @@ package ivm.expressiontree
 import collection.TraversableLike
 import collection.generic.CanBuildFrom
 
-trait Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps with SimpleOpenEncoding.OpsExpressionTreeTrait with SimpleOpenEncoding.TypeFilterOps {
+object Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps with SimpleOpenEncoding.OpsExpressionTreeTrait with SimpleOpenEncoding.TypeFilterOps {
   def liftFunc[S, T](f: Exp[S] => Exp[T]): Exp[S => T] = FuncExp(f)
 
   def groupBySelImpl[T, Repr <: Traversable[T] with
@@ -130,6 +130,3 @@ trait Lifting extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps w
   // maybe this is not the best place to define this function
   def filterByType[S: Manifest]: Exp[PartialFunction[Any,S]] = new PartialFuncExp( (x) => x.ifInstanceOf[S])
 }
-
-//No more really needed, can be removed.
-object Lifting extends Lifting

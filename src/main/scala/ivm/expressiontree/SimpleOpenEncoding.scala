@@ -118,6 +118,7 @@ object SimpleOpenEncoding {
   }
 
   trait TraversableOps {
+    import OpsExpressionTree._
     def newWithFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr],
                                                         f: FuncExp[T, Boolean]) =
       new FilterMaintainerExp(View(base), f)
