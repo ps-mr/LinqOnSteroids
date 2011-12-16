@@ -99,10 +99,10 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
 
   private def analyzeConfusedInheritanceNative(classFiles: Seq[ClassFile]) = {
     val protectedFields = benchMark("CI_CONFUSED_INHERITANCE-Native") {
-      for (
-        classFile ← classFiles if classFile.isFinal;
+      (for (
+        classFile ← classFiles.view if classFile.isFinal;
         field ← classFile.fields if field.isProtected
-      ) yield (classFile, field)
+      ) yield (classFile, field))
     }
     println("\tViolations: " + protectedFields.size)
     protectedFields
