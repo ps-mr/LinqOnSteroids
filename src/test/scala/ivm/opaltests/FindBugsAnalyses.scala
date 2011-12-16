@@ -85,22 +85,19 @@ object FindBugsAnalyses extends FindBugsAnalyses {
 class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
   private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
   import CountingPerformanceEvaluator._
+  import ivm.performancetests.Benchmarking
 
   private def benchMark[T](msg: String)(t: => T): T = {
-    import ivm.performancetests.Benchmarking
     val debug = false
     Benchmarking.benchMark(msg, warmUpLoops = if (debug) 1 else 100, sampleLoops = if (debug) 2 else 50)(t)
+    //Benchmarking.benchMark(msg)(t)
   }
   @Test
   def testAnalyze() {
-    analyze(Array("lib/scalatest-1.6.1.jar"))
+    analyze(Seq("lib/scalatest-1.6.1.jar"))
   }
 
-  // The following code is meant to show how easy it is to write analyses;
-  // it is not meant to demonstrate how to write such analyses in an effecient
-  // manner.
-  private def analyzeConfusedInheritance(classFiles: Array[ClassFile]) {
-    // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
+  private def analyzeConfusedInheritanceNative(classFiles: Seq[ClassFile]) = {
     val protectedFields = benchMark("CI_CONFUSED_INHERITANCE-Native") {
       for (
         classFile ← classFiles if classFile.isFinal;
@@ -108,18 +105,16 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       ) yield (classFile, field)
     }
     println("\tViolations: " + protectedFields.size)
+    protectedFields
+  }
 
+  // The following code is meant to show how easy it is to write analyses;
+  // it is not meant to demonstrate how to write such analyses in an efficient
+  // manner.
+  private def analyzeConfusedInheritance(classFiles: Seq[ClassFile]) {
+    val protectedFields = analyzeConfusedInheritanceNative(classFiles)
+    // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
     import BATLifting._
-    val protectedFieldsLos = benchMark("CI_CONFUSED_INHERITANCE-Los-setup-materialize") {
-      (for (
-        classFile ← classFiles.asSmartCollection if classFile.isFinal;
-        field ← classFile.fields if field.isProtected
-      ) yield (classFile, field)) materialize
-    }
-    val protectedFieldsLosRes = benchMark("CI_CONFUSED_INHERITANCE-Los") {
-      protectedFieldsLos.interpret()
-    }
-    assert(protectedFieldsLosRes.size == protectedFields.size)
     val protectedFieldsLos2 = benchMark("CI_CONFUSED_INHERITANCE-Los-setup") {
       (for (
         classFile ← classFiles.asSmartCollection if classFile.isFinal;
@@ -130,12 +125,25 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       protectedFieldsLos2.interpret()
     }
     assert(protectedFieldsLosRes2.size == protectedFields.size)
+
+    val protectedFieldsLos = benchMark("CI_CONFUSED_INHERITANCE-Los-setup-materialize") {
+      (for (
+        classFile ← classFiles.asSmartCollection if classFile.isFinal;
+        field ← classFile.fields if field.isProtected
+      ) yield (classFile, field)) materialize
+    }
+    val protectedFieldsLosRes = benchMark("CI_CONFUSED_INHERITANCE-Los-interpret-noop") {
+      protectedFieldsLos.interpret()
+    }
+    assert(protectedFieldsLosRes.size == protectedFields.size)
+    val protectedFields2 = analyzeConfusedInheritanceNative(classFiles)
+    assert(protectedFieldsLosRes2.size == protectedFields2.size)
   }
 
-  def analyze(zipFiles: Array[String]) {
+  def analyze(zipFiles: Seq[String]) {
     val classHierarchy = new ClassHierarchy {}
 
-    val classFiles = time(t ⇒ println("Reading all class files took: " + nsToSecs(t))) {
+    val classFiles = Benchmarking.benchMark("Reading all class files", warmUpLoops = 1, execLoops = 1) {
       for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
     }
     val classFilesCount = classFiles.length
