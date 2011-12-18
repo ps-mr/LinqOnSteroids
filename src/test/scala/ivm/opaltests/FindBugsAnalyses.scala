@@ -196,7 +196,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
         instruction ← method.body.get.code
       } yield (classFile, method, instruction)
       instructions.filter {
-        case (a, b, instruction) ⇒
+        case (_, _, instruction) ⇒
           instruction match {
             case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
                  INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒ true
