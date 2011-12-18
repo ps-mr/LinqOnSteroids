@@ -211,7 +211,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
     // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
     val classesWithPublicFinalizeMethods = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED") {
       for (
-        classFile ← classFiles if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
+        classFile ← classFiles
+        if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
       ) yield classFile
     }
     println("\tViolations: " + classesWithPublicFinalizeMethods.length)
