@@ -26,12 +26,15 @@ import collections.IncHashSet
 object BATLifting {
   implicit def expToClassFileOps(t: Exp[ClassFile]) = new ClassFileOps(t)
   class ClassFileOps(t: Exp[ClassFile]) {
+    def constructors = onExp(t)('constructors, _.constructors)
     def methods = onExp(t)('methods, _.methods)
     def fields = onExp(t)('fields, _.fields)
     def thisClass = onExp(t)('thisClass, _.thisClass)
     def superClass = onExp(t)('superClass, _.superClass)
     def interfaces = onExp(t)('interfaces, _.interfaces)
     def isFinal = onExp(t)('isFinal, _.isFinal)
+    def isClassDeclaration = onExp(t)('isClassDeclaration, _.isClassDeclaration)
+    def isInterfaceDeclaration = onExp(t)('isInterfaceDeclaration, _.isInterfaceDeclaration)
   }
 
   implicit def expToObjectTypeOps(t: Exp[ObjectType]) = new ObjectTypeOps(t)
@@ -71,6 +74,12 @@ object BATLifting {
   implicit def expToCodeAttributeOps(t: Exp[CodeAttribute]) = new CodeAttributeOps(t)
   class CodeAttributeOps(t: Exp[CodeAttribute]) {
     def code: Exp[Seq[Instruction]] = onExp(t)('code, _.code)
+    def exceptionTable = onExp(t)('exceptionTable, _.exceptionTable)
+  }
+
+  implicit def expToExceptionTableEntryOps(t: Exp[ExceptionTableEntry]) = new ExceptionTableEntryOps(t)
+  class ExceptionTableEntryOps(t: Exp[ExceptionTableEntry]) {
+    def catchType = onExp(t)('catchType, _.catchType)
   }
 }
 

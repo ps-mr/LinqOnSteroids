@@ -216,6 +216,16 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       ) yield classFile
     }
     println("\tViolations: " + classesWithPublicFinalizeMethods.length)
+    
+    import BATLifting._
+
+    val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED-Los") {
+      for (
+        classFile ← classFiles.asSmartCollection
+        if classFile.methods.exists(method ⇒ method.name === "finalize" && method.isPublic && method.descriptor.returnType === VoidType && method.descriptor.parameterTypes.size === 0)
+      ) yield classFile
+    }
+    classesWithPublicFinalizeMethodsLos.interpret() should be (classesWithPublicFinalizeMethods)
   }
 
   def analyzeSerializableNoConstructor(classHierarchy: ClassHierarchy, getClassFile: Map[ObjectType, ClassFile]) {
@@ -232,6 +242,19 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       ) yield superclass // there can be at most one method
     }
     println("\tViolations: " + classesWithoutDefaultConstructor.size)
+
+    import BATLifting._
+    val classesWithoutDefaultConstructorLos = benchMark("SE_NO_SUITABLE_CONSTRUCTOR-Los") {
+      for (
+        superclass ← classHierarchy.superclasses(serializableClasses).asSmartCollection if getClassFile.asSmartCollection.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+        {
+          val superClassFile = (getClassFile.asSmartCollection)(superclass)
+          !superClassFile.isInterfaceDeclaration &&
+            !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
+        }
+      ) yield superclass // there can be at most one method
+    }
+    classesWithoutDefaultConstructorLos.interpret() should be (classesWithoutDefaultConstructor)
   }
 
   def analyzeCatchIllegalMonitorStateException(classFiles: Seq[ClassFile]) {
@@ -245,6 +268,16 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       ) yield (classFile, method)
     }
     println("\tViolations: " + catchesIllegalMonitorStateException.size)
+
+    import BATLifting._
+    val catchesIllegalMonitorStateExceptionLos = benchMark("IMSE_DONT_CATCH_IMSE-Los") {
+      for (
+        classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration;
+        method ← classFile.methods if method.body.isDefined;
+        exceptionHandler ← method.body.get.exceptionTable if exceptionHandler.catchType === IllegalMonitorStateExceptionType
+      ) yield (classFile, method)
+    }
+    catchesIllegalMonitorStateExceptionLos.interpret() should be (catchesIllegalMonitorStateException)
   }
 
   def analyze(zipFiles: Seq[String]) {

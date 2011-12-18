@@ -72,6 +72,10 @@ object SimpleOpenEncoding {
                                   // inlined: preventing code size explosion.
         case _ => App(f, _)
       }
+    
+    implicit def expToPartialFunOps[S, T](t: Exp[PartialFunction[S, T]]) = new {
+      def isDefinedAt(a: Exp[S]): Exp[Boolean] = IsDefinedAt(t, a)
+    }
 
     // these functions are explicitly not implicit :)
     def liftCall[Res](id: Symbol, callfunc: () => Res) = new Call0(id, callfunc)
@@ -224,6 +228,7 @@ object SimpleOpenEncoding {
       def :+[U >: T, That <: Traversable[U]](that: Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         this union onExp(that)('Traversable, Traversable(_))
       def size = onExp(this.t)('size, _.size)
+      def length = size
 
       def view: Exp[TraversableView[T, Repr]] = View(this.t)
 
