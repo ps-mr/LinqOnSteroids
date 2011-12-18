@@ -99,10 +99,10 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
 
   private def analyzeConfusedInheritanceNative(classFiles: Seq[ClassFile]) = {
     val protectedFields = benchMark("CI_CONFUSED_INHERITANCE-Native") {
-      (for (
-        classFile ← classFiles.view if classFile.isFinal;
+      (for {
+        classFile ← classFiles.view if classFile.isFinal
         field ← classFile.fields if field.isProtected
-      ) yield (classFile, field))
+      } yield (classFile, field))
     }
     println("\tViolations: " + protectedFields.size)
     protectedFields
@@ -116,10 +116,10 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
     // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
     import BATLifting._
     val protectedFieldsLos2 = benchMark("CI_CONFUSED_INHERITANCE-Los-setup") {
-      (for (
-        classFile ← classFiles.asSmartCollection if classFile.isFinal;
+      (for {
+        classFile ← classFiles.asSmartCollection if classFile.isFinal
         field ← classFile.fields if field.isProtected
-      ) yield (classFile, field))
+      } yield (classFile, field))
     }
     val protectedFieldsLosRes2 = benchMark("CI_CONFUSED_INHERITANCE-Los") {
       protectedFieldsLos2.interpret()
@@ -127,10 +127,10 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
     assert(protectedFieldsLosRes2.size == protectedFields.size)
 
     val protectedFieldsLos = benchMark("CI_CONFUSED_INHERITANCE-Los-setup-materialize") {
-      (for (
-        classFile ← classFiles.asSmartCollection if classFile.isFinal;
+      (for {
+        classFile ← classFiles.asSmartCollection if classFile.isFinal
         field ← classFile.fields if field.isProtected
-      ) yield (classFile, field)) materialize
+      } yield (classFile, field)) materialize
     }
     val protectedFieldsLosRes = benchMark("CI_CONFUSED_INHERITANCE-Los-interpret-noop") {
       protectedFieldsLos.interpret()
@@ -190,11 +190,11 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
   def analyzeExplicitGC(classFiles: Seq[ClassFile]) {
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
     val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
-      val instructions = for (
+      val instructions = for {
         classFile ← classFiles;
         method ← classFile.methods if method.body.isDefined;
         instruction ← method.body.get.code
-      ) yield (classFile, method, instruction)
+      } yield (classFile, method, instruction)
       instructions.filter {
         case (a, b, instruction) ⇒
           instruction match {
@@ -232,27 +232,27 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
     // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
     val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).get
     val classesWithoutDefaultConstructor = benchMark("SE_NO_SUITABLE_CONSTRUCTOR") {
-      for (
+      for {
         superclass ← classHierarchy.superclasses(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
           val superClassFile = getClassFile(superclass)
           !superClassFile.isInterfaceDeclaration &&
             !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
         }
-      ) yield superclass // there can be at most one method
+      } yield superclass // there can be at most one method
     }
     println("\tViolations: " + classesWithoutDefaultConstructor.size)
 
     import BATLifting._
     val classesWithoutDefaultConstructorLos = benchMark("SE_NO_SUITABLE_CONSTRUCTOR-Los") {
-      for (
+      for {
         superclass ← classHierarchy.superclasses(serializableClasses).asSmartCollection if getClassFile.asSmartCollection.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
           val superClassFile = (getClassFile.asSmartCollection)(superclass)
           !superClassFile.isInterfaceDeclaration &&
             !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
         }
-      ) yield superclass // there can be at most one method
+      } yield superclass // there can be at most one method
     }
     classesWithoutDefaultConstructorLos.interpret() should be (classesWithoutDefaultConstructor)
   }
@@ -261,21 +261,21 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
     // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
     val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
     val catchesIllegalMonitorStateException = benchMark("IMSE_DONT_CATCH_IMSE") {
-      for (
-        classFile ← classFiles if classFile.isClassDeclaration;
-        method ← classFile.methods if method.body.isDefined;
+      for {
+        classFile ← classFiles if classFile.isClassDeclaration
+        method ← classFile.methods if method.body.isDefined
         exceptionHandler ← method.body.get.exceptionTable if exceptionHandler.catchType == IllegalMonitorStateExceptionType
-      ) yield (classFile, method)
+      } yield (classFile, method)
     }
     println("\tViolations: " + catchesIllegalMonitorStateException.size)
 
     import BATLifting._
     val catchesIllegalMonitorStateExceptionLos = benchMark("IMSE_DONT_CATCH_IMSE-Los") {
-      for (
-        classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration;
-        method ← classFile.methods if method.body.isDefined;
+      for {
+        classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
+        method ← classFile.methods if method.body.isDefined
         exceptionHandler ← method.body.get.exceptionTable if exceptionHandler.catchType === IllegalMonitorStateExceptionType
-      ) yield (classFile, method)
+      } yield (classFile, method)
     }
     catchesIllegalMonitorStateExceptionLos.interpret() should be (catchesIllegalMonitorStateException)
   }
