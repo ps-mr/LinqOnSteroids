@@ -223,6 +223,7 @@ object SimpleOpenEncoding {
       // declared in a subclass
       def :+[U >: T, That <: Traversable[U]](that: Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         this union onExp(that)('Traversable, Traversable(_))
+      def size = onExp(this.t)('size, _.size)
 
       def view: Exp[TraversableView[T, Repr]] = View(this.t)
 
