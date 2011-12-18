@@ -140,25 +140,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
     assert(protectedFieldsLosRes2.size == protectedFields2.size)
   }
 
-  def analyze(zipFiles: Seq[String]) {
-    val classHierarchy = new ClassHierarchy {}
-
-    val classFiles = Benchmarking.benchMark("Reading all class files", warmUpLoops = 1, execLoops = 1) {
-      for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
-    }
-    val classFilesCount = classFiles.length
-    // This operation is not incrementalizable by itself. If classHierarchy supports removing classes, we might
-    // provide a way to setup a listener easily.
-    for (classFile ← classFiles)
-      classHierarchy.update(classFile)
-    //As an alternative, classHierarchy might support IVM directly.
-    //classHierarchy.update(classFiles)
-
-    val getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
-    println("Number of class files: " + classFilesCount)
-
-    analyzeConfusedInheritance(classFiles)
-
+  def analyzeUnusedFields(classFiles: Seq[ClassFile]) {
     // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
     val unusedFields: Seq[(ClassFile, Traversable[String])] = benchMark("UUF_UNUSED_FIELD") {
       for {
@@ -203,7 +185,9 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       } yield (classFile, privateFields)
     }
     println("\tViolations: " + unusedFields2.size)
+  }
 
+  def analyzeExplicitGC(classFiles: Seq[ClassFile]) {
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
     val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
       val instructions = for (
@@ -221,7 +205,9 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       }
     }
     println("\tViolations: " + garbageCollectingMethods.size)
+  }
 
+  def analyzePublicFinalizer(classFiles: Seq[ClassFile]) {
     // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
     val classesWithPublicFinalizeMethods = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED") {
       for (
@@ -229,7 +215,9 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       ) yield classFile
     }
     println("\tViolations: " + classesWithPublicFinalizeMethods.length)
+  }
 
+  def analyzeSerializableNoConstructor(classHierarchy: ClassHierarchy, getClassFile: Map[ObjectType, ClassFile]) {
     // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
     val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable"))
     val classesWithoutDefaultConstructor = benchMark("SE_NO_SUITABLE_CONSTRUCTOR") {
@@ -243,7 +231,9 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       ) yield superclass // there can be at most one method
     }
     println("\tViolations: " + classesWithoutDefaultConstructor.size)
+  }
 
+  def analyzeCatchIllegalMonitorStateException(classFiles: Seq[ClassFile]) {
     // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
     val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
     val catchesIllegalMonitorStateException = benchMark("IMSE_DONT_CATCH_IMSE") {
@@ -254,5 +244,30 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       ) yield (classFile, method)
     }
     println("\tViolations: " + catchesIllegalMonitorStateException.size)
+  }
+
+  def analyze(zipFiles: Seq[String]) {
+    val classHierarchy = new ClassHierarchy {}
+
+    val classFiles = Benchmarking.benchMark("Reading all class files", warmUpLoops = 1, execLoops = 1) {
+      for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
+    }
+    val classFilesCount = classFiles.length
+    // This operation is not incrementalizable by itself. If classHierarchy supports removing classes, we might
+    // provide a way to setup a listener easily.
+    for (classFile ← classFiles)
+      classHierarchy.update(classFile)
+    //As an alternative, classHierarchy might support IVM directly.
+    //classHierarchy.update(classFiles)
+
+    val getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
+    println("Number of class files: " + classFilesCount)
+
+    analyzeConfusedInheritance(classFiles)
+    analyzeUnusedFields(classFiles)
+    analyzeExplicitGC(classFiles)
+    analyzePublicFinalizer(classFiles)
+    analyzeSerializableNoConstructor(classHierarchy, getClassFile)
+    analyzeCatchIllegalMonitorStateException(classFiles)
   }
 }
