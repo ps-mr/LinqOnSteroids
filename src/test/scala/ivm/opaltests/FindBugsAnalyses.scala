@@ -219,7 +219,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
 
   def analyzeSerializableNoConstructor(classHierarchy: ClassHierarchy, getClassFile: Map[ObjectType, ClassFile]) {
     // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
-    val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable"))
+    val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).get
     val classesWithoutDefaultConstructor = benchMark("SE_NO_SUITABLE_CONSTRUCTOR") {
       for (
         superclass ← classHierarchy.superclasses(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available

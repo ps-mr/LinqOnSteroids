@@ -40,19 +40,34 @@ object BATLifting {
     def packageName = onExp(t)('packageName, _.packageName)
   }
 
+  implicit def expToClassMemberOps(t: Exp[ClassMember]) = new ClassMemberOps(t)
+  class ClassMemberOps(t: Exp[ClassMember]) {
+    def isPublic = onExp(t)('isPublic, _.isPublic)
+    def isProtected = onExp(t)('isProtected, _.isProtected)
+    def isPrivate = onExp(t)('isPrivate, _.isPrivate)
+    def isStatic = onExp(t)('isStatic, _.isStatic)
+  }
+
   implicit def expToFieldOps(t: Exp[Field]) = new FieldOps(t)
   class FieldOps(t: Exp[Field]) {
     def attributes = onExp(t)('attributes, _.attributes)
     def name = onExp(t)('name, _.name)
-    def isProtected = onExp(t)('isProtected, _.isProtected)
   }
 
   implicit def expToMethodOps(t: Exp[Method]) = new MethodOps(t)
   class MethodOps(t: Exp[Method]) {
     def attributes = onExp(t)('attributes, _.attributes)
+    def descriptor = onExp(t)('descriptor, _.descriptor)
     def name = onExp(t)('name, _.name)
     def body = onExp(t)('body, _.body)
   }
+
+  implicit def expToMethodDescriptorOps(t: Exp[MethodDescriptor]) = new MethodDescriptorOps(t)
+  class MethodDescriptorOps(t: Exp[MethodDescriptor]) {
+    def returnType = onExp(t)('returnType, _.returnType)
+    def parameterTypes = onExp(t)('parameterTypes, _.parameterTypes)
+  }
+
   implicit def expToCodeAttributeOps(t: Exp[CodeAttribute]) = new CodeAttributeOps(t)
   class CodeAttributeOps(t: Exp[CodeAttribute]) {
     def code: Exp[Seq[Instruction]] = onExp(t)('code, _.code)
