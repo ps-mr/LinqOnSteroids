@@ -122,7 +122,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       } yield (classFile, field))
     }
     val protectedFieldsLosRes2 = benchMark("CI_CONFUSED_INHERITANCE-Los") {
-      protectedFieldsLos2.interpret()
+      protectedFieldsLos2.interpret().force //XXX Should we really use force in the benchmark? And just here?
     }
     assert(protectedFieldsLosRes2.size == protectedFields.size)
 
