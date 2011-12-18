@@ -67,3 +67,35 @@ case class TypeFilter[T, C[X] <: TraversableLike[X, C[X]], D[_], S /* is this to
   }
   override def copy(base: Exp[C[D[T]]], f: Exp[D[T]=>T]) = TypeFilter[T, C, D, S](base, f)
 }
+
+//Note: this class also handles IVM, though in an incomplete way
+case class Forall[T](coll: Exp[Traversable[T]], f: FuncExp[T, Boolean])
+  extends UnaryOpExp[Traversable[T], Boolean](coll) with EvtTransformerEl[Traversable[T], Boolean, Traversable[T]]
+  with ExpWithCache[Boolean]
+{
+  var countFalse: Int = 0
+  override def interpret() = {
+    //XXX: we should get the initial status otherwise.
+    countFalse = coll.interpret().count(x => !f.interpret()(x))
+    expResult()
+  }
+
+  override def copy(coll: Exp[Traversable[T]]) = Forall(coll, f)
+
+  override def cache = Some(expResult()) //We probably need to make the cache _field_ optional.
+  override def expResult() = countFalse == 0 //The result is always valid here.
+
+  override def notifyEv(pub: Traversable[T], evt: Message[Traversable[T]]) {
+    evt match {
+      case Include(v) =>
+        countFalse += (if (!f.interpret()(v)) 1 else 0)
+      case Remove(v) =>
+        countFalse -= (if (!f.interpret()(v)) 1 else 0)
+      case Update(oldV, newV) =>
+        notifyEv(pub, Remove(oldV))
+        notifyEv(pub, Include(newV))
+      case Reset =>
+        countFalse = 0
+    }
+  }
+}

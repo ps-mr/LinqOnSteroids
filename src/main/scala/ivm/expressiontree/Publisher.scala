@@ -141,6 +141,46 @@ trait EvtTransformer[-T, +U, -Repr] extends EvtTransformerBase[Traversable[T], T
 
 }
 
+//Interface used by EvtTransformerEl
+trait ExpWithCache[+T] extends Exp[T] {
+  protected[this] def cache: Option[T]
+}
+
+// Cache the computed result value of an expression.
+// One reusable implementation of the EvtTransformerEl interface
+trait CachingExp[+T] extends ExpWithCache[T] {
+  //This field is never set by Exp or CachingExp itself, only by result-caching nodes
+
+  //Note: this declaration overrides both getter and setter. Therefore, they both need to be already declared in parent
+  //types; therefore, we need to declare WorkaroundExp.
+  protected[this] var cache: Option[T] = None
+
+  override def expResult(): T = cache match {
+    case None =>
+      val res = interpret()
+      cache = Some(res)
+      res
+    case Some(v) => v
+  }
+}
+
+trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U, Exp[U]] {
+  this: ExpWithCache[U] =>
+
+  def notifyEv(pub: Repr, evt: Message[T])
+  override def notify(pub: Repr, evts: Seq[Message[T]]) {
+    val oldRes = cache
+    evts foreach (notifyEv(pub, _))
+    assert(cache.isDefined)
+    oldRes match {
+      case Some(oldVal) =>
+        publish(UpdateVal(oldVal, cache.get))
+      case None =>
+        publish(NewVal(cache.get))
+    }
+  }
+}
+
 object Debug {
   val verbose = false
 }

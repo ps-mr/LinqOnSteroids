@@ -10,30 +10,7 @@ import collection.generic.CanBuildFrom
  * Date: 25/11/2011
  */
 
-//Interface used by EvtTransformerEl
-trait ExpWithCache[+T] extends Exp[T] {
-  protected[this] def cache: Option[T]
-}
-
-// Cache the computed result value of an expression.
-// One reusable implementation of the EvtTransformerEl interface
-trait CachingExp[+T] extends ExpWithCache[T] {
-  //This field is never set by Exp or CachingExp itself, only by result-caching nodes
-
-  //Note: this declaration overrides both getter and setter. Therefore, they both need to be already declared in parent
-  //types; therefore, we need to declare WorkaroundExp.
-  protected[this] var cache: Option[T] = None
-
-  override def expResult(): T = cache match {
-    case None =>
-      val res = interpret()
-      cache = Some(res)
-      res
-    case Some(v) => v
-  }
-}
-
-object FoldOperators {
+trait FoldOperators {
   type BinOp[Out, In] = (Out, In) => Out
 
   trait IncBinOp[Out, In] extends BinOp[Out, In] {
@@ -45,32 +22,11 @@ object FoldOperators {
     def apply(o: Out, i: In): Out = f(o, i)
   }
 
-  def reverse[Out, In](op: IncBinOp[Out, In]) = new IncBinOp[Out, In] {
-    override def remove(o: Out, i: In): Out = op.apply(o, i)
-    override def apply(o: Out, i: In): Out = op.remove(o, i)
-  }
-
   //Allow reusing an IncBinOp to build expression nodes. Not sure yet how useful this is...
   case class ExpBinOp[Out, In](a: Exp[Out], b: Exp[In], op: BinOp[Out, In]) extends BinaryOpExp[Out, In, Out](a, b) {
     def interpret() = op(a.interpret(), b.interpret())
     def copy(a: Exp[Out], b: Exp[In]) = ExpBinOp(a, b, op)
   }
-
-  val And: BinOp[Boolean, Boolean] = (_ && _)
-  val Or: BinOp[Boolean, Boolean] = (_ || _)
-  val Xor = new IncBinOpC[Boolean, Boolean](_ ^ _) {
-    override def remove(o: Boolean, i: Boolean): Boolean = o ^ i
-  }
-  def Plus[T](implicit num: Numeric[T]) = new IncBinOpC[T, T](num.plus(_, _)) {
-    override def remove(o: T, i: T): T = num.minus(o, i)
-  }
-  def Minus[T: Numeric] = reverse(Plus[T])
-  def Times[T](implicit num: Numeric[T]): BinOp[T, T] = num.times(_, _)
-
-  def Times[T](implicit num: Fractional[T]) = new IncBinOpC[T, T](num.times(_, _)) {
-    override def remove(o: T, i: T): T = num.div(o, i)
-  }
-  def Div[T: Fractional] = reverse(Times[T])
 
   /*private def convertBinFunInternal[T](f: (Exp[T], Exp[T]) => Exp[T]): Exp[((T, T)) => T] = FuncExp(f.tupled compose Lifting.unliftPair)
   private def convertBinFun[T](f: (Exp[T], Exp[T]) => Exp[T]): ((T, T)) => T = convertBinFunInternal(f).interpret()*/
@@ -85,9 +41,6 @@ object FoldOperators {
     TreeFold[T](coll, f, z)
 
   def foldl[Out, In](coll: Exp[Traversable[In]])(f: IncBinOpC[Out, In], z: Out) = Foldl(coll, f, z)
-  def not(v: Exp[Boolean]) = new NotMaintainerExp(v)
-  def forall[T](coll: Exp[Traversable[T]])(f: Exp[T] => Exp[Boolean]) = Forall(coll, FuncExp(f))
-  def exists[T](coll: Exp[Traversable[T]])(f: Exp[T] => Exp[Boolean]) = not(Forall(coll, FuncExp(f andThen (new NotMaintainerExp(_)))))
 
   case class Foldl[Out, In](coll: Exp[Traversable[In]], f: IncBinOpC[Out, In], z: Out)
     extends UnaryOpExp[Traversable[In], Out](coll) with EvtTransformerEl[Traversable[In], Out, Traversable[In]]
@@ -113,65 +66,6 @@ object FoldOperators {
           case Reset =>
             z
         })
-    }
-  }
-
-  trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U, Exp[U]] {
-    this: ExpWithCache[U] =>
-
-    def notifyEv(pub: Repr, evt: Message[T])
-    override def notify(pub: Repr, evts: Seq[Message[T]]) {
-      val oldRes = cache
-      evts foreach (notifyEv(pub, _))
-      assert(cache.isDefined)
-      oldRes match {
-        case Some(oldVal) =>
-          publish(UpdateVal(oldVal, cache.get))
-        case None =>
-          publish(NewVal(cache.get))
-      }
-    }
-  }
-
-  class NotMaintainerExp(b: Exp[Boolean]) extends Not(b) with EvtTransformerEl[Boolean, Boolean, Exp[Boolean]] with CachingExp[Boolean] {
-    def notifyEv(pub: Exp[Boolean], evt: Message[Boolean]) {
-      evt match {
-        case NewVal(v) =>
-          cache = Some(!v)
-        case UpdateVal(_, v) =>
-          cache = Some(!v)
-      }
-    }
-  }
-
-  case class Forall[T](coll: Exp[Traversable[T]], f: FuncExp[T, Boolean])
-    extends UnaryOpExp[Traversable[T], Boolean](coll) with EvtTransformerEl[Traversable[T], Boolean, Traversable[T]]
-    with ExpWithCache[Boolean]
-  {
-    var countFalse: Int = 0
-    override def interpret() = {
-      //XXX: we should get the initial status otherwise.
-      countFalse = coll.interpret().count(x => !f.interpret()(x))
-      expResult()
-    }
-
-    override def copy(coll: Exp[Traversable[T]]) = Forall(coll, f)
-
-    override def cache = Some(expResult()) //We probably need to make the cache _field_ optional.
-    override def expResult() = countFalse == 0 //The result is always valid here.
-
-    override def notifyEv(pub: Traversable[T], evt: Message[Traversable[T]]) {
-      evt match {
-        case Include(v) =>
-          countFalse += (if (!f.interpret()(v)) 1 else 0)
-        case Remove(v) =>
-          countFalse -= (if (!f.interpret()(v)) 1 else 0)
-        case Update(oldV, newV) =>
-          notifyEv(pub, Remove(oldV))
-          notifyEv(pub, Include(newV))
-        case Reset =>
-          countFalse = 0
-      }
     }
   }
 
@@ -286,17 +180,41 @@ object FoldOperators {
     }
     (tree, layer.headOption.getOrElse(z))
   }
+}
+
+object FoldOperators extends FoldOperators {
+  def reverse[Out, In](op: IncBinOp[Out, In]) = new IncBinOp[Out, In] {
+    override def remove(o: Out, i: In): Out = op.apply(o, i)
+    override def apply(o: Out, i: In): Out = op.remove(o, i)
+  }
+
+  val And: BinOp[Boolean, Boolean] = (_ && _)
+  val Or: BinOp[Boolean, Boolean] = (_ || _)
+  val Xor = new IncBinOpC[Boolean, Boolean](_ ^ _) {
+    override def remove(o: Boolean, i: Boolean): Boolean = o ^ i
+  }
+  def Plus[T](implicit num: Numeric[T]) = new IncBinOpC[T, T](num.plus(_, _)) {
+    override def remove(o: T, i: T): T = num.minus(o, i)
+  }
+  def Minus[T: Numeric] = reverse(Plus[T])
+  def Times[T](implicit num: Numeric[T]): BinOp[T, T] = num.times(_, _)
+
+  def Times[T](implicit num: Fractional[T]) = new IncBinOpC[T, T](num.times(_, _)) {
+    override def remove(o: T, i: T): T = num.div(o, i)
+  }
+  def Div[T: Fractional] = reverse(Times[T])
 
   def main(args: Array[String]) {
     import Lifting._
     for (n <- 1 to 5) {
       val coll = Seq.fill(n)((math.random * 2).toInt)
+      val collQ = coll.asSmartCollection
       println(coll)
       val res = coll.forall(_ % 2 == 0)
       val res2 = coll.exists(_ % 2 == 0)
       println("%s %s" format (res, res2))
-      val query = forall(coll)(_ % 2 is 0)
-      val query2 = exists(coll)(_ % 2 is 0)
+      val query = collQ forall (_ % 2 is 0)
+      val query2 = collQ exists (_ % 2 is 0)
       println(query)
       println(query2)
       assert(query.interpret() == res)
@@ -352,8 +270,9 @@ object FoldOperators {
       //println(coll)
       //val res = incBuf.forall(_ % 2 == 0)
       //println(res)
-      val query = forall(incBuf)(_ % 2 is 0)
-      val query2 = exists(incBuf)(_ % 2 is 0)
+      val incBufQ = incBuf.asQueryable
+      val query = incBufQ forall (_ % 2 is 0)
+      val query2 = incBufQ exists (_ % 2 is 0)
       incBuf.addSubscriber(query)
       val query2Content = query2.x.asInstanceOf[Forall[Int]]
       incBuf.addSubscriber(query2Content)

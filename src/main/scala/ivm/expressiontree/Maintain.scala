@@ -217,4 +217,15 @@ class UnionMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]
   override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = new UnionMaintainerExp[T, Repr, That](base, that)
 }
 
+class NotMaintainerExp(b: Exp[Boolean]) extends Not(b) with EvtTransformerEl[Boolean, Boolean, Exp[Boolean]] with CachingExp[Boolean] {
+  def notifyEv(pub: Exp[Boolean], evt: Message[Boolean]) {
+    evt match {
+      case NewVal(v) =>
+        cache = Some(!v)
+      case UpdateVal(_, v) =>
+        cache = Some(!v)
+    }
+  }
+}
+
 // vim: set ts=4 sw=4 et:
