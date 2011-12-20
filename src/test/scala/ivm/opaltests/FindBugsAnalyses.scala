@@ -43,7 +43,7 @@ import reader.Java6Framework
 
 import org.junit.Test
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
-import expressiontree.Lifting
+import expressiontree.{Exp, Lifting}
 import Lifting._
 
 /**
@@ -184,7 +184,60 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
     }
-    println("\tViolations: " + unusedFields2.size)
+    unusedFields2 should be (unusedFields)
+
+    import BATLifting._
+    import InstructionLifting._
+
+    val unusedFieldsLos: Exp[Traversable[(ClassFile, Traversable[String])]] = benchMark("UUF_UNUSED_FIELD-Los") {
+      for {
+        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
+        instructions ← Let(for {
+          method ← classFile.methods if method.body.isDefined
+          instruction ← method.body.get.code
+        } yield instruction)
+        declaringClass ← Let(classFile.thisClass)
+        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
+        usedPrivateFields ← Let(instructions filter {
+          instruction =>
+            val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
+            val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
+            asGETFIELD.isDefined && asGETFIELD.get.declaringClass === declaringClass ||
+              asGETSTATIC.isDefined && asGETSTATIC.get.declaringClass === declaringClass
+        } map {
+          instruction =>
+            val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
+            val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
+            asGETFIELD map (_.name) getOrElse (asGETSTATIC map (_.name) get)
+              //XXX: should we emulate support for `if` in some way?
+            /*if (asGETFIELD.isDefined)
+              asGETFIELD.name
+            else if (asGETSTATIC.isDefined)
+              asGETSTATIC.name*/
+        })
+        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, privateFields)
+    }
+    unusedFieldsLos.interpret() should be (unusedFields)
+
+    val unusedFields2Los: Exp[Traversable[(ClassFile, Traversable[String])]] = benchMark("UUF_UNUSED_FIELD-2-Los") {
+      for {
+        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
+        instructions ← Let(for {
+          method ← classFile.methods if method.body.isDefined
+          instruction ← method.body.get.code
+        } yield instruction)
+        declaringClass ← Let(classFile.thisClass)
+        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
+        usedPrivateFields ← Let(//This seemed much slower in a quarter-of-scientific test, at least without Los
+        (for (instruction ← instructions; asGETFIELD <- instruction.ifInstanceOf[GETFIELD] if asGETFIELD.declaringClass === declaringClass) yield asGETFIELD.name) union
+          (for (instruction ← instructions; asGETSTATIC <- instruction.ifInstanceOf[GETSTATIC] if asGETSTATIC.declaringClass === declaringClass) yield asGETSTATIC.name))
+        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, privateFields)
+    }
+    unusedFields2Los.interpret() should be (unusedFields)
   }
 
   def analyzeExplicitGC(classFiles: Seq[ClassFile]) {
@@ -205,6 +258,30 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       }
     }
     println("\tViolations: " + garbageCollectingMethods.size)
+
+    import BATLifting._
+    import InstructionLifting._
+
+    val garbageCollectingMethodsLos = benchMark("DM_GC-Los") {
+      val instructions = for {
+        classFile ← classFiles.asSmartCollection
+        method ← classFile.methods if method.body.isDefined
+        instruction ← method.body.get.code
+      } yield (classFile, method, instruction)
+      instructions.filter {
+        triple =>
+          val instruction = to3pleHelper(triple)._3
+          val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
+          val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
+          val desc = MethodDescriptor(Seq(), VoidType)
+
+          asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass === ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
+            asINVOKESTATIC.get.methodDescriptor == desc ||
+            asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass === ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
+              asINVOKEVIRTUAL.get.methodDescriptor == desc
+      }
+    }
+    garbageCollectingMethodsLos.interpret() should be (garbageCollectingMethods)
   }
 
   def analyzePublicFinalizer(classFiles: Seq[ClassFile]) {
