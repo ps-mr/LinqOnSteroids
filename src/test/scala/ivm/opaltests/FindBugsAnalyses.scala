@@ -191,8 +191,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
     val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
       val instructions = for {
-        classFile ← classFiles;
-        method ← classFile.methods if method.body.isDefined;
+        classFile ← classFiles
+        method ← classFile.methods if method.body.isDefined
         instruction ← method.body.get.code
       } yield (classFile, method, instruction)
       instructions.filter {
