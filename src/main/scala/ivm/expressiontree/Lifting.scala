@@ -10,10 +10,12 @@ trait OptionLifting extends SimpleOpenEncoding.OpsExpressionTreeTrait {
     def get = onExp(t)('get, _.get)
     //We do not use Option.withFilter because it returns a different type; we could provide operations
     //for that type as well, but I do not see the point of doing that, especially for a side-effect-free predicate.
-    def withFilter(p: Exp[T] => Exp[Boolean]) = onExp(t, FuncExp(p))('map, _ filter _)
+    def withFilter(p: Exp[T] => Exp[Boolean]) = onExp(t, FuncExp(p))('filter, _ filter _)
     def map[U](f: Exp[T] => Exp[U]) = onExp(t, FuncExp(f))('map, _ map _)
     def flatMap[U](f: Exp[T] => Exp[Traversable[U]]) = onExp(t, FuncExp(f))('flatMap, (a, b) => (a: Iterable[T]) flatMap b)
+    def getOrElse[U >: T](v: /*=> */ Exp[U]) = onExp(t, v)('Option$getOrElse, _ getOrElse _)
   }
+  implicit def expOption2Iterable[T](t: Exp[Option[T]]) = onExp(t)('Option_option2Iterable, x => x: Iterable[T])
 
   //Support let-bindings within for-comprehensions without relying on pattern-matching.
   def Let[T](v: Exp[T]): Exp[Option[T]] = onExp(v)('Some, Some(_))

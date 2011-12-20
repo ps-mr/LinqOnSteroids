@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
 import collection.generic.{FilterMonadic, CanBuildFrom}
-import collection.{TraversableView, TraversableViewLike, TraversableLike, mutable}
+import collection.{TraversableView, TraversableViewLike, TraversableLike, GenTraversableOnce, mutable}
 import ivm.collections.TypeMapping
 
 /**
@@ -58,6 +58,13 @@ object SimpleOpenEncoding {
     }
 
     implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
+
+    implicit def tripleToTripleExp[A, B, C](triple: (Exp[A], Exp[B], Exp[C])): Exp[(A, B, C)] = onExp(triple._1, triple._2, triple._3)('Tuple3, Tuple3.apply)
+    implicit def to3pleHelper[A, B, C](e: Exp[(A, B, C)]) = new {
+      def _1 = onExp(e)('_1, _._1)
+      def _2 = onExp(e)('_2, _._2)
+      def _3 = onExp(e)('_3, _._3)
+    }
 
     implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
       f match {
@@ -227,8 +234,11 @@ object SimpleOpenEncoding {
       // declared in a subclass
       def :+[U >: T, That <: Traversable[U]](that: Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         this union onExp(that)('Traversable, Traversable(_))
+      def ++[U >: T, That <: Traversable[U]](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+        union(that)
       def size = onExp(this.t)('size, _.size)
       def length = size
+      def toSet = onExp(this.t)('toSet, _.toSet)
 
       def view: Exp[TraversableView[T, Repr]] = View(this.t)
 
@@ -306,7 +316,7 @@ object SimpleOpenEncoding {
   }
 
   trait CollectionSetOps extends TraversableOps {
-    import OpsExpressionTree.toExp
+    import OpsExpressionTree.{toExp, onExp}
     //We want this lifting to apply to all Sets, not just the immutable ones, so that we can call map also on IncHashSet
     //and get the right type.
     import collection.{Set => GenSet}
@@ -319,6 +329,8 @@ object SimpleOpenEncoding {
     class CollectionGenSetOps[T](val t: Exp[GenSet[T]]) extends TraversableLikeOps[T, GenSet[T]] with WithFilterImpl[T, GenSet[T], GenSet[T]] {
       def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
       def contains(el: Exp[T]) = apply(el)
+      def --(that: Exp[GenTraversableOnce[T]]): Exp[GenSet[T] /* Repr */] =
+        onExp(t, that)('__, _ -- _) //Diff(t, that)
     }
     implicit def expToCollectionGenSetExp[T](t: Exp[GenSet[T]]): CollectionGenSetOps[T] = new CollectionGenSetOps(t)
     implicit def tToCollectionGenSetExp[T](t: GenSet[T]): CollectionGenSetOps[T] = expToCollectionGenSetExp(t)
