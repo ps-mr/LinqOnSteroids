@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
 import collection.generic.{CanBuildFrom, FilterMonadic}
-import collection.{TraversableViewLike, TraversableView, TraversableLike}
+import collection._
 
 /**
 * User: pgiarrusso
@@ -52,6 +52,11 @@ case class Union[T, Repr <: TraversableLike[T, Repr], That](base: Exp[Repr], tha
                                    (implicit protected[this] val c: CanBuildFrom[Repr, T, That]) extends BinaryOpExp[Repr, Traversable[T], That](base, that) {
   override def interpret() = base.interpret() ++ that.interpret()
   override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = Union[T, Repr, That](base, that)
+}
+
+case class Diff[T, Repr <: collection.Set[T] with SetLike[T, Repr]](base: Exp[Repr], that: Exp[GenTraversableOnce[T]]) extends BinaryOpExp[Repr, GenTraversableOnce[T], Repr](base, that) {
+  override def interpret() = base.interpret() -- that.interpret()
+  override def copy(base: Exp[Repr], that: Exp[GenTraversableOnce[T]]) = Diff[T, Repr](base, that)
 }
 
 case class TypeFilter[T, C[X] <: TraversableLike[X, C[X]], D[_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T])

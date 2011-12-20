@@ -330,7 +330,7 @@ object SimpleOpenEncoding {
       def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
       def contains(el: Exp[T]) = apply(el)
       def --(that: Exp[GenTraversableOnce[T]]): Exp[GenSet[T] /* Repr */] =
-        onExp(t, that)('__, _ -- _) //Diff(t, that)
+        Diff(t, that)
     }
     implicit def expToCollectionGenSetExp[T](t: Exp[GenSet[T]]): CollectionGenSetOps[T] = new CollectionGenSetOps(t)
     implicit def tToCollectionGenSetExp[T](t: GenSet[T]): CollectionGenSetOps[T] = expToCollectionGenSetExp(t)
