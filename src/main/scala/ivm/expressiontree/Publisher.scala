@@ -184,4 +184,7 @@ trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with Msg
 object Debug {
   val verbose = false
 }
+
+//XXX: make EvtTransformerEl descend from EvtTransformerBase
+
 // vim: set ts=4 sw=4 et:
