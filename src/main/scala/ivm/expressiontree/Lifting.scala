@@ -30,6 +30,8 @@ trait OptionLifting extends SimpleOpenEncoding.OpsExpressionTreeTrait {
 object Lifting
   extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps with SimpleOpenEncoding.OpsExpressionTreeTrait with SimpleOpenEncoding.TypeFilterOps with OptionLifting
 {
+  //XXX: evaluate whether this interface is good.
+  def NULL = toExp(null)
   def liftFunc[S, T](f: Exp[S] => Exp[T]): Exp[S => T] = FuncExp(f)
 
   def groupBySelImpl[T, Repr <: Traversable[T] with

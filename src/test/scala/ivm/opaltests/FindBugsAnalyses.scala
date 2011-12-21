@@ -216,7 +216,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
           instruction =>
             val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
             val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
-            asGETFIELD map (_.name) getOrElse (asGETSTATIC map (_.name) get)
+            //Call-by-name parameters are not currently supported, in practice, by exp. trees.
+            asGETFIELD map (_.name) getOrElse (asGETSTATIC map (_.name) getOrElse NULL) //XXX hack
               //XXX: should we emulate support for `if` in some way?
             /*if (asGETFIELD.isDefined)
               asGETFIELD.name
