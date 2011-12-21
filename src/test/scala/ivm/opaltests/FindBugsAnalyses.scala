@@ -109,7 +109,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
   }
 
   private def analyzeConfusedInheritanceNative(classFiles: Seq[ClassFile]) = {
-    val protectedFields = benchMark("CI_CONFUSED_INHERITANCE-Native") {
+    val protectedFields = benchMark("CI_CONFUSED_INHERITANCE") {
       (for {
         classFile ← classFiles.view if classFile.isFinal
         field ← classFile.fields if field.isProtected
@@ -126,23 +126,23 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
     val protectedFields = analyzeConfusedInheritanceNative(classFiles)
     // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
     import BATLifting._
-    val protectedFieldsLos2 = benchMark("CI_CONFUSED_INHERITANCE-Los-setup") {
+    val protectedFieldsLos2 = benchMark("CI_CONFUSED_INHERITANCE Los Setup") {
       (for {
         classFile ← classFiles.asSmartCollection if classFile.isFinal
         field ← classFile.fields if field.isProtected
       } yield (classFile, field))
     }
     //XXX Should we really use force in the benchmark?
-    val protectedFieldsLosRes2 = benchInterpret("CI_CONFUSED_INHERITANCE-Los", protectedFieldsLos2)
+    val protectedFieldsLosRes2 = benchInterpret("CI_CONFUSED_INHERITANCE Los", protectedFieldsLos2)
     protectedFieldsLosRes2 should be (protectedFields)
 
-    val protectedFieldsLos = benchMark("CI_CONFUSED_INHERITANCE-Los-setup-materialize") {
+    val protectedFieldsLos = benchMark("CI_CONFUSED_INHERITANCE Los Setup (materialize)") {
       (for {
         classFile ← classFiles.asSmartCollection if classFile.isFinal
         field ← classFile.fields if field.isProtected
       } yield (classFile, field)) materialize
     }
-    val protectedFieldsLosRes = benchMark("CI_CONFUSED_INHERITANCE-Los-interpret-noop")(protectedFieldsLos.interpret())
+    val protectedFieldsLosRes = benchMark("CI_CONFUSED_INHERITANCE Los interpret noop")(protectedFieldsLos.interpret())
     protectedFieldsLosRes should be (protectedFields.toSet)
     val protectedFields2 = analyzeConfusedInheritanceNative(classFiles)
     protectedFieldsLosRes should be (protectedFields2.toSet)
