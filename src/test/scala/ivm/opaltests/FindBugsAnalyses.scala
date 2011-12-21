@@ -216,8 +216,11 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
           instruction =>
             val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
             val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
-            //Call-by-name parameters are not currently supported, in practice, by exp. trees.
-            asGETFIELD map (_.name) getOrElse (asGETSTATIC map (_.name) getOrElse NULL) //XXX hack
+            // Note that we might not factor map (_.name) by writing:
+            //   ((asGETFIELD orElse asGETSTATIC) map (_.name)).get
+            // because Scala's type system is nominal and for the two branches different (_.name) methods (with the same
+            // signature) are invoked.
+            (asGETFIELD map (_.name) orElse (asGETSTATIC map (_.name))).get
               //XXX: should we emulate support for `if` in some way?
             /*if (asGETFIELD.isDefined)
               asGETFIELD.name

@@ -13,7 +13,11 @@ trait OptionLifting extends SimpleOpenEncoding.OpsExpressionTreeTrait {
     def withFilter(p: Exp[T] => Exp[Boolean]) = onExp(t, FuncExp(p))('filter, _ filter _)
     def map[U](f: Exp[T] => Exp[U]) = onExp(t, FuncExp(f))('map, _ map _)
     def flatMap[U](f: Exp[T] => Exp[Traversable[U]]) = onExp(t, FuncExp(f))('flatMap, (a, b) => (a: Iterable[T]) flatMap b)
-    def getOrElse[U >: T](v: /*=> */ Exp[U]) = onExp(t, v)('Option$getOrElse, _ getOrElse _)
+
+    //Note: we do not support call-by-name parameters; therefore we currently provide only orElse, and expect the user to
+    //provide a default which will never fail evalution through exceptions but only evaluate to None.
+    //def getOrElse[U >: T](v: /*=> */ Exp[U]) = onExp(t, v)('Option$getOrElse, _ getOrElse _)
+    def orElse[U >: T](v: /*=> */ Exp[Option[U]]) = onExp(t, v)('Option$orElse, _ orElse _)
   }
   implicit def expOption2Iterable[T](t: Exp[Option[T]]) = onExp(t)('Option_option2Iterable, x => x: Iterable[T])
 
