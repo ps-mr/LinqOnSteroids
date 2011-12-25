@@ -298,7 +298,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     }
     methodsNative should equal (m2Int)
 
-    //This is twice as slow as the other los solutions, except methods3.
+    //This is twice as slow as the other los solutions, except methodsLos2.
     //My guess is that this is because collect applies the given function twice.
     val methodsLos3 = queryData.flatMap( cf => cf.methods
       .flatMap( m => m.attributes
