@@ -17,7 +17,7 @@ object FuncExpIdentity {
 //Pattern match to connect two conditions
 object & { def unapply[A](a: A) = Some(a, a) }
 
-
+//XXX: make transform require a function of type Exp[T] to Exp[T]!
 class Optimization {
   private def buildJoin[T, S, TKey, TResult](fmColl: Exp[Traversable[T]],
                                                   wfColl: Exp[Traversable[S]],
@@ -128,6 +128,19 @@ class Optimization {
         coll
       case _ => e
     }
+  
+  val sizeToEmpty: Exp[_] => Exp[_] =
+    e => e match {
+      case Call3('OrderingOps$gt, f, _, Call1('size, f2, coll: Exp[Traversable[t]]), Const(0)) =>
+        coll.nonEmpty
+      case Call3('OrderingOps$gteq, f, _, Call1('size, f2, coll: Exp[Traversable[t]]), Const(1)) =>
+        coll.nonEmpty
+      case Not(Eq(Call1('size, f2, coll: Exp[Traversable[t]]), Const(0))) =>
+        coll.nonEmpty
+      case Eq(Call1('size, f2, coll: Exp[Traversable[t]]), Const(0)) =>
+        coll.isEmpty
+      case _ => e
+    }
 
   val normalizer: Exp[_] => Exp[_] =
     e => e match {
@@ -179,6 +192,8 @@ object Optimization {
   def mergeMaps[T](exp: Exp[T]): Exp[T] = exp.transform(opt.mergeMaps)
 
   def mergeViews[T](exp: Exp[T]): Exp[T] = exp.transform(opt.mergeViews)
+
+  def sizeToEmpty[T](exp: Exp[T]): Exp[T] = exp.transform(opt.sizeToEmpty)
 
   def normalize[T](exp: Exp[T]): Exp[T] = exp.transform(opt.normalizer)
 

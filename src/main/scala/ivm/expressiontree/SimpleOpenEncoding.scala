@@ -236,9 +236,12 @@ object SimpleOpenEncoding {
         this union onExp(that)('Traversable, Traversable(_))
       def ++[U >: T, That <: Traversable[U]](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
         union(that)
+      //XXX: Generate these wrappers
       def size = onExp(this.t)('size, _.size)
       def length = size
       def toSet = onExp(this.t)('toSet, _.toSet)
+      def isEmpty = onExp(this.t)('isEmpty, _.isEmpty)
+      def nonEmpty = onExp(this.t)('nonEmpty, _.nonEmpty)
 
       def view: Exp[TraversableView[T, Repr]] = View(this.t)
 
