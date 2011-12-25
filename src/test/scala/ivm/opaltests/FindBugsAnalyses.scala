@@ -161,10 +161,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
         } yield instruction
         declaringClass = classFile.thisClass
         privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
-        /*usedPrivateFields2 = //This seemed much slower in a quarter-of-scientific test - it's tested below!
-(for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) <- Seq(instruction)) yield name) union
-(for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) <- Seq(instruction)) yield name)*/
-        usedPrivateFields = instructions filter {
+        usedPrivateFields = instructions withFilter {
           case GETFIELD(`declaringClass`, name, _) => true
           case GETSTATIC(`declaringClass`, name, _) => true
           case _ => false
@@ -187,7 +184,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
         } yield instruction
         declaringClass = classFile.thisClass
         privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
-        usedPrivateFields = //This seemed much slower in a quarter-of-scientific test
+        usedPrivateFields = //This is much slower
         (for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) <- Seq(instruction)) yield name) union
           (for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) <- Seq(instruction)) yield name)
         unusedPrivateFields = privateFields -- usedPrivateFields //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
@@ -245,7 +242,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
         } yield instruction)
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
-        usedPrivateFields ← Let(//This seemed much slower in a quarter-of-scientific test, at least without Los
+        usedPrivateFields ← Let(//This is much slower, also with Los
         (for (instruction ← instructions; asGETFIELD <- instruction.ifInstanceOf[GETFIELD] if asGETFIELD.declaringClass === declaringClass) yield asGETFIELD.name) union
           (for (instruction ← instructions; asGETSTATIC <- instruction.ifInstanceOf[GETSTATIC] if asGETSTATIC.declaringClass === declaringClass) yield asGETSTATIC.name))
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
@@ -254,6 +251,25 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
     }
     val unusedFields2LosRes = benchInterpret("UUF_UNUSED_FIELD-2 Los", unusedFields2Los)
     unusedFields2LosRes should be (unusedFields)
+
+    val unusedFields3Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-3 Los Setup") {
+      for {
+        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
+        instructions ← Let(for {
+          method ← classFile.methods if method.body.isDefined
+          instruction ← method.body.get.code
+        } yield instruction)
+        declaringClass ← Let(classFile.thisClass)
+        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
+        usedPrivateFields ← Let(//This is much slower, but typeFilter is faster
+          (for (instruction ← expToSimpleTypeFilterOps[Instruction, Traversable](instructions).typeFilter[GETFIELD] if instruction.declaringClass === declaringClass) yield instruction.name) union
+            (for (instruction ← expToSimpleTypeFilterOps[Instruction, Traversable](instructions).typeFilter[GETSTATIC] if instruction.declaringClass === declaringClass) yield instruction.name))
+        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, privateFields)
+    }
+    val unusedFields3LosRes = benchInterpret("UUF_UNUSED_FIELD-3 Los", unusedFields3Los)
+    unusedFields3LosRes should be (unusedFields)
   }
 
   def analyzeExplicitGC(classFiles: Seq[ClassFile]) {
