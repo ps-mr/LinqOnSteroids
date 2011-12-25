@@ -18,7 +18,7 @@ abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
 
   def xName = x.name
   protected[this] lazy val internX = gensym[S]()
-  def x: TypedVar[_] = internX //Since functions are contravariant in S, so TypedVar[S] cannot be a return type for a public method.
+  def x: TypedVar[_] = internX //Functions are contravariant in S, so TypedVar[S] cannot be a return type for a public method.
 
   lazy val lazyBody: Exp[T] = f(internX)
   def body: Exp[T] = lazyBody
@@ -95,7 +95,8 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
 class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, T](FuncExp.closeOver(foasBody, v)) {
   override def arrowString = "=i=>"
 
-  //The following two lines must be enabled together, I believe:
+  //The following two overrides must be either both present or both absent. Without this override, the body would be
+  //recomputed using substitution.
   override def x = v
   override def body = foasBody
 
@@ -108,6 +109,7 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
       res
     }
 }
+
 object FuncExpInt {
   private[expressiontree] val env = new ScalaThreadLocal(new HashMap[Int, Any]())
   //Write down a constructor of FuncExpInt from HOAS
