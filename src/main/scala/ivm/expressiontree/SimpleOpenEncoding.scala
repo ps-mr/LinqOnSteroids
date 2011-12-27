@@ -103,8 +103,11 @@ object SimpleOpenEncoding {
       liftCall(id, f, a0, a1, a2, a3)
     def onExp[A0, A1, A2, A3, A4, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3], a4: Exp[A4])(id: Symbol, f: (A0, A1, A2, A3, A4) => Res): Exp[Res] =
       liftCall(id, f, a0, a1, a2, a3, a4)
+
     //XXX: bad position
     def not(v: Exp[Boolean]) = new NotMaintainerExp(v)
+    //XXX: disable IVM, switch back to using the plain Not
+    //def not(v: Exp[Boolean]) = Not(v)
   }
   object OpsExpressionTree extends OpsExpressionTreeTrait
 
