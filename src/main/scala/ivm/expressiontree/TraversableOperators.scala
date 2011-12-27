@@ -59,7 +59,7 @@ case class Diff[T, Repr <: collection.Set[T] with SetLike[T, Repr]](base: Exp[Re
   override def copy(base: Exp[Repr], that: Exp[GenTraversableOnce[T]]) = Diff[T, Repr](base, that)
 }
 
-case class TypeFilter[T, C[X] <: TraversableLike[X, C[X]], D[_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T])
+case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T])
                                  (implicit cS: ClassManifest[S])
                                   extends BinaryOp[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]]](base, f) {
   private[this] val classS = cS.erasure

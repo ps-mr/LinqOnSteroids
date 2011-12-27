@@ -265,7 +265,7 @@ object SimpleOpenEncoding {
       def exists(f: Exp[T] => Exp[Boolean]) = not(Forall(this.t, FuncExp(f andThen (not(_)))))
 
       def typeFilter[S](implicit cS: ClassManifest[S]) = {
-        type ID[T] = T
+        type ID[+T] = T
         TypeFilter[T, Traversable, ID, S](t, FuncExp(identity))
       }
     }
@@ -395,7 +395,7 @@ object SimpleOpenEncoding {
       }
 
     }
-    class TypeFilterOps[T, C[X] <: TraversableLike[X, C[X]], D[_]](val t: Exp[C[D[T]]]) {
+    class TypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](val t: Exp[C[D[T]]]) {
       def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T, C, D, S](t, FuncExp(f))
       def groupByType(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t, FuncExp(f))
     }
@@ -403,8 +403,8 @@ object SimpleOpenEncoding {
     class TypeMappingAppOps[C[X] <: TraversableLike[X, C[X]], D[_]](val t: Exp[TypeMapping[C, D]]) {
       def get[S](implicit cS: ClassManifest[S]) = TypeMappingApp[C, D, S](t)
     }
-    implicit def expToTypeFilterOps[T, C[X] <: TraversableLike[X, C[X]], D[_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T, C, D](t)
-    implicit def expToTypeMappingAppOps[C[X] <: TraversableLike[X, C[X]], D[_]](t: Exp[TypeMapping[C, D]]) = new TypeMappingAppOps[C, D](t)
+    implicit def expToTypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T, C, D](t)
+    implicit def expToTypeMappingAppOps[C[X] <: TraversableLike[X, C[X]], D[+_]](t: Exp[TypeMapping[C, D]]) = new TypeMappingAppOps[C, D](t)
     //Experiments
     class GroupByTupleType[U, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](val t: Exp[C[U]]) {
       def groupByTupleType[T, D[_]](typeEqual: U =:= D[T])(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t map (x => onExp(x)('foo, typeEqual)), FuncExp(f))
