@@ -119,6 +119,22 @@ object FuncExpInt {
   }
 }
 
+class FuncExpInt2[S1, S2, T](val foasBody: Exp[T], v1: TypedVar[S1], v2: TypedVar[S2])
+  extends FuncExp[(S1, S2), T](p => foasBody.substVar(v1.id, Proj1(p)).substVar(v2.id, Proj2(p)))
+{
+  override def arrowString = "=i=>"
+  override def interpret(): ((S1, S2)) => T = {
+    case (z1, z2) =>
+      import FuncExpInt._
+      env.get()(v1.id) = z1
+      env.get()(v2.id) = z2
+      val res = foasBody.interpret()
+      env.get() -= v1.id
+      env.get() -= v2.id
+      res
+  }
+}
+
 class ScalaThreadLocal[T](v: => T) extends ThreadLocal[T] {
   override def initialValue() = v
   def modify(f: T => T) {
@@ -145,8 +161,16 @@ object FuncExp {
   def makefun[S, T](e: Exp[T], v: TypedVar[/*S*/_]): FuncExp[S, T] = new FuncExpInt(e, v)
 
   def makePartialFun[S, T](e: Exp[Option[T]], v: TypedVar[S]): PartialFuncExp[S, T] = PartialFuncExp(closeOver(e, v))
-  def makepairfun[S1, S2, T](e: Exp[T], v1: TypedVar[/*S1*/_], v2: TypedVar[/*S2*/_]): FuncExp[(S1, S2), T] =
-    FuncExp(p => e.substVar(v1.id, Proj1(p)).substVar(v2.id, Proj2(p)))
+  def makepairfun[S1, S2, T](e: Exp[T], v1: TypedVar[/*S1*/_], v2: TypedVar[/*S2*/_]): FuncExp[(S1, S2), T] = {
+    //This implementation is correct but slow!
+    //FuncExp(p => e.substVar(v1.id, Proj1(p)).substVar(v2.id, Proj2(p)))
+    //This implementation is correct but limits further optimizations since it uses the opaque onExp
+    /*FuncExp(arg =>
+      App(
+        Lifting.onExp(new FuncExpInt[Any, (Any => T)](new FuncExpInt(e, v1), v2))('tupledCurried, x => Function.tupled(Function.uncurried(x))),
+        arg))*/
+    new FuncExpInt2(e, v1, v2)
+  }
 
   //The idea here is similar to normalization-by-evaluation
   def normalize[S, T](f: Exp[S] => Exp[T], x: TypedVar[/*S*/_] = gensym[S]()) = {
