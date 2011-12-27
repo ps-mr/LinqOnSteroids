@@ -262,8 +262,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
         usedPrivateFields ← Let(//This is much slower, but typeFilter is faster
-          (for (instruction ← expToSimpleTypeFilterOps[Instruction, Traversable](instructions).typeFilter[GETFIELD] if instruction.declaringClass === declaringClass) yield instruction.name) union
-            (for (instruction ← expToSimpleTypeFilterOps[Instruction, Traversable](instructions).typeFilter[GETSTATIC] if instruction.declaringClass === declaringClass) yield instruction.name))
+          (for (instruction ← instructions.typeFilter[GETFIELD] if instruction.declaringClass === declaringClass) yield instruction.name) union
+            (for (instruction ← instructions.typeFilter[GETSTATIC] if instruction.declaringClass === declaringClass) yield instruction.name))
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)

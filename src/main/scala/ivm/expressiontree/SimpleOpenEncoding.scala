@@ -216,7 +216,7 @@ object SimpleOpenEncoding {
                                                g: Exp[T] => Exp[Rest])(
       implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
 
-    trait TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends FilterMonadicOpsLike[T, Repr] {
+    trait TraversableLikeOps[T, Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]], Repr <: Traversable[T] with TraversableLike[T, Repr] with Coll[T]] extends FilterMonadicOpsLike[T, Repr] {
       def collect[U, That <: Traversable[U]](f: Exp[T] => Exp[Option[U]])
                    (implicit c: CanBuildFrom[TraversableView[T, Repr], U, That]): Exp[That] = {
          new MapOpMaintainerExp(new FilterMaintainerExp(View(this.t),
@@ -260,13 +260,19 @@ object SimpleOpenEncoding {
 
       def forall(f: Exp[T] => Exp[Boolean]) = Forall(this.t, FuncExp(f))
       def exists(f: Exp[T] => Exp[Boolean]) = not(Forall(this.t, FuncExp(f andThen (not(_)))))
+
+      def typeFilter[S](implicit cS: ClassManifest[S]) = {
+        type ID[T] = T
+        TypeFilter[T, Traversable, ID, S](t, FuncExp(identity))
+      }
     }
 
     trait TraversableViewLikeOps[
         T,
         Repr <: Traversable[T] with TraversableLike[T, Repr],
-        ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
-      extends TraversableLikeOps[T, ViewColl] with WithFilterable[T, Repr]
+        Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]],
+        ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl] with Coll[T]]
+      extends TraversableLikeOps[T, Coll, ViewColl] with WithFilterable[T, Repr]
     {
       def force[That](implicit bf: CanBuildFrom[Repr, T, That]) = Force(this.t)
 
@@ -274,10 +280,10 @@ object SimpleOpenEncoding {
         new FilterMaintainerExp[T, ViewColl](this.t, FuncExp(f))
     }
 
-    class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable[T]] with WithFilterImpl[T, Traversable[T], Traversable[T]]
+    class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable, Traversable[T]] with WithFilterImpl[T, Traversable[T], Traversable[T]]
 
     class TraversableViewOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val t: Exp[TraversableView[T, Repr]])
-      extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]]
+      extends TraversableViewLikeOps[T, Repr, Traversable, TraversableView[T, Repr]]
 
     implicit def expToTravExp[T](t: Exp[Traversable[T]]): TraversableOps[T] = new TraversableOps(t)
     implicit def tToTravExp[T](t: Traversable[T]): TraversableOps[T] = {
@@ -304,7 +310,7 @@ object SimpleOpenEncoding {
   //implicit conversions for both WithFilterImpl and TraversableLikeOps.
   trait MapOps extends TraversableOps {
     import OpsExpressionTree._
-    class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Map[K, V]] with WithFilterImpl[(K, V), Map[K, V], Map[K, V]] {
+    class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Iterable, Map[K, V]] with WithFilterImpl[(K, V), Map[K, V], Map[K, V]] {
       /*
       //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
       case class WithFilter(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[IterableView[(K, V), Map[K, V]]] {
@@ -329,7 +335,7 @@ object SimpleOpenEncoding {
       def copy(set: Exp[GenSet[T]], v: Exp[T]) = Contains(set: Exp[GenSet[T]], v: Exp[T])
     }
 
-    class CollectionGenSetOps[T](val t: Exp[GenSet[T]]) extends TraversableLikeOps[T, GenSet[T]] with WithFilterImpl[T, GenSet[T], GenSet[T]] {
+    class CollectionGenSetOps[T](val t: Exp[GenSet[T]]) extends TraversableLikeOps[T, GenSet, GenSet[T]] with WithFilterImpl[T, GenSet[T], GenSet[T]] {
       def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
       def contains(el: Exp[T]) = apply(el)
       def --(that: Exp[GenTraversableOnce[T]]): Exp[GenSet[T] /* Repr */] =
@@ -343,10 +349,10 @@ object SimpleOpenEncoding {
     import OpsExpressionTree.toExp
     //For convenience, also have a lifting for scala.Set = scala.collection.immutable.Set.
 
-    // This class differs from CollectionSetOps because it extends TraversableLikeOps[T, collection.immutable.Set[T]]
-    // instead of TraversableLikeOps[T, collection.Set[T]].
+    // This class differs from CollectionSetOps because it extends TraversableLikeOps[T, collection.immutable.Set, collection.immutable.Set[T]]
+    // instead of TraversableLikeOps[T, collection.Set, collection.Set[T]].
     // XXX: abstract the commonalities in SetLikeOps, even if for now it takes more code than it saves.
-    class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set[T]] with WithFilterImpl[T, Set[T], Set[T]] {
+    class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set, Set[T]] with WithFilterImpl[T, Set[T], Set[T]] {
       def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
       def contains(el: Exp[T]) = apply(el)
     }
@@ -390,15 +396,11 @@ object SimpleOpenEncoding {
       def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T, C, D, S](t, FuncExp(f))
       def groupByType(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t, FuncExp(f))
     }
-    class SimpleTypeFilterOps[T, C[X] <: TraversableLike[X, C[X]]](val t: Exp[C[T]]) {
-      type ID[T] = T
-      def typeFilter[S](implicit cS: ClassManifest[S]) = TypeFilter[T, C, ID, S](t, FuncExp(identity))
-    }
+
     class TypeMappingAppOps[C[X] <: TraversableLike[X, C[X]], D[_]](val t: Exp[TypeMapping[C, D]]) {
       def get[S](implicit cS: ClassManifest[S]) = TypeMappingApp[C, D, S](t)
     }
     implicit def expToTypeFilterOps[T, C[X] <: TraversableLike[X, C[X]], D[_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T, C, D](t)
-    implicit def expToSimpleTypeFilterOps[T, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[T]]) = new SimpleTypeFilterOps[T, C](t)
     implicit def expToTypeMappingAppOps[C[X] <: TraversableLike[X, C[X]], D[_]](t: Exp[TypeMapping[C, D]]) = new TypeMappingAppOps[C, D](t)
     //Experiments
     class GroupByTupleType[U, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](val t: Exp[C[U]]) {

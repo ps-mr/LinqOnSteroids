@@ -44,7 +44,7 @@ object Lifting
     implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
   {
     implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
-      new TraversableLikeOps[T, Repr] {val t = v}
+      new TraversableLikeOps[T, Traversable, Repr] {val t = v}
 
     //val tmp: Exp[Map[K, Repr]] = t.groupBy(f) //can't write this, because we have no lifting for TraversableLike
     //val tmp: Exp[Map[K, Repr]] = GroupBy(t, FuncExp(f))
