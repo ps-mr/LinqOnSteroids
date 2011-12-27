@@ -71,6 +71,21 @@ case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this 
   override def copy(base: Exp[C[D[T]]], f: Exp[D[T]=>T]) = TypeFilter[T, C, D, S](base, f)
 }
 
+// XXX: It is not clear whether the cast from Repr to That is always valid. OTOH, this could express typeFilter on Map,
+// though not necessarily with a desirable interface.
+case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](base: Exp[Repr],
+                                                                               f: Exp[D[T] => T])(implicit cS: ClassManifest[S],
+                                                                                                  cb: CanBuildFrom[Repr, S, That])
+  extends BinaryOp[Exp[Repr], Exp[D[T] => T], That](base, f)
+{
+  private[this] val classS = cS.erasure
+  def interpret() = {
+    val b: Repr = base.interpret()
+    b.filter(x => classS.isInstance(f.interpret()(x))).asInstanceOf[That]
+  }
+  def copy(base: Exp[Repr], f: Exp[D[T] => T]) = TypeFilter2[T, D, Repr, S, That](base, f)
+}
+
 //Note: this class also handles IVM, though in an incomplete way
 case class Forall[T](coll: Exp[Traversable[T]], f: FuncExp[T, Boolean])
   extends UnaryOpExp[Traversable[T], Boolean](coll) with EvtTransformerEl[Traversable[T], Boolean, Traversable[T]]
