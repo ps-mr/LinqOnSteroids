@@ -182,7 +182,11 @@ trait FoldOperators {
   }
 }
 
-object FoldOperators extends FoldOperators {
+object FoldOperators extends FoldOperators
+
+object FoldOperatorsMain {
+  import FoldOperators._
+
   def reverse[Out, In](op: IncBinOp[Out, In]) = new IncBinOp[Out, In] {
     override def remove(o: Out, i: In): Out = op.apply(o, i)
     override def apply(o: Out, i: In): Out = op.remove(o, i)
