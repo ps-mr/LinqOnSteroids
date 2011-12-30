@@ -32,7 +32,8 @@ trait OptionLifting extends SimpleOpenEncoding.BaseExps {
 }
 
 object Lifting
-  extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps with SimpleOpenEncoding.BaseExps with SimpleOpenEncoding.TypeFilterOps with OptionLifting
+  extends SimpleOpenEncoding.BaseExps with OptionLifting
+  with SimpleOpenEncoding.TraversableOps with SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps with SimpleOpenEncoding.TypeFilterOps
 {
   //XXX: evaluate whether this interface is good.
   def NULL = toExp(null)

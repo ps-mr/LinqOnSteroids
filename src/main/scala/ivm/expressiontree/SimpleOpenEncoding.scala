@@ -117,7 +117,6 @@ object SimpleOpenEncoding {
     //XXX: disable IVM, switch back to using the plain Not
     //def not(v: Exp[Boolean]) = Not(v)
   }
-  object OpsExpressionTree extends BaseExps
 
   /**
    * In comparison to the other encoding, we don't use CanBuildExp to get most specific types as result types, as
@@ -142,7 +141,7 @@ object SimpleOpenEncoding {
   }*/
 
   trait TraversableOps {
-    import OpsExpressionTree._
+    this: BaseExps =>
     def newWithFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr],
                                                         f: FuncExp[T, Boolean]) =
       new FilterMaintainerExp(View(base), f)
@@ -319,8 +318,8 @@ object SimpleOpenEncoding {
 
   //XXX: we'll probably have to duplicate this for Maps, as for Sets below. Or rather, we could drop this if we define
   //implicit conversions for both WithFilterImpl and TraversableLikeOps.
-  trait MapOps extends TraversableOps {
-    import OpsExpressionTree._
+  trait MapOps {
+    this: LiftingConvs with TraversableOps =>
     class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Iterable, Map[K, V]] with WithFilterImpl[(K, V), Map[K, V], Map[K, V]] {
       /*
       //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
@@ -335,8 +334,8 @@ object SimpleOpenEncoding {
       expToMapExp(t)
   }
 
-  trait CollectionSetOps extends TraversableOps {
-    import OpsExpressionTree.toExp
+  trait CollectionSetOps {
+    this: LiftingConvs with TraversableOps =>
     //We want this lifting to apply to all Sets, not just the immutable ones, so that we can call map also on IncHashSet
     //and get the right type.
     import collection.{Set => GenSet}
@@ -357,7 +356,7 @@ object SimpleOpenEncoding {
   }
 
   trait SetOps extends CollectionSetOps {
-    import OpsExpressionTree.toExp
+    this: LiftingConvs with TraversableOps =>
     //For convenience, also have a lifting for scala.Set = scala.collection.immutable.Set.
 
     // This class differs from CollectionSetOps because it extends TraversableLikeOps[T, collection.immutable.Set, collection.immutable.Set[T]]
@@ -371,8 +370,8 @@ object SimpleOpenEncoding {
     implicit def tToSetExp[T](t: Set[T]): SetOps[T] = expToSetExp(t)
   }
 
-  trait TypeFilterOps extends TraversableOps {
-    import OpsExpressionTree._
+  trait TypeFilterOps {
+    this: TupleOps with FunctionOps with TraversableOps =>
     case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends BinaryOpExp[C[D[T]], D[T] => T, TypeMapping[C, D]](base, f) {
       override def interpret() = {
         val x: C[D[T]] = base.interpret()
