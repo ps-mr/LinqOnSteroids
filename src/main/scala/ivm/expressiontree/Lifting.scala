@@ -3,7 +3,7 @@ package ivm.expressiontree
 import collection.TraversableLike
 import collection.generic.CanBuildFrom
 
-trait OptionLifting extends SimpleOpenEncoding.OpsExpressionTreeTrait {
+trait OptionLifting extends SimpleOpenEncoding.BaseExps {
   implicit def expToOptionOps[T](t: Exp[Option[T]]) = new OptionOps(t)
   class OptionOps[T](t: Exp[Option[T]]) {
     def isDefined = onExp(t)('isDefined, _.isDefined)
@@ -32,7 +32,7 @@ trait OptionLifting extends SimpleOpenEncoding.OpsExpressionTreeTrait {
 }
 
 object Lifting
-  extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps with SimpleOpenEncoding.OpsExpressionTreeTrait with SimpleOpenEncoding.TypeFilterOps with OptionLifting
+  extends SimpleOpenEncoding.MapOps with SimpleOpenEncoding.SetOps with SimpleOpenEncoding.BaseExps with SimpleOpenEncoding.TypeFilterOps with OptionLifting
 {
   //XXX: evaluate whether this interface is good.
   def NULL = toExp(null)

@@ -29,61 +29,17 @@ object SimpleOpenEncoding {
     implicit def noConstForMutableColl[T](t: mutable.Traversable[T]): Exp[mutable.Traversable[T]] = null
   }
 
-  trait OpsExpressionTreeTrait extends ConversionDisabler {
+  trait LiftingConvs extends ConversionDisabler {
     implicit def toExp[T](t: T): Exp[T] = Const(t)
     /*implicit def liftOrd[T: Ordering](x: T) = Const(x)
     implicit def liftNum[T: Numeric](x: T) = Const(x)
 
     implicit def liftBool(x: Boolean): Exp[Boolean] = Const(x)
     implicit def liftString(x: String): Exp[String] = Const(x)*/
+  }
 
-    implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A, B](pair._1, pair._2)
-
-    //To "unlift" a pair, here's my first solution:
-    /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
-    /*
-    //Unfortunately this conversion is not redundant; we may want to have a special node to support this, or to
-    //remove Pair constructors applied on top of other pair constructors.
-    implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): Pair[A, B] =
-      (Pair[A, B] _).tupled(unliftPair(pair))
-    */
-
-    //Here's the second one, adapted from Klaus code. It represents but does not build a tuple (once one adds lazy vals).
-    //However, one cannot do pattern matching against the result, not with the existing pattern.
-    //Lesson: Scala does not allow to define additional extractors for a given pattern type, and syntax shortcuts such
-    //as tuples or => are simply built-in in the language.
-    case class PairHelper[A, B](p: Exp[(A, B)]) {
-      lazy val _1 = Proj1(p)
-      lazy val _2 = Proj2(p)
-    }
-
-    implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairHelper[A, B] = PairHelper(e)
-
-    implicit def tripleToTripleExp[A, B, C](triple: (Exp[A], Exp[B], Exp[C])): Exp[(A, B, C)] = onExp(triple._1, triple._2, triple._3)('Tuple3, Tuple3.apply)
-    implicit def to3pleHelper[A, B, C](e: Exp[(A, B, C)]) = new {
-      def _1 = onExp(e)('_1, _._1)
-      def _2 = onExp(e)('_2, _._2)
-      def _3 = onExp(e)('_3, _._3)
-    }
-
-    implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
-      f match {
-        case FuncExp(fe) => fe(_) //This line should be dropped, but then we'll need to introduce a beta-reducer.
-                                  // KO: Why do we need a beta-reducer? Since we use HOAS this is just Scala function application
-                                  // and already available in App.interpret
-                                  // But it may still make sense to evaluate such applications right away
-                                  // PG: I believe we need a beta-reducer before any optimization, to ensure that beta-equivalent
-                                  // operations optimize to the same thing. Otherwise the optimizer might not find a pattern
-                                  // because it would show up only after reduction.
-                                  // I believe we want to have App for the same exact reason not all function calls are
-                                  // inlined: preventing code size explosion.
-        case _ => App(f, _)
-      }
-    
-    implicit def expToPartialFunOps[S, T](t: Exp[PartialFunction[S, T]]) = new {
-      def isDefinedAt(a: Exp[S]): Exp[Boolean] = IsDefinedAt(t, a)
-    }
-
+  trait FunctionOps {
+    this: LiftingConvs =>
     // these functions are explicitly not implicit :)
     def liftCall[Res](id: Symbol, callfunc: () => Res) = new Call0(id, callfunc)
     def liftCall[A0, Res](id: Symbol, callfunc: A0 => Res, arg0: Exp[A0]) = new Call1(id, callfunc, arg0)
@@ -104,12 +60,64 @@ object SimpleOpenEncoding {
     def onExp[A0, A1, A2, A3, A4, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3], a4: Exp[A4])(id: Symbol, f: (A0, A1, A2, A3, A4) => Res): Exp[Res] =
       liftCall(id, f, a0, a1, a2, a3, a4)
 
+    implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
+      f match {
+        case FuncExp(fe) => fe(_) //This line should be dropped, but then we'll need to introduce a beta-reducer.
+        // KO: Why do we need a beta-reducer? Since we use HOAS this is just Scala function application
+        // and already available in App.interpret
+        // But it may still make sense to evaluate such applications right away
+        // PG: I believe we need a beta-reducer before any optimization, to ensure that beta-equivalent
+        // operations optimize to the same thing. Otherwise the optimizer might not find a pattern
+        // because it would show up only after reduction.
+        // I believe we want to have App for the same exact reason not all function calls are
+        // inlined: preventing code size explosion.
+        case _ => App(f, _)
+      }
+
+    implicit def expToPartialFunOps[S, T](t: Exp[PartialFunction[S, T]]) = new {
+      def isDefinedAt(a: Exp[S]): Exp[Boolean] = IsDefinedAt(t, a)
+    }
+  }
+
+  trait TupleOps {
+    this: FunctionOps =>
+    implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A, B](pair._1, pair._2)
+
+    //To "unlift" a pair, here's my first solution:
+    /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
+    /*
+    //Unfortunately this conversion is not redundant; we may want to have a special node to support this, or to
+    //remove Pair constructors applied on top of other pair constructors.
+    implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): Pair[A, B] =
+      (Pair[A, B] _).tupled(unliftPair(pair))
+    */
+
+    //Here's the second one, adapted from Klaus code. It represents but does not build a tuple (once one adds lazy vals).
+    //However, one cannot do pattern matching against the result, not with the existing pattern.
+    //Lesson: Scala does not allow to define additional extractors for a given pattern type, and syntax shortcuts such
+    //as tuples or => are simply built-in in the language.
+    case class PairOps[A, B](p: Exp[(A, B)]) {
+      lazy val _1 = Proj1(p)
+      lazy val _2 = Proj2(p)
+    }
+
+    implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairOps[A, B] = PairOps(e)
+
+    implicit def tripleToTripleExp[A, B, C](triple: (Exp[A], Exp[B], Exp[C])): Exp[(A, B, C)] = onExp(triple._1, triple._2, triple._3)('Tuple3, Tuple3.apply)
+    implicit def to3pleHelper[A, B, C](e: Exp[(A, B, C)]) = new {
+      def _1 = onExp(e)('_1, _._1)
+      def _2 = onExp(e)('_2, _._2)
+      def _3 = onExp(e)('_3, _._3)
+    }
+  }
+
+  trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
     //XXX: bad position
     def not(v: Exp[Boolean]) = new NotMaintainerExp(v)
     //XXX: disable IVM, switch back to using the plain Not
     //def not(v: Exp[Boolean]) = Not(v)
   }
-  object OpsExpressionTree extends OpsExpressionTreeTrait
+  object OpsExpressionTree extends BaseExps
 
   /**
    * In comparison to the other encoding, we don't use CanBuildExp to get most specific types as result types, as
@@ -118,7 +126,7 @@ object SimpleOpenEncoding {
    * then specific ones Pi T: Numeric. Exp[T] => NumExp[T]; Pi T. Exp[Traversable[T]] => TraversableExp[T]
    */
 
-  object NumOpsExps {
+  /*object NumOpsExps {
     import OpsExpressionTree._
     class NumOps[T: Numeric](val t: Exp[T]) {
       def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
@@ -131,7 +139,7 @@ object SimpleOpenEncoding {
     implicit def tToNumOps[T: Numeric](t: T): NumOps[T] = expToNumOps(t)
     implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
     implicit def tToOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
-  }
+  }*/
 
   trait TraversableOps {
     import OpsExpressionTree._
@@ -328,7 +336,7 @@ object SimpleOpenEncoding {
   }
 
   trait CollectionSetOps extends TraversableOps {
-    import OpsExpressionTree.{toExp, onExp}
+    import OpsExpressionTree.toExp
     //We want this lifting to apply to all Sets, not just the immutable ones, so that we can call map also on IncHashSet
     //and get the right type.
     import collection.{Set => GenSet}
