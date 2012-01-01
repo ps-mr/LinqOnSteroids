@@ -172,7 +172,7 @@ trait BaseTypesOps {
     def <=(that: Exp[T]): Exp[Boolean] = LEq(this.t, that)
     def <(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$lt, _.lt(_, _))
     def >(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$gt, _.gt(_, _))
-    def >=(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$gteq, _.gteq(_, _))
+    def >=(that: Exp[T]): Exp[Boolean] = LEq(that, this.t)
   }
 
   class StringOps(t: Exp[String]) {

@@ -133,7 +133,7 @@ class Optimization {
     e => e match {
       case Call3('OrderingOps$gt, f, _, Call1('size, f2, coll: Exp[Traversable[t]]), Const(0)) =>
         coll.nonEmpty
-      case Call3('OrderingOps$gteq, f, _, Call1('size, f2, coll: Exp[Traversable[t]]), Const(1)) =>
+      case LEq(Const(1), Call1('size, f2, coll: Exp[Traversable[t]])) =>
         coll.nonEmpty
       case Not(Eq(Call1('size, f2, coll: Exp[Traversable[t]]), Const(0))) =>
         coll.nonEmpty
