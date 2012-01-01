@@ -170,8 +170,8 @@ trait BaseTypesOps {
   class OrderingOps[T: Ordering](t: Exp[T]) {
     //XXX: we probably need to use distinguished nodes for these operations, to be able to use indexes for them.
     def <=(that: Exp[T]): Exp[Boolean] = LEq(this.t, that)
-    def <(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$lt, _.lt(_, _))
-    def >(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$gt, _.gt(_, _))
+    def <(that: Exp[T]): Exp[Boolean] = Less(this.t, that)
+    def >(that: Exp[T]): Exp[Boolean] = Less(that, this.t)
     def >=(that: Exp[T]): Exp[Boolean] = LEq(that, this.t)
   }
 

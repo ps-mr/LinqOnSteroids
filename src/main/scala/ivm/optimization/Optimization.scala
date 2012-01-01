@@ -131,7 +131,7 @@ class Optimization {
   
   val sizeToEmpty: Exp[_] => Exp[_] =
     e => e match {
-      case Call3('OrderingOps$gt, f, _, Call1('size, f2, coll: Exp[Traversable[t]]), Const(0)) =>
+      case Less(Const(0), Call1('size, f2, coll: Exp[Traversable[t]])) =>
         coll.nonEmpty
       case LEq(Const(1), Call1('size, f2, coll: Exp[Traversable[t]])) =>
         coll.nonEmpty
