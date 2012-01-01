@@ -122,9 +122,9 @@ trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
  * then specific ones Pi T: Numeric. Exp[T] => NumExp[T]; Pi T. Exp[Traversable[T]] => TraversableExp[T]
  */
 
-/*object NumOpsExps {
-  import OpsExpressionTree._
-  class NumOps[T: Numeric](val t: Exp[T]) {
+trait NumOps {
+  this: BaseExps =>
+  /*class NumOps[T: Numeric](val t: Exp[T]) {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
   }
   class OrderingOps[T: Ordering](t: Exp[T]) {
@@ -134,6 +134,26 @@ trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
   implicit def expToNumOps[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
   implicit def tToNumOps[T: Numeric](t: T): NumOps[T] = expToNumOps(t)
   implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
-  implicit def tToOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
-}*/
+  implicit def tToOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)*/
+
+
+  class NumericOps[T: Numeric](t: Exp[T]) {
+    def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
+    def *(that: Exp[T]): Exp[T] = Times(this.t, that)
+    def -(that: Exp[T]): Exp[T] = onExp(implicitly[Numeric[T]], this.t, that)('NumericOps$minus, _.minus(_, _))
+  }
+
+  class FractionalOps[T: Fractional](t: Exp[T]) {
+    def /(that: Exp[T]): Exp[T] = onExp(implicitly[Fractional[T]], this.t, that)('FractionalOps$div, _.div(_, _))
+  }
+
+  class IntegralOps[T: Integral](t: Exp[T]) {
+    def %(that: Exp[T]): Exp[T] = onExp(implicitly[Integral[T]], this.t, that)('IntegralOps$mod, _.rem(_, _))
+  }
+
+  implicit def expToNumOps[T: Numeric](t: Exp[T]) = new NumericOps(t)
+  implicit def expToIntegralOps[T: Integral](t: Exp[T]) = new IntegralOps(t)
+  implicit def toNumOps[T: Numeric](t: T) = expToNumOps(t)
+
+}
 
