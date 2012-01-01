@@ -152,8 +152,11 @@ trait NumOps {
   }
 
   implicit def expToNumOps[T: Numeric](t: Exp[T]) = new NumericOps(t)
+  implicit def expToFractionalOps[T: Fractional](t: Exp[T]) = new FractionalOps(t)
   implicit def expToIntegralOps[T: Integral](t: Exp[T]) = new IntegralOps(t)
   implicit def toNumOps[T: Numeric](t: T) = expToNumOps(t)
+  implicit def toFractionalOps[T: Fractional](t: T) = expToFractionalOps(t)
+  implicit def toIntegralOps[T: Integral](t: T) = expToIntegralOps(t)
 
 }
 
