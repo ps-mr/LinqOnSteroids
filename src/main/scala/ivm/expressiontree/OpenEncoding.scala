@@ -43,13 +43,23 @@ object OpenEncoding {
     case class Const[T](t: T) extends Exp[T] {
       def interpret = t
     }
-    //Not exactly sure what I should use to represent applications.
+
+    //Bad encoding of application. A better encoding is below.
     case class App[T, U](f: T => U, t: Exp[T]) extends Exp[U] {
       def interpret = f(t.interpret)
     }
     object Exp {
       def app[T, U](f: T => U, t: Exp[T]): Exp[U] = App(f, t)
     }
+
+    //A standard embedding of the lambda-calculus uses signatures isomorphic to this one.
+    case class App2[T, U](f: Exp[T => U], t: Exp[T]) extends Exp[U] {
+      def interpret = f.interpret(t.interpret)
+    }
+    object Exp2 {
+      def app[T, U](f: Exp[T => U], t: Exp[T]): Exp[U] = App2(f, t)
+    }
+
   }
 
   trait CanBuildExpExpressionTree extends BaseExprTree with ExpModule {
