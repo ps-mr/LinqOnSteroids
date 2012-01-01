@@ -17,7 +17,6 @@ import ivm.collections.TypeMapping
  * This can be solved by making their composition available as another implicit conversion, and that's the solution
  * we show here.
  */
-object SimpleOpenEncoding {
   trait ConversionDisabler {
     //We forbid implicit conversion from Unit to Exp[Unit] by making it ambiguous. To this end we declare noToExpForUnit.
     //It is more specific than toExp[Unit] because it's not generic, but is declared in a superclass, hence
@@ -430,4 +429,3 @@ object SimpleOpenEncoding {
     }
     implicit def expToGroupByTupleType[T, U, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps(t)
   }
-}
