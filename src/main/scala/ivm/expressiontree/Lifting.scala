@@ -31,32 +31,10 @@ trait OptionLifting extends BaseExps {
   }
 }
 
-object Lifting
-  extends BaseExps with OptionLifting
-  with TraversableOps with MapOps with SetOps with TypeFilterOps with NumOps
-{
+trait ExpSugar {
+  this: BaseExps =>
   //XXX: evaluate whether this interface is good.
   def NULL = toExp(null)
-  def liftFunc[S, T](f: Exp[S] => Exp[T]): Exp[S => T] = FuncExp(f)
-
-  def groupBySelImpl[T, Repr <: Traversable[T] with
-    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],
-                                             g: Exp[T] => Exp[Rest])(
-    implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
-  {
-    implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
-      new TraversableLikeOps[T, Traversable, Repr] {val t = v}
-
-    //val tmp: Exp[Map[K, Repr]] = t.groupBy(f) //can't write this, because we have no lifting for TraversableLike
-    //val tmp: Exp[Map[K, Repr]] = GroupBy(t, FuncExp(f))
-    val tmp: Exp[Map[K, Repr]] = expToTraversableLikeOps(t).groupBy(f)
-    //tmp.map(v => (v._1, MapOp(v._2, FuncExp(g)))) //This uses MapOp directly, but map could return other nodes
-    tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(c)))
-  }
-
-  //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
-  //parameter of Exp here.
-  def asExp[T](t: Exp[T]) = t
 
   class Pimper[T](t: T) {
     def asSmartCollection = asExp(t)
@@ -75,46 +53,33 @@ object Lifting
     def materialize = new IncrementalResult(t)
   }
   implicit def toMaterializable[T](t: Exp[Traversable[T]]) = new Materializable(t)
+}
+
+object Lifting
+  extends BaseExps with OptionLifting
+  with TraversableOps with MapOps with SetOps with TypeFilterOps with NumOps with BaseTypesOps with ExpSugar
+{
+  def liftFunc[S, T](f: Exp[S] => Exp[T]): Exp[S => T] = FuncExp(f)
+
+  def groupBySelImpl[T, Repr <: Traversable[T] with
+    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],
+                                             g: Exp[T] => Exp[Rest])(
+    implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
+  {
+    implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
+      new TraversableLikeOps[T, Traversable, Repr] {val t = v}
+
+    //val tmp: Exp[Map[K, Repr]] = t.groupBy(f) //can't write this, because we have no lifting for TraversableLike
+    //val tmp: Exp[Map[K, Repr]] = GroupBy(t, FuncExp(f))
+    val tmp: Exp[Map[K, Repr]] = expToTraversableLikeOps(t).groupBy(f)
+    //tmp.map(v => (v._1, MapOp(v._2, FuncExp(g)))) //This uses MapOp directly, but map could return other nodes
+    tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(c)))
+  }
 
   //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
   def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
 
   implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
-
-  class OrderingOps[T: Ordering](t: Exp[T]) {
-    //XXX: we probably need to use distinguished nodes for these operations, to be able to use indexes for them.
-    def <=(that: Exp[T]): Exp[Boolean] = LEq(this.t, that)
-    def <(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$lt, _.lt(_, _))
-    def >(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$gt, _.gt(_, _))
-    def >=(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$gteq, _.gteq(_, _))
-  }
-
-  class StringOps(t: Exp[String]) {
-    def +(that: Exp[String]) = StringConcat(t, that)
-  }
-
-  class BooleanOps(b: Exp[Boolean]) {
-    def &&(that: Exp[Boolean]) = And(b, that)
-    def ||(that: Exp[Boolean]) = Or(b, that)
-    def unary_! = Not(b)
-  }
-
-  implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
-  implicit def expToStringOps(t: Exp[String]) = new StringOps(t)
-  implicit def expToBooleanOps(t: Exp[Boolean]) = new BooleanOps(t)
-
-  /*
-   * In these definitions of toNumOps and toOrderingOps, implicit resolution fails because of ambiguity between liftOrd
-   * and liftNum, if they are both declared - even if the ambiguity could easily be solved. The problem can be solved by
-   * just having a polymorphic lift conversion. Other solutions are possible here but don't remove this ambiguity that
-   * affects client code then.
-   */
-  implicit def toOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
-  // These definitions work even if both liftOrd and liftNum are declared.
-  /*implicit def toNumOps[T: Numeric](t: T): NumericOps[T] = Const(t)
-  implicit def toOrderingOps[T: Ordering](t: T): OrderingOps[T] = Const(t)*/
-  implicit def toStringOps(t: String) = expToStringOps(t)
-  implicit def toBooleanOps(t: Boolean) = expToBooleanOps(t)
 
   // Some experimental implicit conversions.
   // With the current Scala compiler, given (f_ )(x), the compiler will try to use implicit conversion on (f _), because

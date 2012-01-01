@@ -33,6 +33,10 @@ trait LiftingConvs extends ConversionDisabler {
 
   implicit def liftBool(x: Boolean): Exp[Boolean] = Const(x)
   implicit def liftString(x: String): Exp[String] = Const(x)*/
+
+  //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
+  //parameter of Exp here.
+  def asExp[T](t: Exp[T]) = t
 }
 
 trait FunctionOps {
@@ -123,7 +127,8 @@ trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
  */
 
 trait NumOps {
-  this: BaseExps =>
+  this: LiftingConvs with FunctionOps =>
+
   /*class NumOps[T: Numeric](val t: Exp[T]) {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
   }
@@ -157,6 +162,44 @@ trait NumOps {
   implicit def toNumOps[T: Numeric](t: T) = expToNumOps(t)
   implicit def toFractionalOps[T: Fractional](t: T) = expToFractionalOps(t)
   implicit def toIntegralOps[T: Integral](t: T) = expToIntegralOps(t)
+}
 
+trait BaseTypesOps {
+  this: LiftingConvs with FunctionOps =>
+
+  class OrderingOps[T: Ordering](t: Exp[T]) {
+    //XXX: we probably need to use distinguished nodes for these operations, to be able to use indexes for them.
+    def <=(that: Exp[T]): Exp[Boolean] = LEq(this.t, that)
+    def <(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$lt, _.lt(_, _))
+    def >(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$gt, _.gt(_, _))
+    def >=(that: Exp[T]): Exp[Boolean] = onExp(implicitly[Ordering[T]], this.t, that)('OrderingOps$gteq, _.gteq(_, _))
+  }
+
+  class StringOps(t: Exp[String]) {
+    def +(that: Exp[String]) = StringConcat(t, that)
+  }
+
+  class BooleanOps(b: Exp[Boolean]) {
+    def &&(that: Exp[Boolean]) = And(b, that)
+    def ||(that: Exp[Boolean]) = Or(b, that)
+    def unary_! = Not(b)
+  }
+
+  implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
+  implicit def expToStringOps(t: Exp[String]) = new StringOps(t)
+  implicit def expToBooleanOps(t: Exp[Boolean]) = new BooleanOps(t)
+
+  /*
+   * In these definitions of toNumOps and toOrderingOps, implicit resolution fails because of ambiguity between liftOrd
+   * and liftNum, if they are both declared - even if the ambiguity could easily be solved. The problem can be solved by
+   * just having a polymorphic lift conversion. Other solutions are possible here but don't remove this ambiguity that
+   * affects client code then.
+   */
+  implicit def toOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
+  // These definitions work even if both liftOrd and liftNum are declared.
+  /*implicit def toNumOps[T: Numeric](t: T): NumericOps[T] = Const(t)
+  implicit def toOrderingOps[T: Ordering](t: T): OrderingOps[T] = Const(t)*/
+  implicit def toStringOps(t: String) = expToStringOps(t)
+  implicit def toBooleanOps(t: Boolean) = expToBooleanOps(t)
 }
 
