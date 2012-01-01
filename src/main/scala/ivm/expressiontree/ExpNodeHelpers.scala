@@ -35,6 +35,14 @@ trait BinaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], +R] extends Exp[R] {
   def copy(t1: T1, t2: T2): Exp[R]
 }
 
+//XXX: replace BinaryOpTrait with this, to prevent statically the only boilerplate-related copy-n-paste bug in defining tree classes.
+trait BinaryOpTrait2[T1 <: Exp[_], T2 <: Exp[_], +R, Self <: Exp[R]] extends BinaryOpTrait[T1, T2, R] {
+  //Ensure that Self is actually correct:
+  this: Self =>
+  //Ensure that copy returns the correct type.
+  override def copy(t1: T1, t2: T2): Self
+}
+
 abstract class BinaryOp[T1 <: Exp[_], T2 <: Exp[_], +R](val t1: T1, val t2: T2) extends BinaryOpTrait[T1, T2, R]
 
 trait BinaryOpExpTrait[T1, T2, +R] extends BinaryOpTrait[Exp[T1], Exp[T2], R]
