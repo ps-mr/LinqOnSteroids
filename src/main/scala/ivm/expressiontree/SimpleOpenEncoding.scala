@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-import collection.generic.{FilterMonadic, CanBuildFrom}
+import collection.generic.CanBuildFrom
 import collection.{TraversableView, TraversableViewLike, TraversableLike, GenTraversableOnce, mutable}
 import ivm.collections.TypeMapping
 
