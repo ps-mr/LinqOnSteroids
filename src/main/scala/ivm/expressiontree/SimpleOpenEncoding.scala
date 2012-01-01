@@ -288,6 +288,7 @@ object SimpleOpenEncoding {
 
       def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
         new FilterMaintainerExp[T, ViewColl](this.t, FuncExp(f))
+      //TODO: override operations to avoid using CanBuildFrom
     }
 
     class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable, Traversable[T]] with WithFilterImpl[T, Traversable[T], Traversable[T]]
