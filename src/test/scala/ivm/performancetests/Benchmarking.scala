@@ -44,6 +44,7 @@ object Benchmarking {
     var ret: T = null.asInstanceOf[T]
     if (!hasConsoleOutput)
       print(">>> Name = %s, starting warmup..." format name)
+    Console.flush()
 
     //We need at least one warmup loop to produce the result to return. That's not a perfect fix, but it doesn't matter.
     for (i <- 1 to math.max(warmUpLoops, 1))
