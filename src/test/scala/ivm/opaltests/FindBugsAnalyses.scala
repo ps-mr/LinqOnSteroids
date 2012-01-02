@@ -47,6 +47,7 @@ import expressiontree.{Exp, Lifting}
 import Lifting._
 import collection.generic.CanBuildFrom
 import collection.{TraversableViewLike, TraversableLike, TraversableView}
+import optimization.Optimization
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -268,8 +269,19 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
     }
+    println(unusedFields3Los)
     val unusedFields3LosRes = benchInterpret("UUF_UNUSED_FIELD-3 Los", unusedFields3Los)
     unusedFields3LosRes should be (unusedFields)
+
+    val unusedFields3LosOpt = Optimization optimize unusedFields3Los
+    println(unusedFields3LosOpt)
+    val unusedFields3LosOptRes = benchInterpret("UUF_UNUSED_FIELD-3 Opt Los", unusedFields3LosOpt)
+    unusedFields3LosOptRes should be (unusedFields)
+
+    val unusedFields3LosOptSzToEm = Optimization sizeToEmpty unusedFields3LosOpt
+    println(unusedFields3LosOptSzToEm)
+    val unusedFields3LosOptSzToEmRes = benchInterpret("UUF_UNUSED_FIELD-3 Opt Size To Empty Los", unusedFields3LosOptSzToEm)
+    unusedFields3LosOptSzToEmRes should be (unusedFields)
   }
 
   def analyzeExplicitGC(classFiles: Seq[ClassFile]) {
