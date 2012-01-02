@@ -105,19 +105,20 @@ class Optimization {
     }
 
   //Recognize relational-algebra set operations; they can be executed more efficiently if one of the two members is indexed.
-  //However, sets are always indexed.
+  //However, sets are already always indexed, so these optimizations will not have a huge impact by themselves.
   val setIntersection: Exp[_] => Exp[_] =
     e => e match {
-      case Filter(col, predFun @ FuncExpBody(Contains(col2, x))) if (x == predFun.x) =>
-        e //Intersect(col, col2)
+      case Filter(col: Exp[Traversable[t]], predFun @ FuncExpBody(Contains(col2, x))) if (x == predFun.x) =>
+        e //col.join(col2)(identity, identity, _._1) //Somewhat expensive implementation of intersection.
+        //e //Intersect(col, col2)
       case _ => e
     }
 
-  //We want to support anti-joins. Is this one? This is an anti-join where a set is involved!
+  //We want to support anti-joins. Is this one? This is an anti-join where a set is involved and with identity selectors.
   val setDifference: Exp[_] => Exp[_] =
     e => e match {
       case Filter(col, predFun @ FuncExpBody(Not(Contains(col2, x)))) if (x == predFun.x) =>
-        e //Diff(col, col2)
+        e //Diff(col, col2) //We cannot use Diff because col is not a Set - but we can build a more complex operator for this case.
       case _ => e
     }
 
