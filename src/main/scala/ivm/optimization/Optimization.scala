@@ -52,9 +52,6 @@ class Optimization {
         fmFun @ FuncExpBody(MapOp(Filter(wfColl: Exp[Traversable[_]], wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
         if !wfColl.isOrContains(fmFun.x)
       =>
-        //XXX: buildJoin is passed Any as type parameter - this makes manifests for Any be part of the new expression.
-        // It's not so bad because we'll produce a res: Exp[Traversable[Any]] - the lost information has little relevance
-        // currently: the manifest still shows that result represents a Traversable.
         if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
           buildJoin(fmColl, wfColl, lhs, rhs, moFun, fmFun, wfFun)
         else if (!(rhs.isOrContains(wfFun.x)) && !(lhs.isOrContains(fmFun.x)))
