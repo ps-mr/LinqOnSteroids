@@ -20,6 +20,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   val r1 = for (k <- l; k2 <- j if k + k2 is k2 + k) yield k + k2
   val r2 = for (k <- l; k2 <- j if liftCall('test$Int$Int, test, k, k2)) yield k + k2
   val r3 = for (k <- l; k2 <- j if liftCall('foo$Int, foo, k) is liftCall('bar$Int, bar, k2)) yield (k, k2)
+  
   @Test
   def testq() {
     optimize(q) should equal (q)

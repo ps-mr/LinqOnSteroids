@@ -89,6 +89,34 @@ object OptimizationTransforms {
       case _ => e
     }
 
+  //Reassociation similarly to what is described in "Advanced Compiler Design and Implementation", page 337.
+  //Note that we don't check whether computation is being done on floating-point numbers - for them, we should perform
+  // no simplification.
+  // - make sure that right children are always leaves and that constants are moved to the left
+  // - perform constant folding on the left-hand child
+  val reassociateOps: Exp[_] => Exp[_] =
+    e => e match {
+      case p@Plus(l, r) =>
+        implicit val isNum = p.isNum
+        (l, r) match {
+          case (Const(a), Const(b)) =>
+            isNum.plus(a, b)
+          case (Plus(Const(a), b), Const(c)) =>
+            reassociateOps(isNum.plus(a, c) + b)
+          case (a, Plus(b, c)) =>
+            //Note: only in this case are other simplifications possible at _this_ level.
+            reassociateOps((a + b) + c)
+          case (Const(_), _) | (Plus(_, _), _) =>
+            //Since the above matches failed and l is a Const, r is neither a Plus nor a Const node.
+            e
+          case (a, b@Const(_)) =>
+            reassociateOps(b + a)
+          case _ =>
+            e
+        }
+      case _ => e
+    }
+
   val mergeFilters: Exp[_] => Exp[_] =
     e => e match {
       case Filter(Filter(col2: Exp[Traversable[_]], f2), f) =>
@@ -182,6 +210,8 @@ object Optimization {
   }
 
   def mergeOps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeOps)
+
+  def reassociateOps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.reassociateOps)
 
   def mergeMaps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeMaps)
 
