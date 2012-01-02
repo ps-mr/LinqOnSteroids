@@ -18,7 +18,7 @@ object FuncExpIdentity {
 object & { def unapply[A](a: A) = Some(a, a) }
 
 //XXX: make transform require a function of type Exp[T] to Exp[T]!
-object Optimization {
+object OptimizationTransforms {
   private def buildJoin[T, S, TKey, TResult](fmColl: Exp[Traversable[T]],
                                                   wfColl: Exp[Traversable[S]],
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
@@ -145,13 +145,15 @@ object Optimization {
       case _ => e
     }
 
-  import scala.collection.mutable.Map
-
   private[optimization] def stripView[T](coll: Exp[Traversable[T]]) =
     coll match {
       case View(coll2: Exp[Traversable[T]]) => coll2
       case _ => coll
     }
+}
+
+object Optimization {
+  import scala.collection.mutable.Map
 
   val subqueries: Map[Exp[_], Any] = Map.empty
 
@@ -169,7 +171,7 @@ object Optimization {
     subqueries -= normalize(optimize(query))
   }
 
-  def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(cartProdToJoin)
+  def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.cartProdToJoin)
 
   def optimize[T](exp: Exp[T]): Exp[T] = {
     shareSubqueries(
@@ -179,19 +181,19 @@ object Optimization {
         optimizeCartProdToJoin(exp)))))
   }
 
-  def mergeOps[T](exp: Exp[T]): Exp[T] = exp.transform(mergeOps)
+  def mergeOps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeOps)
 
-  def mergeMaps[T](exp: Exp[T]): Exp[T] = exp.transform(mergeMaps)
+  def mergeMaps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeMaps)
 
-  def mergeViews[T](exp: Exp[T]): Exp[T] = exp.transform(mergeViews)
+  def mergeViews[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeViews)
 
-  def sizeToEmpty[T](exp: Exp[T]): Exp[T] = exp.transform(sizeToEmpty)
+  def sizeToEmpty[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.sizeToEmpty)
 
-  def normalize[T](exp: Exp[T]): Exp[T] = exp.transform(normalizer)
+  def normalize[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.normalizer)
 
-  def mergeFilters[T](exp: Exp[T]): Exp[T] = mergeViews(exp.transform(mergeFilters))
+  def mergeFilters[T](exp: Exp[T]): Exp[T] = mergeViews(exp.transform(OptimizationTransforms.mergeFilters))
 
-  def removeIdentityMaps[T](exp: Exp[T]): Exp[T] = exp.transform(removeIdentityMaps)
+  def removeIdentityMaps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.removeIdentityMaps)
 
   def shareSubqueries[T](query: Exp[T]): Exp[T] = {
       new SubquerySharing(subqueries).shareSubqueries(query)
