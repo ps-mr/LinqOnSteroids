@@ -274,12 +274,10 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
     unusedFields3LosRes should be (unusedFields)
 
     val unusedFields3LosOpt = Optimization optimize unusedFields3Los
-    println(unusedFields3LosOpt)
     val unusedFields3LosOptRes = benchInterpret("UUF_UNUSED_FIELD-3 Opt Los", unusedFields3LosOpt)
     unusedFields3LosOptRes should be (unusedFields)
 
     val unusedFields3LosOptSzToEm = Optimization sizeToEmpty unusedFields3LosOpt
-    println(unusedFields3LosOptSzToEm)
     val unusedFields3LosOptSzToEmRes = benchInterpret("UUF_UNUSED_FIELD-3 Opt Size To Empty Los", unusedFields3LosOptSzToEm)
     unusedFields3LosOptSzToEmRes should be (unusedFields)
   }
