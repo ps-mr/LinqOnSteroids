@@ -142,10 +142,10 @@ trait TraversableOps {
   }
 
   trait TraversableViewLikeOps[
-  T,
-  Repr <: Traversable[T] with TraversableLike[T, Repr],
-  Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]],
-  ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl] with Coll[T]]
+    T,
+    Repr <: Traversable[T] with TraversableLike[T, Repr],
+    Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]],
+    ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl] with Coll[T]]
     extends TraversableLikeOps[T, Coll, ViewColl] with WithFilterable[T, Repr]
   {
     def force[That](implicit bf: CanBuildFrom[Repr, T, That]) = Force(this.t)
