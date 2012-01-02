@@ -28,11 +28,6 @@ trait ConversionDisabler {
 
 trait LiftingConvs extends ConversionDisabler {
   implicit def toExp[T](t: T): Exp[T] = Const(t)
-  /*implicit def liftOrd[T: Ordering](x: T) = Const(x)
-  implicit def liftNum[T: Numeric](x: T) = Const(x)
-
-  implicit def liftBool(x: Boolean): Exp[Boolean] = Const(x)
-  implicit def liftString(x: String): Exp[String] = Const(x)*/
 
   //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
   //parameter of Exp here.
@@ -129,19 +124,6 @@ trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
 trait NumOps {
   this: LiftingConvs with FunctionOps =>
 
-  /*class NumOps[T: Numeric](val t: Exp[T]) {
-    def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
-  }
-  class OrderingOps[T: Ordering](t: Exp[T]) {
-    def <=(that: Exp[T]) = LEq(t, that)
-  }
-
-  implicit def expToNumOps[T : Numeric](t: Exp[T]): NumOps[T] = new NumOps(t)
-  implicit def tToNumOps[T: Numeric](t: T): NumOps[T] = expToNumOps(t)
-  implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
-  implicit def tToOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)*/
-
-
   class NumericOps[T: Numeric](t: Exp[T]) {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
     def *(that: Exp[T]): Exp[T] = Times(this.t, that)
@@ -168,7 +150,6 @@ trait BaseTypesOps {
   this: LiftingConvs with FunctionOps =>
 
   class OrderingOps[T: Ordering](t: Exp[T]) {
-    //XXX: we probably need to use distinguished nodes for these operations, to be able to use indexes for them.
     def <=(that: Exp[T]): Exp[Boolean] = LEq(this.t, that)
     def <(that: Exp[T]): Exp[Boolean] = Less(this.t, that)
     def >(that: Exp[T]): Exp[Boolean] = Less(that, this.t)
@@ -196,9 +177,6 @@ trait BaseTypesOps {
    * affects client code then.
    */
   implicit def toOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
-  // These definitions work even if both liftOrd and liftNum are declared.
-  /*implicit def toNumOps[T: Numeric](t: T): NumericOps[T] = Const(t)
-  implicit def toOrderingOps[T: Ordering](t: T): OrderingOps[T] = Const(t)*/
   implicit def toStringOps(t: String) = expToStringOps(t)
   implicit def toBooleanOps(t: Boolean) = expToBooleanOps(t)
 }
