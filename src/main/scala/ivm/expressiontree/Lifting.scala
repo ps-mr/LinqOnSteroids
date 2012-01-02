@@ -61,7 +61,7 @@ object Lifting
 {
   def liftFunc[S, T](f: Exp[S] => Exp[T]): Exp[S => T] = FuncExp(f)
 
-  def groupBySelImpl[T, Repr <: Traversable[T] with
+  override def groupBySelImpl[T, Repr <: Traversable[T] with
     TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],
                                              g: Exp[T] => Exp[Rest])(
     implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
