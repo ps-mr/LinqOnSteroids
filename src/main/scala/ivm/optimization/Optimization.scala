@@ -49,13 +49,13 @@ class Optimization {
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
       case FlatMap(fmColl: Exp[Traversable[_]],
-        fmFun @ FuncExpBody(MapOp(Filter(wfColl: Exp[Traversable[_]], wfFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
-        if !wfColl.isOrContains(fmFun.x)
+        fmFun @ FuncExpBody(MapOp(Filter(filterColl: Exp[Traversable[_]], filterFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
+        if !filterColl.isOrContains(fmFun.x)
       =>
-        if (!(lhs.isOrContains(wfFun.x)) && !(rhs.isOrContains(fmFun.x)))
-          buildJoin(fmColl, wfColl, lhs, rhs, moFun, fmFun, wfFun)
-        else if (!(rhs.isOrContains(wfFun.x)) && !(lhs.isOrContains(fmFun.x)))
-          buildJoin(fmColl, wfColl, rhs, lhs, moFun, fmFun, wfFun)
+        if (!(lhs.isOrContains(filterFun.x)) && !(rhs.isOrContains(fmFun.x)))
+          buildJoin(fmColl, filterColl, lhs, rhs, moFun, fmFun, filterFun)
+        else if (!(rhs.isOrContains(filterFun.x)) && !(lhs.isOrContains(fmFun.x)))
+          buildJoin(fmColl, filterColl, rhs, lhs, moFun, fmFun, filterFun)
         else
           e
       case _ => e
