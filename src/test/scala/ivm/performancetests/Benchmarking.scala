@@ -42,8 +42,9 @@ object Benchmarking {
   def benchMarkInternal[T](name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): (T, Double) = {
     var ret: T = null.asInstanceOf[T]
+    //Use Console.err instead of println and flush here.
     if (!hasConsoleOutput)
-      print(">>> Name = %s, starting warmup..." format name)
+      println(">>> Name = %s, starting warmup..." format name)
     Console.flush()
 
     //We need at least one warmup loop to produce the result to return. That's not a perfect fix, but it doesn't matter.
