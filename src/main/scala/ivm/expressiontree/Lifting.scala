@@ -59,8 +59,6 @@ object Lifting
   extends BaseExps with OptionLifting
   with TraversableOps with MapOps with SetOps with TypeFilterOps with NumOps with BaseTypesOps with ExpSugar
 {
-  def liftFunc[S, T](f: Exp[S] => Exp[T]): Exp[S => T] = FuncExp(f)
-
   override def groupBySelImpl[T, Repr <: Traversable[T] with
     TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],
                                              g: Exp[T] => Exp[Rest])(

@@ -205,21 +205,6 @@ object OptimizationTransforms {
       case _ => e
     }
 
-
-    /*e => e match {
-      case p@Plus(Const(a), Const(b)) =>
-        p.isNum.plus(a, b)
-      case Plus(Const(_), _) =>
-        e
-      case p@Plus(a, b@Const(_)) =>
-        Plus(b, a)(p.isNum)
-      case p@Plus(a, Plus(b, c)) =>
-        implicit val isNum = p.isNum
-        //Note: only in this case are other simplifications possible at _this_ level.
-        reassociateOps(Plus(Plus(a, b), c))
-      case _ => e
-    }*/
-
   val mergeFilters: Exp[_] => Exp[_] =
     e => e match {
       case Filter(Filter(col2: Exp[Traversable[_]], f2), f) =>
