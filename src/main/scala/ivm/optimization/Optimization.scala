@@ -64,19 +64,6 @@ object OptimizationTransforms {
                                                  lhs: Exp[TKey], rhs: Exp[TKey],
                                                  filterFun: FuncExp[T, Boolean],
                                                  forallFun: FuncExp[S, Boolean]): Exp[Traversable[T]] /*Join[T, S, TKey, TResult]*/ = {
-    //Filter(filteredColl, filterFun)
-    //Filter(filteredColl, FuncExp(x => Forall(forallColl, forallFun)))
-    //Filter(filteredColl, FuncExp(x => Forall(forallColl, FuncExp(y => Not(Eq(lhs, rhs))))))
-    //XXX: we must hoist the creation of the subcollection, so that we build the index only once.
-
-    /*
-    stripView(filteredColl) withFilter {
-      x =>
-        !(forallColl.map(FuncExp.makefun[S, TKey](rhs, forallFun.x).f).toSet
-          contains
-          FuncExp.makefun[T, TKey](lhs, filterFun.x)(x))
-    }
-    */
     //XXX: in this version of the work, we should create a custom node, since our handling of redexes is not yet perfect -
     //we currently assume expression trees are already beta-reduced when comparing them. OTOH, performing beta-reduction
     //risks introducing non-termination inside optimization.
@@ -129,11 +116,19 @@ object OptimizationTransforms {
       case _ => e
     }
 
+  /*
+  def removeIdentityMaps[T](e: Exp[T]): Exp[T] =
+    e match {
+      case MapOp(col: Exp[_ /*T*/], FuncExpIdentity()) =>
+        col.asInstanceOf[Exp[T]]
+      case _ => e
+    }
+    */
+
   //XXX: use normalization more often (e.g., whenever building a FuncExp, or whenever building a FuncExpInt?)
   private def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: FuncExp[T, U], g: FuncExp[U, V]) =
     coll.map(FuncExp.normalize(f.f andThen g.f, f.x))
     //coll.map(g.f andThen f.f) //Here the typechecker can reject this line.
-  
 
   val mergeMaps: Exp[_] => Exp[_] =
     e => e match {
@@ -188,13 +183,28 @@ object OptimizationTransforms {
         default
     }
   }
-  
+
   val reassociateOps: Exp[_] => Exp[_] =
     e => e match {
       case p@Plus(l, r) =>
         buildSum(l, r)(p.isNum)
       case _ => e
     }
+
+
+    /*e => e match {
+      case p@Plus(Const(a), Const(b)) =>
+        p.isNum.plus(a, b)
+      case Plus(Const(_), _) =>
+        e
+      case p@Plus(a, b@Const(_)) =>
+        Plus(b, a)(p.isNum)
+      case p@Plus(a, Plus(b, c)) =>
+        implicit val isNum = p.isNum
+        //Note: only in this case are other simplifications possible at _this_ level.
+        reassociateOps(Plus(Plus(a, b), c))
+      case _ => e
+    }*/
 
   val mergeFilters: Exp[_] => Exp[_] =
     e => e match {
@@ -231,7 +241,7 @@ object OptimizationTransforms {
         coll
       case _ => e
     }
-  
+
   val sizeToEmpty: Exp[_] => Exp[_] =
     e => e match {
       case Less(Const(0), Call1('size, _, coll: Exp[Traversable[t]])) =>
