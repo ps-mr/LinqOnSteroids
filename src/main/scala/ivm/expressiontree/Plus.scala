@@ -1,5 +1,7 @@
 package ivm.expressiontree
 
+import Numeric.Implicits._
+
 //Root node for all binary, associative and commutative operations. The
 //intuition is that many operations (including optimizations) might apply
 //for all of those - e.g. expression normalization.
@@ -15,4 +17,9 @@ case class Plus[T](override val t1: Exp[T], override val t2: Exp[T])(implicit va
 
 case class Times[T](override val t1: Exp[T], override val t2: Exp[T])(implicit val isNum: Numeric[T]) extends CommOp[T](t1, t2)(isNum.times(_, _)) with CommutativeOp[T] {
   def copy(x: Exp[T], y: Exp[T]) = Times(x, y)
+}
+
+case class Negate[T: Numeric](override val t1: Exp[T]) extends UnaryOpExp[T, T](t1) {
+  def copy(t1: Exp[T]) = Negate(t1)
+  def interpret() = - t1.interpret()
 }

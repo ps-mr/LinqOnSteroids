@@ -162,6 +162,8 @@ object OptimizationTransforms {
   // Note 2: in their picture, "t_x" represents an arbitrary node, even in rule R7.
   // Note 3: rule R2 and R7 together seem not to form a terminating rewrite system; note however that
   // rule R7 does not just swap children but performs a tree rotation.
+  // Note 4: we omit rules on subtractions (R5, R6, etc.) because NumericOps.- just always represent subtraction through
+  // addition (XXX which is a pessimization if no constants are involved)
   def buildSum[T](l: Exp[T], r: Exp[T])(implicit isNum: Numeric[T]): Exp[T] = {
     import Numeric.Implicits._
     r match {

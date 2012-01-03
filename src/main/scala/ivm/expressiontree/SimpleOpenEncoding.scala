@@ -127,7 +127,8 @@ trait NumOps {
   class NumericOps[T: Numeric](t: Exp[T]) {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
     def *(that: Exp[T]): Exp[T] = Times(this.t, that)
-    def -(that: Exp[T]): Exp[T] = onExp(implicitly[Numeric[T]], this.t, that)('NumericOps$minus, _.minus(_, _))
+    def -(that: Exp[T]): Exp[T] = Plus(this.t, Negate(that))
+    def unary_- : Exp[T] = Negate(this.t)
   }
 
   class FractionalOps[T: Fractional](t: Exp[T]) {
