@@ -8,6 +8,7 @@ import expressiontree._
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test
+import optimization.OptimizationTransforms
 
 class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   def test(x: Int, y: Int): Boolean = x+y == 12
@@ -71,6 +72,19 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
     println(optimize(r3))
     println(r3.exec())
     println(optimize(r3).interpret().exec())*/
+  }
+  
+  @Test
+  def testAntiJoin() {
+    val r = for (k <- l if j forall (k2 => k !== k2)) yield k
+    val rAntiJoin = r.transform(OptimizationTransforms.cartProdToAntiJoin)
+    //XXX: this is problematic because it transforms the newly-built FuncExp nodes into FuncExpInt ones.
+    val rOpt = optimize(rAntiJoin)
+    println(r)
+    println(rAntiJoin)
+    println(rOpt)
+    r.interpret() should equal (rAntiJoin.interpret())
+    r.interpret() should equal (rOpt.interpret())
   }
 }
 

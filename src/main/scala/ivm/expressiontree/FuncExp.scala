@@ -100,6 +100,9 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
   override def x = v
   override def body = foasBody
 
+  // TODO: This is broken when more functions are nested. Bad things can happen if res is a Scala View which will
+  // still execute an interpreted function, which references an environment. We are not constructing closures, but
+  // using dynamic scoping!!
   override def interpret(): S => T =
     z => {
       import FuncExpInt._

@@ -78,6 +78,8 @@ object Lifting
 
   //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
   def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
+  //The use of _App_ and FuncExp means that t will be evaluated only once.
+  def letExp[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = App(FuncExp(f), t)
 
   implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
 

@@ -59,6 +59,65 @@ object OptimizationTransforms {
       case _ => e
     }
 
+  private def buildAntiJoin[T, S, TKey](filteredColl: Exp[Traversable[T]],
+                                                 forallColl: Exp[Traversable[S]],
+                                                 lhs: Exp[TKey], rhs: Exp[TKey],
+                                                 filterFun: FuncExp[T, Boolean],
+                                                 forallFun: FuncExp[S, Boolean]): Exp[Traversable[T]] /*Join[T, S, TKey, TResult]*/ = {
+    //Filter(filteredColl, filterFun)
+    //Filter(filteredColl, FuncExp(x => Forall(forallColl, forallFun)))
+    //Filter(filteredColl, FuncExp(x => Forall(forallColl, FuncExp(y => Not(Eq(lhs, rhs))))))
+    //XXX: we must hoist the creation of the subcollection, so that we build the index only once.
+
+    /*
+    stripView(filteredColl) withFilter {
+      x =>
+        !(forallColl.map(FuncExp.makefun[S, TKey](rhs, forallFun.x).f).toSet
+          contains
+          FuncExp.makefun[T, TKey](lhs, filterFun.x)(x))
+    }
+    */
+
+    letExp(FuncExp.makefun[T, TKey](lhs, filterFun.x)){
+      subFun =>
+        letExp((forallColl map FuncExp.makefun[S, TKey](rhs, forallFun.x).f).toSet){
+          subColl =>
+            stripView(filteredColl) withFilter {
+              x =>
+                !(subColl
+                  contains
+                  subFun(x))
+            }}}
+
+    //filteredColl withFilter (x => (forallColl forall forallFun))
+
+    /*stripView(wfColl))(
+  FuncExp.makefun[T, TKey](lhs, fmFun.x).f,
+  FuncExp.makefun[S, TKey](rhs, wfFun.x).f,
+  FuncExp.makepairfun[T, S, TResult](
+    moFun.body,
+    fmFun.x,
+    moFun.x).f)*/
+  }
+
+  //XXX maybe finished - needs testing!
+  val cartProdToAntiJoin: Exp[_] => Exp[_] =
+    e => e match {
+      case Filter(filteredColl: Exp[Traversable[_]],
+        filterFun @ FuncExpBody(Forall(forallColl, forallFun @ FuncExpBody(Not(Eq(lhs, rhs))))))
+      //case FlatMap(fmColl: Exp[Traversable[_]],
+        //fmFun @ FuncExpBody(MapOp(Filter(filterColl: Exp[Traversable[_]], filterFun @ FuncExpBody(Not(Eq(lhs, rhs)))), moFun)))
+        if !forallColl.isOrContains(filterFun.x)
+      =>
+        if (!(rhs.isOrContains(filterFun.x)) && !(lhs.isOrContains(forallFun.x)))
+          buildAntiJoin(filteredColl, forallColl, lhs, rhs, filterFun, forallFun)
+        else if (!(lhs.isOrContains(filterFun.x)) && !(rhs.isOrContains(forallFun.x)))
+          buildAntiJoin(filteredColl, forallColl, rhs, lhs, filterFun, forallFun)
+        else
+          e
+      case _ => e
+    }
+
   val removeIdentityMaps: Exp[_] => Exp[_] =
     e => e match {
       case MapOp(col, FuncExpIdentity()) =>
