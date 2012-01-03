@@ -45,12 +45,9 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
     val mappedChilds = for (c <- children) yield c.treeMap(mapper)
     mapper(this, mappedChilds)
   }
-  private[ivm] def containsExp[S](e: Exp[S]): Boolean = {
-    var ac = allChildren //XXX slow, allChildren computes an eager sequence!
-    ac.contains(e)
-  }
-  //Alternative implementation not using allChildren - and thus probably faster:
-  //def containsExp[S](e: Exp[S]): Boolean = children.map(_.isOrContains(e)).foldRight(false)(_ || _)
+  //Avoid using allChildren to keep this fast:
+  private def containsExp[S](e: Exp[S]): Boolean =
+    children.map(_.isOrContains(e)).foldRight(false)(_ || _)
 
   private[ivm] def isOrContains(e: Exp[_]): Boolean = if (this.equals(e)) true else containsExp(e)
   private[ivm] def allChildren: Seq[Exp[_]] = children ++ (for (c <- children; a <- c.allChildren) yield a)
