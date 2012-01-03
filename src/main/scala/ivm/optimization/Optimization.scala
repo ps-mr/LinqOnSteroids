@@ -174,15 +174,20 @@ object OptimizationTransforms {
       case (a, Plus(b, c)) => //R7
         buildSum(buildSum(a, b), c)
         /*
-         * WRONG TERMINATION PROOF
-         * Why does the above invocation terminate? This is obvious by case analysis unless l is a Plus node.
+         * Rules R1 and R9 reduce the tree size by one, thus it is easy to prove that their application causes
+         * well-founded recursion. Rules R2 and R7 are instead more problematic.
+         * Why does the above recursive invocation in R2 terminate? This is obvious by case analysis unless l is a Plus
+         * node. Otherwise, we need to prove that we either terminate recursion or that we reach either of rule R1 or
+         * R9, reducing the input size. We must do the proof by induction, assuming that all calls to buildSum with
+         * total input size smaller than the current one terminate.
+         *
          * Let us assume (l, r) matches (Plus(l1, l2), Const(rV)); buildSum(b, a) will match
-         * (r, l) against (Const(rV), Plus(l1, l2)), and rewrite it to buildSum(buildSum(Const(rV), l1), l2).
-         * We will prove that l2 is not a Const node (Lemma); it will thus not match again this case.
-         * Lemma: In the above situation, l2 cannot be Const.
-         * Proof: Remember that l has been already canonicalized, and that (l, r) did not match against
-         * (Plus(Const(a), b), Const(c)) but matches against (Plus(l1, l2), Const(_)); thus l1 is not Const.
-         * Since l1 is not Const, l2 can't be either; unless l1 is Plus and l2 is Const.
+         * (r, l) against (Const(rV), Plus(l1, l2)) (R7), and rewrite it to buildSum(buildSum(Const(rV), l1), l2).
+         * If l2 is not a Const node, it will not match again this case (rule R7) without further reduction.
+         * If l2 is a Const node and the inner buildSum(Const(rV), l1) just returns Plus(Const(rV), l1), rule R9 applies
+         * and reduces the input size.
+         * If l2 is a Const node and the inner buildSum(Const(rV), l1) returns something else, then it must terminate
+         * by the inductive hypothesis.
          */
       case _ =>
         default
