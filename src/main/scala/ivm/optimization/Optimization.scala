@@ -147,15 +147,20 @@ object OptimizationTransforms {
       case _ => e
     }
 
-  //Reassociation similarly to what is described in "Advanced Compiler Design and Implementation", page 337-..., Fig 12.6.
-  //Note that we don't check whether computation is being done on floating-point numbers - for them, we should perform
-  // no simplification.
-  // We make sure that right children are always leaves and that constants are moved to the left (using rules R2 and R7)
-  // And we perform constant folding on the left-hand child
+  // Reassociation similarly to what is described in "Advanced Compiler Design and Implementation", page 337-...,
+  // Sec 12.3.1 and Fig 12.6. We refer to their reduction rules with their original codes, like R1, R2, ..., R9.
+  // We don't apply distributivity, nor (yet) rules not involving just Plus (i.e., involving Minus or Times).
+  // TODO: We should abstract this code to also apply on other commutative and associative operations.
+  // Note that we don't check whether computation is being done on floating-point numbers - for them, we should perform
+  // no simplification (Sec. 12.3.2).
+  //
+  // We make sure that right children are never Plus expressions and that constants are moved to the left (using rules R2 and R7).
+  // All `Const` nodes are then constant-folded together (using rules R1 and R9).
+  //
   // Note: keep in mind that the transformation is applied bottom-up; moreover, whenever a new expression is built, new sums
   // are created by recursive invocation of buildSum, except when returning `default`.
   // Note 2: in their picture, "t_x" represents an arbitrary node, even in rule R7.
-  // Rule R2 and R7 together seem not to form a terminating rewrite system; note however that
+  // Note 3: rule R2 and R7 together seem not to form a terminating rewrite system; note however that
   // rule R7 does not just swap children but performs a tree rotation.
   def buildSum[T](l: Exp[T], r: Exp[T])(implicit isNum: Numeric[T]): Exp[T] = {
     val default = l + r
