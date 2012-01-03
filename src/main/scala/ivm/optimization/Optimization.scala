@@ -89,34 +89,45 @@ object OptimizationTransforms {
       case _ => e
     }
 
-  //Reassociation similarly to what is described in "Advanced Compiler Design and Implementation", page 337.
+  //Reassociation similarly to what is described in "Advanced Compiler Design and Implementation", page 337-..., Fig 12.6.
   //Note that we don't check whether computation is being done on floating-point numbers - for them, we should perform
   // no simplification.
-  // - make sure that right children are always leaves and that constants are moved to the left
-  // - perform constant folding on the left-hand child
-  // Note: keep in mind that the transformation is applied bottom-up.
-  // Note 2: XXX: I believe that by "t_x" in their picture, the authors might intend not an arbitrary node but any node
-  // other than a constant. Otherwise, already R2 and R7 together do not form a terminating rewrite system.
-  // In fact, that's not the case - there must simply be a priority between those rules.
+  // We make sure that right children are always leaves and that constants are moved to the left (using rules R2 and R7)
+  // And we perform constant folding on the left-hand child
+  // Note: keep in mind that the transformation is applied bottom-up; moreover, whenever a new expression is built, new sums
+  // are created by recursive invocation of buildSum, except when returning `default`.
+  // Note 2: in their picture, "t_x" represents an arbitrary node, even in rule R7.
+  // Rule R2 and R7 together seem not to form a terminating rewrite system; note however that
+  // rule R7 does not just swap children but performs a tree rotation.
   def buildSum[T](l: Exp[T], r: Exp[T])(implicit isNum: Numeric[T]): Exp[T] = {
-    val otherwise = l + r
+    val default = l + r
     (l, r) match {
-      case (Const(a), Const(b)) =>
+      case (Const(a), Const(b)) => //R1
         isNum.plus(a, b)
-      case (Plus(Const(a), b), Const(c)) =>
+      case (Plus(Const(a), b), Const(c)) => //R9
         buildSum(isNum.plus(a, c), b)
-      case (a, Plus(b, c)) =>
+      case (a, Plus(b, c)) => //R7
         buildSum(buildSum(a, b), c)
-        //XXX: maybe do the opposite if the Plus node contains no Const nodes.
-      case (a, b@Const(_)) =>
+      case (a, b@Const(_)) => //R2
         buildSum(b, a)
+        /*
+         * WRONG TERMINATION PROOF
+         * Why does the above invocation terminate? This is obvious by case analysis unless l is a Plus node.
+         * Let us assume (l, r) matches (Plus(l1, l2), Const(rV)); buildSum(b, a) will match
+         * (r, l) against (Const(rV), Plus(l1, l2)), and rewrite it to buildSum(buildSum(Const(rV), l1), l2).
+         * We will prove that l2 is not a Const node (Lemma); it will thus not match again this case.
+         * Lemma: In the above situation, l2 cannot be Const.
+         * Proof: Remember that l has been already canonicalized, and that (l, r) did not match against
+         * (Plus(Const(a), b), Const(c)) but matches against (Plus(l1, l2), Const(_)); thus l1 is not Const.
+         * Since l1 is not Const, l2 can't be either; unless l1 is Plus and l2 is Const.
+         */
       case (Const(_), _) | (Plus(_, _), _) =>
         //Since the above matches failed, r is not a Plus node;
         //If l is a Const node, r is neither a Plus nor a Const node.
         //if instead l is a Plus node, it does not contain Const nodes directly - they would be on the left side.
-        otherwise
+        default
       case _ =>
-        otherwise
+        default
     }
   }
   
