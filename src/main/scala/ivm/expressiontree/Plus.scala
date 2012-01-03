@@ -11,11 +11,12 @@ abstract class CommOp[T](x: Exp[T], y: Exp[T])(op: (T, T) => T) extends BinaryOp
   def interpret() = op(x.interpret(), y.interpret())
 }
 
-case class Plus[T](override val t1: Exp[T], override val t2: Exp[T])(implicit val isNum: Numeric[T]) extends CommOp[T](t1, t2)(isNum.plus(_, _)) with CommutativeOp[T] {
+//Note: the isNum member is referenced by Optimization, thus cannot be transformed into a context bound.
+case class Plus[T](override val t1: Exp[T], override val t2: Exp[T])(implicit val isNum: Numeric[T]) extends CommOp[T](t1, t2)(_ + _) with CommutativeOp[T] {
   def copy(x: Exp[T], y: Exp[T]) = Plus(x, y)
 }
 
-case class Times[T](override val t1: Exp[T], override val t2: Exp[T])(implicit val isNum: Numeric[T]) extends CommOp[T](t1, t2)(isNum.times(_, _)) with CommutativeOp[T] {
+case class Times[T](override val t1: Exp[T], override val t2: Exp[T])(implicit val isNum: Numeric[T]) extends CommOp[T](t1, t2)(_ * _) with CommutativeOp[T] {
   def copy(x: Exp[T], y: Exp[T]) = Times(x, y)
 }
 

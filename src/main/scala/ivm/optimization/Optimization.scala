@@ -4,6 +4,7 @@ package optimization
 import expressiontree._
 import Lifting._
 import collection.GenTraversableOnce
+import Numeric.Implicits._
 
 //Pattern-matchers for simplifying writing patterns
 object FuncExpBody {
@@ -143,7 +144,8 @@ object OptimizationTransforms {
   val mergeOps: Exp[_] => Exp[_] =
     e => e match {
       case p@Plus(Plus(a, Const(b)), Const(c)) =>
-        mergeOps(Plus(a, p.isNum.plus(b, c))(p.isNum))
+        implicit val isNum = p.isNum
+        mergeOps(a + (b + c))
       case _ => e
     }
 
@@ -165,7 +167,6 @@ object OptimizationTransforms {
   // Note 4: we omit rules on subtractions (R5, R6, etc.) because NumericOps.- just always represent subtraction through
   // addition (XXX which is a pessimization if no constants are involved)
   def buildSum[T](l: Exp[T], r: Exp[T])(implicit isNum: Numeric[T]): Exp[T] = {
-    import Numeric.Implicits._
     r match {
       case Const(rV) => l match {
         case Const(a) => //R1
