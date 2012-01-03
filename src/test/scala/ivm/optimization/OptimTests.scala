@@ -25,11 +25,6 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val optF = testIdempotence(composedF)
     optF should be (FuncExp((x: Exp[Int]) => Plus(Const(3), x)))
-    assert(optF match {
-      case f@FuncExpBody(Plus(Const(3), x)) if f.x == x =>
-        true
-      case _ => false
-    })
   }
 
   @Test
