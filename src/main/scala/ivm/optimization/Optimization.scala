@@ -94,26 +94,30 @@ object OptimizationTransforms {
   // no simplification.
   // - make sure that right children are always leaves and that constants are moved to the left
   // - perform constant folding on the left-hand child
+  def buildSum[T](l: Exp[T], r: Exp[T])(implicit isNum: Numeric[T]): Exp[T] = {
+    val e = l + r
+    (l, r) match {
+      case (Const(a), Const(b)) =>
+        isNum.plus(a, b)
+      case (Plus(Const(a), b), Const(c)) =>
+        buildSum(isNum.plus(a, c), b)
+      case (a, Plus(b, c)) =>
+        //Note: only in this case are other simplifications possible at _this_ level.
+        buildSum((a + b), c)
+      case (Const(_), _) | (Plus(_, _), _) =>
+        //Since the above matches failed and l is a Const, r is neither a Plus nor a Const node.
+        e
+      case (a, b@Const(_)) =>
+        buildSum(b, a)
+      case _ =>
+        e
+    }
+  }
+  
   val reassociateOps: Exp[_] => Exp[_] =
     e => e match {
       case p@Plus(l, r) =>
-        implicit val isNum = p.isNum
-        (l, r) match {
-          case (Const(a), Const(b)) =>
-            isNum.plus(a, b)
-          case (Plus(Const(a), b), Const(c)) =>
-            reassociateOps(isNum.plus(a, c) + b)
-          case (a, Plus(b, c)) =>
-            //Note: only in this case are other simplifications possible at _this_ level.
-            reassociateOps((a + b) + c)
-          case (Const(_), _) | (Plus(_, _), _) =>
-            //Since the above matches failed and l is a Const, r is neither a Plus nor a Const node.
-            e
-          case (a, b@Const(_)) =>
-            reassociateOps(b + a)
-          case _ =>
-            e
-        }
+        buildSum(l, r)(p.isNum)
       case _ => e
     }
 
