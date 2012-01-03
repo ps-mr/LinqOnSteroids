@@ -158,40 +158,41 @@ object OptimizationTransforms {
   // All `Const` nodes are then constant-folded together (using rules R1 and R9).
   //
   // Note: keep in mind that the transformation is applied bottom-up; moreover, whenever a new expression is built, new sums
-  // are created by recursive invocation of buildSum, except when returning `default`.
+  // are created by recursive invocation of buildSum, except in the default case.
   // Note 2: in their picture, "t_x" represents an arbitrary node, even in rule R7.
   // Note 3: rule R2 and R7 together seem not to form a terminating rewrite system; note however that
   // rule R7 does not just swap children but performs a tree rotation.
   def buildSum[T](l: Exp[T], r: Exp[T])(implicit isNum: Numeric[T]): Exp[T] = {
-    val default = l + r
-    (l, r) match {
-      case (Const(a), Const(b)) => //R1
-        isNum.plus(a, b)
-      case (Plus(Const(a), b), Const(c)) => //R9 - must be before R2!
-        buildSum(isNum.plus(a, c), b)
-      case (a, b@Const(_)) => //R2 - must be after R1!
-        buildSum(b, a)
-      case (a, Plus(b, c)) => //R7
-        buildSum(buildSum(a, b), c)
-        /*
-         * Rules R1 and R9 reduce the tree size by one, thus it is easy to prove that their application causes
-         * well-founded recursion. Rules R2 and R7 are instead more problematic.
-         * Why does the above recursive invocation in R2 terminate? This is obvious by case analysis unless l is a Plus
-         * node. Otherwise, we need to prove that we either terminate recursion or that we reach either of rule R1 or
-         * R9, reducing the input size. We must do the proof by induction, assuming that all calls to buildSum with
-         * total input size smaller than the current one terminate.
-         *
-         * Let us assume (l, r) matches (Plus(l1, l2), Const(rV)); buildSum(b, a) will match
-         * (r, l) against (Const(rV), Plus(l1, l2)) (R7), and rewrite it to buildSum(buildSum(Const(rV), l1), l2).
-         * If l2 is not a Const node, it will not match again this case (rule R7) without further reduction.
-         * If l2 is a Const node and the inner buildSum(Const(rV), l1) just returns Plus(Const(rV), l1), rule R9 applies
-         * and reduces the input size.
-         * If l2 is a Const node and the inner buildSum(Const(rV), l1) returns something else, then it must terminate
-         * by the inductive hypothesis.
-         */
+    r match {
+      case Const(rV) => l match {
+        case Const(a) => //R1
+          isNum.plus(a, rV)
+        case Plus(Const(a), b) => //R9 - must be before R2!
+          buildSum(isNum.plus(a, rV), b)
+        case _ => //R2 - must be after R1!
+          buildSum(r, l)
+      }
+      case Plus(rl, rr) => //R7
+        buildSum(buildSum(l, rl), rr)
       case _ =>
-        default
+        l + r
     }
+    /*
+     * Rules R1 and R9 reduce the tree size by one, thus it is easy to prove that their application causes
+     * well-founded recursion. Rules R2 and R7 are instead more problematic.
+     * Why does the above recursive invocation in R2 terminate? This is obvious by case analysis unless l is a Plus
+     * node. Otherwise, we need to prove that we either terminate recursion or that we reach either of rule R1 or
+     * R9, reducing the input size. We must do the proof by induction, assuming that all calls to buildSum with
+     * total input size smaller than the current one terminate.
+     *
+     * Let us assume (l, r) matches (Plus(l1, l2), Const(rV)); buildSum(b, a) will match
+     * (r, l) against (Const(rV), Plus(l1, l2)) (R7), and rewrite it to buildSum(buildSum(Const(rV), l1), l2).
+     * If l2 is not a Const node, it will not match again this case (rule R7) without further reduction.
+     * If l2 is a Const node and the inner buildSum(Const(rV), l1) just returns Plus(Const(rV), l1), rule R9 applies
+     * and reduces the input size.
+     * If l2 is a Const node and the inner buildSum(Const(rV), l1) returns something else, then it must terminate
+     * by the inductive hypothesis.
+     */
   }
 
   val reassociateOps: Exp[_] => Exp[_] =
