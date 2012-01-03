@@ -140,15 +140,6 @@ object OptimizationTransforms {
       case _ => e
     }
 
-  //XXX: This is a hack tailored to IVMPerformanceTests. OTOH, implementing the proper version seems just engineering
-  val mergeOps: Exp[_] => Exp[_] =
-    e => e match {
-      case p@Plus(Plus(a, Const(b)), Const(c)) =>
-        implicit val isNum = p.isNum
-        mergeOps(a + (b + c))
-      case _ => e
-    }
-
   // Reassociation similarly to what is described in "Advanced Compiler Design and Implementation", page 337-...,
   // Sec 12.3.1 and Fig 12.6. We refer to their reduction rules with their original codes, like R1, R2, ..., R9.
   // We don't apply distributivity, nor (yet) rules not involving just Plus (i.e., involving Minus or Times).
@@ -292,13 +283,11 @@ object Optimization {
 
   def optimize[T](exp: Exp[T]): Exp[T] = {
     shareSubqueries(
-     mergeOps(
+      reassociateOps(
       mergeMaps(
        mergeFilters(
         optimizeCartProdToJoin(exp)))))
   }
-
-  def mergeOps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeOps)
 
   def reassociateOps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.reassociateOps)
 
