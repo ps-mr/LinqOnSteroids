@@ -53,13 +53,13 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
   def reassociateOpsI() {
     val i = FuncExp((x: Exp[Int]) => x + x + 1 + x + 1)
     val optI = testIdempotence(i)
-    optI should be (FuncExp((x: Exp[Int]) => Plus(Plus(Plus(Plus(x, x), Const(1)), x), Const(1))))
+    optI should be (FuncExp((x: Exp[Int]) => Plus(Plus(Plus(Const(2), x), x), x)))
   }
 
   @Test
   def reassociateOpsJ() {
     val j = FuncExp((x: Exp[Int]) => x + 1 + x + 1)
     val optJ = testIdempotence(j)
-    optJ should be (FuncExp((x: Exp[Int]) => Plus(Plus(Plus(Const(1), x), x), Const(1))))
+    optJ should be (FuncExp((x: Exp[Int]) => Plus(Plus(Const(2), x), x)))
   }
 }

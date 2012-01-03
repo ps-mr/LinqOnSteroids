@@ -94,8 +94,12 @@ object OptimizationTransforms {
   // no simplification.
   // - make sure that right children are always leaves and that constants are moved to the left
   // - perform constant folding on the left-hand child
+  // Note: keep in mind that the transformation is applied bottom-up.
+  // Note 2: XXX: I believe that by "t_x" in their picture, the authors might intend not an arbitrary node but any node
+  // other than a constant. Otherwise, already R2 and R7 together do not form a terminating rewrite system.
+  // In fact, that's not the case - there must simply be a priority between those rules.
   def buildSum[T](l: Exp[T], r: Exp[T])(implicit isNum: Numeric[T]): Exp[T] = {
-    val e = l + r
+    val otherwise = l + r
     (l, r) match {
       case (Const(a), Const(b)) =>
         isNum.plus(a, b)
@@ -103,13 +107,16 @@ object OptimizationTransforms {
         buildSum(isNum.plus(a, c), b)
       case (a, Plus(b, c)) =>
         buildSum(buildSum(a, b), c)
-      case (Const(_), _) | (Plus(_, _), _) =>
-        //Since the above matches failed and l is a Const, r is neither a Plus nor a Const node.
-        e
+        //XXX: maybe do the opposite if the Plus node contains no Const nodes.
       case (a, b@Const(_)) =>
         buildSum(b, a)
+      case (Const(_), _) | (Plus(_, _), _) =>
+        //Since the above matches failed, r is not a Plus node;
+        //If l is a Const node, r is neither a Plus nor a Const node.
+        //if instead l is a Plus node, it does not contain Const nodes directly - they would be on the left side.
+        otherwise
       case _ =>
-        e
+        otherwise
     }
   }
   
