@@ -104,12 +104,12 @@ object OptimizationTransforms {
     (l, r) match {
       case (Const(a), Const(b)) => //R1
         isNum.plus(a, b)
-      case (Plus(Const(a), b), Const(c)) => //R9
+      case (Plus(Const(a), b), Const(c)) => //R9 - must be before R2!
         buildSum(isNum.plus(a, c), b)
+      case (a, b@Const(_)) => //R2 - must be after R1!
+        buildSum(b, a)
       case (a, Plus(b, c)) => //R7
         buildSum(buildSum(a, b), c)
-      case (a, b@Const(_)) => //R2
-        buildSum(b, a)
         /*
          * WRONG TERMINATION PROOF
          * Why does the above invocation terminate? This is obvious by case analysis unless l is a Plus node.
@@ -121,11 +121,6 @@ object OptimizationTransforms {
          * (Plus(Const(a), b), Const(c)) but matches against (Plus(l1, l2), Const(_)); thus l1 is not Const.
          * Since l1 is not Const, l2 can't be either; unless l1 is Plus and l2 is Const.
          */
-      case (Const(_), _) | (Plus(_, _), _) =>
-        //Since the above matches failed, r is not a Plus node;
-        //If l is a Const node, r is neither a Plus nor a Const node.
-        //if instead l is a Plus node, it does not contain Const nodes directly - they would be on the left side.
-        default
       case _ =>
         default
     }
