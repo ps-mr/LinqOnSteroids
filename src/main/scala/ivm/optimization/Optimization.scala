@@ -163,12 +163,13 @@ object OptimizationTransforms {
   // Note 3: rule R2 and R7 together seem not to form a terminating rewrite system; note however that
   // rule R7 does not just swap children but performs a tree rotation.
   def buildSum[T](l: Exp[T], r: Exp[T])(implicit isNum: Numeric[T]): Exp[T] = {
+    import Numeric.Implicits._
     r match {
       case Const(rV) => l match {
         case Const(a) => //R1
-          isNum.plus(a, rV)
+          a + rV
         case Plus(Const(a), b) => //R9 - must be before R2!
-          buildSum(isNum.plus(a, rV), b)
+          buildSum(a + rV, b)
         case _ => //R2 - must be after R1!
           buildSum(r, l)
       }
