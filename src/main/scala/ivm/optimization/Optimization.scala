@@ -102,8 +102,7 @@ object OptimizationTransforms {
       case (Plus(Const(a), b), Const(c)) =>
         buildSum(isNum.plus(a, c), b)
       case (a, Plus(b, c)) =>
-        //Note: only in this case are other simplifications possible at _this_ level.
-        buildSum((a + b), c)
+        buildSum(buildSum(a, b), c)
       case (Const(_), _) | (Plus(_, _), _) =>
         //Since the above matches failed and l is a Const, r is neither a Plus nor a Const node.
         e
