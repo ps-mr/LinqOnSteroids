@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-import collection.mutable.HashMap
+import collection.immutable.HashMap
 import actors.threadpool.AtomicInteger
 
 // Not exactly sure what I should use to represent applications, but this is the standard App node, well known from
@@ -100,7 +100,9 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
   override def x = v
   override def body = foasBody
 
-  // TODO: This is broken when more functions are nested. Bad things can happen if res is a Scala View which will
+  //TODO: add test for dynamic vs lexical scoping.
+  /*
+  // This is broken when more functions are nested. Bad things can happen if res is a Scala View which will
   // still execute an interpreted function, which references an environment. We are not constructing closures, but
   // using dynamic scoping!!
   override def interpret(): S => T =
@@ -111,6 +113,19 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
       env.get() -= v.id
       res
     }
+    */
+
+  override def interpret(): S => T = {
+    //Close over the current environment, and ensure it is stored in the returned closure.
+    val env = FuncExpInt.env.get()
+    z => {
+      val old = FuncExpInt.env.get()
+      FuncExpInt.env.set(env + (v.id -> z))
+      val res = foasBody.interpret()
+      FuncExpInt.env.set(old)
+      res
+    }
+  }
 }
 
 object FuncExpInt {
@@ -126,15 +141,20 @@ class FuncExpInt2[S1, S2, T](val foasBody: Exp[T], v1: TypedVar[S1], v2: TypedVa
   extends FuncExp[(S1, S2), T](p => foasBody.substVar(v1.id, Proj1(p)).substVar(v2.id, Proj2(p)))
 {
   override def arrowString = "=i=>"
-  override def interpret(): ((S1, S2)) => T = {
-    case (z1, z2) =>
-      import FuncExpInt._
-      env.get()(v1.id) = z1
-      env.get()(v2.id) = z2
-      val res = foasBody.interpret()
-      env.get() -= v1.id
-      env.get() -= v2.id
-      res
+  override def interpret() = {
+    //Close over the current environment, and ensure it is stored in the returned closure.
+    val env = FuncExpInt.env.get()
+    val interpFun: ((S1, S2)) => T =
+    {
+      case (z1, z2) =>
+        val old = FuncExpInt.env.get()
+
+        FuncExpInt.env.set(env + (v1.id -> z1) + (v2.id -> z2))
+        val res = foasBody.interpret()
+        FuncExpInt.env.set(old)
+        res
+    }
+    interpFun
   }
 }
 
