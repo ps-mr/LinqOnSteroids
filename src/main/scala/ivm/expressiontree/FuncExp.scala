@@ -118,13 +118,7 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
   override def interpret(): S => T = {
     //Close over the current environment, and ensure it is stored in the returned closure.
     val env = FuncExpInt.env.get()
-    z => {
-      val old = FuncExpInt.env.get()
-      FuncExpInt.env.set(env + (v.id -> z))
-      val res = foasBody.interpret()
-      FuncExpInt.env.set(old)
-      res
-    }
+    z => FuncExpInt.env.withValue(env + (v.id -> z))(foasBody.interpret())
   }
 }
 
@@ -144,15 +138,12 @@ class FuncExpInt2[S1, S2, T](val foasBody: Exp[T], v1: TypedVar[S1], v2: TypedVa
   override def interpret() = {
     //Close over the current environment, and ensure it is stored in the returned closure.
     val env = FuncExpInt.env.get()
+    //Apparently, on case functions the type annotation must be on the immediately enclosing expression - putting it as
+    //the return value of interpret() does not work. Workaround this bug this way.
     val interpFun: ((S1, S2)) => T =
     {
       case (z1, z2) =>
-        val old = FuncExpInt.env.get()
-
-        FuncExpInt.env.set(env + (v1.id -> z1) + (v2.id -> z2))
-        val res = foasBody.interpret()
-        FuncExpInt.env.set(old)
-        res
+        FuncExpInt.env.withValue(env + (v1.id -> z1) + (v2.id -> z2))(foasBody.interpret())
     }
     interpFun
   }
@@ -162,6 +153,14 @@ class ScalaThreadLocal[T](v: => T) extends ThreadLocal[T] {
   override def initialValue() = v
   def modify(f: T => T) {
     set(f(get()))
+  }
+  def withValue[U](tempV: T)(toCompute: => U) = {
+    val old = get()
+
+    set(tempV)
+    val res = toCompute
+    set(old)
+    res
   }
 }
 
