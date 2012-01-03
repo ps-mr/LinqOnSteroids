@@ -77,7 +77,11 @@ object OptimizationTransforms {
           FuncExp.makefun[T, TKey](lhs, filterFun.x)(x))
     }
     */
+    //XXX: in this version of the work, we should create a custom node, since our handling of redexes is not yet perfect -
+    //we currently assume expression trees are already beta-reduced when comparing them. OTOH, performing beta-reduction
+    //risks introducing non-termination inside optimization.
 
+    //We must hoist the creation of the subcollection, so that we build the index only once. We use letExp to this end.
     letExp(FuncExp.makefun[T, TKey](lhs, filterFun.x)){
       subFun =>
         letExp((forallColl map FuncExp.makefun[S, TKey](rhs, forallFun.x).f).toSet){
