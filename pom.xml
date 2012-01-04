@@ -1,0 +1,39 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<parent>
+		<artifactId>sae</artifactId>
+		<groupId>de.tud.cs.st.opal.sae</groupId>
+		<version>0.2.0</version>
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>de.tud.cs.st.opal.sae</groupId>
+	<artifactId>sae-linqonsteroids</artifactId>
+	<version>0.0.1</version>
+	<packaging>jar</packaging>
+
+	<name>sae-database-core</name>
+	<url>http://opal-project.org</url>
+	<inceptionYear>2011</inceptionYear>
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.8.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.scalatest</groupId>
+			<artifactId>scalatest</artifactId>
+			<version>1.4.RC2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.scala-lang</groupId>
+			<artifactId>scala-library</artifactId>
+			<version>${scala.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>
