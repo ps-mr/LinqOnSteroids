@@ -1,35 +1,35 @@
 /* License (BSD Style License):
-*  Copyright (c) 2009, 2011
-*  Software Technology Group
-*  Department of Computer Science
-*  Technische Universität Darmstadt
-*  All rights reserved.
-*
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions are met:
-*
-*  - Redistributions of source code must retain the above copyright notice,
-*    this list of conditions and the following disclaimer.
-*  - Redistributions in binary form must reproduce the above copyright notice,
-*    this list of conditions and the following disclaimer in the documentation
-*    and/or other materials provided with the distribution.
-*  - Neither the name of the Software Technology Group or Technische
-*    Universität Darmstadt nor the names of its contributors may be used to
-*    endorse or promote products derived from this software without specific
-*    prior written permission.
-*
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-*  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-*  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-*  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-*  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-*  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-*  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-*  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-*  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-*  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*/
+ *  Copyright (c) 2009, 2011
+ *  Software Technology Group
+ *  Department of Computer Science
+ *  Technische Universität Darmstadt
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
+ *
+ *  - Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  - Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *  - Neither the name of the Software Technology Group or Technische
+ *    Universität Darmstadt nor the names of its contributors may be used to
+ *    endorse or promote products derived from this software without specific
+ *    prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ */
 package ivm
 package opaltests
 
@@ -90,7 +90,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
   import CountingPerformanceEvaluator._
   import ivm.performancetests.Benchmarking
 
-  private def benchMark[T](msg: String)(t: => T): T = {
+  private def benchMark[T](msg: String)(t: ⇒ T): T = {
     val debug = false
     Benchmarking.benchMark(msg, warmUpLoops = if (debug) 1 else 100, sampleLoops = if (debug) 2 else 50)(t)
     //Benchmarking.benchMark(msg)(t)
@@ -163,12 +163,12 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
         declaringClass = classFile.thisClass
         privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
         usedPrivateFields = instructions withFilter {
-          case GETFIELD(`declaringClass`, name, _) => true
-          case GETSTATIC(`declaringClass`, name, _) => true
-          case _ => false
+          case GETFIELD(`declaringClass`, name, _) ⇒ true
+          case GETSTATIC(`declaringClass`, name, _) ⇒ true
+          case _ ⇒ false
         } map {
-          case GETFIELD(`declaringClass`, name, _) => name
-          case GETSTATIC(`declaringClass`, name, _) => name
+          case GETFIELD(`declaringClass`, name, _) ⇒ name
+          case GETSTATIC(`declaringClass`, name, _) ⇒ name
         }
         unusedPrivateFields = privateFields -- usedPrivateFields //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
@@ -186,8 +186,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
         declaringClass = classFile.thisClass
         privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
         usedPrivateFields = //This is much slower
-        (for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) <- Seq(instruction)) yield name) union
-          (for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) <- Seq(instruction)) yield name)
+        (for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) ← Seq(instruction)) yield name) union
+          (for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) ← Seq(instruction)) yield name)
         unusedPrivateFields = privateFields -- usedPrivateFields //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
@@ -207,13 +207,13 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
         usedPrivateFields ← Let(instructions filter {
-          instruction =>
+          instruction ⇒
             val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
             val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
             asGETFIELD.isDefined && asGETFIELD.get.declaringClass === declaringClass ||
               asGETSTATIC.isDefined && asGETSTATIC.get.declaringClass === declaringClass
         } map {
-          instruction =>
+          instruction ⇒
             val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
             val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
             // Note that we might not factor map (_.name) by writing:
@@ -244,8 +244,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
         usedPrivateFields ← Let(//This is much slower, also with Los
-        (for (instruction ← instructions; asGETFIELD <- instruction.ifInstanceOf[GETFIELD] if asGETFIELD.declaringClass === declaringClass) yield asGETFIELD.name) union
-          (for (instruction ← instructions; asGETSTATIC <- instruction.ifInstanceOf[GETSTATIC] if asGETSTATIC.declaringClass === declaringClass) yield asGETSTATIC.name))
+        (for (instruction ← instructions; asGETFIELD ← instruction.ifInstanceOf[GETFIELD] if asGETFIELD.declaringClass === declaringClass) yield asGETFIELD.name) union
+          (for (instruction ← instructions; asGETSTATIC ← instruction.ifInstanceOf[GETSTATIC] if asGETSTATIC.declaringClass === declaringClass) yield asGETSTATIC.name))
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
@@ -311,7 +311,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
         instruction ← method.body.get.code
       } yield (classFile, method, instruction)
       instructions.withFilter {
-        triple =>
+        triple ⇒
           val instruction = to3pleHelper(triple)._3
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
