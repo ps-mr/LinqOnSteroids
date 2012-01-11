@@ -47,9 +47,8 @@ object Benchmarking {
       println(">>> Name = %s, starting warmup..." format name)
     Console.flush()
 
-    //We need at least one warmup loop to produce the result to return. That's not a perfect fix, but it doesn't matter.
-    for (i <- 1 to math.max(warmUpLoops, 1))
-      ret = toBench
+    for (i <- 1 to warmUpLoops)
+      toBench
     System.gc()
 
     if (hasConsoleOutput)
@@ -61,7 +60,7 @@ object Benchmarking {
     for (i <- 1 to sampleLoops) {
       val before = System.nanoTime()
       for (i <- 1 to execLoops)
-        toBench
+        ret = toBench
       stats.update((System.nanoTime() - before) / execLoops)
       System.gc()
     }
