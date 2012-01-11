@@ -133,6 +133,7 @@ trait TraversableOps {
     = Join(this.t, innerColl, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
 
     def forall(f: Exp[T] => Exp[Boolean]) = Forall(this.t, FuncExp(f))
+    //This awkward form is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
     def exists(f: Exp[T] => Exp[Boolean]) = !(Forall(this.t, FuncExp(f andThen (!(_)))))
 
     def typeFilter[S](implicit cS: ClassManifest[S]) = {

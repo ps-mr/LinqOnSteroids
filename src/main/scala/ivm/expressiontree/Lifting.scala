@@ -74,6 +74,9 @@ object Lifting
     tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(c)))
   }
 
+  // XXX: Both these and onExp should not be made available without qualification everywhere. We should just be able to
+  // import them, but we should not pollute the namespace for client code.
+
   //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
   def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
   //The use of _App_ and FuncExp means that t will be evaluated only once.
