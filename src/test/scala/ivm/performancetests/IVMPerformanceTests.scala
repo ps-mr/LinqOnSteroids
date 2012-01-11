@@ -20,6 +20,7 @@ import optimization.Optimization
  * Date: 2/11/2011
  */
 
+/*
 class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
   val debug = false
   val warmUpLoops = if (debug) 1 else 100
@@ -170,3 +171,4 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
     checkIncRes(vIncUpdPlus2)
   }
 }
+*/
