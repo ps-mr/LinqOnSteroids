@@ -13,6 +13,7 @@ import expressiontree.{Lifting, Exp, Queryable, IncrementalResult}
  * Date: 31/10/2011
  */
 
+/*
 class IVMTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
   import Lifting._
 
@@ -115,3 +116,4 @@ class IVMTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
   @Test def testUnion1() {testUnion(true)}
   @Test def testUnion2() {testUnion(false)}
 }
+*/

@@ -16,6 +16,7 @@ import ivm.expressiontree.Lifting
  */
 
 
+/*
 class IVMFlatMapTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
   import Lifting._
 
@@ -145,3 +146,4 @@ class IVMFlatMapTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTes
     }
   }
 }
+*/

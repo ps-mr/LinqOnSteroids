@@ -6,13 +6,23 @@ import ivm.collections.TypeMapping
 
 trait TraversableOps {
   this: BaseExps with BaseTypesOps =>
+  def newFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr],
+                                                                             f: FuncExp[T, Boolean]) =
+    Filter(base, f)
   def newWithFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr],
                                                                              f: FuncExp[T, Boolean]) =
-    new FilterMaintainerExp(View(base), f)
+    newFilter(View(base), f)
   def newMapOp[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]](base: Exp[Repr],
                                                                                                    f: FuncExp[T, U])
                                                                                                   (implicit c: CanBuildFrom[Repr, U, That]) =
-    new MapOpMaintainerExp(base, f)
+    MapOp(base, f)
+  def newFlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]](base: Exp[Repr], f: Exp[T] => Exp[TraversableOnce[U]])
+                                        (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+    FlatMap(base, FuncExp(f))
+
+  def newUnion[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U >: T, That <: Traversable[U]](base: Exp[Repr with Traversable[T]], that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+    new Union(base, that)
+
 
   /* Lift faithfully the FilterMonadic trait except foreach and withFilter, since we have a special lifting for it.
    * This trait is used both for concrete collections of type Repr <: FilterMonadic[T, Repr].
@@ -20,12 +30,12 @@ trait TraversableOps {
   trait FilterMonadicOpsLike[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] {
     val t: Exp[Repr]
     def map[U, That <: Traversable[U]](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-      new MapOpMaintainerExp(this.t, FuncExp(f))
+      newMapOp(this.t, FuncExp(f))
     def map2[U, That <: Traversable[U]](f: T => U)(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-      new MapOpMaintainerExp(this.t, FuncExp(f: Exp[T => U]))
+      newMapOp(this.t, FuncExp(f: Exp[T => U]))
     def flatMap[U, That <: Traversable[U]](f: Exp[T] => Exp[TraversableOnce[U]])
                                           (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-      new FlatMapMaintainerExp(this.t, FuncExp(f))
+      newFlatMap(this.t, FuncExp(f))
   }
 
   case class GroupBy[T, Repr <: TraversableLike[T, Repr], K](base: Exp[Repr], f: Exp[T => K]) extends BinaryOpExp[Repr,
@@ -93,16 +103,16 @@ trait TraversableOps {
   trait TraversableLikeOps[T, Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]], Repr <: Traversable[T] with TraversableLike[T, Repr] with Coll[T]] extends FilterMonadicOpsLike[T, Repr] {
     def collect[U, That <: Traversable[U]](f: Exp[T] => Exp[Option[U]])
                                           (implicit c: CanBuildFrom[TraversableView[T, Repr], U, That]): Exp[That] = {
-      new MapOpMaintainerExp(new FilterMaintainerExp(View(this.t),
+      newMapOp(newWithFilter(this.t,
         FuncExp((x: Exp[T]) => IsDefinedAt(PartialFuncExp(f), x))),
         FuncExp((x: Exp[T]) => App(PartialFuncExp(f), x)))(c)
     }
 
     def filter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
-      new FilterMaintainerExp(this.t, FuncExp(f))
+      newFilter(this.t, FuncExp(f))
 
     def union[U >: T, That <: Traversable[U]](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-      new UnionMaintainerExp(this.t, that)
+      newUnion(this.t, that)
 
     // XXX: This cannot be called + to avoid ambiguity with the conversion to NumericOps - probably that's an artifact of it being
     // declared in a subclass
@@ -152,7 +162,7 @@ trait TraversableOps {
     def force[That](implicit bf: CanBuildFrom[Repr, T, That]) = Force(this.t)
 
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
-      new FilterMaintainerExp[T, ViewColl](this.t, FuncExp(f))
+      newFilter[T, ViewColl](this.t, FuncExp(f))
     //TODO: override operations to avoid using CanBuildFrom
   }
 
