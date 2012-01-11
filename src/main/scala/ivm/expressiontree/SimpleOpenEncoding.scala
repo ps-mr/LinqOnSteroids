@@ -107,12 +107,7 @@ trait TupleOps {
   }
 }
 
-trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
-  //XXX: bad position
-  def not(v: Exp[Boolean]) = new NotMaintainerExp(v)
-  //XXX: disable IVM, switch back to using the plain Not
-  //def not(v: Exp[Boolean]) = Not(v)
-}
+trait BaseExps extends LiftingConvs with FunctionOps with TupleOps
 
 /**
  * In comparison to the other encoding, we don't use CanBuildExp to get most specific types as result types, as

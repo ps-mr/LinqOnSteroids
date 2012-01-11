@@ -280,7 +280,8 @@ object FoldOperatorsMain {
       incBuf.addSubscriber(query)
       val query2Content = query2.x.asInstanceOf[Forall[Int]]
       incBuf.addSubscriber(query2Content)
-      query2Content.addSubscriber(query2)
+      //XXX this is disabled because IVM support for Not was disabled
+      //query2Content.addSubscriber(query2)
       println(query)
       for (n <- 0 to (4, 2)) {
         incBuf += n

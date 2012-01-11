@@ -5,7 +5,7 @@ import collection.{TraversableView, TraversableViewLike, TraversableLike, GenTra
 import ivm.collections.TypeMapping
 
 trait TraversableOps {
-  this: BaseExps =>
+  this: BaseExps with BaseTypesOps =>
   def newWithFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr],
                                                                              f: FuncExp[T, Boolean]) =
     new FilterMaintainerExp(View(base), f)
@@ -133,7 +133,7 @@ trait TraversableOps {
     = Join(this.t, innerColl, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
 
     def forall(f: Exp[T] => Exp[Boolean]) = Forall(this.t, FuncExp(f))
-    def exists(f: Exp[T] => Exp[Boolean]) = not(Forall(this.t, FuncExp(f andThen (not(_)))))
+    def exists(f: Exp[T] => Exp[Boolean]) = !(Forall(this.t, FuncExp(f andThen (!(_)))))
 
     def typeFilter[S](implicit cS: ClassManifest[S]) = {
       type ID[+T] = T
