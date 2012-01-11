@@ -235,13 +235,13 @@ object OptimizationTransforms {
 
   val sizeToEmpty: Exp[_] => Exp[_] =
     e => e match {
-      case Less(Const(0), Call1('size, _, coll: Exp[Traversable[t]])) =>
+      case Less(Const(0), Size(coll)) =>
         coll.nonEmpty
-      case LEq(Const(1), Call1('size, _, coll: Exp[Traversable[t]])) =>
+      case LEq(Const(1), Size(coll)) =>
         coll.nonEmpty
-      case Not(Eq(Call1('size, _, coll: Exp[Traversable[t]]), Const(0))) =>
+      case Not(Eq(Size(coll), Const(0))) =>
         coll.nonEmpty
-      case Eq(Call1('size, _, coll: Exp[Traversable[t]]), Const(0)) =>
+      case Eq(Size(coll), Const(0)) =>
         coll.isEmpty
       case _ => e
     }
