@@ -48,18 +48,19 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
 
   private[ivm] def find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = {
     val baseSeq =
-      if (filter.isDefinedAt(this) && filter(this))
+      if (PartialFunction.cond(this)(filter))
         Seq(this)
       else
         Seq.empty
     children.map(_ find filter).fold(baseSeq)(_ ++ _)
   }
 
+  // This overload is not called find because that would confuse type inference - it would fail to infer that filter's
+  // domain type is Exp[_].
+  private[ivm] def findTotFun(filter: Exp[_] => Boolean): Seq[Exp[_]] = find(filter.asPartial)
 
   private[ivm] def isOrContains(e: Exp[_]): Boolean =
-    (this.find {
-      case e => true
-    }).nonEmpty
+    (this findTotFun (_ == e)).nonEmpty
 
   private[ivm] def substVar[S](v: Int, e: Exp[S]) =
     transform((exp) => exp match {
