@@ -3,33 +3,19 @@ package ivm.expressiontree
 import collection.TraversableLike
 import collection.generic.CanBuildFrom
 
-//We would like to have this conversion available:
-//implicit def expOption2TraversableOps[T](t: Exp[Option[T]]) = expOption2Iterable(t): TraversableOps[T]
-//so that we can invoke Traversable methods on Exp[Option[T]].
-//However, we also want to have more specifics methods available.
-//Giving this conversion a lower priority does not work:
-/*
-trait OptionLiftingLowPriorityImplicits extends BaseExps {
-  this: TraversableOps =>
-  //implicit def expOption2Iterable[T](t: Exp[Option[T]]): Exp[Iterable[T]]
-  implicit def expOption2Iterable[T](t: Exp[Option[T]]) = onExp(t)('Option_option2Iterable, x => x: Iterable[T])
-  implicit def expOption2TraversableOps[T](t: Exp[Option[T]]) = expOption2Iterable(t): TraversableOps[T]
-}
-
-trait OptionLifting extends OptionLiftingLowPriorityImplicits {
-*/
 trait OptionLifting extends BaseExps {
   this: TraversableOps =>
   implicit def expOption2Iterable[T](t: Exp[Option[T]]) = onExp(t)('Option_option2Iterable, x => x: Iterable[T])
 
-  //implicit def expOption2TraversableOps[T](t: Exp[Option[T]]) = (t: Exp[Iterable[T]]): TraversableOps[T]
-
-  /*
-  //Overloading flatMap this way also does not work:
-  implicit def expToOptionOps2[T](t: Exp[Option[T]]) = new OptionOps2(t)
-  class OptionOps2[T](t: Exp[Option[T]]) {
-  }
-  */
+  // We would like to have this conversion available:
+  //   implicit def expOption2TraversableOps[T](t: Exp[Option[T]]) = (t: Exp[Iterable[T]]): TraversableOps[T]
+  // so that we can invoke Traversable methods on Exp[Option[T]]. However, we also want to have more specifics methods
+  // available, for instance flatMap. We can't define two different implicit conversions providing flatMap, because they
+  // would be ambiguous; giving this conversion a lower priority does not work - the lower priority one
+  // provides a plausible flatMap overload, and when that fails to match it's too late for the compiler to backtrack and
+  // try the other one.
+  // What we need to do is to provide the different versions of flatMap on OptionOps, which is not straightforward - see
+  // below.  
 
   object OptionOps {
     val optionMapId = 'Option$map
@@ -51,21 +37,24 @@ trait OptionLifting extends BaseExps {
     import OptionOps._
     def isDefined = onExp(t)('isDefined, _.isDefined)
     def get = onExp(t)('get, _.get)
-    //We do not use Option.withFilter because it returns a different type; we could provide operations
-    //for that type as well, but I do not see the point of doing that, especially for a side-effect-free predicate.
-    def filter(p: Exp[T] => Exp[Boolean]) = onExp(t, FuncExp(p))(optionFilterId, _ filter _) //(t: Exp[Iterable[T]]) withFilter p
-    def withFilter(p: Exp[T] => Exp[Boolean]) = filter(p)
-    def map[U](f: Exp[T] => Exp[U]) = onExp(t, FuncExp(f))(optionMapId, _ map _) //(t: Exp[Iterable[T]]) map f
-    //It would be wise to add this, but we can't. Having two overloads causes type inference to fail.
-    //def flatMap[U](f: Exp[T] => Exp[Option[U]])(implicit dummy: DummyImplicit): Exp[Option[U]] = onExp(t, FuncExp(f))('Option$flatMap, (a, b) => a flatMap b)
-    //def flatMap[U](f: Exp[T] => Exp[Traversable[U]])(implicit dummy: DummyImplicit): Exp[Traversable[U]] = (t: Exp[Iterable[T]]) flatMap f //onExp(t, FuncExp(f))('flatMap, (a, b) => (a: Iterable[T]) flatMap b)
-    
-    //def flatMap[U](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] = (t: Exp[Iterable[T]]) flatMap f //onExp(t, FuncExp(f))('flatMap, (a, b) => (a: Iterable[T]) flatMap b)
-    //Standard implementation:
-    //def flatMap[U](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]] = (t: Exp[Iterable[T]]) flatMap f //onExp(t, FuncExp(f))('flatMap, (a, b) => a flatMap b)
-    //Tillmann suggestion:
 
-    def flatMap[U, That](f: Exp[T] => Exp[That])(implicit v: FlatMappableTo[That]): Exp[That] = v.flatMap(t, f)
+    def filter(p: Exp[T] => Exp[Boolean]): Exp[Option[T]] = onExp(t, FuncExp(p))(optionFilterId, _ filter _) //(t: Exp[Iterable[T]]) withFilter p
+    //We do not lift Option.withFilter because it returns a different type; we could provide operations
+    //for that type as well, but I do not see the point of doing that, especially for a side-effect-free predicate.
+    def withFilter(p: Exp[T] => Exp[Boolean]) = filter(p)
+    def map[U](f: Exp[T] => Exp[U]): Exp[Option[U]] = onExp(t, FuncExp(f))(optionMapId, _ map _) //(t: Exp[Iterable[T]]) map f
+
+    // Finally, we can't provide the two implicit conversions as overloaded version of OptionOps.flatMap - or not directly
+    // with Java-style overloading, first because the two overloaded signature:
+    //   def flatMap[U](f: Exp[T] => Exp[Option[U]]): Exp[Option[U]]
+    //   def flatMap[U](f: Exp[T] => Exp[Traversable[U]]): Exp[Traversable[U]]
+    // have the same erasure. The standard trick is to alter one signature with an implicit parameter:
+    //   def flatMap[U](f: Exp[T] => Exp[Traversable[U]])(implicit dummy: DummyImplicit): Exp[Traversable[U]]
+    // but then type inference fails for f's domain type.
+
+    //Tillmann's suggestion was to use Haskell-style overloading by emulating type classes with implicits:
+    def flatMap[That](f: Exp[T] => Exp[That])(implicit v: FlatMappableTo[That]): Exp[That] = v.flatMap(t, f)
+
     //Note: we do not support call-by-name parameters; therefore we currently provide only orElse, and expect the user to
     //provide a default which will never fail evalution through exceptions but only evaluate to None.
     //def getOrElse[U >: T](v: /*=> */ Exp[U]) = onExp(t, v)('Option$getOrElse, _ getOrElse _)
