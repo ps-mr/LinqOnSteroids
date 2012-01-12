@@ -41,8 +41,10 @@ trait ExpSugar {
   }
   implicit def toPimper[T](t: T) = new Pimper(t)
 
+  implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
+
   class ArrayPimper[T](t: Array[T]) {
-    def asSmartCollection = asExp(t: Seq[T])
+    def asSmartCollection = t: Exp[Seq[T]]
   }
   implicit def toArrayPimper[T](t: Array[T]) = new ArrayPimper(t)
   //Either we use ArrayPimper, or we create an implicit conversion from Exp[Array[T]] to TraverableOps[T] by adding the final cast to TraversableOps[T] here.
@@ -81,8 +83,6 @@ object Lifting
   def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
   //The use of _App_ and FuncExp means that t will be evaluated only once.
   def letExp[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = App(FuncExp(f), t)
-
-  implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
 
   // Some experimental implicit conversions.
   // With the current Scala compiler, given (f_ )(x), the compiler will try to use implicit conversion on (f _), because
