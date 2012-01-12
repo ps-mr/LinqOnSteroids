@@ -7,7 +7,7 @@ package object expressiontree {
   type Var = TypedVar[Nothing]
 
   //From http://stackoverflow.com/questions/6834000/scala-partialfunctions-from-concrete-ones
-  private[expressiontree] def funcAsPartial[A, B](f: A => B) = new {
+  private[expressiontree] implicit def funcAsPartial[A, B](f: A => B) = new {
     /** only use if `f` is defined everywhere */
     def asPartial = new PartialFunction[A, B] {
       def isDefinedAt(a: A) = true
