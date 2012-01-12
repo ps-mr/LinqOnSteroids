@@ -47,10 +47,9 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   }
   //Avoid using allChildren to keep this fast:
   private def containsExp[S](e: Exp[S]): Boolean =
-    children.map(_.isOrContains(e)).foldRight(false)(_ || _)
+    children.map(_ isOrContains e).foldRight(false)(_ || _)
 
-  private[ivm] def isOrContains(e: Exp[_]): Boolean = if (this.equals(e)) true else containsExp(e)
-  private[ivm] def allChildren: Seq[Exp[_]] = children ++ (for (c <- children; a <- c.allChildren) yield a)
+  private[ivm] def isOrContains(e: Exp[_]): Boolean = if (this == e) true else containsExp(e)
 
   private[ivm] def substVar[S](v: Int, e: Exp[S]) =
     transform((exp) => exp match {
