@@ -45,11 +45,21 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
     val mappedChilds = for (c <- children) yield c.treeMap(mapper)
     mapper(this, mappedChilds)
   }
-  //Avoid using allChildren to keep this fast:
-  private def containsExp[S](e: Exp[S]): Boolean =
-    children.map(_ isOrContains e).foldRight(false)(_ || _)
 
-  private[ivm] def isOrContains(e: Exp[_]): Boolean = if (this == e) true else containsExp(e)
+  private[ivm] def find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = {
+    val baseSeq =
+      if (filter.isDefinedAt(this) && filter(this))
+        Seq(this)
+      else
+        Seq.empty
+    children.map(_ find filter).fold(baseSeq)(_ ++ _)
+  }
+
+
+  private[ivm] def isOrContains(e: Exp[_]): Boolean =
+    (this.find {
+      case e => true
+    }).nonEmpty
 
   private[ivm] def substVar[S](v: Int, e: Exp[S]) =
     transform((exp) => exp match {
