@@ -148,7 +148,7 @@ trait TraversableOps {
     //This awkward form is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
     def exists(f: Exp[T] => Exp[Boolean]) = !(Forall(this.t, FuncExp(f andThen (!(_)))))
 
-    def typeFilter[S](implicit cS: ClassManifest[S]) = {
+    def typeFilter[S](implicit cS: ClassManifest[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
       TypeFilter[T, Traversable, ID, S](t, FuncExp(identity))
     }

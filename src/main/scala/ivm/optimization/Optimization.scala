@@ -157,7 +157,7 @@ object OptimizationTransforms {
   // rule R7 does not just swap children but performs a tree rotation.
   // Note 4: we omit rules on subtractions (R5, R6, etc.) because NumericOps.- just always represent subtraction through
   // addition (XXX which is a pessimization if no constants are involved)
-  def buildSum[T](l: Exp[T], r: Exp[T])(implicit isNum: Numeric[T]): Exp[T] = {
+  def buildSum[T: Numeric](l: Exp[T], r: Exp[T]): Exp[T] = {
     r match {
       case Const(rV) => l match {
         case Const(a) => //R1
@@ -306,5 +306,4 @@ object Optimization {
   def shareSubqueries[T](query: Exp[T]): Exp[T] = {
       new SubquerySharing(subqueries).shareSubqueries(query)
   }
-
 }

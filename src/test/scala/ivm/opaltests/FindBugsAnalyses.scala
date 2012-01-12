@@ -59,7 +59,7 @@ import optimization.Optimization
  * @author Michael Eichberg
  */
 
-object FindBugsAnalyses extends FindBugsAnalyses {
+object FindBugsAnalyses {
   private def printUsage: Unit = {
     println("Usage: java … ClassHierarchy <ZIP or JAR file containing class files>+")
     println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
