@@ -114,7 +114,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       (for {
         classFile ← classFiles.view if classFile.isFinal
         field ← classFile.fields if field.isProtected
-      } yield (classFile, field))
+      } yield (classFile, field)).force
     }
     println("\tViolations: " + protectedFields.size)
     protectedFields
@@ -274,6 +274,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
     unusedFields3LosRes should be (unusedFields)
 
     val unusedFields3LosOpt = Optimization optimize unusedFields3Los
+    println(unusedFields3LosOpt)
     val unusedFields3LosOptRes = benchInterpret("UUF_UNUSED_FIELD-3 Opt Los", unusedFields3LosOpt)
     unusedFields3LosOptRes should be (unusedFields)
 
