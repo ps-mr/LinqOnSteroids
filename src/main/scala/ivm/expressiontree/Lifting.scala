@@ -5,7 +5,7 @@ import collection.generic.CanBuildFrom
 
 trait OptionLifting extends BaseExps {
   this: TraversableOps =>
-  implicit def expOption2Iterable[T](t: Exp[Option[T]]) = onExp(t)('Option_option2Iterable, x => x: Iterable[T])
+  implicit def expOption2Iterable[T](t: Exp[Option[T]]) = onExp(t)(OptionOps.optionToIterableId, x => x: Iterable[T])
 
   // We would like to have this conversion available:
   //   implicit def expOption2TraversableOps[T](t: Exp[Option[T]]) = (t: Exp[Iterable[T]]): TraversableOps[T]
@@ -15,12 +15,19 @@ trait OptionLifting extends BaseExps {
   // provides a plausible flatMap overload, and when that fails to match it's too late for the compiler to backtrack and
   // try the other one.
   // What we need to do is to provide the different versions of flatMap on OptionOps, which is not straightforward - see
-  // below.  
+  // below.
 
   object OptionOps {
+    /* Symbol IDs are magic constants, even if self-documenting, so they are defined here. This way, if those IDs are
+     * used externally (say in Optimization), it's still possible to change them without breaking the code.
+     * Symbol names might seem similar, but they are not supported by refactorings - and additionally there is no
+     * builtin concept of name resolution for symbols in Scala.
+     */
+
     val optionMapId = 'Option$map
     val optionFilterId = 'Option$filter
     val optionFlatMapId = 'Option$flatMap
+    val optionToIterableId = 'Option_option2Iterable
 
     sealed trait FlatMappableTo[U] {
       def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[U]): Exp[U]
