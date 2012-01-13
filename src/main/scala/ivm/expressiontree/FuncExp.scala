@@ -132,7 +132,7 @@ object FuncExpInt {
 }
 
 class FuncExpInt2[S1, S2, T](val foasBody: Exp[T], v1: TypedVar[S1], v2: TypedVar[S2])
-  extends FuncExp[(S1, S2), T](p => foasBody.substVar(v1.id, Proj1(p)).substVar(v2.id, Proj2(p)))
+  extends FuncExp[(S1, S2), T](p => foasBody.substVar(v1, Proj1(p)).substVar(v2, Proj2(p)))
 {
   override def arrowString = "=i=>"
   override def interpret() = {
@@ -177,7 +177,7 @@ object FuncExp {
 
   val varzero = gensym()
 
-  def closeOver[S, T](e: Exp[T], v: TypedVar[S]): Exp[S] => Exp[T] = x => e.substVar(v.id, x)
+  def closeOver[S, T](e: Exp[T], v: TypedVar[S]): Exp[S] => Exp[T] = x => e.substVar(v, x)
   //def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = FuncExp(closeOver(e, v))
   //def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = new FuncExpInt(e, v)
   def makefun[S, T](e: Exp[T], v: TypedVar[/*S*/_]): FuncExp[S, T] = new FuncExpInt(e, v)
