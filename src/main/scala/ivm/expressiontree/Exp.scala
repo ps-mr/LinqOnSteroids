@@ -62,9 +62,9 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   private[ivm] def isOrContains(e: Exp[_]): Boolean =
     (this findTotFun (_ == e)).nonEmpty
 
-  private[ivm] def substVar[S](V: TypedVar[_], e: Exp[S]) =
+  private[ivm] def substSubTerm[S](SubTerm: Exp[_], e: Exp[S]) =
     transform(exp => exp match {
-      case V => e
+      case SubTerm => e
       case _ => exp
     })
 
