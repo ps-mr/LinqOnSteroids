@@ -19,6 +19,10 @@ class BooleanOperatorTests extends JUnitSuite with ShouldMatchersForJUnit {
     val o3: Exp[Boolean] = Not(Or(Not(And(Var(0), Not(And(Var(1),Var(2))))), Not(Var(0))))
     val r3 = BooleanOperators.cnf(o3)
     r3 should be (Set(Var(0), Or(Not(Var(1)),Not(Var(2)))))
+
+    val o4: Exp[Boolean] = Or(And(Var(0), Var(1)), And(Var(2), Var(3)))
+    val r4 = BooleanOperators.cnf(o4)
+    r4 should be (Set(Or(Var(0), Var(2)), Or(Var(0), Var(3)), Or(Var(1), Var(2)), Or(Var(1), Var(3))))
   }
 
 }

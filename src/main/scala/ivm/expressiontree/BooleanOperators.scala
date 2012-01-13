@@ -18,6 +18,7 @@ case class Not(x: Exp[Boolean]) extends UnaryOpExp[Boolean, Boolean](x) {
 
 object BooleanOperators {
   // convert formula to CNF using naive algorithm
+  // contract: returns a set of clauses, each of which is a disjunction of literals
   def cnf(in: Exp[Boolean]): Set[Exp[Boolean]] = {
      in match {
        case And(x,y) => cnf(x) ++ cnf(y)
@@ -27,15 +28,10 @@ object BooleanOperators {
        case Or(x,y) => {
          val cnfx = cnf(x)
          val cnfy = cnf(y)
-         if ((cnfx.size == 1) && (cnfy.size == 1))
-           return Set(Or(cnfx.head, cnfy.head))
-         val (c1, c2) = if (cnfx.size > 1) (cnfy, cnfx) else (cnfx, cnfy)
-         val c1factors = c1.fold(Const(true)){
-           (a, b) => And(a, b)
-         }
-         cnf(c2.map(Or(_,c1factors)).fold(Const(true)){
-           (a, b) => And(a, b)
-         })
+         for (clauseX <- cnfx; clauseY <- cnfy)
+           //Since both clauseX and clauseY are disjunction of literals, so is their disjunction, hence the result is a
+           //correct CNF conversion.
+           yield Or(clauseX, clauseY)
        }
        case _ => Set(in)
      }
