@@ -9,8 +9,13 @@ import optimization.Optimization
 import collection.{mutable, TraversableView}
 
 trait TestUtil {
+  def showExpNoVal[T](t: Exp[T], message: String = "") {
+    print("\nQuery name: %s\n *\tstructure:\n\t%s\n" format (message, t))
+  }
+
   def showExp[T](t: Exp[T], message: String = "") {
-    print("\nQuery name: %s\n *\tstructure:\n\t%s\n *\tvalue:\n\t%s\n\n" format (message, t, t.interpret()))
+    showExpNoVal(t, message)
+    print(" *\tvalue:\n\t%s\n\n" format t.interpret())
   }
 
   def show(name: String, v: Any) {
