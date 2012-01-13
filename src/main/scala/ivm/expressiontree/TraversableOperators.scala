@@ -67,7 +67,7 @@ case class Size[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) ext
 case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T])
                                  (implicit cS: ClassManifest[S])
                                   extends BinaryOp[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]]](base, f) {
-  private[this] val classS = cS.erasure
+  private[this] val classS = IfInstanceOf.getErasure(cS)
 
   override def interpret() = {
     val b: C[D[T]] = base.interpret()
@@ -83,7 +83,7 @@ case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](b
                                                                                                   cb: CanBuildFrom[Repr, S, That])
   extends BinaryOp[Exp[Repr], Exp[D[T] => T], That](base, f)
 {
-  private[this] val classS = cS.erasure
+  private[this] val classS = IfInstanceOf.getErasure(cS)
   def interpret() = {
     val b: Repr = base.interpret()
     b.filter(x => classS.isInstance(f.interpret()(x))).asInstanceOf[That]
