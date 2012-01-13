@@ -278,7 +278,7 @@ object FoldOperatorsMain {
       val query = incBufQ forall (_ % 2 === 0)
       val query2 = incBufQ exists (_ % 2 === 0)
       incBuf.addSubscriber(query)
-      val query2Content = query2.x.asInstanceOf[Forall[Int]]
+      val query2Content = query2.t1.asInstanceOf[Forall[Int]]
       incBuf.addSubscriber(query2Content)
       //XXX this is disabled because IVM support for Not was disabled
       //query2Content.addSubscriber(query2)

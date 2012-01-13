@@ -1,19 +1,19 @@
 package ivm.expressiontree
 
 
-case class And(x: Exp[Boolean], y: Exp[Boolean]) extends BinaryOpSymmExp[Boolean, Boolean](x, y) {
+case class And(t1: Exp[Boolean], t2: Exp[Boolean]) extends CommutativeOp[Boolean] {
   def copy(x: Exp[Boolean], y: Exp[Boolean]) = And(x, y)
-  def interpret() = x.interpret() && y.interpret()
+  def interpret() = t1.interpret() && t2.interpret()
 }
 
-case class Or(x: Exp[Boolean], y: Exp[Boolean]) extends BinaryOpSymmExp[Boolean, Boolean](x, y) {
+case class Or(t1: Exp[Boolean], t2: Exp[Boolean]) extends CommutativeOp[Boolean] {
   def copy(x: Exp[Boolean], y: Exp[Boolean]) = Or(x, y)
-  def interpret() = x.interpret() || y.interpret()
+  def interpret() = t1.interpret() || t2.interpret()
 }
 
-case class Not(x: Exp[Boolean]) extends UnaryOpExp[Boolean, Boolean](x) {
+case class Not(t1: Exp[Boolean]) extends UnaryOpExpTrait[Boolean, Boolean] {
   def copy(x: Exp[Boolean]) = Not(x)
-  def interpret() = !x.interpret()
+  def interpret() = !t1.interpret()
 }
 
 object BooleanOperators {

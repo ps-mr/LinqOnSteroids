@@ -23,6 +23,8 @@ trait UnaryOpTrait[T1 <: Exp[_], +R] extends Exp[R] {
 
 abstract class UnaryOp[T1 <: Exp[_], +R](val t1: T1) extends UnaryOpTrait[T1, R]
 
+trait UnaryOpExpTrait[T1, +R] extends UnaryOpTrait[Exp[T1], R]
+
 abstract class UnaryOpExp[T1, R](t1: Exp[T1]) extends UnaryOp[Exp[T1], R](t1)
 
 trait BinaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], +R] extends Exp[R] {
