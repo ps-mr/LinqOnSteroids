@@ -86,5 +86,16 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
     r.interpret() should equal (rAntiJoin.interpret())
     r.interpret() should equal (rOpt.interpret())
   }
+
+  @Test
+  def testTypeFilterPrimitive() {
+    val base = asExp(Seq(1))
+    val query1 = for (i <- base.typeFilter[Int] if i % 2 === 0) yield i
+    val query2 = for (i <- base.typeFilter[Int] if i % 2 === 1) yield i
+    query1.expResult() should be (Seq())
+    query2.expResult() should be (Seq(1))
+    val query21 = for (i <- base; iCast <- i.ifInstanceOf[Int] if iCast % 2 === 1) yield iCast
+    query21.expResult() should be (Seq(1))
+  }
 }
 
