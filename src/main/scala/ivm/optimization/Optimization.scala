@@ -92,7 +92,6 @@ object OptimizationTransforms {
     moFun.x).f)*/
   }
 
-  //XXX maybe finished - needs testing!
   val cartProdToAntiJoin: Exp[_] => Exp[_] =
     e => e match {
       case Filter(filteredColl: Exp[Traversable[_]],
@@ -280,6 +279,8 @@ object Optimization {
   }
 
   def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.cartProdToJoin)
+
+  def cartProdToAntiJoin[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.cartProdToAntiJoin)
 
   def optimize[T](exp: Exp[T]): Exp[T] = {
     shareSubqueries(

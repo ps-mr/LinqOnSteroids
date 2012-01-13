@@ -2,15 +2,15 @@ package ivm
 package tests
 
 import scala.collection.immutable.Vector
-import optimization.Optimization._
 import expressiontree.Lifting._
 import expressiontree._
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test
-import optimization.OptimizationTransforms
+import optimization.Optimization
+import Optimization.optimize
 
-class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
+class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
   def test(x: Int, y: Int): Boolean = x+y == 12
   def foo(x: Int): Int = x
   def bar(x: Int): Int = x
@@ -77,8 +77,8 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit  {
   @Test
   def testAntiJoin() {
     val r = for (k <- l if j forall (k2 => k !== k2)) yield k
-    val rAntiJoin = r.transform(OptimizationTransforms.cartProdToAntiJoin)
-    //XXX: this is problematic because it transforms the newly-built FuncExp nodes into FuncExpInt ones.
+    val rAntiJoin = Optimization.cartProdToAntiJoin(r)
+    //This was problematic because it transforms the newly-built FuncExp nodes into FuncExpInt ones, so we test that it works.
     val rOpt = optimize(rAntiJoin)
     println(r)
     println(rAntiJoin)
