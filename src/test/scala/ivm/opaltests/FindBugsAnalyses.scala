@@ -37,17 +37,15 @@ import de.tud.cs.st._
 import bat.resolved._
 import analyses._
 
-import util.perf.{ Counting, PerformanceEvaluation }
-import util.graphs.{ Node, toDot }
 import reader.Java6Framework
 
 import org.junit.Test
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import expressiontree.{Exp, Lifting}
 import Lifting._
-import collection.generic.CanBuildFrom
-import collection.{TraversableViewLike, TraversableLike, TraversableView}
+import collection.TraversableView
 import optimization.Optimization
+import tests.TestUtil
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -85,9 +83,7 @@ object FindBugsAnalyses {
   }
 }
 
-class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
-  private val CountingPerformanceEvaluator = new PerformanceEvaluation with Counting
-  import CountingPerformanceEvaluator._
+class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   import ivm.performancetests.Benchmarking
 
   private def benchMark[T](msg: String)(t: ⇒ T): T = {
@@ -100,13 +96,34 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
     analyze(Seq("lib/scalatest-1.6.1.jar"))
   }
 
-  def benchInterpret[T] //, Repr <: Traversable[T] with TraversableLike[T, Repr], ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl] with TraversableView[T, Repr], That]
-  (
-    msg: String, v: Exp[TraversableView[T, Traversable[_]]])//( //Exp[ViewColl with TraversableLike[T, Repr]])(
-    //implicit bf: CanBuildFrom[Repr, T, That]): That =
-  : Traversable[T] =
+  type QueryRes[T] = TraversableView[T, Traversable[_]]
+  def optimizerTable[T]: Seq[(String, Exp[T] => Exp[T])] = Seq((" - after optimization", Optimization.optimize _))
+
+  def benchInterpret[T](msg: String,
+                        v: Exp[QueryRes[T]],
+                        extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty): Traversable[T] =
   {
-    benchMark(msg)(v.interpret().force)
+    def doRun(msg: String, v: Exp[QueryRes[T]]) = {
+      showExpNoVal(v, msg)
+      benchMark(msg)(v.interpret().force)
+    }
+
+    val res = doRun(msg, v)
+    for ((msgExtra, optim) <- optimizerTable[QueryRes[T]] ++ extraOptims.asInstanceOf[Seq[(String, Exp[QueryRes[T]] => Exp[QueryRes[T]])]]) {
+      val resOpt = doRun(msg + msgExtra, optim(v))
+      resOpt should be (res)
+    }
+
+    res
+  }
+
+  def benchQuery[T](msg: String,
+                    v: Exp[QueryRes[T]],
+                    expectedResult: Traversable[T],
+                    extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty): Traversable[T] = {
+    val res = benchInterpret(msg, v, extraOptims)
+    res should be (expectedResult)
+    res
   }
 
   private def analyzeConfusedInheritanceNative(classFiles: Seq[ClassFile]) = {
@@ -270,17 +287,17 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit {
       } yield (classFile, privateFields)
     }
     println(unusedFields3Los)
-    val unusedFields3LosRes = benchInterpret("UUF_UNUSED_FIELD-3 Los", unusedFields3Los)
+    val unusedFields3LosRes = benchInterpret("UUF_UNUSED_FIELD-3 Los", unusedFields3Los, Seq((" - with Optim: Size To Empty", Optimization.sizeToEmpty _)))
     unusedFields3LosRes should be (unusedFields)
 
-    val unusedFields3LosOpt = Optimization optimize unusedFields3Los
+    /*val unusedFields3LosOpt = Optimization optimize unusedFields3Los
     println(unusedFields3LosOpt)
     val unusedFields3LosOptRes = benchInterpret("UUF_UNUSED_FIELD-3 Opt Los", unusedFields3LosOpt)
     unusedFields3LosOptRes should be (unusedFields)
 
     val unusedFields3LosOptSzToEm = Optimization sizeToEmpty unusedFields3LosOpt
     val unusedFields3LosOptSzToEmRes = benchInterpret("UUF_UNUSED_FIELD-3 Opt Size To Empty Los", unusedFields3LosOptSzToEm)
-    unusedFields3LosOptSzToEmRes should be (unusedFields)
+    unusedFields3LosOptSzToEmRes should be (unusedFields)*/
   }
 
   def analyzeExplicitGC(classFiles: Seq[ClassFile]) {
