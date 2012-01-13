@@ -251,24 +251,20 @@ object OptimizationTransforms {
 
   private def tryBuildTypeFilter[T, U](coll: Exp[Traversable[T]],
                                        fmFun: FuncExp[T, TraversableOnce[U]],
-                                       term: Exp[Option[U]], e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
+                                       e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
     val X = fmFun.x
-    term.find {
-      case IfInstanceOf(X) => true
-    } match {
-        //If there is a single IfInstanceOf object...
-      case Seq(instanceOf: IfInstanceOf[_, _]) =>
+    //Correct safety condition for this optimization: The variable of fmFun must appear always wrapped in the same
+    //IfInstanceOf node (with the same type manifest...)
+    val containingX = fmFun.body.findTotFun(_.children.contains(X))
+    containingX.head match {
+      case instanceOfNode@IfInstanceOf(X) if containingX.forall(_ == instanceOfNode) =>
         //Aargh! Do something about this mess, to allow expressing it in a nicer way.
         val v = FuncExp.gensym()
-        val transformed = term transform {
-          exp => exp match {
-            case IfInstanceOf(_) => Let(v)
-            case _ => exp
-          }
-        }
-        buildTypeFilter(coll, instanceOf.cS, FuncExp.makefun(expOption2Iterable(transformed.asInstanceOf[Exp[Option[U]]]), v))
-      //Now, on the result we would really like to drop all the Optionness.
-      case _ => e
+        val transformed = fmFun.body.substSubTerm(IfInstanceOf(X), Let(v))
+        //Note: on the result we would really like to drop all the 'Option'-ness, but that's a separate step.
+        buildTypeFilter(coll, instanceOfNode.cS, FuncExp.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v))
+      case _ =>
+        e
     }
   }
 
@@ -279,10 +275,9 @@ object OptimizationTransforms {
    */
 
   val toTypeFilter: Exp[_] => Exp[_] = {
-    import OptionOps._
     e => e match {
-      case FlatMap(coll: Exp[Traversable[_]], fmFun@FuncExpBody(Call1(`optionToIterableId`, _, term: Exp[Option[u]]))) =>
-        tryBuildTypeFilter(coll, fmFun, term, e.asInstanceOf[Exp[Traversable[u]]])
+      case FlatMap(coll: Exp[Traversable[_]], fmFun: FuncExp[t, u]) =>
+        tryBuildTypeFilter(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
       case _ => e
     }
   }
