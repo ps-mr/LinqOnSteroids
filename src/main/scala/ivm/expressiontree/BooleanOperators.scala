@@ -1,14 +1,12 @@
 package ivm.expressiontree
 
 
-case class And(t1: Exp[Boolean], t2: Exp[Boolean]) extends CommutativeOp[Boolean] {
+case class And(override val t1: Exp[Boolean], override val t2: Exp[Boolean]) extends CommOp[Boolean](t1, t2)(_ && _) {
   def copy(x: Exp[Boolean], y: Exp[Boolean]) = And(x, y)
-  def interpret() = t1.interpret() && t2.interpret()
 }
 
-case class Or(t1: Exp[Boolean], t2: Exp[Boolean]) extends CommutativeOp[Boolean] {
+case class Or(override val t1: Exp[Boolean], override val t2: Exp[Boolean]) extends CommOp[Boolean](t1, t2)(_ || _) {
   def copy(x: Exp[Boolean], y: Exp[Boolean]) = Or(x, y)
-  def interpret() = t1.interpret() || t2.interpret()
 }
 
 case class Not(t1: Exp[Boolean]) extends UnaryOpExpTrait[Boolean, Boolean] {
