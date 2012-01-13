@@ -244,6 +244,41 @@ object OptimizationTransforms {
         coll.isEmpty
       case _ => e
     }
+  
+  def buildTypeFilter[S, T, U](coll: Exp[Traversable[T]], cS: ClassManifest[S], f: FuncExp[S, Traversable[U]]) =
+    //coll.typeFilter(cS).map(f.f)
+    coll.typeFilter(cS).flatMap(f.f)
+
+  val toTypeFilter: Exp[_] => Exp[_] = {
+    import OptionOps._
+    e => e match {
+      case FlatMap(coll: Exp[Traversable[_]], fmFun) =>
+        fmFun match {
+          /*case FuncExpBody(Call1(`optionToIterableId`, _, Call2(`optionMapId`, _, instanceOf@IfInstanceOf(x), f: FuncExp[Any, _]))) =>
+            buildTypeFilter(coll, instanceOf.cS, f)*/
+          case FuncExpBody(Call1(`optionToIterableId`, _, term)) =>
+            term.find {
+              case IfInstanceOf(_) => true
+            } match {
+              case Seq(instanceOf: IfInstanceOf[_, _]) =>
+                //Aargh! Do something about this mess, to allow expressing it in a nicer way.
+                val v = FuncExp.gensym()
+                val transformed = term transform {
+                  exp => exp match {
+                    case IfInstanceOf(_) => Let(v)
+                    case _ => exp
+                  }
+                }
+                buildTypeFilter(coll, instanceOf.cS, FuncExp.makefun(expOption2Iterable(transformed.asInstanceOf[Exp[Option[Any]]]), v))
+                //Now, on the result we would really like to drop all the Optionness.
+              case _ => e
+            }
+          case _ =>
+            e
+        }
+      case _ => e
+    }
+  }
 
   val normalizer: Exp[_] => Exp[_] =
     e => e match {
@@ -283,11 +318,11 @@ object Optimization {
   def cartProdToAntiJoin[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.cartProdToAntiJoin)
 
   def optimize[T](exp: Exp[T]): Exp[T] = {
-    shareSubqueries(
+    shareSubqueries(removeIdentityMaps(
       reassociateOps(
-      mergeMaps(
-       mergeFilters(
-        optimizeCartProdToJoin(exp)))))
+        mergeMaps(
+          mergeFilters(
+            optimizeCartProdToJoin(exp))))))
   }
 
   def reassociateOps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.reassociateOps)
@@ -303,6 +338,8 @@ object Optimization {
   def mergeFilters[T](exp: Exp[T]): Exp[T] = mergeViews(exp.transform(OptimizationTransforms.mergeFilters))
 
   def removeIdentityMaps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.removeIdentityMaps)
+
+  def toTypeFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.toTypeFilter)
 
   def shareSubqueries[T](query: Exp[T]): Exp[T] = {
       new SubquerySharing(subqueries).shareSubqueries(query)
