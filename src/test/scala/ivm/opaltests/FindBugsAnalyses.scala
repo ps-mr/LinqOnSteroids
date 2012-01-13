@@ -151,8 +151,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
       } yield (classFile, field))
     }
     //XXX Should we really use force in the benchmark?
-    val protectedFieldsLosRes = benchInterpret("CI_CONFUSED_INHERITANCE Los", protectedFieldsLos)
-    protectedFieldsLosRes should be (protectedFields)
+    benchQuery("CI_CONFUSED_INHERITANCE Los", protectedFieldsLos, protectedFields)
 
 
     /*val protectedFieldsLos2 = benchMark("CI_CONFUSED_INHERITANCE Los Setup (materialize)") {
@@ -163,8 +162,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     }
     val protectedFieldsLos2Res = benchMark("CI_CONFUSED_INHERITANCE Los interpret noop")(protectedFieldsLos2.interpret())
     protectedFieldsLos2Res should be (protectedFields.toSet)*/
-    val protectedFields2 = analyzeConfusedInheritanceNative(classFiles)
-    protectedFieldsLosRes should be (protectedFields2)
+    analyzeConfusedInheritanceNative(classFiles) should be (protectedFields)
     //protectedFieldsLos2Res should be (protectedFields2.toSet)
   }
 
@@ -248,8 +246,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
     }
-    val unusedFieldsLosRes = benchInterpret("UUF_UNUSED_FIELD Los", unusedFieldsLos)
-    unusedFieldsLosRes should be (unusedFields)
+    benchQuery("UUF_UNUSED_FIELD Los", unusedFieldsLos, unusedFields)
 
     val unusedFields2Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-2 Los Setup") {
       for {
@@ -267,8 +264,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
     }
-    val unusedFields2LosRes = benchInterpret("UUF_UNUSED_FIELD-2 Los", unusedFields2Los)
-    unusedFields2LosRes should be (unusedFields)
+    benchQuery("UUF_UNUSED_FIELD-2 Los", unusedFields2Los, unusedFields)
 
     val unusedFields3Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-3 Los Setup") {
       for {
@@ -287,8 +283,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
       } yield (classFile, privateFields)
     }
     println(unusedFields3Los)
-    val unusedFields3LosRes = benchInterpret("UUF_UNUSED_FIELD-3 Los", unusedFields3Los, Seq((" - with Optim: Size To Empty", Optimization.sizeToEmpty _)))
-    unusedFields3LosRes should be (unusedFields)
+    benchQuery("UUF_UNUSED_FIELD-3 Los", unusedFields3Los, unusedFields, Seq((" - with Optim: Size To Empty", Optimization.sizeToEmpty _)))
 
     /*val unusedFields3LosOpt = Optimization optimize unusedFields3Los
     println(unusedFields3LosOpt)
@@ -341,8 +336,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
               asINVOKEVIRTUAL.get.methodDescriptor == desc
       }
     }
-    val garbageCollectingMethodsLosRes = benchInterpret("DM_GC Los", garbageCollectingMethodsLos)
-    garbageCollectingMethodsLosRes should be (garbageCollectingMethods)
+    benchQuery("DM_GC Los", garbageCollectingMethodsLos, garbageCollectingMethods)
   }
 
   def analyzePublicFinalizer(classFiles: Seq[ClassFile]) {
@@ -363,8 +357,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
         if classFile.methods.exists(method ⇒ method.name === "finalize" && method.isPublic && method.descriptor.returnType === VoidType && method.descriptor.parameterTypes.size === 0)
       ) yield classFile
     }
-    val classesWithPublicFinalizeMethodsLosRes = benchInterpret("FI_PUBLIC_SHOULD_BE_PROTECTED Los", classesWithPublicFinalizeMethodsLos)
-    classesWithPublicFinalizeMethodsLosRes should be (classesWithPublicFinalizeMethods)
+    benchQuery("FI_PUBLIC_SHOULD_BE_PROTECTED Los", classesWithPublicFinalizeMethodsLos, classesWithPublicFinalizeMethods)
   }
 
   def analyzeSerializableNoConstructor(classHierarchy: ClassHierarchy, getClassFile: Map[ObjectType, ClassFile]) {
@@ -393,8 +386,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
         }
       } yield superclass // there can be at most one method
     }
-    val classesWithoutDefaultConstructorLosRes = benchInterpret("SE_NO_SUITABLE_CONSTRUCTOR Los", classesWithoutDefaultConstructorLos)
-    classesWithoutDefaultConstructorLosRes should be (classesWithoutDefaultConstructor)
+    benchQuery("SE_NO_SUITABLE_CONSTRUCTOR Los", classesWithoutDefaultConstructorLos, classesWithoutDefaultConstructor)
   }
 
   def analyzeCatchIllegalMonitorStateException(classFiles: Seq[ClassFile]) {
@@ -417,8 +409,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
         exceptionHandler ← method.body.get.exceptionTable if exceptionHandler.catchType === IllegalMonitorStateExceptionType
       } yield (classFile, method)
     }
-    val catchesIllegalMonitorStateExceptionLosRes = benchInterpret("IMSE_DONT_CATCH_IMSE Los", catchesIllegalMonitorStateExceptionLos)
-    catchesIllegalMonitorStateExceptionLosRes should be (catchesIllegalMonitorStateException)
+    benchQuery("IMSE_DONT_CATCH_IMSE Los", catchesIllegalMonitorStateExceptionLos, catchesIllegalMonitorStateException)
   }
 
   def analyze(zipFiles: Seq[String]) {
