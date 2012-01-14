@@ -7,9 +7,9 @@ import Numeric.Implicits._
 //for all of those - e.g. expression normalization.
 trait CommutativeOp[T] extends BinaryOpExpTrait[T, T, T]
 
-abstract class CommOp[T](x: Exp[T], y: Exp[T]) extends BinaryOpSymmExp[T, T](x, y) with CommutativeOp[T] {
+abstract class CommOp[T](val t1: Exp[T], val t2: Exp[T]) extends CommutativeOp[T] {
   def op: (T, T) => T
-  def interpret() = op(x.interpret(), y.interpret())
+  def interpret() = op(t1.interpret(), t2.interpret())
 }
 
 //Note: the isNum member is referenced by Optimization, thus cannot be transformed into a context bound.
