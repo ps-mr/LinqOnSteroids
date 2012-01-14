@@ -106,7 +106,11 @@ trait DefaultPublisher[+Evt, +Pub <: DefaultPublisher[Evt, Pub]] extends Publish
   }
 }
 
-trait MsgSeqPublisher[+T, +Pub <: MsgSeqPublisher[T, Pub]] extends DefaultPublisher[Seq[Message[T]], Pub] {
+//
+trait MsgSeqPublisher[+T, +Pub <: MsgSeqPublisher[T, Pub]] extends
+IgnoringPublisher[Seq[Message[T]], Pub]
+//DefaultPublisher[Seq[Message[T]], Pub] //XXX: restore this after deadline
+{
   selfAsPub: Pub =>
   protected[this] def publish(evt: Message[T]) {
     publish(Seq(evt))
