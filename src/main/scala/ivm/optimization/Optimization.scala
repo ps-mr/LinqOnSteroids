@@ -282,6 +282,50 @@ object OptimizationTransforms {
     }
   }
 
+  private def tryRemoveRedundantOption[T, U](coll: Exp[Traversable[T]],
+                                       fmFun: FuncExp[T, TraversableOnce[U]],
+                                       e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
+    val X = fmFun.x
+    //Correct safety condition for this optimization: The variable of fmFun must appear always wrapped in the same
+    //Some node
+    val containingX = fmFun.body.findTotFun(_.children.contains(X))
+    import OptionOps._
+    containingX.head match {
+      case letNode@Call1(SomeId, _, X) if containingX.forall(_ == letNode) =>
+        //Aargh! Do something about this mess, to allow expressing it in a nicer way.
+        val v = FuncExp.gensym()
+        val transformed = fmFun.body.substSubTerm(letNode, v).asInstanceOf[Exp[U]] //Note that the type, in fact, should change somehow!
+        //XXX: However, we are assuming, for no good reason, that the type is Option because we are acting on letNode, but we might be acting
+        //on something else.
+        val transformed2 = transformed transform (e2 => e2 match {
+          case Call2(OptionMapId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, u]) => subColl map f.f.asInstanceOf[FuncExp[t, u]]
+          case Call2(OptionFilterId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, _]) => subColl filter f.f.asInstanceOf[FuncExp[t, Boolean]]
+          case Call2(OptionFlatMapId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, TraversableOnce[u]]) => subColl flatMap f.f.asInstanceOf[FuncExp[t, TraversableOnce[u]]]
+          case _ => e2
+        })
+        coll.map(FuncExp.makefun(transformed2, v).f)
+      case _ =>
+        e
+    }
+  }
+
+  //removeRedundantOption is supposed to eliminate redundant lets from code like:
+  //for (i <- base.typeFilter[Int]; j <- Let(i) if j % 2 === 0) yield j
+  //which is for instance produced by toTypeFilter.
+
+  val removeRedundantOption: Exp[_] => Exp[_] = {
+    import OptionOps._
+    e => e match {
+      case FlatMap(coll: Exp[Traversable[t]], (fmFun: FuncExp[_, Traversable[u]]) & FuncExpBody(Call1(OptionToIterableId, _, term))) =>
+        tryRemoveRedundantOption(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
+      /*case FlatMap(coll, fmFun @ FuncExpBody(Call1(OptionToIterableId, _, Call2(OptionMapId, _, subColl, f: FuncExp[Any, _])))) =>
+        e
+      case FlatMap(coll, fmFun @ FuncExpBody(Call1(OptionToIterableId, _, Call2(OptionMapId, _, instanceOf@IfInstanceOf(x), f: FuncExp[Any, _])))) =>
+        e*/
+      case _ => e
+    }
+  }
+
   private def buildHoistedFilterForMap[T, U, V](coll1: Exp[Traversable[T]], fmFun: FuncExp[T, TraversableOnce[V]],
                                 coll2: Exp[Traversable[U]],
                                 filterFun: FuncExp[U, Boolean],

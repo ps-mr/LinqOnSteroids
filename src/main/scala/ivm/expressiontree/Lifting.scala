@@ -5,7 +5,7 @@ import collection.generic.CanBuildFrom
 
 trait OptionLifting extends BaseExps {
   this: TraversableOps =>
-  implicit def expOption2Iterable[T](t: Exp[Option[T]]) = onExp(t)(OptionOps.optionToIterableId, x => x: Iterable[T])
+  implicit def expOption2Iterable[T](t: Exp[Option[T]]) = onExp(t)(OptionOps.OptionToIterableId, x => x: Iterable[T])
 
   // We would like to have this conversion available:
   //   implicit def expOption2TraversableOps[T](t: Exp[Option[T]]) = (t: Exp[Iterable[T]]): TraversableOps[T]
@@ -24,16 +24,17 @@ trait OptionLifting extends BaseExps {
      * builtin concept of name resolution for symbols in Scala.
      */
 
-    val optionMapId = 'Option$map
-    val optionFilterId = 'Option$filter
-    val optionFlatMapId = 'Option$flatMap
-    val optionToIterableId = 'Option_option2Iterable
+    val OptionMapId = 'Option$map
+    val OptionFilterId = 'Option$filter
+    val OptionFlatMapId = 'Option$flatMap
+    val OptionToIterableId = 'Option_option2Iterable
+    val SomeId = 'Some
 
     sealed trait FlatMappableTo[U] {
       def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[U]): Exp[U]
     }
     implicit def option[U] = new FlatMappableTo[Option[U]] {
-      override def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[Option[U]]): Exp[Option[U]] = onExp(t, FuncExp(f))(optionFlatMapId, (a, b) => a flatMap b)
+      override def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[Option[U]]): Exp[Option[U]] = onExp(t, FuncExp(f))(OptionFlatMapId, (a, b) => a flatMap b)
     }
     implicit def traversable[U] = new FlatMappableTo[Traversable[U]] {
       override def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[Traversable[U]]) = (t: Exp[Iterable[T]]) flatMap f
@@ -45,11 +46,11 @@ trait OptionLifting extends BaseExps {
     def isDefined = onExp(t)('isDefined, _.isDefined)
     def get = onExp(t)('get, _.get)
 
-    def filter(p: Exp[T] => Exp[Boolean]): Exp[Option[T]] = onExp(t, FuncExp(p))(optionFilterId, _ filter _) //(t: Exp[Iterable[T]]) withFilter p
+    def filter(p: Exp[T] => Exp[Boolean]): Exp[Option[T]] = onExp(t, FuncExp(p))(OptionFilterId, _ filter _) //(t: Exp[Iterable[T]]) withFilter p
     //We do not lift Option.withFilter because it returns a different type; we could provide operations
     //for that type as well, but I do not see the point of doing that, especially for a side-effect-free predicate.
     def withFilter(p: Exp[T] => Exp[Boolean]) = filter(p)
-    def map[U](f: Exp[T] => Exp[U]): Exp[Option[U]] = onExp(t, FuncExp(f))(optionMapId, _ map _) //(t: Exp[Iterable[T]]) map f
+    def map[U](f: Exp[T] => Exp[U]): Exp[Option[U]] = onExp(t, FuncExp(f))(OptionMapId, _ map _) //(t: Exp[Iterable[T]]) map f
 
     // Finally, we can't provide the two implicit conversions as overloaded version of OptionOps.flatMap - or not directly
     // with Java-style overloading, first because the two overloaded signature:
@@ -69,7 +70,7 @@ trait OptionLifting extends BaseExps {
   }
 
   //Support let-bindings within for-comprehensions without relying on pattern-matching.
-  def Let[T](v: Exp[T]): Exp[Option[T]] = onExp(v)('Some, Some(_))
+  def Let[T](v: Exp[T]): Exp[Option[T]] = onExp(v)(OptionOps.SomeId, Some(_))
 
   case class ExpSeq[T](children: Exp[T]*) extends Exp[Seq[T]] {
     override def nodeArity = children.size
