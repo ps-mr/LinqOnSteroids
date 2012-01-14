@@ -29,6 +29,7 @@ trait Queryable[T, +CC[_], Repr] extends NullaryExp[CC[T]] {
   //type Pub = Queryable[T, Repr] //XXX? Should this be defined here already? Or should Pub be even more specific?
   def asQueryable: Exp[CC[T]] = this
   def asCollection: Repr = this
+  //XXX: this is at odds with concentrating caching into expResult().
   override def interpret() = this
   //This allows selecting early how the query is to be executed.
   // The alternative is to choose between exec(isLazy = true) and exec(isLazy = false).
