@@ -85,17 +85,19 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
         i <- base
         j <- base
         k <- base
+        l <- base
         if i < 3
-      } yield (i, j, k)
+      } yield (i, j, l)
     val opt2 = Optimization.hoistFilter(query2)
-    query2.interpret() should be (for (i <- 1 to 2; j <- 1 to 5; k <- 1 to 5) yield (i, j, k))
+    query2.interpret() should be (for (i <- 1 to 2; j <- 1 to 5; k <- 1 to 5; l <- 1 to 5) yield (i, j, l))
     opt2 should be (
       for {
         i <- base
         if i < 3
         j <- base
         k <- base
-      } yield (i, j, k)
+        l <- base
+      } yield (i, j, l)
     )
     opt2.interpret() should be (query2.interpret())
 
@@ -106,58 +108,18 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
         if i < 3
         j <- base
         k <- base
-      } yield (i, j, k)
+        l <- base
+      } yield (i, j, l)
     )
     opt21.interpret() should be (query2.interpret())
   }
 
   @Test
-  def testHoistFilterWithRange() {
-    val query =
-      for {
-        i <- (1 to 5).asSmartCollection
-        j <- (1 to 5).asSmartCollection
-        if i < 3
-      } yield (i, j)
-    val opt = Optimization.hoistFilter(query)
-    query.interpret() should be (for (i <- 1 to 2; j <- 1 to 5) yield (i, j))
+  def testRemoveRedundantOption() {
+    val base = Seq(1) asSmartCollection
+    val query = for (i <- base.typeFilter[Int]; j <- Let(i) if j % 2 === 1) yield j
+    val opt = Optimization.removeRedundantOption(query)
     opt.interpret() should be (query.interpret())
-    opt should be (
-      for {
-        i <- (1 to 5).asSmartCollection
-        if i < 3
-        j <- (1 to 5).asSmartCollection
-      } yield (i, j)
-    )
-
-    val query2 =
-      for {
-        i <- (1 to 5).asSmartCollection
-        j <- (1 to 5).asSmartCollection
-        k <- (1 to 5).asSmartCollection
-        if i < 3
-      } yield (i, j, k)
-    val opt2 = Optimization.hoistFilter(query2)
-    query2.interpret() should be (for (i <- 1 to 2; j <- 1 to 5; k <- 1 to 5) yield (i, j, k))
-    opt2 should be (
-      for {
-        i <- (1 to 5).asSmartCollection
-        if i < 3
-        j <- (1 to 5).asSmartCollection
-        k <- (1 to 5).asSmartCollection
-      } yield (i, j, k)
-    )
-    opt2.interpret() should be (query2.interpret())
-
-    val opt21 = Optimization.hoistFilter(opt2)
-    opt21 should be (
-      for {
-        i <- (1 to 5).asSmartCollection
-        if i < 3
-        j <- (1 to 5).asSmartCollection
-        k <- (1 to 5).asSmartCollection
-      } yield (i, j, k)
-    )
-    opt21.interpret() should be (query2.interpret())
+    opt should be (for (i <- base.typeFilter[Int]; if i % 2 === 1) yield i)
   }
 }

@@ -87,8 +87,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
   import ivm.performancetests.Benchmarking
 
   private def benchMark[T](msg: String)(t: ⇒ T): T = {
-    val debug = false
-    Benchmarking.benchMark(msg, warmUpLoops = if (debug) 1 else 100, sampleLoops = if (debug) 2 else 50)(t)
+    val debug = true
+    Benchmarking.benchMark(msg, warmUpLoops = if (debug) 0 else 100, sampleLoops = if (debug) 1 else 50)(t)
     //Benchmarking.benchMark(msg)(t)
   }
   @Test
