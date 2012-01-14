@@ -260,7 +260,7 @@ object OptimizationTransforms {
       case instanceOfNode@IfInstanceOf(X) if containingX.forall(_ == instanceOfNode) =>
         //Aargh! Do something about this mess, to allow expressing it in a nicer way.
         val v = FuncExp.gensym()
-        val transformed = fmFun.body.substSubTerm(IfInstanceOf(X), Let(v))
+        val transformed = fmFun.body.substSubTerm(instanceOfNode, Let(v))
         //Note: on the result we would really like to drop all the 'Option'-ness, but that's a separate step.
         buildTypeFilter(coll, instanceOfNode.cS, FuncExp.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v))
       case _ =>
@@ -278,6 +278,28 @@ object OptimizationTransforms {
     e => e match {
       case FlatMap(coll: Exp[Traversable[_]], fmFun: FuncExp[t, u]) =>
         tryBuildTypeFilter(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
+      case _ => e
+    }
+  }
+
+  private def buildHoistedFilter[T, U, V](coll1: Exp[Traversable[T]], fmFun: FuncExp[T, TraversableOnce[V]],
+                                coll: Exp[Traversable[U]],
+                                filterFun: FuncExp[U, Boolean],
+                                mapFun: FuncExp[U, V]): Exp[Traversable[V]] = {
+    //Let's show that the source types are correct, in that we can rebuild the original expression:
+    import Util.assertType
+    assertType[Exp[Traversable[V]]](coll1.flatMap(fmFun.f))
+    assertType[Exp[Traversable[V]]](coll1.flatMap(FuncExp.makefun(coll.filter(filterFun.f).map(mapFun.f), fmFun.x).f))
+    val ret: Exp[Traversable[V]] = coll1.withFilter(FuncExp.makefun(filterFun.body, fmFun.x).f) flatMap FuncExp.makefun(stripView(coll) map mapFun.f, fmFun.x).f
+    ret
+  }
+
+  val hoistFilter: Exp[_] => Exp[_] = {
+    e => e match {
+      case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(MapOp(Filter(coll: Exp[Traversable[_]], filterFun), mapFun)))
+        if !filterFun.body.isOrContains(filterFun.x) =>
+        buildHoistedFilter(coll1, fmFun, coll, filterFun, mapFun)
+        //coll1.filter(FuncExp.makefun(filterFun.body, fmFun.x).f) flatMap FuncExp.makefun(coll map mapFun.f, fmFun.x).f
       case _ => e
     }
   }
@@ -342,6 +364,8 @@ object Optimization {
   def removeIdentityMaps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.removeIdentityMaps)
 
   def toTypeFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.toTypeFilter)
+
+  def hoistFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.hoistFilter)
 
   def shareSubqueries[T](query: Exp[T]): Exp[T] = {
       new SubquerySharing(subqueries).shareSubqueries(query)
