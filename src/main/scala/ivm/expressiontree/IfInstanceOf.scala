@@ -17,7 +17,7 @@ object IfInstanceOf {
     primitiveToWrapper.getOrElse(cS.erasure, cS.erasure)
 }
 
-case class IfInstanceOf[T,S](x: Exp[T])(implicit val cS: ClassManifest[S]) extends UnaryOpExp[T,Option[S]](x) {
+case class IfInstanceOf[T, S](x: Exp[T])(implicit val cS: ClassManifest[S]) extends UnaryOpExp[T, Option[S], IfInstanceOf[T, S]](x) {
   import IfInstanceOf._
   /*
    * This is required to get the expected behavior also for primitive types. Class.isInstance(Object) documents that
