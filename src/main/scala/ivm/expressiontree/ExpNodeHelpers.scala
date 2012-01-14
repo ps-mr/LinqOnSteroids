@@ -52,7 +52,7 @@ trait BinaryOpExpTrait[T1, T2, +R] extends BinaryOpTrait[Exp[T1], Exp[T2], R]
 // Should this inherit from BinaryOpExpTrait or from BinaryOp? Does it matter? I hope not - these classes should
 // stay an implementation detail.
 abstract class BinaryOpExp[T1, T2, +R](t1: Exp[T1], t2: Exp[T2]) extends BinaryOp[Exp[T1], Exp[T2], R](t1, t2)
-abstract class BinaryOpSymmExp[Arg, +R](t1: Exp[Arg], t2: Exp[Arg]) extends BinaryOpExp[Arg, Arg, R](t1, t2)
+trait BinaryOpSymmExp[Arg, +R] extends BinaryOpExpTrait[Arg, Arg, R]
 
 trait TernaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R] extends Exp[R] {
   def t1: T1

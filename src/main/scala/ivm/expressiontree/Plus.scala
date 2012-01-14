@@ -5,7 +5,7 @@ import Numeric.Implicits._
 //Root node for all binary, associative and commutative operations. The
 //intuition is that many operations (including optimizations) might apply
 //for all of those - e.g. expression normalization.
-trait CommutativeOp[T] extends BinaryOpExpTrait[T, T, T]
+trait CommutativeOp[T] extends BinaryOpSymmExp[T, T]
 
 abstract class CommOp[T](val t1: Exp[T], val t2: Exp[T]) extends CommutativeOp[T] {
   def op: (T, T) => T

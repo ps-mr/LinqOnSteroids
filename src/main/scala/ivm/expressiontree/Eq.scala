@@ -1,10 +1,10 @@
 package ivm.expressiontree
 
-case class Eq[/*@specialized(Int, Boolean, Double)*/ T](x: Exp[T], y: Exp[T]) extends BinaryOpSymmExp[T, Boolean](x, y) {
+case class Eq[/*@specialized(Int, Boolean, Double)*/ T](t1: Exp[T], t2: Exp[T]) extends BinaryOpSymmExp[T, Boolean] {
   def copy(x: Exp[T], y: Exp[T]) = Eq(x, y)
   def interpret() = {
-    val v1 = x.interpret()
-    val v2 = y.interpret()
+    val v1 = t1.interpret()
+    val v2 = t2.interpret()
     v1 == v2
 
   };
