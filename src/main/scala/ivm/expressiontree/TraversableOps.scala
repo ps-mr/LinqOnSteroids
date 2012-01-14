@@ -16,9 +16,9 @@ trait TraversableOps {
                                                                                                    f: FuncExp[T, U])
                                                                                                   (implicit c: CanBuildFrom[Repr, U, That]) =
     MapOp(base, f)
-  def newFlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]](base: Exp[Repr], f: Exp[T] => Exp[TraversableOnce[U]])
+  def newFlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
                                         (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-    FlatMap(base, FuncExp(f))
+    FlatMap(base, f)
 
   def newUnion[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U >: T, That <: Traversable[U]](base: Exp[Repr with Traversable[T]], that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
     new Union(base, that)
