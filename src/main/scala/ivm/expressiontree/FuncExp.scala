@@ -52,7 +52,7 @@ abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
   }
 }
 
-case class FuncExp[-S, +T](f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S => T] {
+class FuncExp[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S => T] {
   def interpret(): S => T =
     z => f(Const(z)).interpret()
 
@@ -170,6 +170,10 @@ case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends B
 }
 
 object FuncExp {
+  //Force switch to FuncExpInt everywhere with a single line of code :-)
+  def apply[S, T](f: Exp[S] => Exp[T]) = FuncExpInt.apply(f)
+  def unapply[S, T](f: FuncExp[S, T]) = Some(f.f)
+
   private val varCounter = new AtomicInteger(0)
   def gensymId(): Int = varCounter.incrementAndGet()
   //def gensym(): Var = Var(gensymId())
