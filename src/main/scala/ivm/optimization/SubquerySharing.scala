@@ -52,18 +52,28 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
   private def tryGroupBy[T](c: Exp[Traversable[T]],
                                allConds: Set[Exp[Boolean]],
                                f: FuncExp[T,Boolean])
-                               (equ: Exp[Boolean]): Option[Exp[FilterMonadic[T, Traversable[T]]]] = {
+                               (equ: Exp[Boolean]): Option[Exp[FilterMonadic[T, Traversable[T]]]] =
     equ match {
-      case eq: Eq[t2] => {
-       val oq: Option[Exp[Traversable[T]]] =
-        if (eq.x.isOrContains(f.x) && !eq.y.isOrContains(f.x))
-                 groupByShareBody[T,t2](c, f, eq, eq.y, eq.x)
-              else if (eq.y.isOrContains(f.x) && !eq.x.isOrContains(f.x))
-                 groupByShareBody[T,t2](c, f, eq, eq.x, eq.y)
-              else None
-       oq.map( (e) => residualQuery(e, allConds-eq, f.x)) }
+      case eq: Eq[t2] =>
+        val oq: Option[Exp[Traversable[T]]] =
+          if (eq.t1.isOrContains(f.x) && !eq.t2.isOrContains(f.x))
+            groupByShareBody[T, t2](c, f, eq, eq.t2, eq.t1)
+          else if (eq.t2.isOrContains(f.x) && !eq.t1.isOrContains(f.x))
+            groupByShareBody[T, t2](c, f, eq, eq.t1, eq.t2)
+          else None
+        oq.map(e => residualQuery(e, allConds - eq, f.x))
       case _ => None
     }
+
+  //This is equivalent to coll.collectFirst(Function.unlift(f)), but it saves the expensive Function.unlift.
+  private def collectFirst[T, U](coll: TraversableOnce[T])(f: T => Option[U]): Option[U] = {
+    for (x <- coll) {
+      f(x) match {
+        case v@Some(_) => return v
+        case _ =>
+      }
+    }
+    None
   }
 
   //XXX: we should strip View if needed on _both_ sides before performing the match.
@@ -71,9 +81,7 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
    e => e match {
      case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _/*Boolean*/]) =>
        val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
-       //Function.unlift is expensive.
-       val optimized: Option[Exp[_]]=
-         conds.collectFirst( Function.unlift( tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]),conds,f)))
+       val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f)(_))
        optimized.getOrElse(e)
      case _ => e
    }
