@@ -282,27 +282,53 @@ object OptimizationTransforms {
     }
   }
 
-  private def buildHoistedFilter[T, U, V](coll1: Exp[Traversable[T]], fmFun: FuncExp[T, TraversableOnce[V]],
-                                coll: Exp[Traversable[U]],
+  private def buildHoistedFilterForMap[T, U, V](coll1: Exp[Traversable[T]], fmFun: FuncExp[T, TraversableOnce[V]],
+                                coll2: Exp[Traversable[U]],
                                 filterFun: FuncExp[U, Boolean],
                                 mapFun: FuncExp[U, V]): Exp[Traversable[V]] = {
     //Let's show that the source types are correct, in that we can rebuild the original expression:
     import Util.assertType
     assertType[Exp[Traversable[V]]](coll1.flatMap(fmFun.f))
-    assertType[Exp[Traversable[V]]](coll1.flatMap(FuncExp.makefun(coll.filter(filterFun.f).map(mapFun.f), fmFun.x).f))
-    val ret: Exp[Traversable[V]] = coll1.withFilter(FuncExp.makefun(filterFun.body, fmFun.x).f) flatMap FuncExp.makefun(stripView(coll) map mapFun.f, fmFun.x).f
+    assertType[Exp[Traversable[V]]](coll1.flatMap(FuncExp.makefun(coll2.filter(filterFun.f).map(mapFun.f), fmFun.x).f))
+    val ret: Exp[Traversable[V]] = coll1.withFilter(FuncExp.makefun(filterFun.body, fmFun.x).f) flatMap FuncExp.makefun(stripView(coll2) map mapFun.f, fmFun.x).f
     ret
   }
 
-  val hoistFilter: Exp[_] => Exp[_] = {
-    e => e match {
-      case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(MapOp(Filter(coll: Exp[Traversable[_]], filterFun), mapFun)))
-        if !filterFun.body.isOrContains(filterFun.x) =>
-        buildHoistedFilter(coll1, fmFun, coll, filterFun, mapFun)
-        //coll1.filter(FuncExp.makefun(filterFun.body, fmFun.x).f) flatMap FuncExp.makefun(coll map mapFun.f, fmFun.x).f
-      case _ => e
-    }
+  private def buildHoistedFilterForFlatMap[T, U, V](coll1: Exp[Traversable[T]], fmFun: FuncExp[T, TraversableOnce[V]],
+                                                coll2: Exp[Traversable[U]],
+                                                filterFun: FuncExp[U, Boolean],
+                                                fmFun2: FuncExp[U, TraversableOnce[V]]): Exp[Traversable[V]] = {
+    //Let's show that the source types are correct, in that we can rebuild the original expression:
+    import Util.assertType
+    assertType[Exp[Traversable[V]]](coll1.flatMap(fmFun.f))
+    assertType[Exp[Traversable[V]]](coll1.flatMap(FuncExp.makefun(coll2.filter(filterFun.f).flatMap(fmFun2.f), fmFun.x).f))
+    val ret: Exp[Traversable[V]] = coll1.withFilter(FuncExp.makefun(filterFun.body, fmFun.x).f) flatMap FuncExp.makefun(stripView(coll2) flatMap fmFun2.f, fmFun.x).f
+    ret
   }
+
+  //TODO: apply this optimization in a fixpoint loop, to move the filter as much as needed.
+  //Scalac miscompiles this code if I write it the obvious way - without optimizations enabled!
+  val hoistFilter: Exp[_] => Exp[_] =
+    e => {
+      val e1 = e match {
+        case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(MapOp(Filter(coll2: Exp[Traversable[_]], filterFun), mapFun)))
+          if !filterFun.body.isOrContains(filterFun.x) =>
+          buildHoistedFilterForMap(coll1, fmFun, coll2, filterFun, mapFun)
+        //coll1.filter(FuncExp.makefun(filterFun.body, fmFun.x).f) flatMap FuncExp.makefun(coll map mapFun.f, fmFun.x).f
+          /*
+        case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(FlatMap(Filter(coll2: Exp[Traversable[_]], filterFun), fmFun2)))
+          if !filterFun.body.isOrContains(filterFun.x) =>
+          buildHoistedFilterForFlatMap(coll1, fmFun, coll2, filterFun, fmFun2)
+          */
+        case _ => e
+      }
+      e1 match {
+        case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(FlatMap(Filter(coll2: Exp[Traversable[_]], filterFun), fmFun2)))
+          if !filterFun.body.isOrContains(filterFun.x) =>
+          buildHoistedFilterForFlatMap(coll1, fmFun, coll2, filterFun, fmFun2)
+        case _ => e1
+      }
+    }
 
   val normalizer: Exp[_] => Exp[_] =
     e => e match {

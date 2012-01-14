@@ -92,8 +92,8 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
     opt2 should be (
       for {
         i <- base
-        j <- base
         if i < 3
+        j <- base
         k <- base
       } yield (i, j, k)
     )
@@ -142,8 +142,8 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
     opt2 should be (
       for {
         i <- (1 to 5).asSmartCollection
-        j <- (1 to 5).asSmartCollection
         if i < 3
+        j <- (1 to 5).asSmartCollection
         k <- (1 to 5).asSmartCollection
       } yield (i, j, k)
     )
