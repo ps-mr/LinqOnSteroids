@@ -25,4 +25,14 @@ class BooleanOperatorTests extends JUnitSuite with ShouldMatchersForJUnit {
     r4 should be (Set(Or(Var(0), Var(2)), Or(Var(0), Var(3)), Or(Var(1), Var(2)), Or(Var(1), Var(3))))
   }
 
+  @Test
+  def testShortCircuit() {
+    val coll = Seq(None, Some(1)) asSmartCollection
+    val query = for {
+      v <- coll
+      //This line executes correctly only if And is short-circuiting, as it should be.
+      if v.isDefined && v.get === 1
+    } yield v.get
+    query.expResult() should be (Traversable(1))
+  }
 }
