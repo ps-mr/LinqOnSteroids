@@ -54,9 +54,9 @@ trait IncSetLike[T, CCThis[X] <: Set[X] with SetLike[X, CCThis[X]] with GenSet[X
   //so we fake it.
   override def companion: GenericCompanion[CCThis] = null
 }
-// XXX: How comes that the above definition of IncSetLike does not break down? Now we restricted the scope of the
+// Note: How comes that the above definition of IncSetLike does not break down? Now we restricted the scope of the
 // publish method, by inheriting a stricter definition of MsgSeqPublisher. How come that ObservableSet can still publish
-// messages of type Seq[Message[Traversable[T]]] ?
+// messages of type Seq[Message[Traversable[T]]] ? See discussion about IncrementalResult
 
 class IncHashSet[T] extends HashSet[T]
    with IncSetLike[T, IncHashSet, HashSet[T]] with MsgSeqPublisher[collection.Set[T], IncHashSet[T]]

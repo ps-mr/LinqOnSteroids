@@ -121,6 +121,11 @@ class IncrementalResultBase[T](val base: Exp[Traversable[T]])
  *
  * Note that the strangeness stems from the fact that since publish is protected[this], its argument type is allowed to
  * be covariant.
+ *
+ * The same phenomenon happens with IncHashSet and IncSetLike. Apparently, given A <: CovariantType[Base] and
+ * B <: A with CovariantType[Derived], if CovariantType[T] has a method protected[this] def foo(t: T),
+ * A contains def foo(t: Base) and B contains def foo(t: Derived) but does not contain any more def foo(t: Base). Since
+ * for other objects foo is not available anyway, this does not violate Liskov's substitution principle.
  */
 class IncrementalResult[T](base: Exp[Traversable[T]])
   extends IncrementalResultBase(base) with Queryable[T, collection.Set, collection.SetProxy[T]]
