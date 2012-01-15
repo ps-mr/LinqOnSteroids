@@ -105,11 +105,13 @@ trait TupleOps {
   implicit def toPairOps[A, B](e: Exp[(A, B)]): PairOps[A, B] = new PairOps(e)
 
   implicit def tripleToTripleExp[A, B, C](triple: (Exp[A], Exp[B], Exp[C])): Exp[(A, B, C)] = onExp(triple._1, triple._2, triple._3)('Tuple3, Tuple3.apply)
-  implicit def to3pleHelper[A, B, C](e: Exp[(A, B, C)]) = new {
+
+  class TripleOps[A, B, C](e: Exp[(A, B, C)]) {
     def _1 = onExp(e)('_1, _._1)
     def _2 = onExp(e)('_2, _._2)
     def _3 = onExp(e)('_3, _._3)
   }
+  implicit def toTripleOps[A, B, C](e: Exp[(A, B, C)]) = new TripleOps(e)
 }
 
 trait BaseExps extends LiftingConvs with FunctionOps with TupleOps
