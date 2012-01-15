@@ -27,6 +27,11 @@ trait ConversionDisabler {
 }
 
 trait LiftingConvs extends ConversionDisabler {
+  //The following variant would avoid ugliness like:
+  //implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
+  //but it does not work (bug https://issues.scala-lang.org/browse/SI-3346).
+  //implicit def toExp[T, U <% T](t: U): Exp[T] = Const(t)
+  //So let's keep it simple.
   implicit def toExp[T](t: T): Exp[T] = Const(t)
 
   //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
@@ -134,11 +139,18 @@ trait NumOps {
     def %(that: Exp[T]): Exp[T] = onExp(implicitly[Integral[T]], this.t, that)('IntegralOps$mod, _.rem(_, _))
   }
 
+  //Solution 1:
+  //implicit def expToNumOps[T: Numeric, U <% Exp[T]](t: U) = new NumericOps(t)
+  //Doesn't work because of https://issues.scala-lang.org/browse/SI-3346 - expToNumOps is the same as mkOps in their example.
+  //Solution 2:
   implicit def expToNumOps[T: Numeric](t: Exp[T]) = new NumericOps(t)
-  implicit def expToFractionalOps[T: Fractional](t: Exp[T]) = new FractionalOps(t)
-  implicit def expToIntegralOps[T: Integral](t: Exp[T]) = new IntegralOps(t)
   implicit def toNumOps[T: Numeric](t: T) = expToNumOps(t)
+
+  //Same for the others:
+  implicit def expToFractionalOps[T: Fractional](t: Exp[T]) = new FractionalOps(t)
   implicit def toFractionalOps[T: Fractional](t: T) = expToFractionalOps(t)
+
+  implicit def expToIntegralOps[T: Integral](t: Exp[T]) = new IntegralOps(t)
   implicit def toIntegralOps[T: Integral](t: T) = expToIntegralOps(t)
 }
 
