@@ -326,7 +326,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
       } yield (classFile, method, instruction)
       instructions.withFilter {
         triple ⇒
-          val instruction = to3pleHelper(triple)._3
+          val instruction = triple._3
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
           val desc = MethodDescriptor(Seq(), VoidType)
