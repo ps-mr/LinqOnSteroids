@@ -97,12 +97,12 @@ trait TupleOps {
   //However, one cannot do pattern matching against the result, not with the existing pattern.
   //Lesson: Scala does not allow to define additional extractors for a given pattern type, and syntax shortcuts such
   //as tuples or => are simply built-in in the language.
-  case class PairOps[A, B](p: Exp[(A, B)]) {
+  class PairOps[A, B](p: Exp[(A, B)]) {
     lazy val _1 = Proj1(p)
     lazy val _2 = Proj2(p)
   }
 
-  implicit def toPairHelper[A, B](e: Exp[(A, B)]): PairOps[A, B] = PairOps(e)
+  implicit def toPairOps[A, B](e: Exp[(A, B)]): PairOps[A, B] = new PairOps(e)
 
   implicit def tripleToTripleExp[A, B, C](triple: (Exp[A], Exp[B], Exp[C])): Exp[(A, B, C)] = onExp(triple._1, triple._2, triple._3)('Tuple3, Tuple3.apply)
   implicit def to3pleHelper[A, B, C](e: Exp[(A, B, C)]) = new {
