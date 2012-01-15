@@ -169,11 +169,11 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   }
 
   def testInadequate(c: Exp[Map[Int, Int]]) {
-    val e: Exp[Map[Int, Int]] = c map (_ match {
-      case Pair(a, b) => (a, b + 1) //Inadequate term, even if it's the first I wrote; it causes a crash
-    })
-    assertType[Exp[Map[Int, Int]]](e)
     intercept[MatchError] {
+      val e: Exp[Map[Int, Int]] = c map (_ match {
+        case Pair(a, b) => (a, b + 1) //Inadequate term, even if it's the first I wrote; it causes a crash
+      })
+      assertType[Exp[Map[Int, Int]]](e)
       showInterp("e", e)
     }
   }

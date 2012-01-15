@@ -218,25 +218,25 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     import BATLifting._
     import BATLiftingExperimental._
 
-    //The pattern-matches used here are unsound:
-    val methodsLos1 =
-      for {
-        cf <- queryData
-        m <- cf.methods
-        mBody <- Let(m.body)
-        if mBody.isDefined
-        INSTANCEOF(_) <- mBody.get.code
-      } yield m.name
-
     intercept[ExoticTermException] {
-      println(methodsLos1) //Fails because the terms are inadequate
-    }
+      //The pattern-matches used here are unsound:
+      val methodsLos1 =
+        for {
+          cf <- queryData
+          m <- cf.methods
+          mBody <- Let(m.body)
+          if mBody.isDefined
+          INSTANCEOF(_) <- mBody.get.code
+        } yield m.name
 
-    var m1Int: Traversable[String] = null
-    benchMark("los1-new", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-      m1Int = methodsLos1.interpret()
+      println(methodsLos1) //Fails because the terms are inadequate
+
+      var m1Int: Traversable[String] = null
+      benchMark("los1-new", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+        m1Int = methodsLos1.interpret()
+      }
+      methodsNative should equal (m1Int)
     }
-    methodsNative should equal (m1Int)
 
     val methodsLos2 = queryData.flatMap(cf => cf.methods
       .withFilter(m => m.body.isDefined)
@@ -269,21 +269,21 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
     import BATLifting._
     import BATLiftingExperimental._
 
-    //The pattern-matches used here are unsound:
-    val methodsLos1 = for (cf <- queryData;
-                        m <- cf.methods;
-                        CodeAttribute(_,_,code,_,_) <- m.attributes;
-                        INSTANCEOF(_) <- code) yield m.name
-
     intercept[ExoticTermException] {
-      println(methodsLos1) //Fails because the terms are inadequate
-    }
+      //The pattern-matches used here are unsound:
+      val methodsLos1 = for (cf <- queryData;
+                             m <- cf.methods;
+                             CodeAttribute(_,_,code,_,_) <- m.attributes;
+                             INSTANCEOF(_) <- code) yield m.name
 
-    var m1Int: Traversable[String] = null
-    benchMark("los1", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
-      m1Int = methodsLos1.interpret()
+      println(methodsLos1) //Fails because the terms are inadequate
+
+      var m1Int: Traversable[String] = null
+      benchMark("los1", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+        m1Int = methodsLos1.interpret()
+      }
+      methodsNative should equal (m1Int)
     }
-    methodsNative should equal (m1Int)
 
     val methodsLos2 = queryData.flatMap( cf => cf.methods
       .flatMap( m => m.attributes
