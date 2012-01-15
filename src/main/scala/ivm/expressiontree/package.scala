@@ -6,8 +6,11 @@ package object expressiontree {
   type TravMsgSeqSubscriber[-T, -Repr] = MsgSeqSubscriber[Traversable[T], Repr]
   type Var = TypedVar[Nothing]
 
-  //From http://stackoverflow.com/questions/6834000/scala-partialfunctions-from-concrete-ones
-  private[expressiontree] implicit def funcAsPartial[A, B](f: A => B) = new {
+  //From http://stackoverflow.com/questions/6834000/scala-partialfunctions-from-concrete-ones, altered by avoiding
+  //refinement types.
+  private[expressiontree] implicit def funcAsPartial[A, B](f: A => B) = new PartialFunctionOps(f)
+
+  class PartialFunctionOps[A, B](f: A => B) {
     /** only use if `f` is defined everywhere */
     def asPartial = new PartialFunction[A, B] {
       def isDefinedAt(a: A) = true

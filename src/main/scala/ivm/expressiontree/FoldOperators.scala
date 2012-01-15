@@ -69,11 +69,11 @@ trait FoldOperators {
     }
   }
 
-  implicit def pimpTravLike[T, Repr <: TraversableLike[T, Repr]](v: TraversableLike[T, Repr]) =
-    new {
-      def groupBySel[K, Rest, That](f: T => K, g: T => Rest)(implicit c: CanBuildFrom[Repr, Rest, That]): Map[K, That] =
-        v.groupBy(f).map(v => (v._1, v._2.map(g)))
-    }
+  class TraversableLike_GroupBySel_Op[T, Repr <: TraversableLike[T, Repr]](v: TraversableLike[T, Repr]) {
+    def groupBySel[K, Rest, That](f: T => K, g: T => Rest)(implicit c: CanBuildFrom[Repr, Rest, That]): Map[K, That] =
+      v.groupBy(f).map(v => (v._1, v._2.map(g)))
+  }
+  implicit def toTraversableLike_GroupBySel_Op[T, Repr <: TraversableLike[T, Repr]](v: TraversableLike[T, Repr]) = new TraversableLike_GroupBySel_Op(v)
 
   //Here I accept a primitive function because I believe the overhead for expression trees would be too significant, especially with all the wrapping and unwrapping done by convertBinFunInternal.
   //However, normalization-by-evaluation and a two-argument version of FuncExpInt could come to the rescue!

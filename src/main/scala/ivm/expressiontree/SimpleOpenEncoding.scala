@@ -75,9 +75,11 @@ trait FunctionOps {
       case _ => App(f, _)
     }
 
-  implicit def expToPartialFunOps[S, T](t: Exp[PartialFunction[S, T]]) = new {
+  class PartialFunctionOps[S, T](t: Exp[PartialFunction[S, T]]) {
     def isDefinedAt(a: Exp[S]): Exp[Boolean] = IsDefinedAt(t, a)
   }
+
+  implicit def expToPartialFunOps[S, T](t: Exp[PartialFunction[S, T]]) = new PartialFunctionOps(t)
 }
 
 trait TupleOps {
