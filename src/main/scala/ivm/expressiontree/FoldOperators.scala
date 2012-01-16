@@ -3,7 +3,7 @@ package ivm.expressiontree
 import collection.{immutable, TraversableLike, mutable}
 import mutable.{Buffer, ArrayBuffer}
 import ivm.collections.IncArrayBuffer
-import Util._
+import Util.ExtraImplicits._
 
 /**
  * User: pgiarrusso

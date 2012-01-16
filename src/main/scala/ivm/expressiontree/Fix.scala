@@ -1,5 +1,5 @@
 package ivm.expressiontree
-import Util._
+import Util.ExtraImplicits._
 
 object Fix {
   def fix[A](f: A => A, v: A): A = {

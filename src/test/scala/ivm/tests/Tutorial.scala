@@ -40,7 +40,7 @@ trait TestUtil {
  */
 
 class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
-  import Util._
+  import Util.assertType
 
   /*
    * This tutorial introduces the features of our DSEL for queries on collections.

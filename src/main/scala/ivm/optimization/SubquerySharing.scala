@@ -2,7 +2,7 @@ package ivm.optimization
 
 import ivm.expressiontree._
 import Lifting._
-import Util._
+import Util.assertType
 import collection.generic.FilterMonadic
 import scala.collection.Map
 
