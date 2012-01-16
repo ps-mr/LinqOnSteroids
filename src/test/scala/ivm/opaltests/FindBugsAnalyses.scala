@@ -41,8 +41,9 @@ import reader.Java6Framework
 
 import org.junit.Test
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
-import expressiontree.{Exp, Lifting}
+import expressiontree.{Exp, Lifting, Util}
 import Lifting._
+import Util.ExtraImplicits._
 import collection.TraversableView
 import optimization.Optimization
 import tests.TestUtil
@@ -97,20 +98,19 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     analyze(Seq("lib/scalatest-1.6.1.jar"))
   }
 
-  type QueryRes[T] = TraversableView[T, Traversable[_]]
   def optimizerTable[T]: Seq[(String, Exp[T] => Exp[T])] = Seq((" - after optimization", Optimization.optimize _))
 
-  def benchInterpret[T](msg: String,
-                        v: Exp[QueryRes[T]],
-                        extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty): Traversable[T] =
+  def benchInterpret[T, Coll <: Traversable[T]](msg: String,
+                        v: Exp[Coll with Traversable[T]],
+                        extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)(implicit f: Forceable[T, Coll]): Traversable[T] =
   {
-    def doRun(msg: String, v: Exp[QueryRes[T]]) = {
+    def doRun(msg: String, v: Exp[Coll]) = {
       showExpNoVal(v, msg)
-      benchMark(msg)(v.interpret().force)
+      benchMark(msg)(pimpForce(v.interpret()).force)
     }
 
     val res = doRun(msg, v)
-    for ((msgExtra, optim) <- optimizerTable[QueryRes[T]] ++ extraOptims.asInstanceOf[Seq[(String, Exp[QueryRes[T]] => Exp[QueryRes[T]])]]) {
+    for ((msgExtra, optim) <- optimizerTable[Coll] ++ extraOptims.asInstanceOf[Seq[(String, Exp[Coll] => Exp[Coll])]]) {
       val resOpt = doRun(msg + msgExtra, optim(v))
       resOpt should be (res)
     }
@@ -118,10 +118,10 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     res
   }
 
-  def benchQuery[T](msg: String,
-                    v: Exp[QueryRes[T]],
+  def benchQuery[T, Coll <: Traversable[T]](msg: String,
+                    v: Exp[Coll with Traversable[T]],
                     expectedResult: Traversable[T],
-                    extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty): Traversable[T] = {
+                    extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)(implicit f: Forceable[T, Coll]): Traversable[T] = {
     val res = benchInterpret(msg, v, extraOptims)
     res should be (expectedResult)
     res
@@ -169,7 +169,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
 
   def analyzeUnusedFields(classFiles: Seq[ClassFile]) {
     // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
-    val unusedFields: Seq[(ClassFile, Traversable[String])] = benchMark("UUF_UNUSED_FIELD") {
+    val unusedFields: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD") {
       for {
         classFile ← classFiles if !classFile.isInterfaceDeclaration
         instructions = for {
@@ -192,7 +192,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     }
     println("\tViolations: " + unusedFields.size)
 
-    val unusedFields2: Seq[(ClassFile, Traversable[String])] = benchMark("UUF_UNUSED_FIELD-2") {
+    val unusedFields2: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD-2") {
       for {
         classFile ← classFiles if !classFile.isInterfaceDeclaration
         instructions = for {
@@ -315,18 +315,49 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     }
     println("\tViolations: " + garbageCollectingMethods.size)
 
+    val garbageCollectingMethods2: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC 2") {
+      for {
+        classFile ← classFiles
+        method ← classFile.methods if method.body.isDefined
+        instruction ← method.body.get.code
+        if (instruction match {
+          case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
+               INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒ true
+          case _ ⇒ false
+        })
+      } yield (classFile, method, instruction)
+    }
+
+    garbageCollectingMethods2 should be (garbageCollectingMethods)
+
+    val garbageCollectingMethodsLosLike = benchMark("DM_GC Native Like Los") {
+      for {
+        classFile ← classFiles
+        method ← classFile.methods if method.body.isDefined
+        instruction ← method.body.get.code
+        if ({
+          val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
+          val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
+          val desc = MethodDescriptor(Seq(), VoidType)
+
+          asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass == ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
+            asINVOKESTATIC.get.methodDescriptor == desc ||
+            asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass == ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
+              asINVOKEVIRTUAL.get.methodDescriptor == desc
+        })
+      } yield (classFile, method, instruction)
+    }
+    garbageCollectingMethodsLosLike should be (garbageCollectingMethods)
+
     import BATLifting._
     import InstructionLifting._
 
     val garbageCollectingMethodsLos = benchMark("DM_GC Los Setup") {
-      val instructions = for {
+      for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods if method.body.isDefined
         instruction ← method.body.get.code
-      } yield (classFile, method, instruction)
-      instructions.withFilter {
-        triple ⇒
-          val instruction = triple._3
+        if ({
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
           val desc = MethodDescriptor(Seq(), VoidType)
@@ -335,7 +366,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
             asINVOKESTATIC.get.methodDescriptor == desc ||
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass === ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
               asINVOKEVIRTUAL.get.methodDescriptor == desc
-      }
+        })
+      } yield (classFile, method, instruction)
     }
     benchQuery("DM_GC Los", garbageCollectingMethodsLos, garbageCollectingMethods)
   }
