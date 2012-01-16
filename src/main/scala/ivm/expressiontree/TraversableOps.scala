@@ -191,7 +191,7 @@ trait TraversableOps {
 trait ForceOps {
   this: LiftingConvs with TraversableOps =>
 
-  sealed trait Forceable[T, Coll <: Traversable[T]] {
+  sealed trait Forceable[T, -Coll] {
     def force(t: Coll): Traversable[T]
     def force(t: Exp[Coll]): Exp[Traversable[T]]
   }
@@ -199,19 +199,21 @@ trait ForceOps {
     def force(t: Traversable[T]) = t
     def force(t: Exp[Traversable[T]]) = t
   }
+  //Note: type inference does not pick supertypes of arguments unless needed (i.e. if inferring T from t: T, the type
+  //of T will be picked usually), therefore this implicit will be picked when needed.
   implicit def TraversableViewForceable[T]: Forceable[T, TraversableView[T, Traversable[_]]] = new Forceable[T, TraversableView[T, Traversable[_]]] {
     def force(t: Exp[TraversableView[T, Traversable[_]]]) = t.force
     def force(t: TraversableView[T, Traversable[_]]) = t.force
   }
 
-  def pimpForce[T, Coll <: Traversable[T]](t: Coll with Traversable[T])(implicit f: Forceable[T, Coll]) = new ForceOps(t)
-  class ForceOps[T, Coll <: Traversable[T]](t: Coll with Traversable[T])(implicit f: Forceable[T, Coll]) {
-    def force: Traversable[T] = implicitly[Forceable[T, Coll]].force(t)
+  implicit def pimpForce[T, Coll](t: Coll)(implicit f: Forceable[T, Coll]) = new ForceOps(t)
+  class ForceOps[T, Coll](t: Coll)(implicit f: Forceable[T, Coll]) {
+    def force: Traversable[T] = f.force(t)
   }
 
-  def pimpForceExp[T, Coll <: Traversable[T]](t: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll]) = new ForceOpsExp(t)
-  class ForceOpsExp[T, Coll <: Traversable[T]](t: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll]) {
-    def force: Exp[Traversable[T]] = implicitly[Forceable[T, Coll]].force(t)
+  implicit def pimpForceExp[T, Coll](t: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll]) = new ForceOpsExp(t)
+  class ForceOpsExp[T, Coll](t: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll]) {
+    def force: Exp[Traversable[T]] = f.force(t)
   }
 }
 /**

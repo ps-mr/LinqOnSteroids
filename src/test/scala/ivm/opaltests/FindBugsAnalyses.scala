@@ -100,8 +100,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
 
   def optimizerTable[T]: Seq[(String, Exp[T] => Exp[T])] = Seq((" - after optimization", Optimization.optimize _))
 
-  def benchInterpret[T, Coll <: Traversable[T]](msg: String,
-                        v: Exp[Coll with Traversable[T]],
+  def benchInterpret[T, Coll](msg: String,
+                        v: Exp[Coll],
                         extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)(implicit f: Forceable[T, Coll]): Traversable[T] =
   {
     def doRun(msg: String, v: Exp[Coll]) = {
@@ -118,11 +118,11 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     res
   }
 
-  def benchQuery[T, Coll <: Traversable[T]](msg: String,
-                    v: Exp[Coll with Traversable[T]],
+  def benchQuery[T, Coll](msg: String,
+                    v: Exp[Coll],
                     expectedResult: Traversable[T],
                     extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)(implicit f: Forceable[T, Coll]): Traversable[T] = {
-    val res = benchInterpret(msg, v, extraOptims)
+    val res = benchInterpret[T, Coll](msg, v, extraOptims)
     res should be (expectedResult)
     res
   }
