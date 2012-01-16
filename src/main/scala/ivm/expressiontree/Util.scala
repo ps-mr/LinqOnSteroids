@@ -19,8 +19,8 @@ object Util {
     }
     implicit def toTraversableLike_GroupBySel_Op[T, Repr <: TraversableLike[T, Repr]](v: TraversableLike[T, Repr]) = new TraversableLike_GroupBySel_Op(v)
 
-    implicit def pimpInstanceOf[T](t: T) = new InstanceOfAble(t)
-    class InstanceOfAble[T](v: T) {
+    implicit def pimpInstanceOf[T](t: T) = new IfInstanceOfAble(t)
+    class IfInstanceOfAble[T](v: T) {
       def ifInstanceOf[S](implicit cS: ClassManifest[S]): Option[S] =
         ifInstanceOfBody[T, S](v, IfInstanceOf.getErasure(cS))
     }

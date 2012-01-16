@@ -116,7 +116,12 @@ trait TupleOps {
   implicit def toTripleOps[A, B, C](e: Exp[(A, B, C)]) = new TripleOps(e)
 }
 
-trait BaseExps extends LiftingConvs with FunctionOps with TupleOps
+trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
+  implicit def toIfInstanceOfOps[T](t: Exp[T]) = new toIfInstanceOfOps(t)
+  class toIfInstanceOfOps[T](t: Exp[T]) {
+    def ifInstanceOf[S:ClassManifest]: Exp[Option[S]] = IfInstanceOf(t)
+  }
+}
 
 /**
  * In comparison to the other encoding, we don't use CanBuildExp to get most specific types as result types, as
