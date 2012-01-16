@@ -11,4 +11,16 @@ object Util {
       v.groupBy(f).map(v => (v._1, v._2.map(g)))
   }
   implicit def toTraversableLike_GroupBySel_Op[T, Repr <: TraversableLike[T, Repr]](v: TraversableLike[T, Repr]) = new TraversableLike_GroupBySel_Op(v)
+  
+  def ifInstanceOfBody[T, S](v: T, classS: Class[_]): Option[S] =
+    if (v == null || !classS.isInstance(v))
+      None
+    else
+      Some(v.asInstanceOf[S])
+
+  implicit def pimpInstanceOf[T](t: T) = new InstanceOfAble(t)
+  class InstanceOfAble[T](v: T) {
+    def ifInstanceOf[S](implicit cS: ClassManifest[S]): Option[S] =
+      ifInstanceOfBody[T, S](v, IfInstanceOf.getErasure(cS))
+  }
 }
