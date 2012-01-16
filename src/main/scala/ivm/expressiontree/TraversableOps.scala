@@ -191,7 +191,7 @@ trait TraversableOps {
 trait ForceOps {
   this: LiftingConvs with TraversableOps =>
 
-  sealed trait Forceable[T, -Coll] {
+  sealed trait Forceable[T, Coll] {
     def force(t: Coll): Traversable[T]
     def force(t: Exp[Coll]): Exp[Traversable[T]]
   }
@@ -200,19 +200,22 @@ trait ForceOps {
     def force(t: Exp[Traversable[T]]) = t
   }
   //Note: type inference does not pick supertypes of arguments unless needed (i.e. if inferring T from t: T, the type
-  //of T will be picked usually), therefore this implicit will be picked when needed.
+  //of T will be picked usually), therefore this implicit will be picked when needed. Note that since Forceable is invariant,
+  //implicit resolution will not have other alternatives
   implicit def TraversableViewForceable[T]: Forceable[T, TraversableView[T, Traversable[_]]] = new Forceable[T, TraversableView[T, Traversable[_]]] {
     def force(t: Exp[TraversableView[T, Traversable[_]]]) = t.force
     def force(t: TraversableView[T, Traversable[_]]) = t.force
   }
 
-  implicit def pimpForce[T, Coll](t: Coll)(implicit f: Forceable[T, Coll]) = new ForceOps(t)
+  //Note: "Coll with Traversable[T]" seems to help deduction of T, since apparently the type-class parameter is not enough
+  // for that.
+  implicit def pimpForce[T, Coll](t: Coll with Traversable[T])(implicit f: Forceable[T, Coll]) = new ForceOps[T, Coll](t)
   class ForceOps[T, Coll](t: Coll)(implicit f: Forceable[T, Coll]) {
     def force: Traversable[T] = f.force(t)
   }
 
-  implicit def pimpForceExp[T, Coll](t: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll]) = new ForceOpsExp(t)
-  class ForceOpsExp[T, Coll](t: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll]) {
+  implicit def pimpForceExp[T, Coll](t: Exp[Coll])(implicit f: Forceable[T, Coll]) = new ForceOpsExp(t)
+  class ForceOpsExp[T, Coll](t: Exp[Coll])(implicit f: Forceable[T, Coll]) {
     def force: Exp[Traversable[T]] = f.force(t)
   }
 }
