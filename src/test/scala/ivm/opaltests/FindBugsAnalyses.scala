@@ -298,24 +298,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
 
   def analyzeExplicitGC(classFiles: Seq[ClassFile]) {
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
-    val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
-      val instructions = for {
-        classFile ← classFiles
-        method ← classFile.methods if method.body.isDefined
-        instruction ← method.body.get.code
-      } yield (classFile, method, instruction)
-      instructions.filter {
-        case (_, _, instruction) ⇒
-          instruction match {
-            case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
-                 INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒ true
-            case _ ⇒ false
-          }
-      }
-    }
-    println("\tViolations: " + garbageCollectingMethods.size)
-
-    val garbageCollectingMethods2: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC 2") {
+    val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC 2") {
       for {
         classFile ← classFiles
         method ← classFile.methods if method.body.isDefined
@@ -328,7 +311,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
       } yield (classFile, method, instruction)
     }
 
-    garbageCollectingMethods2 should be (garbageCollectingMethods)
+    println("\tViolations: " + garbageCollectingMethods.size)
 
     val garbageCollectingMethodsLosLike = benchMark("DM_GC Native Like Los") {
       for {
