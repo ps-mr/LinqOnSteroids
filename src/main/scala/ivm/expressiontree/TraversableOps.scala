@@ -188,6 +188,32 @@ trait TraversableOps {
   implicit def tToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
 }
 
+trait ForceOps {
+  this: LiftingConvs with TraversableOps =>
+
+  sealed trait Forceable[T, Coll <: Traversable[T]] {
+    def force(t: Coll): Traversable[T]
+    def force(t: Exp[Coll]): Exp[Traversable[T]]
+  }
+  implicit def TraversableForceable[T]: Forceable[T, Traversable[T]] = new Forceable[T, Traversable[T]] {
+    def force(t: Traversable[T]) = t
+    def force(t: Exp[Traversable[T]]) = t
+  }
+  implicit def TraversableViewForceable[T]: Forceable[T, TraversableView[T, Traversable[_]]] = new Forceable[T, TraversableView[T, Traversable[_]]] {
+    def force(t: Exp[TraversableView[T, Traversable[_]]]) = t.force
+    def force(t: TraversableView[T, Traversable[_]]) = t.force
+  }
+
+  def pimpForce[T, Coll <: Traversable[T]](t: Coll with Traversable[T])(implicit f: Forceable[T, Coll]) = new ForceOps(t)
+  class ForceOps[T, Coll <: Traversable[T]](t: Coll with Traversable[T])(implicit f: Forceable[T, Coll]) {
+    def force: Traversable[T] = implicitly[Forceable[T, Coll]].force(t)
+  }
+
+  def pimpForceExp[T, Coll <: Traversable[T]](t: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll]) = new ForceOpsExp(t)
+  class ForceOpsExp[T, Coll <: Traversable[T]](t: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll]) {
+    def force: Exp[Traversable[T]] = implicitly[Forceable[T, Coll]].force(t)
+  }
+}
 /**
  * A goal of this new encoding is to be able to build expression trees (in particular, query trees) producing
  * different collections; once we can represent query trees producing maps and maintain them incrementally, view
