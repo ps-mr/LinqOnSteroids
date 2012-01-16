@@ -129,10 +129,10 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
 
   private def analyzeConfusedInheritanceNative(classFiles: Seq[ClassFile]) = {
     val protectedFields = benchMark("CI_CONFUSED_INHERITANCE") {
-      (for {
-        classFile ← classFiles.view if classFile.isFinal
+      for {
+        classFile ← classFiles if classFile.isFinal
         field ← classFile.fields if field.isProtected
-      } yield (classFile, field)).force
+      } yield (classFile, field)
     }
     println("\tViolations: " + protectedFields.size)
     protectedFields
@@ -151,8 +151,16 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
         field ← classFile.fields if field.isProtected
       } yield (classFile, field))
     }
-    //XXX Should we really use force in the benchmark?
     benchQuery("CI_CONFUSED_INHERITANCE Los", protectedFieldsLos, protectedFields)
+
+    val protectedFieldsLikeLos = benchMark("CI_CONFUSED_INHERITANCE Native Like Los") {
+      (for {
+        classFile ← classFiles.view if classFile.isFinal
+        field ← classFile.fields.view if field.isProtected
+      } yield (classFile, field)).force
+    }
+
+    protectedFieldsLikeLos should be (protectedFields)
 
 
     /*val protectedFieldsLos2 = benchMark("CI_CONFUSED_INHERITANCE Los Setup (materialize)") {
@@ -298,7 +306,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
 
   def analyzeExplicitGC(classFiles: Seq[ClassFile]) {
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
-    val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC 2") {
+    val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
       for {
         classFile ← classFiles
         method ← classFile.methods if method.body.isDefined
@@ -333,7 +341,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     garbageCollectingMethodsLosLike should be (garbageCollectingMethods)
 
     val garbageCollectingMethodsLosLike2 = benchMark("DM_GC Native More Like Los") {
-      (for {
+      for {
         classFile ← classFiles
         method ← classFile.methods.view if method.body.isDefined
         instruction ← method.body.get.code.view
@@ -347,7 +355,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass == ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
               asINVOKEVIRTUAL.get.methodDescriptor == desc
         })
-      } yield (classFile, method, instruction)).force
+      } yield (classFile, method, instruction)
     }
     garbageCollectingMethodsLosLike2 should be (garbageCollectingMethods)
     import BATLifting._
@@ -382,7 +390,14 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
       ) yield classFile
     }
     println("\tViolations: " + classesWithPublicFinalizeMethods.length)
-    
+
+    val classesWithPublicFinalizeMethodsLikeLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Native Like Los") {
+      (for (
+        classFile ← classFiles.view
+        if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
+      ) yield classFile).force
+    }
+
     import BATLifting._
 
     val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Los Setup") {
@@ -409,6 +424,18 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     }
     println("\tViolations: " + classesWithoutDefaultConstructor.size)
 
+    val classesWithoutDefaultConstructorLikeLos = benchMark("SE_NO_SUITABLE_CONSTRUCTOR Native Like Los") {
+      (for {
+        superclass ← classHierarchy.superclasses(serializableClasses).view if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+        {
+          val superClassFile = getClassFile(superclass)
+          !superClassFile.isInterfaceDeclaration &&
+            !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
+        }
+      } yield superclass).force // there can be at most one method
+    }
+    classesWithoutDefaultConstructorLikeLos should be (classesWithoutDefaultConstructorLikeLos)
+
     import BATLifting._
     val classesWithoutDefaultConstructorLos = benchMark("SE_NO_SUITABLE_CONSTRUCTOR Los Setup") {
       for {
@@ -434,6 +461,14 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
       } yield (classFile, method)
     }
     println("\tViolations: " + catchesIllegalMonitorStateException.size)
+
+    val catchesIllegalMonitorStateExceptionLikeLos = benchMark("IMSE_DONT_CATCH_IMSE Native Like Los") {
+      (for {
+        classFile ← classFiles.view if classFile.isClassDeclaration
+        method ← classFile.methods.view if method.body.isDefined
+        exceptionHandler ← method.body.get.exceptionTable.view if exceptionHandler.catchType == IllegalMonitorStateExceptionType
+      } yield (classFile, method)).force
+    }
 
     import BATLifting._
     val catchesIllegalMonitorStateExceptionLos = benchMark("IMSE_DONT_CATCH_IMSE Los Setup") {
