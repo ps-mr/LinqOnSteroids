@@ -333,7 +333,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     garbageCollectingMethodsLosLike should be (garbageCollectingMethods)
 
     val garbageCollectingMethodsLosLike2 = benchMark("DM_GC Native More Like Los") {
-      for {
+      (for {
         classFile ← classFiles
         method ← classFile.methods.view if method.body.isDefined
         instruction ← method.body.get.code.view
@@ -347,7 +347,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass == ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
               asINVOKEVIRTUAL.get.methodDescriptor == desc
         })
-      } yield (classFile, method, instruction)
+      } yield (classFile, method, instruction)).force
     }
     garbageCollectingMethodsLosLike2 should be (garbageCollectingMethods)
     import BATLifting._
