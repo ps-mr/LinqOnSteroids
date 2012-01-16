@@ -286,7 +286,8 @@ object OptimizationTransforms {
   //removeRedundantOption is supposed to eliminate redundant lets from code like:
   //for (i <- base.typeFilter[Int]; j <- Let(i) if j % 2 === 0) yield j
   //which is for instance produced by toTypeFilter.
-
+  //This optimization does not extend to normal bindings as used in FindBugsAnalyses. There we need to produce the usual
+  //desugaring of Let - i.e. to use letExp.
   private def tryRemoveRedundantOption[T, U](coll: Exp[Traversable[T]],
                                        fmFun: FuncExp[T, TraversableOnce[U]],
                                        insideConv: Exp[Option[U]],
