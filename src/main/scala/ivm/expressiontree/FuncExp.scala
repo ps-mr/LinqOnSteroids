@@ -29,7 +29,7 @@ abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
 
   //Note that thanks to this line and to copy(), we can perform optimization within function bodies, which is notable
   //(even if probably not a contribution)!
-  private[ivm] override def children = Seq(body)
+  /*private[ivm]*/ override def children = Seq(body)
   //private[ivm] override def closedTermChildren: Seq[Exp[_]] = Seq()
   //Copied from UnaryOpTrait:
   override def nodeArity = 1

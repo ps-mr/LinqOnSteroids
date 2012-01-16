@@ -168,7 +168,7 @@ trait TraversableMaintainer[SrcMsg, Src <: Traversable[SrcMsg], +Res] extends Ma
 
 trait OneRootTraversableMaintainer[SrcMsg, Src <: Traversable[SrcMsg], +Res] extends TraversableMaintainer[SrcMsg, Src, Res] {
   val base: Exp[Src]
-  private[ivm] override def roots = Seq(base)
+  /*private[ivm]*/ override def roots = Seq(base)
 }
 
 //Don't make Repr so specific as IncCollectionReifier. Making Repr any specific
@@ -213,7 +213,7 @@ class UnionMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]
   Union[T, Repr, That](base, that)(c) with UnionMaintainer[T, Exp[Traversable[T]]] with TraversableMaintainer[T, Traversable[T], That]
   with MsgSeqPublisher[That, UnionMaintainerExp[T, Repr, That]]
 {
-  private[ivm] override def roots = Seq(base, that)
+  /*private[ivm]*/ override def roots = Seq(base, that)
   override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = new UnionMaintainerExp[T, Repr, That](base, that)
 }
 
