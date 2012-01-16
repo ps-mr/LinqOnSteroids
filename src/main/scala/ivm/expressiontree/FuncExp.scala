@@ -172,7 +172,7 @@ case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends B
 object FuncExp {
   //Force switch to FuncExpInt everywhere with a single line of code :-)
   def apply[S, T](f: Exp[S] => Exp[T]) = FuncExpInt.apply(f)
-  def unapply[S, T](f: FuncExp[S, T]) = Some(f.f)
+  def unapply(f: FuncExp[_, _]) = Some(f.f)
 
   private val varCounter = new AtomicInteger(0)
   def gensymId(): Int = varCounter.incrementAndGet()
