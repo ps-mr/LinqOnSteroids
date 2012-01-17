@@ -98,7 +98,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     analyze(Seq("lib/scalatest-1.6.1.jar"))
   }
 
-  def optimizerTable[T]: Seq[(String, Exp[T] => Exp[T])] = Seq((" - after optimization", Optimization.optimize _))
+  def optimizerTable[T]: Seq[(String, Exp[T] => Exp[T])] = Seq((" - after optimization", identity _))
 
   def benchInterpret[T, Coll <: Traversable[T]](msg: String,
                         v: Exp[Coll],
@@ -111,7 +111,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
 
     val res = doRun(msg, v)
     for ((msgExtra, optim) <- optimizerTable[Coll] ++ extraOptims.asInstanceOf[Seq[(String, Exp[Coll] => Exp[Coll])]]) {
-      val resOpt = doRun(msg + msgExtra, optim(v))
+      val resOpt = doRun(msg + msgExtra, optim(Optimization.optimize(v)))
       resOpt should be (res)
     }
 
