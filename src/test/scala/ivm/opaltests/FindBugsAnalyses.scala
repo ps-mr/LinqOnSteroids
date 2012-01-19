@@ -187,8 +187,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
         declaringClass = classFile.thisClass
         privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
         usedPrivateFields = instructions withFilter {
-          case GETFIELD(`declaringClass`, name, _) ⇒ true
-          case GETSTATIC(`declaringClass`, name, _) ⇒ true
+          case GETFIELD(`declaringClass`, _, _) ⇒ true
+          case GETSTATIC(`declaringClass`, _, _) ⇒ true
           case _ ⇒ false
         } map {
           case GETFIELD(`declaringClass`, name, _) ⇒ name
@@ -218,6 +218,28 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     }
     unusedFields2 should be (unusedFields)
 
+    val unusedFields3: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD-3") {
+      for {
+        classFile ← classFiles if !classFile.isInterfaceDeclaration
+        declaringClass = classFile.thisClass
+        privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
+        unusedPrivateFields = privateFields -- (for {
+          method ← classFile.methods if method.body.isDefined
+          instruction ← method.body.get.code
+          usedPrivateField ← instruction match {
+            case GETFIELD(`declaringClass`, name, _) ⇒ Some(name)
+            case GETSTATIC(`declaringClass`, name, _) ⇒ Some(name)
+            case _ ⇒ None
+          }
+        } yield usedPrivateField) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, privateFields)
+    }
+
+    unusedFields3 should be (unusedFields)
+
+    val optims = Seq((" - with Optim: Size To Empty", Optimization.sizeToEmpty _))
+
     import BATLifting._
     import InstructionLifting._
 
@@ -245,7 +267,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
             // because Scala's type system is nominal and for the two branches different (_.name) methods (with the same
             // signature) are invoked.
             (asGETFIELD map (_.name) orElse (asGETSTATIC map (_.name))).get
-              //XXX: should we emulate support for `if` in some way?
+              //XXX: should we emulate support for `if` in some way? Yes of course!
             /*if (asGETFIELD.isDefined)
               asGETFIELD.name
             else if (asGETSTATIC.isDefined)
@@ -255,7 +277,31 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
     }
-    benchQuery("UUF_UNUSED_FIELD Los", unusedFieldsLos, unusedFields)
+    benchQuery("UUF_UNUSED_FIELD Los", unusedFieldsLos, unusedFields, optims)
+
+    val unusedFieldsLos1bis /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1bis Setup") {
+      for {
+        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
+        declaringClass ← Let(classFile.thisClass)
+        usedPrivateFields ← Let(for {
+          method ← classFile.methods if method.body.isDefined
+          instruction ← method.body.get.code
+          usedPrivateField ← (for {
+            asGETFIELD <- instruction.ifInstanceOf[GETFIELD]
+            if asGETFIELD.declaringClass === declaringClass
+          } yield asGETFIELD.name) orElse
+            (for {
+              asGETSTATIC <- instruction.ifInstanceOf[GETSTATIC]
+              if asGETSTATIC.declaringClass === declaringClass
+            } yield asGETSTATIC.name)
+            //(instruction.ifInstanceOf[GETFIELD].filter(_.declaringClass === declaringClass).map(_.name)) orElse (instruction.ifInstanceOf[GETSTATIC].filter(_.declaringClass === declaringClass).map(_.name))
+        } yield usedPrivateField)
+        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
+        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, privateFields)
+    }
+    benchQuery("UUF_UNUSED_FIELD Los-1bis", unusedFieldsLos1bis, unusedFields, optims)
 
     val unusedFields2Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-2 Los Setup") {
       for {
@@ -273,7 +319,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
     }
-    benchQuery("UUF_UNUSED_FIELD-2 Los", unusedFields2Los, unusedFields)
+    benchQuery("UUF_UNUSED_FIELD-2 Los", unusedFields2Los, unusedFields, optims)
 
     val unusedFields3Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-3 Los Setup") {
       for {
@@ -284,7 +330,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
         } yield instruction)
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
-        usedPrivateFields ← Let(//This is much slower, but typeFilter is faster
+        usedPrivateFields ← Let(//This is much slower, but typeFilter is faster. We need a typeFilter node which accepts a function to run.
           (for (instruction ← instructions.typeFilter[GETFIELD] if instruction.declaringClass === declaringClass) yield instruction.name) union
             (for (instruction ← instructions.typeFilter[GETSTATIC] if instruction.declaringClass === declaringClass) yield instruction.name))
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
@@ -292,7 +338,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
       } yield (classFile, privateFields)
     }
     println(unusedFields3Los)
-    benchQuery("UUF_UNUSED_FIELD-3 Los", unusedFields3Los, unusedFields, Seq((" - with Optim: Size To Empty", Optimization.sizeToEmpty _)))
+    benchQuery("UUF_UNUSED_FIELD-3 Los", unusedFields3Los, unusedFields, optims)
 
     /*val unusedFields3LosOpt = Optimization optimize unusedFields3Los
     println(unusedFields3LosOpt)
