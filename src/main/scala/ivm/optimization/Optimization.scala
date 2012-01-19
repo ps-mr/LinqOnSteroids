@@ -435,11 +435,11 @@ object Optimization {
   def cartProdToAntiJoin[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.cartProdToAntiJoin)
 
   def optimize[T](exp: Exp[T]): Exp[T] = {
-    shareSubqueries(removeIdentityMaps(
+    shareSubqueries(
       reassociateOps(
         mergeMaps(
           mergeFilters(
-            optimizeCartProdToJoin(exp))))))
+            optimizeCartProdToJoin(removeIdentityMaps(exp))))))
   }
 
   def reassociateOps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.reassociateOps)
