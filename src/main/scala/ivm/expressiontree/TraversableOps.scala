@@ -126,8 +126,8 @@ trait TraversableOps {
 
     //XXX: Generate these wrappers
     def toSet = onExp(this.t)('toSet, _.toSet)
-    def isEmpty = onExp(this.t)('isEmpty, _.isEmpty)
-    def nonEmpty = onExp(this.t)('nonEmpty, _.nonEmpty)
+    def isEmpty: Exp[Boolean] = IsEmpty(this.t)
+    def nonEmpty: Exp[Boolean] = !isEmpty
 
     def view: Exp[TraversableView[T, Repr]] = View(this.t)
 

@@ -65,6 +65,11 @@ case class Size[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) ext
   def copy(t: Exp[Repr]) = Size(t)
 }
 
+case class IsEmpty[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) extends UnaryOpExp[Repr, Boolean, IsEmpty[T, Repr]](t) {
+  def interpret() = t.interpret().isEmpty
+  def copy(t: Exp[Repr]) = IsEmpty(t)
+}
+
 case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T])
                                  (implicit cS: ClassManifest[S])
                                   extends BinaryOp[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]], TypeFilter[T, C, D, S]](base, f) {
