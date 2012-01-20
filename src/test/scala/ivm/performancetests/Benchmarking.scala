@@ -27,8 +27,8 @@ trait Benchmarking {
   }
 
   val execLoops = 1
-  val warmUpLoops = 10
-  val sampleLoops = 5
+  val warmUpLoops = 100
+  val sampleLoops = 50
 
   //Import and re-export.
   def debugBench = Benchmarking.debugBench

@@ -21,8 +21,6 @@ import optimization.Optimization
 
 /*
 class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil with Benchmarking {
-  override val warmUpLoops = 100
-  override val sampleLoops = 50
   val maxN = if (debugBench) 9 else 17
   val mapCounts = (1 until (maxN, 4)) :+ maxN
 

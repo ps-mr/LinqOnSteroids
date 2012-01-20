@@ -85,9 +85,6 @@ object FindBugsAnalyses {
 }
 
 class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestUtil with Benchmarking {
-  override val warmUpLoops = 100
-  override val sampleLoops = 50
-
   @Test
   def testAnalyze() {
     analyze(Seq("lib/scalatest-1.6.1.jar"))
