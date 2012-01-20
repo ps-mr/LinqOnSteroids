@@ -81,7 +81,6 @@ object FindBugsAnalyses {
     }
 
     (new FindBugsAnalyses).analyze(args)
-    sys.exit(0)
   }
 }
 
