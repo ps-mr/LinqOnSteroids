@@ -18,7 +18,7 @@ import Java6Framework.ClassFile
 import resolved.Attributes
 import java.util.zip.ZipFile
 import java.io.File
-import performancetests.Benchmarking._
+import performancetests.Benchmarking
 import collections.IncHashSet
 
 /* (Very incomplete) boilerplate code for making use of BAT types convenient in queries.
@@ -147,20 +147,18 @@ object OpalTestData {
   }
   val testdata  = getTestData.toSet
   val queryData = toExp(testdata)
-
-  val debug = false
-  val warmUpLoops = if (debug) 1 else 100
-  val sampleLoops = if (debug) 2 else 50
 }
 
-class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
+class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarking {
+  override val warmUpLoops = 100
+  override val sampleLoops = 50
   import OpalTestData._
 
   //A simple query, which does not use pattern matching.
   @Test def basicQuery() {
     var methodsNative: Set[Attribute] = null
     // native Scala for-comprehension
-    benchMark("native simple", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+    benchMark("native simple") {
       methodsNative =
         for (cf <- testdata;
              m <- cf.methods;
@@ -178,7 +176,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
       yield attrib
 
     var methods: Traversable[Attribute] = null
-    benchMark("los simple", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+    benchMark("los simple") {
       methods = methodsQuery.interpret()
     }
 
@@ -205,7 +203,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
   // compute all method names that make an instance-of check in their body, using the .code member.
   @Test def testOpalNewStyle() {
     var methodsNative: Set[String] = null
-    benchMark("native-new", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+    benchMark("native-new") {
       methodsNative = for (cf <- testdata;
                            m <- cf.methods if m.body.isDefined;
                            INSTANCEOF(_) <- m.body.get.code) yield m.name
@@ -232,7 +230,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
       println(methodsLos1) //Fails because the terms are inadequate
 
       var m1Int: Traversable[String] = null
-      benchMark("los1-new", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      benchMark("los1-new") {
         m1Int = methodsLos1.interpret()
       }
       methodsNative should equal (m1Int)
@@ -245,7 +243,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
       .map(_ => m.name)))
 
     var m2Int: Traversable[String] = null
-    benchMark("los2-new", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+    benchMark("los2-new") {
       m2Int = methodsLos2.interpret()
     }
     methodsNative should equal (m2Int)
@@ -255,7 +253,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     // native Scala for-comprehension
     var methodsNative: Set[String] = null
-    benchMark("native", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+    benchMark("native") {
       methodsNative  = for (cf <- testdata;
                       m <- cf.methods;
                       CodeAttribute(_,_,code,_,_) <- m.attributes;
@@ -279,7 +277,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
       println(methodsLos1) //Fails because the terms are inadequate
 
       var m1Int: Traversable[String] = null
-      benchMark("los1", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+      benchMark("los1") {
         m1Int = methodsLos1.interpret()
       }
       methodsNative should equal (m1Int)
@@ -293,7 +291,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
       .map( _ => m.name)))
 
     var m2Int: Traversable[String] = null
-    benchMark("los2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+    benchMark("los2") {
       m2Int = methodsLos2.interpret()
     }
     methodsNative should equal (m2Int)
@@ -313,7 +311,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
       .map( _ => m.name)))
 
     var m3Int: Traversable[String] = null
-    benchMark("los3", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+    benchMark("los3") {
       m3Int = methodsLos3.interpret()
     }
     methodsNative should equal (m3Int)
@@ -329,7 +327,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
         if onExp(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
       } yield m.name
     var m4Int: Traversable[String] = null
-    benchMark("los4", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+    benchMark("los4") {
       m4Int = methodsLos4.interpret()
     }
     methodsNative should equal (m4Int)
@@ -341,7 +339,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
                          ca <- m.attributes.typeFilter[CodeAttribute];
                          io <- ca.code.typeFilter[INSTANCEOF]) yield m.name
     var m5Int: Traversable[String] = null
-    benchMark("los5", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+    benchMark("los5") {
       m5Int = methodsLos5.interpret()
     }
     methodsNative should equal (m5Int)
@@ -381,7 +379,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit {
 [error]      val methodsLos6 = expToTypeMappingAppOps(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
     */
     var m7Int: Traversable[String] = null
-    benchMark("los6 (with index)", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops) {
+    benchMark("los6 (with index)") {
       m7Int = methodsLos6.interpret()
     }
     methodsNative should equal (m7Int)

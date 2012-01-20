@@ -5,7 +5,7 @@ import expressiontree.Exp
 import optimization._
 import Optimization._
 
-object Benchmarking {
+trait Benchmarking {
   class VarianceCalc {
     var sum: Double = 0
     var sumSq: Double = 0
@@ -22,13 +22,23 @@ object Benchmarking {
     }
   }
 
-  def benchMarkTime(name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  val execLoops = 1
+  val warmUpLoops = 10
+  val sampleLoops = 5
+  val debugBench = false
+
+  //These are a def, so that overriding the values they depend on works!
+  def effectiveExecLoops = if (debugBench) 1 else execLoops
+  def effectiveWarmUpLoops = if (debugBench) 0 else warmUpLoops
+  def effectiveSampleLoops = if (debugBench) 1 else sampleLoops
+
+  def benchMarkTime(name: String, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                    (toBench: => Unit) = {
     val (_, time) = benchMarkInternal(name, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)
     time
   }
 
-  def benchMark[T](name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  def benchMark[T](name: String, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): T = {
     val (ret, _) = benchMarkInternal(name, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)
     ret
@@ -39,7 +49,7 @@ object Benchmarking {
    * @param toBench code to benchmark, which is supposed to always return the same value.
    * @returns the value returned by toBench
    */
-  def benchMarkInternal[T](name: String, execLoops: Int = 1, warmUpLoops: Int = 10, sampleLoops: Int = 5, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  private def benchMarkInternal[T](name: String, execLoops: Int, warmUpLoops: Int, sampleLoops: Int, verbose: Boolean, hasConsoleOutput: Boolean)
                (toBench: => T): (T, Double) = {
     var ret: T = null.asInstanceOf[T]
     //Use Console.err instead of println and flush here.
@@ -78,9 +88,11 @@ object Benchmarking {
     (ret, avgMs)
   }
 
+  /*
   def silentBenchMark[T](name: String, execLoops: Int = 1, warmUpLoops: Int = 3, sampleLoops: Int = 3)
                      (toBench: => T): T =
     benchMark(name, execLoops, warmUpLoops, sampleLoops, false)(toBench)
+    */
 
   def printRes[T](v: Exp[T]) {
     println("v:\t\t" + v)

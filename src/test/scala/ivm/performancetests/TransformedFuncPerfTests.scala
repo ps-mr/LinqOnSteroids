@@ -12,7 +12,6 @@ import org.junit.Test
 import expressiontree.Exp
 import expressiontree.Lifting._
 import optimization.Optimization
-import performancetests.Benchmarking.benchMark
 import collection.mutable.ArrayBuffer
 import tests.TransformTestHelper
 
@@ -22,37 +21,36 @@ import tests.TransformTestHelper
 * Date: 25/8/2011
 */
 
-class TransformedFuncPerfTests extends JUnitSuite with ShouldMatchersForJUnit with TransformTestHelper {
-  val debug = false
-  val warmUpLoops = if (debug) 1 else 4000
-  val sampleLoops = if (debug) 2 else 50
-  val execLoops = 10
-  val collSize = if (debug) 10 else 100
+class TransformedFuncPerfTests extends JUnitSuite with ShouldMatchersForJUnit with TransformTestHelper with Benchmarking {
+  override val warmUpLoops = 4000
+  override val sampleLoops = 50
+  override val effectiveExecLoops = 10
+  val collSize = if (debugBench) 10 else 100
   val l: Exp[Traversable[Int]] = toExp(ArrayBuffer.range(1, collSize))
   val l2: Exp[Traversable[Int]] = toExp(ArrayBuffer.range(1, collSize))
 
   def testBenchmarkTransforms[T](t: Exp[T]) {
     val (_, tTransf) = testRebuild(t)
-    benchMark("base #1", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("base #1") {
       t.interpret()
     }
-    benchMark("base #2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("base #2") {
       t.interpret()
     }
-    benchMark("after transform identity #1", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("after transform identity #1") {
       tTransf.interpret()
     }
-    benchMark("after transform identity #2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("after transform identity #2") {
       tTransf.interpret()
     }
-    benchMark("after transform identity #3", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("after transform identity #3") {
       tTransf.interpret()
     }
     val tOptim = Optimization.optimize(t)
-    benchMark("after optimization #1", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("after optimization #1") {
       tOptim.interpret()
     }
-    benchMark("after optimization #2", warmUpLoops = warmUpLoops, sampleLoops = sampleLoops, execLoops = execLoops) {
+    benchMark("after optimization #2") {
       tOptim.interpret()
     }
     println(t)

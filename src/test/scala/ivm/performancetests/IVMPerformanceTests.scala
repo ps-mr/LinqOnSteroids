@@ -6,7 +6,6 @@ import org.junit.{Ignore, Test}
 import collection.mutable
 
 import mutable.Buffer
-import performancetests.Benchmarking._
 import tests.IVMTestUtil
 
 import expressiontree._
@@ -21,16 +20,15 @@ import optimization.Optimization
  */
 
 /*
-class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
-  val debug = false
-  val warmUpLoops = if (debug) 1 else 100
-  val sampleLoops = if (debug) 2 else 50
-  val maxN = if (debug) 9 else 17
+class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil with Benchmarking {
+  override val warmUpLoops = 100
+  override val sampleLoops = 50
+  val maxN = if (debugBench) 9 else 17
   val mapCounts = (1 until (maxN, 4)) :+ maxN
 
   val toAdd = Array[Int]((1 to 10 * 1000): _*)
   val updSize = 1000
-  val toAddDel = if (debug) Array(1) else Array[Int]((100 * 1000 to 100 * 1000 + updSize): _*)
+  val toAddDel = if (debugBench) Array(1) else Array[Int]((100 * 1000 to 100 * 1000 + updSize): _*)
 
   @Test
   def nativeMappingHashSet() {

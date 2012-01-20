@@ -12,10 +12,9 @@ import expressiontree.Exp
  * Date: 12/10/2011
  */
 
-class JoinCreationTest extends JUnitSuite with ShouldMatchersForJUnit  {
+class JoinCreationTest extends JUnitSuite with ShouldMatchersForJUnit with Benchmarking {
   @Test
   def performancetests() {
-    import Benchmarking._
     //small performance test
     val testSize = 2000
     val c1: Exp[Traversable[Int]] = toExp(Vector.range(1,testSize))

@@ -47,6 +47,7 @@ import Util.ExtraImplicits._
 import collection.TraversableView
 import optimization.Optimization
 import tests.TestUtil
+import performancetests.Benchmarking
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -84,14 +85,9 @@ object FindBugsAnalyses {
   }
 }
 
-class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
-  import ivm.performancetests.Benchmarking
-
-  private def benchMark[T](msg: String)(t: ⇒ T): T = {
-    val debug = false
-    Benchmarking.benchMark(msg, warmUpLoops = if (debug) 0 else 100, sampleLoops = if (debug) 1 else 50)(t)
-    //Benchmarking.benchMark(msg)(t)
-  }
+class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestUtil with Benchmarking {
+  override val warmUpLoops = 100
+  override val sampleLoops = 50
 
   @Test
   def testAnalyze() {
@@ -530,7 +526,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
   def analyze(zipFiles: Seq[String]) {
     val classHierarchy = new ClassHierarchy {}
 
-    val classFiles = Benchmarking.benchMark("Reading all class files", warmUpLoops = 1, execLoops = 1) {
+    val classFiles = benchMark("Reading all class files", warmUpLoops = 1, execLoops = 1) {
       for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
     }
     val classFilesCount = classFiles.length
