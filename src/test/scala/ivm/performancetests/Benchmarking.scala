@@ -7,9 +7,7 @@ import Optimization._
 
 object Benchmarking {
   val debugBench = false
-}
 
-trait Benchmarking {
   class VarianceCalc {
     var sum: Double = 0
     var sumSq: Double = 0
@@ -25,12 +23,16 @@ trait Benchmarking {
       sumSq / count - t * t
     }
   }
+}
+
+trait Benchmarking {
+  import Benchmarking._
 
   val execLoops = 1
   val warmUpLoops = 100
   val sampleLoops = 50
 
-  //Import and re-export.
+  //Import and re-export to inheritors.
   def debugBench = Benchmarking.debugBench
 
   //These are a def, so that overriding the values they depend on works!
