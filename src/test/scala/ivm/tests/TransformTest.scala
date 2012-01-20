@@ -7,7 +7,6 @@ import org.junit.Test
 import expressiontree.Exp
 import expressiontree.Lifting._
 import optimization.Optimization
-import performancetests.Benchmarking
 import collection.mutable.ArrayBuffer
 
 
@@ -26,7 +25,8 @@ trait TransformTestHelper {
   }
 }
 
-class TransformTest extends JUnitSuite with ShouldMatchersForJUnit with TransformTestHelper with Benchmarking {
+class TransformTest extends JUnitSuite with ShouldMatchersForJUnit with TransformTestHelper {
+  import performancetests.Benchmarking.debugBench
   private val collSize = if (debugBench) 10 else 100
   private val l: Exp[Traversable[Int]] = toExp(ArrayBuffer.range(1, collSize))
   private val l2: Exp[Traversable[Int]] = toExp(ArrayBuffer.range(1, collSize))

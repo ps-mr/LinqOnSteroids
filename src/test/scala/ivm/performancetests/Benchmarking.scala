@@ -5,6 +5,10 @@ import expressiontree.Exp
 import optimization._
 import Optimization._
 
+object Benchmarking {
+  val debugBench = false
+}
+
 trait Benchmarking {
   class VarianceCalc {
     var sum: Double = 0
@@ -25,7 +29,9 @@ trait Benchmarking {
   val execLoops = 1
   val warmUpLoops = 10
   val sampleLoops = 5
-  val debugBench = false
+
+  //Import and re-export.
+  def debugBench = Benchmarking.debugBench
 
   //These are a def, so that overriding the values they depend on works!
   def effectiveExecLoops = if (debugBench) 1 else execLoops
