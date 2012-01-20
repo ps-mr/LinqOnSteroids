@@ -436,10 +436,16 @@ object Optimization {
 
   def optimize[T](exp: Exp[T]): Exp[T] = {
     shareSubqueries(
-      reassociateOps(
-        mergeMaps(
-          mergeFilters(
-            optimizeCartProdToJoin(removeIdentityMaps(exp))))))
+      //removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
+        reassociateOps(
+          mergeMaps(
+            mergeFilters(
+              hoistFilter( //Do this before merging filters!
+                cartProdToAntiJoin(
+                  optimizeCartProdToJoin(
+                    removeRedundantOption(toTypeFilter(
+                      sizeToEmpty(
+                        removeIdentityMaps(exp)))))))))))
   }
 
   def reassociateOps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.reassociateOps)
