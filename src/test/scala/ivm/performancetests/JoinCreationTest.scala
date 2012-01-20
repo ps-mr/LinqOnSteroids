@@ -22,13 +22,13 @@ class JoinCreationTest extends JUnitSuite with ShouldMatchersForJUnit  {
     val c2: Exp[Traversable[Int]] = toExp(Vector.range(1,testSize))
     val n1 = Vector.range(1,testSize)
     val n2 = Vector.range(1,testSize)
-    val notoptimized = for (k  <- c1; k2  <- c2 if k is k2) yield k+k2
+    val notoptimized = for (k <- c1; k2 <- c2 if k is k2) yield k+k2
     benchMark("Native query") {
-      val nativequery  = for (k  <- n1; k2  <- n2 if k.equals(k2)) yield k+k2
+      val nativequery = for (k <- n1; k2 <- n2 if k.equals(k2)) yield k+k2
     }
     benchMark("Native query with primitive ==") {
-      // The native query is significantly faster if we compare by  k == k2 instead of k.equals(k2)
-      val nativequery  = for (k  <- n1; k2  <- n2 if k == k2) yield k+k2
+      // The native query is significantly faster if we compare by k == k2 instead of k.equals(k2)
+      val nativequery = for (k <- n1; k2 <- n2 if k == k2) yield k+k2
     }
 
     // Surprisingly, the notoptimized query becomes much slower if we implement
