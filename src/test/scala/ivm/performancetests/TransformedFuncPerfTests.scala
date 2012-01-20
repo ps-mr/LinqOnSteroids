@@ -31,12 +31,15 @@ class TransformedFuncPerfTests extends JUnitSuite with ShouldMatchersForJUnit wi
 
   def testBenchmarkTransforms[T](t: Exp[T]) {
     val (_, tTransf) = testRebuild(t)
+    println(t)
     benchMark("base #1") {
       t.interpret()
     }
     benchMark("base #2") {
       t.interpret()
     }
+
+    println(tTransf)
     benchMark("after transform identity #1") {
       tTransf.interpret()
     }
@@ -46,16 +49,15 @@ class TransformedFuncPerfTests extends JUnitSuite with ShouldMatchersForJUnit wi
     benchMark("after transform identity #3") {
       tTransf.interpret()
     }
+
     val tOptim = Optimization.optimize(t)
+    println(tOptim)
     benchMark("after optimization #1") {
       tOptim.interpret()
     }
     benchMark("after optimization #2") {
       tOptim.interpret()
     }
-    println(t)
-    println(tTransf)
-    println(tOptim)
   }
 
   @Test def testTransformIdentityMap1 {
