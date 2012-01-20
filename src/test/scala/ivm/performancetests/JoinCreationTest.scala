@@ -13,6 +13,8 @@ import expressiontree.Exp
  */
 
 class JoinCreationTest extends JUnitSuite with ShouldMatchersForJUnit with Benchmarking {
+  override val warmUpLoops = 100
+  override val sampleLoops = 50
   @Test
   def performancetests() {
     //small performance test
