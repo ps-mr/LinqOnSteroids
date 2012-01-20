@@ -126,9 +126,8 @@ object OptimizationTransforms {
     }
     */
 
-  //XXX: use normalization more often (e.g., whenever building a FuncExp, or whenever building a FuncExpInt?)
   private def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: FuncExp[T, U], g: FuncExp[U, V]) =
-    coll.map(FuncExp.normalize(f.f andThen g.f, f.x))
+    coll.map(new FuncExpInt(f.f andThen g.f, f.x))
     //coll.map(g.f andThen f.f) //Here the typechecker can reject this line.
 
   val mergeMaps: Exp[_] => Exp[_] =

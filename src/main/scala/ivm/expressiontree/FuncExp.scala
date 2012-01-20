@@ -124,7 +124,8 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
 
 object FuncExpInt {
   private[expressiontree] val env = new ScalaThreadLocal(new HashMap[Int, Any]())
-  //Write down a constructor of FuncExpInt from HOAS
+
+  //Constructs FuncExpInt from HOAS. This also applies normalization-by-evaluation in the process.
   def apply[S, T](f: Exp[S] => Exp[T]) = {
     val v = FuncExp.gensym[S]()
     new FuncExpInt(f(v), v)
@@ -196,10 +197,5 @@ object FuncExp {
         Lifting.onExp(new FuncExpInt[Any, (Any => T)](new FuncExpInt(e, v1), v2))('tupledCurried, x => Function.tupled(Function.uncurried(x))),
         arg))*/
     new FuncExpInt2(e, v1, v2)
-  }
-
-  //The idea here is similar to normalization-by-evaluation
-  def normalize[S, T](f: Exp[S] => Exp[T], x: TypedVar[/*S*/_] = gensym[S]()) = {
-    makefun(f(x.asInstanceOf[Exp[S]]), x)
   }
 }
