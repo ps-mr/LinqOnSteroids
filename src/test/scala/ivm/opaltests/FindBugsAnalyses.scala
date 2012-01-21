@@ -522,7 +522,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
   def analyze(zipFiles: Seq[String]) {
     val classHierarchy = new ClassHierarchy {}
 
-    val classFiles = benchMark("Reading all class files", warmUpLoops = 1, execLoops = 1) {
+    val classFiles = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
       for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
     }
     val classFilesCount = classFiles.length
