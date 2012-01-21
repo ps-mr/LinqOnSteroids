@@ -48,6 +48,7 @@ import collection.TraversableView
 import optimization.Optimization
 import tests.TestUtil
 import performancetests.Benchmarking
+import org.scalatest.BeforeAndAfterAll
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -84,11 +85,10 @@ object FindBugsAnalyses {
   }
 }
 
-class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestUtil with Benchmarking {
-  @Test
-  def testAnalyze() {
-    analyze(Seq("lib/scalatest-1.6.1.jar"))
-  }
+class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with BeforeAndAfterAll with TestUtil with Benchmarking {
+  val classHierarchy = new ClassHierarchy {}
+  var classFiles: Seq[ClassFile] = _
+  var getClassFile: Map[ObjectType, ClassFile] = _
 
   def optimizerTable[T]: Seq[(String, Exp[T] => Exp[T])] = Seq((" - after optimization", identity _))
 
@@ -119,7 +119,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     res
   }
 
-  private def analyzeConfusedInheritanceNative(classFiles: Seq[ClassFile]) = {
+  private def analyzeConfusedInheritanceNative() = {
     val protectedFields = benchMark("CI_CONFUSED_INHERITANCE") {
       for {
         classFile ← classFiles if classFile.isFinal
@@ -133,8 +133,9 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
   // The following code is meant to show how easy it is to write analyses;
   // it is not meant to demonstrate how to write such analyses in an efficient
   // manner.
-  private def analyzeConfusedInheritance(classFiles: Seq[ClassFile]) {
-    val protectedFields = analyzeConfusedInheritanceNative(classFiles)
+  @Test
+  def analyzeConfusedInheritance() {
+    val protectedFields = analyzeConfusedInheritanceNative()
     // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
     import BATLifting._
     val protectedFieldsLos = benchMark("CI_CONFUSED_INHERITANCE Los Setup") {
@@ -163,11 +164,12 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     }
     val protectedFieldsLos2Res = benchMark("CI_CONFUSED_INHERITANCE Los interpret noop")(protectedFieldsLos2.interpret())
     protectedFieldsLos2Res should be (protectedFields.toSet)*/
-    analyzeConfusedInheritanceNative(classFiles) should be (protectedFields)
+    analyzeConfusedInheritanceNative() should be (protectedFields)
     //protectedFieldsLos2Res should be (protectedFields2.toSet)
   }
 
-  def analyzeUnusedFields(classFiles: Seq[ClassFile]) {
+  @Test
+  def analyzeUnusedFields() {
     // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
     val unusedFields: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD") {
       for {
@@ -342,7 +344,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     unusedFields3LosOptSzToEmRes should be (unusedFields)*/
   }
 
-  def analyzeExplicitGC(classFiles: Seq[ClassFile]) {
+  @Test
+  def analyzeExplicitGC() {
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
     val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
       for {
@@ -419,7 +422,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     benchQuery("DM_GC Los", garbageCollectingMethodsLos, garbageCollectingMethods)
   }
 
-  def analyzePublicFinalizer(classFiles: Seq[ClassFile]) {
+  @Test
+  def analyzePublicFinalizer() {
     // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
     val classesWithPublicFinalizeMethods = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED") {
       for (
@@ -447,7 +451,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     benchQuery("FI_PUBLIC_SHOULD_BE_PROTECTED Los", classesWithPublicFinalizeMethodsLos, classesWithPublicFinalizeMethods)
   }
 
-  def analyzeSerializableNoConstructor(classHierarchy: ClassHierarchy, getClassFile: Map[ObjectType, ClassFile]) {
+  @Test
+  def analyzeSerializableNoConstructor() {
     // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
     val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
     val classesWithoutDefaultConstructor = benchMark("SE_NO_SUITABLE_CONSTRUCTOR") {
@@ -488,7 +493,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     benchQuery("SE_NO_SUITABLE_CONSTRUCTOR Los", classesWithoutDefaultConstructorLos, classesWithoutDefaultConstructor)
   }
 
-  def analyzeCatchIllegalMonitorStateException(classFiles: Seq[ClassFile]) {
+  @Test
+  def analyzeCatchIllegalMonitorStateException() {
     // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
     val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
     val catchesIllegalMonitorStateException = benchMark("IMSE_DONT_CATCH_IMSE") {
@@ -519,13 +525,10 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     benchQuery("IMSE_DONT_CATCH_IMSE Los", catchesIllegalMonitorStateExceptionLos, catchesIllegalMonitorStateException)
   }
 
-  def analyze(zipFiles: Seq[String]) {
-    val classHierarchy = new ClassHierarchy {}
-
-    val classFiles = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
+  def setupAnalysis(zipFiles: Seq[String]) {
+    classFiles = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
       for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
     }
-    val classFilesCount = classFiles.length
     // This operation is not incrementalizable by itself. If classHierarchy supports removing classes, we might
     // provide a way to setup a listener easily.
     for (classFile ← classFiles)
@@ -533,14 +536,22 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     //As an alternative, classHierarchy might support IVM directly.
     //classHierarchy.update(classFiles)
 
-    val getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
-    println("Number of class files: " + classFilesCount)
+    getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
+    println("Number of class files: " + classFiles.length)
+  }
 
-    analyzeConfusedInheritance(classFiles)
-    analyzeUnusedFields(classFiles)
-    analyzeExplicitGC(classFiles)
-    analyzePublicFinalizer(classFiles)
-    analyzeSerializableNoConstructor(classHierarchy, getClassFile)
-    analyzeCatchIllegalMonitorStateException(classFiles)
+  def analyze(zipFiles: Seq[String]) {
+    setupAnalysis(zipFiles)
+
+    analyzeConfusedInheritance()
+    analyzeUnusedFields()
+    analyzeExplicitGC()
+    analyzePublicFinalizer()
+    analyzeSerializableNoConstructor()
+    analyzeCatchIllegalMonitorStateException()
+  }
+
+  override def beforeAll() {
+    setupAnalysis(Seq("lib/scalatest-1.6.1.jar"))
   }
 }
