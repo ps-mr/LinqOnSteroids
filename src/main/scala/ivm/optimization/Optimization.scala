@@ -67,30 +67,19 @@ object OptimizationTransforms {
                                                  filterFun: FuncExp[T, Boolean],
                                                  forallFun: FuncExp[S, Boolean]): Exp[Traversable[T]] /*Join[T, S, TKey, TResult]*/ = {
     //XXX: in this version of the work, we should create a custom node, since our handling of redexes is not yet perfect -
-    //we currently assume expression trees are already beta-reduced when comparing them. OTOH, performing beta-reduction
-    //risks introducing non-termination inside optimization.
+    //we currently assume expression trees are already beta-reduced when _comparing_ them and looking for common subexpressions.
+    //OTOH, performing beta-reduction risks introducing non-termination inside optimization.
 
     //We must hoist the creation of the subcollection, so that we build the index only once. We use letExp to this end.
-    letExp(FuncExp.makefun[T, TKey](lhs, filterFun.x)){
-      subFun =>
-        letExp((forallColl map FuncExp.makefun[S, TKey](rhs, forallFun.x).f).toSet){
-          subColl =>
-            stripView(filteredColl) withFilter {
-              x =>
-                !(subColl
-                  contains
-                  subFun(x))
-            }}}
-
-    //filteredColl withFilter (x => (forallColl forall forallFun))
-
-    /*stripView(wfColl))(
-  FuncExp.makefun[T, TKey](lhs, fmFun.x).f,
-  FuncExp.makefun[S, TKey](rhs, wfFun.x).f,
-  FuncExp.makepairfun[T, S, TResult](
-    moFun.body,
-    fmFun.x,
-    moFun.x).f)*/
+    val lhsFun = FuncExp.makefun[T, TKey](lhs, filterFun.x)
+    // lhsFun is used only in one location in a loop; thanks to normalization-by-evaluation, we can inline it while being
+    // sure that term manipulation is only done at optimization time.
+    letExp((forallColl map FuncExp.makefun[S, TKey](rhs, forallFun.x).f).toSet){
+      subColl =>
+        stripView(filteredColl) withFilter {
+          x =>
+            !(subColl contains lhsFun(x))
+        }}
   }
 
   val cartProdToAntiJoin: Exp[_] => Exp[_] =
