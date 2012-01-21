@@ -150,7 +150,11 @@ trait TraversableOps {
 
     def typeFilter[S](implicit cS: ClassManifest[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
-      TypeFilter[T, Traversable, ID, S](t, FuncExp(identity))
+      TypeFilter[T, Traversable, ID, S](t, FuncExp(identity[Exp[T]]), cS)
+    }
+    private[ivm] def typeFilterClass[S](classS: Class[S]): Exp[Traversable[S]] = {
+      type ID[+T] = T
+      TypeFilter[T, Traversable, ID, S](t, FuncExp(identity[Exp[T]]), classS)
     }
   }
 
@@ -322,7 +326,7 @@ trait TypeFilterOps {
 
   }
   class TypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](val t: Exp[C[D[T]]]) {
-    def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T, C, D, S](t, FuncExp(f))
+    def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T, C, D, S](t, FuncExp(f), cS)
     def groupByType(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t, FuncExp(f))
   }
 

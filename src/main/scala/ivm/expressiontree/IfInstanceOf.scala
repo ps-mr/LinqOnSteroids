@@ -19,17 +19,17 @@ object IfInstanceOf {
     else
       cS.erasure*/
     primitiveToWrapper.getOrElse(cS.erasure, cS.erasure)
-}
-
-case class IfInstanceOf[T, S](x: Exp[T])(implicit val cS: ClassManifest[S]) extends UnaryOpExp[T, Option[S], IfInstanceOf[T, S]](x) {
   /*
    * This is required to get the expected behavior also for primitive types. Class.isInstance(Object) documents that
    * "If this Class object represents a primitive type, this method returns false.", which makes sense since an Object
    * can never be an instance of a primitive type.
    */
-  private[this] val classS = IfInstanceOf.getErasure(cS)
+  def apply[T, S](x: Exp[T], cS: ClassManifest[S]) = apply[T, S](x, getErasure(cS))
+}
 
-  def copy(x: Exp[T]) = IfInstanceOf(x)
+//Equality comparison must consider also classS. Therefore, classS must be a class parameter.
+case class IfInstanceOf[T, S](x: Exp[T], classS: Class[_]) extends UnaryOpExp[T, Option[S], IfInstanceOf[T, S]](x) {
+  def copy(x: Exp[T]) = IfInstanceOf(x, classS)
   def interpret() =
     Util.ifInstanceOfBody(x.interpret(), classS)
 }

@@ -249,9 +249,9 @@ object OptimizationTransforms {
       case _ => e
     }
 
-  private def buildTypeFilter[S, T, U](coll: Exp[Traversable[T]], cS: ClassManifest[S], f: FuncExp[S, Traversable[U]]): Exp[Traversable[U]] =
+  private def buildTypeFilter[S, T, U](coll: Exp[Traversable[T]], classS: Class[S], f: FuncExp[S, Traversable[U]]): Exp[Traversable[U]] =
     //coll.typeFilter(cS).map(f.f)
-    coll.typeFilter(cS).flatMap(f.f)
+    coll.typeFilterClass(classS).flatMap(f.f)
 
   private def tryBuildTypeFilter[T, U](coll: Exp[Traversable[T]],
                                        fmFun: FuncExp[T, TraversableOnce[U]],
@@ -261,12 +261,12 @@ object OptimizationTransforms {
     //IfInstanceOf node (with the same type manifest...)
     val containingX = fmFun.body.findTotFun(_.children.contains(X))
     containingX.head match {
-      case instanceOfNode@IfInstanceOf(X) if containingX.forall(_ == instanceOfNode) =>
+      case instanceOfNode@IfInstanceOf(X, _) if containingX.forall(_ == instanceOfNode) =>
         //Aargh! Do something about this mess, to allow expressing it in a nicer way.
         val v = FuncExp.gensym()
         val transformed = fmFun.body.substSubTerm(instanceOfNode, Let(v))
         //Note: on the result we would really like to drop all the 'Option'-ness, but that's a separate step.
-        buildTypeFilter(coll, instanceOfNode.cS, FuncExp.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v))
+        buildTypeFilter(coll, instanceOfNode.classS, FuncExp.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v))
       case _ =>
         e
     }

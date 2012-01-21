@@ -70,16 +70,19 @@ case class IsEmpty[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) 
   def copy(t: Exp[Repr]) = IsEmpty(t)
 }
 
-case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T])
-                                 (implicit cS: ClassManifest[S])
-                                  extends BinaryOp[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]], TypeFilter[T, C, D, S]](base, f) {
-  private[this] val classS = IfInstanceOf.getErasure(cS)
+object TypeFilter {
+  def apply[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], cS: ClassManifest[S]) =
+    apply[T, C, D, S](base, f, IfInstanceOf.getErasure(cS))
+}
 
+//Just like for IfInstanceOf, equality comparison must consider also classS. Therefore, classS must be a class parameter.
+case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], classS: Class[_])
+                                  extends BinaryOp[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]], TypeFilter[T, C, D, S]](base, f) {
   override def interpret() = {
     val b: C[D[T]] = base.interpret()
     b.filter(x => classS.isInstance(f.interpret()(x))).asInstanceOf[C[D[S]]]
   }
-  override def copy(base: Exp[C[D[T]]], f: Exp[D[T] => T]) = TypeFilter[T, C, D, S](base, f)
+  override def copy(base: Exp[C[D[T]]], f: Exp[D[T] => T]) = TypeFilter[T, C, D, S](base, f, classS)
 }
 
 // XXX: It is not clear whether the cast from Repr to That is always valid. OTOH, this could express typeFilter on Map,
