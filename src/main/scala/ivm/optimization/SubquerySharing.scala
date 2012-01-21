@@ -79,7 +79,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   //XXX: we should strip View if needed on _both_ sides before performing the match.
   val groupByShare2: Exp[_] => Exp[_] = {
     e => e match {
-      case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/) =>
+      case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
         val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
         val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f)(_))
         optimized.getOrElse(e)
