@@ -46,13 +46,13 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[FilterMonadic[T, Traversable[T]]] = {
     if (conds.isEmpty) return e
     val residualcond: Exp[Boolean] = conds.reduce(And)
-    e.withFilter(FuncExp.makefun[T, Boolean](residualcond,v))
+    e.withFilter(FuncExp.makefun[T, Boolean](residualcond, v))
   }
 
   private def tryGroupBy[T](c: Exp[Traversable[T]],
-                               allConds: Set[Exp[Boolean]],
-                               f: FuncExp[T,Boolean])
-                               (equ: Exp[Boolean]): Option[Exp[FilterMonadic[T, Traversable[T]]]] =
+                            allConds: Set[Exp[Boolean]],
+                            f: FuncExp[T, Boolean])
+                           (equ: Exp[Boolean]): Option[Exp[FilterMonadic[T, Traversable[T]]]] =
     equ match {
       case eq: Eq[t2] =>
         val oq: Option[Exp[Traversable[T]]] =
@@ -78,18 +78,18 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
   //XXX: we should strip View if needed on _both_ sides before performing the match.
   val groupByShare2: Exp[_] => Exp[_] = {
-   e => e match {
-     case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _/*Boolean*/]) =>
-       val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
-       val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f)(_))
-       optimized.getOrElse(e)
-     case _ => e
-   }
- }
-
-   val groupByShare: Exp[_] => Exp[_] = {
     e => e match {
-      case Filter(View(c: Exp[Traversable[_ /*t*/]]), (f: FuncExp[t, _/*Boolean*/]) & FuncExpBody(fEqBody: Eq[t2])) =>
+      case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/) =>
+        val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
+        val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f)(_))
+        optimized.getOrElse(e)
+      case _ => e
+    }
+  }
+
+  val groupByShare: Exp[_] => Exp[_] = {
+    e => e match {
+      case Filter(View(c: Exp[Traversable[_ /*t*/]]), (f: FuncExp[t, _ /*Boolean*/]) & FuncExpBody(fEqBody: Eq[t2])) =>
         val Eq(lhs, rhs) = fEqBody
         val coll = OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]])
         if (rhs.isOrContains(f.x) && !lhs.isOrContains(f.x))
