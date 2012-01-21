@@ -291,7 +291,7 @@ trait TypeFilterOps {
       //a != null. Here we need to do that check otherwise. To avoid a separate filter stage, and since views don't really support groupBy,
       //aggregate nulls into a separate class.
       new TypeMapping[C, D](x.groupBy
-        ((x: D[T]) => {
+        (x => {
           val gx = g(x)
           if (gx != null)
             ClassManifest.fromClass(gx.getClass)
