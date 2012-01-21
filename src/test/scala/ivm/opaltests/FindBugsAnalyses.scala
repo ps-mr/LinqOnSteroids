@@ -230,7 +230,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
 
     unusedFields3 should be (unusedFields)
 
-    val optims = Seq((" - with Optim: Size To Empty", Optimization.sizeToEmpty _))
+    val optims = Seq.empty
 
     import BATLifting._
     import InstructionLifting._
