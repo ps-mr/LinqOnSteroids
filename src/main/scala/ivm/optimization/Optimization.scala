@@ -126,11 +126,13 @@ object OptimizationTransforms {
     }
     */
 
-  //XXX: The way we compute g(f(x)) by inlining f(x) in the body of g. This might duplicate work!
   //Same problem also when fusing map and flatMap (which we don't do yet).
   private def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: FuncExp[T, U], g: FuncExp[U, V]) =
-    coll.map(f.f andThen g.f)
+    coll.map(x => letExp(f(x))(g))
+    //coll.map(f.f andThen g.f) //Old implementation, equivalent to inlining f(x) in the body of g. This might duplicate work!
     //coll.map(g.f andThen f.f) //Here the typechecker can reject this line.
+
+  //Now we'd like a non-work-duplicating inliner. We'd need a linear type system as in GHC's inliner.
 
   val mergeMaps: Exp[_] => Exp[_] =
     e => e match {
