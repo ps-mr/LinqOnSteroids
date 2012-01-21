@@ -129,7 +129,7 @@ object OptimizationTransforms {
   //XXX: The way we compute g(f(x)) by inlining f(x) in the body of g. This might duplicate work!
   //Same problem also when fusing map and flatMap (which we don't do yet).
   private def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: FuncExp[T, U], g: FuncExp[U, V]) =
-    coll.map(new FuncExpInt(f.f andThen g.f, f.x))
+    coll.map(FuncExpInt(f.f andThen g.f))
     //coll.map(g.f andThen f.f) //Here the typechecker can reject this line.
 
   val mergeMaps: Exp[_] => Exp[_] =
