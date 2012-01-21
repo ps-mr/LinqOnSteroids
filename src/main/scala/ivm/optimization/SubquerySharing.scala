@@ -7,9 +7,9 @@ import collection.generic.FilterMonadic
 import scala.collection.Map
 
 // Contract: Each map entry has the form Exp[T] -> T for some T
-class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
+class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   val directsubqueryShare: Exp[_] => Exp[_] = {
-    (e) => subqueries.get(Optimization.normalize(e)) match {
+    e => subqueries.get(Optimization.normalize(e)) match {
       case Some(t) => Const(t)
       case None => e
     }
@@ -45,8 +45,8 @@ class SubquerySharing(val subqueries: Map[Exp[_],Any]) {
 
   private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[FilterMonadic[T, Traversable[T]]] = {
     if (conds.isEmpty) return e
-    val residualcond: Exp[Boolean] = conds.reduce( (x,y) => And(x,y))
-    e.withFilter(FuncExp.makefun[T,Boolean](residualcond,v))
+    val residualcond: Exp[Boolean] = conds.reduce(And)
+    e.withFilter(FuncExp.makefun[T, Boolean](residualcond,v))
   }
 
   private def tryGroupBy[T](c: Exp[Traversable[T]],
