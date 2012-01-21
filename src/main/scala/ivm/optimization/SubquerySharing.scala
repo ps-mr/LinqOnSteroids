@@ -76,7 +76,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     None
   }
 
-  //XXX: we should strip View if needed on _both_ sides before performing the match.
+  //We have to strip View if needed on _both_ sides before performing the match, to increase the chance of a match.
+  //This is done here on one side, and on Optimization.addSubQuery on the other side. Note that only the top-level strip
+  //is visible.
   val groupByShare2: Exp[_] => Exp[_] = {
     e => e match {
       case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>

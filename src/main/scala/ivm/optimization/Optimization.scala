@@ -407,9 +407,12 @@ object OptimizationTransforms {
       case _ => e
     }
 
-  private[optimization] def stripView[T](coll: Exp[Traversable[T]]) =
+  private[optimization] def stripView[T](coll: Exp[Traversable[T]]) = stripViewUntyped(coll)
+
+  //This type is incorrect whenever T is a view type. Be careful!
+  private[optimization] def stripViewUntyped[T](coll: Exp[T]): Exp[T] =
     coll match {
-      case View(coll2: Exp[Traversable[T]]) => coll2
+      case View(coll2: Exp[Traversable[t]]) => coll2.asInstanceOf[Exp[T]]
       case _ => coll
     }
 }
@@ -419,7 +422,8 @@ object Optimization {
 
   val subqueries: Map[Exp[_], Any] = Map.empty
 
-  def addSubQuery[T](query: Exp[T]) {
+  def addSubQuery[T](_query: Exp[T]) {
+    val query = OptimizationTransforms.stripViewUntyped(_query)
     val optquery = optimize(query)
     val intQuery = optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret() again!
     //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the optimizer.
