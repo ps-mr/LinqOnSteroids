@@ -117,9 +117,19 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test
   def testRemoveRedundantOption() {
     val base = Seq(1) asSmartCollection
+    val query0 = for (i <- base; j <- i.ifInstanceOf[Int] if j % 2 === 1) yield j
     val query = for (i <- base.typeFilter[Int]; j <- Let(i) if j % 2 === 1) yield j
+    Optimization.toTypeFilter(query0) should be (query)
     val opt = Optimization.removeRedundantOption(query)
     opt.interpret() should be (query.interpret())
     opt should be (for (i <- base.typeFilter[Int]; if i % 2 === 1) yield i)
+  }
+  
+  @Test
+  def testIfInstanceOfAndTypeFilterEq() {
+    val v = FuncExp.gensym[Int]()
+    val a1 = v.ifInstanceOf[Int]
+    val a2 = v.ifInstanceOf[Long]
+    a1 should not be (a2)
   }
 }
