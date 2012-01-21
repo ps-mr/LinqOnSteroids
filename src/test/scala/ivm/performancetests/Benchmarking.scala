@@ -61,6 +61,7 @@ trait Benchmarking {
                (toBench: => T): (T, Double) = {
     var ret: T = null.asInstanceOf[T]
     //Use Console.err instead of println and flush here.
+    println("Benchmarking params: execLoops: %d, warmUpLoops: %d, sampleLoops: %d" format (execLoops, warmUpLoops, sampleLoops))
     if (!hasConsoleOutput)
       println(">>> Name = %s, starting warmup..." format name)
     Console.flush()
