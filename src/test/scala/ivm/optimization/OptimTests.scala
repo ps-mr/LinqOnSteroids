@@ -129,8 +129,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test
   def testIfInstanceOfAndTypeFilterEq() {
     val v = FuncExp.gensym[Int]()
-    val a1 = v.ifInstanceOf[Int]
-    val a2 = v.ifInstanceOf[Long]
-    a1 should not be (a2)
+    v.ifInstanceOf[Int] should not be v.ifInstanceOf[Long]
+    baseCol.typeFilter[Int] should not be (baseCol.typeFilter[Long])
   }
 }
