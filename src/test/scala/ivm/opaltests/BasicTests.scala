@@ -19,7 +19,7 @@ import resolved.Attributes
 import java.util.zip.ZipFile
 import java.io.File
 import performancetests.Benchmarking
-import collections.IncHashSet
+import collections.{TypeMapping, IncHashSet}
 
 /* (Very incomplete) boilerplate code for making use of BAT types convenient in queries.
  * This code should be generated */
@@ -345,17 +345,18 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
     // another version using type index but manual index application
     // (need to code this into optimizer - not quite obvious how to do it)
 
-    val q = for (cf <- queryData;
+    type SND[+T] = (Method, T)
+    val q: Exp[Set[SND[Instruction]]] = for (cf <- queryData;
                  m <- cf.methods;
                  ca <- m.attributes.typeFilter[CodeAttribute];
                  i <- ca.code
     ) yield (m, i)
-    //Util.assertType[Exp[Set[SND[Instruction]]]](q) //Does not compile because there is no lifting Set[T] => Exp[Set[T]]
-    //Util.assertType[Exp[Traversable[SND[Instruction]]]](q) //This is just for documentation.
 
+    //Let us accept some limited overhead with explicit type annotations to create the index
     //val typeindex = q.groupByType(_._2)
     val typeindex = q.groupByTupleType2
-    val evaluatedtypeindex = typeindex.interpret()
+    //This is normalization-by-evaluation over terms instead of functions (and who said it is limited to functions?)
+    val evaluatedtypeindex: Exp[TypeMapping[Set, SND]] = asExp(typeindex.interpret())
     //println(evaluatedtypeindex.map.keys)
 
     //val methodsLos6 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
@@ -363,8 +364,8 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
     //is to have the index evaluated at all - otherwise there would be no speed-up. However, the proper solution is to
     //wrap the query result in something similar to IncrementalResult's constructor: Exp[T] -> Exp[T] - so that the result
     //is materialized and incrementally maintained.
-    type SND[+T] = (Method, T)
-    val methodsLos6 = expToTypeMappingAppOps[Set, SND](evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
+    val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1.name)
+    //val methodsLos6 = expToTypeMappingAppOps[Set, SND](evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
     //If I omit type parameters, not type inference, but typechecking here fails after figuring the right type, even if expToTypeMappingAppOps is explicitly called.
     //As you see, it fails to unify D[_] with [B](de.tud.cs.st.bat.resolved.Method_Info, B).
     //This is documented as https://issues.scala-lang.org/browse/SI-5075
