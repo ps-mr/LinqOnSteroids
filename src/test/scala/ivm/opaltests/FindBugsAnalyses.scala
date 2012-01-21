@@ -39,7 +39,7 @@ import analyses._
 
 import reader.Java6Framework
 
-import org.junit.Test
+import org.junit.{Test, BeforeClass}
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import expressiontree.{Exp, Lifting, Util}
 import Lifting._
@@ -48,7 +48,6 @@ import collection.TraversableView
 import optimization.Optimization
 import tests.TestUtil
 import performancetests.Benchmarking
-import org.scalatest.BeforeAndAfterAll
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -85,7 +84,7 @@ object FindBugsAnalyses {
   }
 }
 
-class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with BeforeAndAfterAll with TestUtil with Benchmarking {
+class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestUtil with Benchmarking {
   val classHierarchy = new ClassHierarchy {}
   var classFiles: Seq[ClassFile] = _
   var getClassFile: Map[ObjectType, ClassFile] = _
@@ -551,7 +550,8 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with Befor
     analyzeCatchIllegalMonitorStateException()
   }
 
-  override def beforeAll() {
+  @BeforeClass
+  def initialize() {
     setupAnalysis(Seq("lib/scalatest-1.6.1.jar"))
   }
 }
