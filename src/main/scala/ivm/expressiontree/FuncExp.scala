@@ -24,7 +24,7 @@ abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
   def body: Exp[T] = lazyBody
 
   override def toString() =
-    "(%s) %s %s" format (xName, arrowString, body)
+    "%s %s %s" format (xName, arrowString, body)
   def arrowString: String
 
   //Note that thanks to this line and to copy(), we can perform optimization within function bodies, which is notable
