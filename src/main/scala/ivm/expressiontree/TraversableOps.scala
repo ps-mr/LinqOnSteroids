@@ -290,14 +290,14 @@ trait TypeFilterOps {
       //Why the null check? Remember that (null instanceof Foo) = false. Hence, without using the index, "if (a instanceof Foo)" subsumes
       //a != null. Here we need to do that check otherwise. To avoid a separate filter stage, and since views don't really support groupBy,
       //aggregate nulls into a separate class.
-      new TypeMapping[C, D](x.groupBy
-        (x => {
+      new TypeMapping[C, D](x.groupBy {
+        x =>
           val gx = g(x)
           if (gx != null)
             ClassManifest.fromClass(gx.getClass)
           else
             ClassManifest.Null
-        }).asInstanceOf[Map[ClassManifest[_], C[D[_]]]])
+      }.asInstanceOf[Map[ClassManifest[_], C[D[_]]]])
     }
     override def copy(base: Exp[C[D[T]]], f: Exp[D[T]=>T]) = GroupByType[T, C, D](base, f)
   }
