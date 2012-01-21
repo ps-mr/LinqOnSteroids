@@ -39,8 +39,6 @@ import analyses._
 
 import reader.Java6Framework
 
-import org.junit.{Test, BeforeClass}
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import expressiontree.{Exp, Lifting, Util}
 import Lifting._
 import Util.ExtraImplicits._
@@ -48,6 +46,8 @@ import collection.TraversableView
 import optimization.Optimization
 import tests.TestUtil
 import performancetests.Benchmarking
+import org.scalatest.{FunSuite, BeforeAndAfterAll}
+import org.scalatest.matchers.ShouldMatchers
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -84,7 +84,7 @@ object FindBugsAnalyses {
   }
 }
 
-class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestUtil with Benchmarking {
+class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatchers with TestUtil with Benchmarking {
   val classHierarchy = new ClassHierarchy {}
   var classFiles: Seq[ClassFile] = _
   var getClassFile: Map[ObjectType, ClassFile] = _
@@ -132,7 +132,9 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
   // The following code is meant to show how easy it is to write analyses;
   // it is not meant to demonstrate how to write such analyses in an efficient
   // manner.
-  @Test
+  test("ConfusedInheritance") {
+    analyzeConfusedInheritance()
+  }
   def analyzeConfusedInheritance() {
     val protectedFields = analyzeConfusedInheritanceNative()
     // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
@@ -167,7 +169,9 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     //protectedFieldsLos2Res should be (protectedFields2.toSet)
   }
 
-  @Test
+  test("UnusedFields") {
+    analyzeUnusedFields()
+  }
   def analyzeUnusedFields() {
     // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
     val unusedFields: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD") {
@@ -343,7 +347,9 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     unusedFields3LosOptSzToEmRes should be (unusedFields)*/
   }
 
-  @Test
+  test("ExplicitGC") {
+    analyzeExplicitGC()
+  }
   def analyzeExplicitGC() {
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
     val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
@@ -421,7 +427,9 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     benchQuery("DM_GC Los", garbageCollectingMethodsLos, garbageCollectingMethods)
   }
 
-  @Test
+  test("PublicFinalizer") {
+    analyzePublicFinalizer()
+  }
   def analyzePublicFinalizer() {
     // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
     val classesWithPublicFinalizeMethods = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED") {
@@ -450,7 +458,9 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     benchQuery("FI_PUBLIC_SHOULD_BE_PROTECTED Los", classesWithPublicFinalizeMethodsLos, classesWithPublicFinalizeMethods)
   }
 
-  @Test
+  test("SerializableNoConstructor") {
+    analyzeSerializableNoConstructor()
+  }
   def analyzeSerializableNoConstructor() {
     // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
     val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
@@ -492,7 +502,9 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     benchQuery("SE_NO_SUITABLE_CONSTRUCTOR Los", classesWithoutDefaultConstructorLos, classesWithoutDefaultConstructor)
   }
 
-  @Test
+  test("CatchIllegalMonitorStateException") {
+    analyzeCatchIllegalMonitorStateException()
+  }
   def analyzeCatchIllegalMonitorStateException() {
     // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
     val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
@@ -550,8 +562,7 @@ class FindBugsAnalyses extends JUnitSuite with ShouldMatchersForJUnit with TestU
     analyzeCatchIllegalMonitorStateException()
   }
 
-  @BeforeClass
-  def initialize() {
+  override def beforeAll() {
     setupAnalysis(Seq("lib/scalatest-1.6.1.jar"))
   }
 }
