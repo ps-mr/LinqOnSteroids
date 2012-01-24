@@ -35,8 +35,8 @@ case class UpdateVal[T](oldV: T, newV: T) extends Message[T]
 // Here's a version of DefaultPublisher without this problem; the design is very similar to the original DefaultPublisher class, but
 // with weak references and without filters (since we currently don't need them).
 
-/* TODO Copyright: our DefaultPublisher class derives from Publisher in the Scala library, which has a BSD license.
- * Copying code is allowed and no problem, as long as we acknowledge it in the sources. */
+/* Our DefaultPublisher class derives from Publisher in the Scala library, which is allowed because in LICENSE we
+ * acknowledge this, as requested by Scala's BSD-like license. */
 
 /**
  * Extends WeakReference with working equality comparison
