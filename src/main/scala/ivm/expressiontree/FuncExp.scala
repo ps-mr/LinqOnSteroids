@@ -100,11 +100,14 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
   override def x = v
   override def body = foasBody
 
-  /*
-  // This is broken when more functions are nested. Bad things can happen if res is a Scala View which will
-  // still execute an interpreted function, which references an environment. We are not constructing closures, but
-  // using dynamic scoping!!
-  override def interpret(): S => T =
+  override def interpret(): S => T = {
+    //Close over the current environment, and ensure it is stored in the returned closure.
+    val env = FuncExpInt.env.get()
+    z => FuncExpInt.env.withValue(env + (v.id -> z))(foasBody.interpret())
+    /*
+    // This is broken when more functions are nested. Bad things can happen if res is a Scala View which will
+    // still execute an interpreted function, which references an environment. We are not constructing closures, but
+    // using dynamic scoping!!
     z => {
       import FuncExpInt._
       env.get()(v.id) = z
@@ -113,11 +116,6 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
       res
     }
     */
-
-  override def interpret(): S => T = {
-    //Close over the current environment, and ensure it is stored in the returned closure.
-    val env = FuncExpInt.env.get()
-    z => FuncExpInt.env.withValue(env + (v.id -> z))(foasBody.interpret())
   }
 }
 
