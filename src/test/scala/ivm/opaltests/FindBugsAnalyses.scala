@@ -39,10 +39,9 @@ import analyses._
 
 import reader.Java6Framework
 
-import expressiontree.{Exp, Lifting, Util}
+import expressiontree.{Lifting, TernaryOpExp, Exp, Util}
 import Lifting._
 import Util.ExtraImplicits._
-import collection.TraversableView
 import optimization.Optimization
 import tests.TestUtil
 import performancetests.Benchmarking
@@ -58,6 +57,28 @@ import org.scalatest.matchers.ShouldMatchers
  *
  * @author Michael Eichberg
  */
+
+object Sugar {
+  case class IfThenElse[T](cond: Exp[Boolean], thenBody: Exp[T], elseBody: Exp[T]) extends TernaryOpExp[Boolean, T, T, T](cond, thenBody, elseBody) {
+    def interpret() = if (cond.interpret()) thenBody.interpret() else elseBody.interpret()
+    def copy(cond: Exp[Boolean], thenBody: Exp[T], elseBody: Exp[T]) = IfThenElse(cond, thenBody, elseBody)
+  }
+
+  /*class Elseable[T](cond: Exp[Boolean], thenBody: Exp[T]) {
+    def else_[U >: T](elseBody: Exp[U]): Exp[U] = IfThenElse(cond, thenBody, elseBody)
+    //def elseif_(newCond: Exp[Boolean], newThenBody: Exp[T]) = new Elseable(newCond, newThenBody)
+  }
+  def if_[T](cond: Exp[Boolean])(thenBody: Exp[T]) = new Elseable(cond, thenBody)*/
+  
+  class Elseable[T](conds: Seq[Exp[Boolean]], bodies: Seq[Exp[T]]) {
+    def else_[U >: T](elseBody: Exp[U]): Exp[U] =
+    (conds, bodies).zipped.foldRight(elseBody) {
+      case ((cond, thenBody), curr) => IfThenElse(cond, thenBody, curr)
+    }
+    def elseif_[U >: T](newCond: Exp[Boolean])(newThenBody: Exp[U]) = new Elseable(conds :+ newCond, bodies :+ newThenBody)
+  }
+  def if_[T](cond: Exp[Boolean])(thenBody: Exp[T]) = new Elseable(Seq(cond), Seq(thenBody))
+}
 
 object FindBugsAnalyses {
   private def printUsage: Unit = {
@@ -85,6 +106,8 @@ object FindBugsAnalyses {
 }
 
 class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatchers with TestUtil with Benchmarking {
+  import Sugar._
+
   val classHierarchy = new ClassHierarchy {}
   var classFiles: Seq[ClassFile] = _
   var getClassFile: Map[ObjectType, ClassFile] = _
@@ -273,6 +296,81 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       } yield (classFile, privateFields))
     }
     benchQuery("UUF_UNUSED_FIELD Los", unusedFieldsLos, unusedFields, optims)
+
+    val unusedFieldsLos1_1 /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1.1 Setup") {
+      Query(for {
+        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
+        instructions ← Let(for {
+          method ← classFile.methods if method.body.isDefined
+          instruction ← method.body.get.code
+        } yield instruction)
+        declaringClass ← Let(classFile.thisClass)
+        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
+        usedPrivateFields ← Let(instructions filter {
+          instruction ⇒
+            ((for {
+              getFIELD <- instruction.ifInstanceOf[GETFIELD]
+            } yield getFIELD.declaringClass === declaringClass) orElse
+              (for {
+                getSTATIC <- instruction.ifInstanceOf[GETSTATIC]
+              } yield getSTATIC.declaringClass === declaringClass)).orElse(Some(false)).get
+        } map {
+          instruction ⇒
+            // Note that we might not factor map (_.name) by writing:
+            //   ((asGETFIELD orElse asGETSTATIC) map (_.name)).get
+            // because Scala's type system is nominal and for the two branches different (_.name) methods (with the same
+            // signature) are invoked.
+            (instruction.ifInstanceOf[GETFIELD] map (_.name) orElse (instruction.ifInstanceOf[GETSTATIC] map (_.name))).get
+          //XXX: should we emulate support for `if` in some way? Yes of course!
+          /*if (asGETFIELD.isDefined)
+          asGETFIELD.name
+        else if (asGETSTATIC.isDefined)
+          asGETSTATIC.name*/
+        })
+        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, privateFields))
+    }
+    benchQuery("UUF_UNUSED_FIELD Los-1.1", unusedFieldsLos1_1, unusedFields, optims)
+
+    val unusedFieldsLos1_2 /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1.2 Setup") {
+      Query(for {
+        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
+        instructions ← Let(for {
+          method ← classFile.methods if method.body.isDefined
+          instruction ← method.body.get.code
+        } yield instruction)
+        declaringClass ← Let(classFile.thisClass)
+        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
+        usedPrivateFields ← Let(instructions filter {
+          instruction ⇒
+            val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
+            val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
+            if_ (asGETFIELD.isDefined) {
+              asGETFIELD.get.declaringClass === declaringClass
+            }.elseif_ (asGETSTATIC.isDefined) {
+                asGETSTATIC.get.declaringClass === declaringClass
+            } else_ {
+              false
+            }
+        } map {
+          instruction ⇒
+          // Note that we might not factor map (_.name) by writing:
+          //   ((asGETFIELD orElse asGETSTATIC) map (_.name)).get
+          // because Scala's type system is nominal and for the two branches different (_.name) methods (with the same
+          // signature) are invoked.
+            (instruction.ifInstanceOf[GETFIELD] map (_.name) orElse (instruction.ifInstanceOf[GETSTATIC] map (_.name))).get
+          //XXX: should we emulate support for `if` in some way? Yes of course!
+          /*if (asGETFIELD.isDefined)
+          asGETFIELD.name
+        else if (asGETSTATIC.isDefined)
+          asGETSTATIC.name*/
+        })
+        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, privateFields))
+    }
+    benchQuery("UUF_UNUSED_FIELD Los-1.2", unusedFieldsLos1_2, unusedFields, optims)
 
     val unusedFieldsLos1bis /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1bis Setup") {
       Query(for {
