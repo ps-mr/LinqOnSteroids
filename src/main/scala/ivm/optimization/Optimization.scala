@@ -135,7 +135,7 @@ object OptimizationTransforms {
   // Reassociation similarly to what is described in "Advanced Compiler Design and Implementation", page 337-...,
   // Sec 12.3.1 and Fig 12.6. We refer to their reduction rules with their original codes, like R1, R2, ..., R9.
   // We don't apply distributivity, nor (yet) rules not involving just Plus (i.e., involving Minus or Times).
-  // TODO: We should abstract this code to also apply on other commutative and associative operations.
+  // XXX: We should abstract this code to also apply on other commutative and associative operations. However, there's only * at the moment.
   // Note that we don't check whether computation is being done on floating-point numbers - for them, we should perform
   // no simplification (Sec. 12.3.2).
   //
@@ -182,10 +182,30 @@ object OptimizationTransforms {
      */
   }
 
+  //Copy-n-paste of buildSum. We don't use the distributive rule currently.
+  def buildProd[T: Numeric](l: Exp[T], r: Exp[T]): Exp[T] = {
+    r match {
+      case Const(rV) => l match {
+        case Const(a) => //R1
+          a * rV
+        case Plus(Const(a), b) => //R9 - must be before R2!
+          buildProd(a * rV, b)
+        case _ => //R2 - must be after R1!
+          buildProd(r, l)
+      }
+      case Times(rl, rr) => //R7
+        buildProd(buildProd(l, rl), rr)
+      case _ =>
+        l * r
+    }
+  }
+
   val reassociateOps: Exp[_] => Exp[_] =
     e => e match {
       case p@Plus(l, r) =>
         buildSum(l, r)(p.isNum)
+      case t@Times(l, r) =>
+        buildProd(l, r)(t.isNum)
       case _ => e
     }
 
