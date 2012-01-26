@@ -1,5 +1,7 @@
 package ivm.expressiontree
 
+import collection.mutable.{Set, LinkedHashSet}
+
 // Warning: it is important that these operators are short-circuiting. Therefore, they cannot be expressed through
 // CommOp like Plus and Times, and they are not commutative.
 case class And(t1: Exp[Boolean], t2: Exp[Boolean]) extends BinaryOpSymmExp[Boolean, Boolean, And] {
@@ -22,7 +24,8 @@ object BooleanOperators {
   // contract: returns a set of clauses, each of which is a disjunction of literals
   def cnf(in: Exp[Boolean]): Set[Exp[Boolean]] = {
      in match {
-       case And(x,y) => cnf(x) ++ cnf(y)
+       case And(x,y) =>
+         cnf(x) ++= cnf(y)
        case Not(Not(x)) => cnf(x)
        case Not(And(x, y)) => cnf(Or(Not(x), Not(y)))
        case Not(Or(x, y)) => cnf(And(Not(x), Not(y)))
@@ -34,7 +37,7 @@ object BooleanOperators {
            //correct CNF conversion.
            yield Or(clauseX, clauseY)
        }
-       case _ => Set(in)
+       case _ => LinkedHashSet(in)
      }
   }
 }

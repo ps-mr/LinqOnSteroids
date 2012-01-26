@@ -4,7 +4,7 @@ import ivm.expressiontree._
 import Lifting._
 import Util.assertType
 import collection.generic.FilterMonadic
-import scala.collection.Map
+import scala.collection.{Set, Map}
 
 // Contract: Each map entry has the form Exp[T] -> T for some T
 class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
