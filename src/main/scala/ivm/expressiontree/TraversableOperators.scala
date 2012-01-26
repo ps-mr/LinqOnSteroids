@@ -49,6 +49,15 @@ case class Force[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
   override def copy(base: Exp[ViewColl]) = Force[T, Repr, ViewColl, That](base)
 }
 
+//A bit of a hack, since it does not return the most precise type possible.
+case class ForceIfPossible[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr with TraversableLike[T, Repr]]) extends UnaryOpExp[Repr, Traversable[T], ForceIfPossible[T, Repr]](base) {
+  override def interpret() = base.interpret() match {
+    case view: GenTraversableView[_, _] => view.asInstanceOf[GenTraversableView[T, Repr]].force
+    case coll => coll
+  }
+  override def copy(base: Exp[Repr]) = ForceIfPossible(base)
+}
+
 case class Union[T, Repr <: TraversableLike[T, Repr], That](base: Exp[Repr], that: Exp[Traversable[T]])
                                    (implicit protected[this] val c: CanBuildFrom[Repr, T, That]) extends BinaryOpExp[Repr, Traversable[T], That, Union[T, Repr, That]](base, that) {
   override def interpret() = base.interpret() ++ that.interpret()

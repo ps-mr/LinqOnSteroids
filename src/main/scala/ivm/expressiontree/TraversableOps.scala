@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
 import collection.generic.CanBuildFrom
-import collection.{TraversableView, TraversableViewLike, TraversableLike, GenTraversableOnce, mutable}
+import collection.{GenTraversableView, TraversableView, TraversableViewLike, TraversableLike, GenTraversableOnce, mutable}
 import ivm.collections.TypeMapping
 
 trait TraversableOps {
@@ -200,8 +200,11 @@ trait ForceOps {
     def force(t: Exp[Coll]): Exp[Traversable[T]]
   }
   implicit def TraversableForceable[T]: Forceable[T, Traversable[T]] = new Forceable[T, Traversable[T]] {
-    def force(t: Traversable[T]) = t
-    def force(t: Exp[Traversable[T]]) = t
+    def force(t: Traversable[T]) = t match {
+      case view: GenTraversableView[_, _] => view.asInstanceOf[GenTraversableView[T, Traversable[T]]].force
+      case coll => coll
+    }
+    def force(t: Exp[Traversable[T]]) = ForceIfPossible(t)
   }
   //Note: type inference does not pick supertypes of arguments unless needed (i.e. if inferring T from t: T, the type
   //of T will be picked usually), therefore this implicit will be picked when needed. Note that since Forceable is invariant,
@@ -215,11 +218,13 @@ trait ForceOps {
   // for that.
   implicit def pimpForce[T, Coll](t: Coll with Traversable[T])(implicit f: Forceable[T, Coll]) = new ForceOps[T, Coll](t)
   class ForceOps[T, Coll](t: Coll)(implicit f: Forceable[T, Coll]) {
+    //A bit of a hack, since it does not return the most precise type possible.
     def force: Traversable[T] = f.force(t)
   }
 
   implicit def pimpForceExp[T, Coll](t: Exp[Coll])(implicit f: Forceable[T, Coll]) = new ForceOpsExp(t)
   class ForceOpsExp[T, Coll](t: Exp[Coll])(implicit f: Forceable[T, Coll]) {
+    //A bit of a hack, since it does not return the most precise type possible.
     def force: Exp[Traversable[T]] = f.force(t)
   }
 }
