@@ -257,13 +257,11 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
               asGETSTATIC.isDefined && asGETSTATIC.get.declaringClass === declaringClass
         } map {
           instruction ⇒
-            val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
-            val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
             // Note that we might not factor map (_.name) by writing:
             //   ((asGETFIELD orElse asGETSTATIC) map (_.name)).get
             // because Scala's type system is nominal and for the two branches different (_.name) methods (with the same
             // signature) are invoked.
-            (asGETFIELD map (_.name) orElse (asGETSTATIC map (_.name))).get
+            (instruction.ifInstanceOf[GETFIELD] map (_.name) orElse (instruction.ifInstanceOf[GETSTATIC] map (_.name))).get
               //XXX: should we emulate support for `if` in some way? Yes of course!
             /*if (asGETFIELD.isDefined)
               asGETFIELD.name
