@@ -140,10 +140,10 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
     import BATLifting._
     val protectedFieldsLos = benchMark("CI_CONFUSED_INHERITANCE Los Setup") {
-      Query(toQuery(for {
+      Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isFinal
         field ← classFile.fields if field.isProtected
-      } yield (classFile, field)))
+      } yield (classFile, field))
     }
     benchQuery("CI_CONFUSED_INHERITANCE Los", protectedFieldsLos, protectedFields)
 
@@ -241,7 +241,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     import InstructionLifting._
 
     val unusedFieldsLos /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los Setup") {
-      Query(toQuery(for {
+      Query(for {
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
           method ← classFile.methods if method.body.isDefined
@@ -272,12 +272,12 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         })
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields)))
+      } yield (classFile, privateFields))
     }
     benchQuery("UUF_UNUSED_FIELD Los", unusedFieldsLos, unusedFields, optims)
 
     val unusedFieldsLos1bis /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1bis Setup") {
-      Query(toQuery(for {
+      Query(for {
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         declaringClass ← Let(classFile.thisClass)
         usedPrivateFields ← Let(for {
@@ -296,12 +296,12 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields)))
+      } yield (classFile, privateFields))
     }
     benchQuery("UUF_UNUSED_FIELD Los-1bis", unusedFieldsLos1bis, unusedFields, optims)
 
     val unusedFields2Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-2 Los Setup") {
-      Query(toQuery(for {
+      Query(for {
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
           method ← classFile.methods if method.body.isDefined
@@ -314,12 +314,12 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
           (for (instruction ← instructions; asGETSTATIC ← instruction.ifInstanceOf[GETSTATIC] if asGETSTATIC.declaringClass === declaringClass) yield asGETSTATIC.name))
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields)))
+      } yield (classFile, privateFields))
     }
     benchQuery("UUF_UNUSED_FIELD-2 Los", unusedFields2Los, unusedFields, optims)
 
     val unusedFields3Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-3 Los Setup") {
-      Query(toQuery(for {
+      Query(for {
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
           method ← classFile.methods if method.body.isDefined
@@ -332,7 +332,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
             (for (instruction ← instructions.typeFilter[GETSTATIC] if instruction.declaringClass === declaringClass) yield instruction.name))
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields)))
+      } yield (classFile, privateFields))
     }
     println(unusedFields3Los)
     benchQuery("UUF_UNUSED_FIELD-3 Los", unusedFields3Los, unusedFields, optims)
@@ -408,7 +408,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     import InstructionLifting._
 
     val garbageCollectingMethodsLos = benchMark("DM_GC Los Setup") {
-      Query(toQuery(for {
+      Query(for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods if method.body.isDefined
         instruction ← method.body.get.code
@@ -422,7 +422,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass === ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
               asINVOKEVIRTUAL.get.methodDescriptor == desc
         })
-      } yield (classFile, method, instruction)))
+      } yield (classFile, method, instruction))
     }
     benchQuery("DM_GC Los", garbageCollectingMethodsLos, garbageCollectingMethods)
   }
@@ -450,10 +450,10 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     import BATLifting._
 
     val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Los Setup") {
-      Query(toQuery(for (
+      Query(for (
         classFile ← classFiles.asSmartCollection
         if classFile.methods.exists(method ⇒ method.name === "finalize" && method.isPublic && method.descriptor.returnType === VoidType && method.descriptor.parameterTypes.size === 0)
-      ) yield classFile))
+      ) yield classFile)
     }
     benchQuery("FI_PUBLIC_SHOULD_BE_PROTECTED Los", classesWithPublicFinalizeMethodsLos, classesWithPublicFinalizeMethods)
   }
@@ -490,14 +490,14 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
 
     import BATLifting._
     val classesWithoutDefaultConstructorLos = benchMark("SE_NO_SUITABLE_CONSTRUCTOR Los Setup") {
-      Query(toQuery(for {
+      Query(for {
         superclass ← classHierarchy.superclasses(serializableClasses).asSmartCollection if getClassFile.asSmartCollection.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
           val superClassFile = (getClassFile.asSmartCollection)(superclass)
           !superClassFile.isInterfaceDeclaration &&
             !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
         }
-      } yield superclass)) // there can be at most one method
+      } yield superclass) // there can be at most one method
     }
     benchQuery("SE_NO_SUITABLE_CONSTRUCTOR Los", classesWithoutDefaultConstructorLos, classesWithoutDefaultConstructor)
   }
@@ -527,11 +527,11 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
 
     import BATLifting._
     val catchesIllegalMonitorStateExceptionLos = benchMark("IMSE_DONT_CATCH_IMSE Los Setup") {
-      Query(toQuery(for {
+      Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
         method ← classFile.methods if method.body.isDefined
         exceptionHandler ← method.body.get.exceptionTable if exceptionHandler.catchType === IllegalMonitorStateExceptionType
-      } yield (classFile, method)))
+      } yield (classFile, method))
     }
     benchQuery("IMSE_DONT_CATCH_IMSE Los", catchesIllegalMonitorStateExceptionLos, catchesIllegalMonitorStateException)
   }

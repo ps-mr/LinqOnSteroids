@@ -99,11 +99,24 @@ trait ExpSugar {
   //Since this is an implicit conversion, we can't just return Exp[Seq[T]] and rely on an additional implicit conversion to supply lifted collection methods.
   //implicit def expArrayToExpSeq[T](x: Exp[Array[T]]) = onExp(x)('castToSeq, x => x: Seq[T]): TraversableOps[T]
 
-  //This way, using Query verifies that it's argument is of type Exp[Traversable[T]] without needing to convert it. We could
-  //also restrict the result of Query so that only expResult() can be called on it.
+  //Simplest possible definition of Query:
+  //def Query[Repr](t: Exp[Repr]): Exp[Repr] = t
+
   class Dummy[T](val v: T)
-  implicit def toQuery[Repr <: Traversable[_]](t: Exp[Repr]): Dummy[Exp[Repr]] = new Dummy(t)
-  def Query[Repr <: Traversable[_]](t: Dummy[Exp[Repr]]): Exp[Repr] = t.v
+
+  //This way, using Query verifies that it's argument is of type Exp[Traversable[T]] without needing to convert it. We could
+  //maybe also restrict the result of Query so that only expResult() can be called on it.
+  //
+  implicit def toQuery[T](t: Exp[Traversable[T]]) = new Dummy(t)
+  def Query[T](t: Dummy[Exp[Traversable[T]]]) = t.v
+
+  //With all variants underneath, Scala does not manage to apply toQuery implicitly.
+  //implicit def toQuery[Repr](t: Exp[Repr]): Dummy[Exp[Repr]] = new Dummy(t)
+  //def Query[Repr](t: Dummy[Exp[Repr]]): Exp[Repr] = t.v
+
+  //implicit def toQuery[Repr <: Traversable[_]](t: Exp[Repr]): Dummy[Exp[Repr]] = new Dummy(t)
+  //def Query[Repr <: Traversable[_]](t: Dummy[Exp[Repr]]): Exp[Repr] = t.v
+
   //implicit def toQuery[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]): Dummy[Exp[Repr with Traversable[T]]] = new Dummy(t)
   //def Query[T, Repr <: Traversable[T]](t: Dummy[Exp[Repr with Traversable[T]]]): Exp[Repr with Traversable[T]] = t.v
 
