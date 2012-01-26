@@ -51,9 +51,8 @@ case class Force[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
 
 //A bit of a hack, since it does not return the most precise type possible.
 case class ForceIfPossible[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr with TraversableLike[T, Repr]]) extends UnaryOpExp[Repr, Traversable[T], ForceIfPossible[T, Repr]](base) {
-  override def interpret() = base.interpret() match {
-    case view: GenTraversableView[_, _] => view.asInstanceOf[GenTraversableView[T, Repr]].force
-    case coll => coll
+  override def interpret() = {
+    Lifting.TraversableForceable.force(base.interpret())
   }
   override def copy(base: Exp[Repr]) = ForceIfPossible(base)
 }

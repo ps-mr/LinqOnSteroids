@@ -201,6 +201,7 @@ trait ForceOps {
   }
   implicit def TraversableForceable[T]: Forceable[T, Traversable[T]] = new Forceable[T, Traversable[T]] {
     def force(t: Traversable[T]) = t match {
+      //Note: this class name is the root of all views for Scala 2.9, but this is not part of the API.
       case view: GenTraversableView[_, _] => view.asInstanceOf[GenTraversableView[T, Traversable[T]]].force
       case coll => coll
     }
