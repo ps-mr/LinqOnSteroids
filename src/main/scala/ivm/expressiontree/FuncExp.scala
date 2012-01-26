@@ -100,7 +100,6 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
   override def x = v
   override def body = foasBody
 
-  //TODO: add test for dynamic vs lexical scoping.
   /*
   // This is broken when more functions are nested. Bad things can happen if res is a Scala View which will
   // still execute an interpreted function, which references an environment. We are not constructing closures, but
