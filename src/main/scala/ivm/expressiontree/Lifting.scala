@@ -102,8 +102,11 @@ trait ExpSugar {
   //This way, using Query verifies that it's argument is of type Exp[Traversable[T]] without needing to convert it. We could
   //also restrict the result of Query so that only expResult() can be called on it.
   class Dummy[T](val v: T)
-  implicit def toQuery[T](t: Exp[Traversable[T]]) = new Dummy(t)
-  def Query[T](t: Dummy[Exp[Traversable[T]]]) = t.v
+  implicit def toQuery[Repr <: Traversable[_]](t: Exp[Repr]): Dummy[Exp[Repr]] = new Dummy(t)
+  def Query[Repr <: Traversable[_]](t: Dummy[Exp[Repr]]): Exp[Repr] = t.v
+  //implicit def toQuery[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]): Dummy[Exp[Repr with Traversable[T]]] = new Dummy(t)
+  //def Query[T, Repr <: Traversable[T]](t: Dummy[Exp[Repr with Traversable[T]]]): Exp[Repr with Traversable[T]] = t.v
+
 
   class Materializable[T](t: Exp[Traversable[T]]) {
     def materialize = new IncrementalResult(t)
