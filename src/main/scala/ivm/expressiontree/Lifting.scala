@@ -99,6 +99,12 @@ trait ExpSugar {
   //Since this is an implicit conversion, we can't just return Exp[Seq[T]] and rely on an additional implicit conversion to supply lifted collection methods.
   //implicit def expArrayToExpSeq[T](x: Exp[Array[T]]) = onExp(x)('castToSeq, x => x: Seq[T]): TraversableOps[T]
 
+  //This way, using Query verifies that it's argument is of type Exp[Traversable[T]] without needing to convert it. We could
+  //also restrict the result of Query so that only expResult() can be called on it.
+  class Dummy[T](val v: T)
+  implicit def toQuery[T](t: Exp[Traversable[T]]) = new Dummy(t)
+  def Query[T](t: Dummy[Exp[Traversable[T]]]) = t.v
+
   class Materializable[T](t: Exp[Traversable[T]]) {
     def materialize = new IncrementalResult(t)
   }
