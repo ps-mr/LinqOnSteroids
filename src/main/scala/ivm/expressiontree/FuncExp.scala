@@ -120,7 +120,7 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
 }
 
 object FuncExpInt {
-  private[expressiontree] val env = new ScalaThreadLocal(new HashMap[Int, Any]())
+  private[expressiontree] val env = new ScalaThreadLocal[Map[Int, Any]](new HashMap[Int, Any]())
 
   //Constructs FuncExpInt from HOAS. This also applies normalization-by-evaluation in the process.
   def apply[S, T](f: Exp[S] => Exp[T]) = {
