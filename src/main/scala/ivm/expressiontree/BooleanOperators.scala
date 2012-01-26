@@ -1,13 +1,13 @@
 package ivm.expressiontree
 
 // Warning: it is important that these operators are short-circuiting. Therefore, they cannot be expressed through
-// CommOp like Plus and Times
-case class And(t1: Exp[Boolean], t2: Exp[Boolean]) extends CommutativeOp[Boolean, And] {
+// CommOp like Plus and Times, and they are not commutative.
+case class And(t1: Exp[Boolean], t2: Exp[Boolean]) extends BinaryOpSymmExp[Boolean, Boolean, And] {
   def copy(x: Exp[Boolean], y: Exp[Boolean]) = And(x, y)
   def interpret() = t1.interpret() && t2.interpret()
 }
 
-case class Or(t1: Exp[Boolean], t2: Exp[Boolean]) extends CommutativeOp[Boolean, Or] {
+case class Or(t1: Exp[Boolean], t2: Exp[Boolean]) extends BinaryOpSymmExp[Boolean, Boolean, Or] {
   def copy(x: Exp[Boolean], y: Exp[Boolean]) = Or(x, y)
   def interpret() = t1.interpret() || t2.interpret()
 }

@@ -61,6 +61,7 @@ trait BinaryOpExpTrait[T1, T2, +R, Self <: Exp[R]] extends BinaryOpTrait[Exp[T1]
 abstract class BinaryOpExp[T1, T2, +R, Self <: Exp[R]](t1: Exp[T1], t2: Exp[T2]) extends BinaryOp[Exp[T1], Exp[T2], R, Self](t1, t2) {
   this: Self =>
 }
+//Note: descendents of this class are not necessarily supposed to be commutative, just to have type (A, A) => B.
 trait BinaryOpSymmExp[Arg, +R, Self <: Exp[R]] extends BinaryOpExpTrait[Arg, Arg, R, Self] {
   this: Self =>
 }
