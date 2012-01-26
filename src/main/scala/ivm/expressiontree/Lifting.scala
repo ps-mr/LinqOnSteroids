@@ -159,5 +159,5 @@ object Lifting
   }
 
   // maybe this is not the best place to define this function
-  def filterByType[S: Manifest]: Exp[PartialFunction[Any,S]] = new PartialFuncExp( (x) => x.ifInstanceOf[S])
+  //def filterByType[S: Manifest]: Exp[PartialFunction[Any, S]] = new PartialFuncExp(x => x.ifInstanceOf[S])
 }
