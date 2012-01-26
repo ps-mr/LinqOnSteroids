@@ -24,9 +24,9 @@ object BooleanOperators {
      in match {
        case And(x,y) => cnf(x) ++ cnf(y)
        case Not(Not(x)) => cnf(x)
-       case Not(And(x,y)) => cnf(Or(Not(x), Not(y)))
-       case Not(Or(x,y)) => cnf(And(Not(x), Not(y)))
-       case Or(x,y) => {
+       case Not(And(x, y)) => cnf(Or(Not(x), Not(y)))
+       case Not(Or(x, y)) => cnf(And(Not(x), Not(y)))
+       case Or(x, y) => {
          val cnfx = cnf(x)
          val cnfy = cnf(y)
          for (clauseX <- cnfx; clauseY <- cnfy)
