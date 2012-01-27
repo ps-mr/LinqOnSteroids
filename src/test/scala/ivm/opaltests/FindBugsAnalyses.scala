@@ -264,7 +264,6 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
             // because Scala's type system is nominal and for the two branches different (_.name) methods (with the same
             // signature) are invoked.
             (instruction.ifInstanceOf[GETFIELD] map (_.name) orElse (instruction.ifInstanceOf[GETSTATIC] map (_.name))).get
-          //XXX: should we emulate support for `if` in some way? Yes of course!
           /*if (asGETFIELD.isDefined)
           asGETFIELD.name
         else if (asGETSTATIC.isDefined)
