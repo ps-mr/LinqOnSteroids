@@ -39,7 +39,7 @@ import analyses._
 
 import reader.Java6Framework
 
-import expressiontree.{Lifting, TernaryOpExp, Exp, Util}
+import expressiontree.{Lifting, FuncExp, TernaryOpExp, Exp, Util}
 import Lifting._
 import Util.ExtraImplicits._
 import optimization.Optimization
@@ -69,15 +69,31 @@ object Sugar {
     //def elseif_(newCond: Exp[Boolean], newThenBody: Exp[T]) = new Elseable(newCond, newThenBody)
   }
   def if_[T](cond: Exp[Boolean])(thenBody: Exp[T]) = new Elseable(cond, thenBody)*/
-  
-  class Elseable[T](conds: Seq[Exp[Boolean]], bodies: Seq[Exp[T]]) {
+
+  case class Elseable[T](conds: Seq[Exp[Boolean]], bodies: Seq[Exp[T]]) {
     def else_[U >: T](elseBody: Exp[U]): Exp[U] =
-    (conds, bodies).zipped.foldRight(elseBody) {
-      case ((cond, thenBody), curr) => IfThenElse(cond, thenBody, curr)
-    }
-    def elseif_[U >: T](newCond: Exp[Boolean])(newThenBody: Exp[U]) = new Elseable(conds :+ newCond, bodies :+ newThenBody)
+      (conds, bodies).zipped.foldRight(elseBody) {
+        case ((cond, thenBody), curr) => IfThenElse(cond, thenBody, curr)
+      }
+    //This overload allows chaining if-else if. The idea comes from:
+    //http://blog.razie.com/2011/08/scala-dsl-technique-if-else-constructs.html
+    def else_[U >: T](branch: Elseable[U]) = Elseable(conds ++ branch.conds, bodies ++ branch.bodies)
+    //def elseif_[U >: T](newCond: Exp[Boolean])(newThenBody: Exp[U]) = new Elseable(conds :+ newCond, bodies :+ newThenBody)
   }
-  def if_[T](cond: Exp[Boolean])(thenBody: Exp[T]) = new Elseable(Seq(cond), Seq(thenBody))
+  def if_[T](cond: Exp[Boolean])(thenBody: Exp[T]) = Elseable(Seq(cond), Seq(thenBody))
+}
+
+class TestSugar extends FunSuite with ShouldMatchers {
+  import Sugar._
+  test("if-1") {
+    (if_ (asExp(1) + 2 === 4) {1} else_ if_ (asExp(1) + 2 === 3) {2} else_ 3).expResult() should be (2)
+  }
+
+  test("if should work in a function body") {
+    val f: FuncExp[Int, Int] = FuncExp(x => (if_ (x % 3 === 0) {0} else_ if_ (x % 3 === 1) {1} else_ 2))
+    for (i <- 0 to 2)
+     f(i).expResult() should be (i)
+  }
 }
 
 object FindBugsAnalyses {
@@ -348,7 +364,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
             val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
             if_ (asGETFIELD.isDefined) {
               asGETFIELD.get.declaringClass === declaringClass
-            }.elseif_ (asGETSTATIC.isDefined) {
+            } else_ if_ (asGETSTATIC.isDefined) {
                 asGETSTATIC.get.declaringClass === declaringClass
             } else_ {
               false
