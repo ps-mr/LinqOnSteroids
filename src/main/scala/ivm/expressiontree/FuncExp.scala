@@ -67,22 +67,8 @@ abstract class FuncExp[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T
 // can only be determined during interpretation
 
 case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBase[S, Option[T], PartialFunction[S, T]] {
-  def interpret(): PartialFunction[S,T] = {
-    new PartialFunction[S,T] {
-      override def apply(z: S) = {
-        f(Const(z)).interpret() match {
-          case Some(x) => x
-          case _ => sys.error("partial function not defined on arg" + z)
-        }
-      }
-      override def isDefinedAt(z: S) = {
-        f(Const(z)).interpret() match {
-          case Some(_) => true
-          case _ => false
-        }
-      }
-    }
-  }
+  def interpret(): PartialFunction[S,T] =
+    Function.unlift(FuncExp(f).interpret())
 
   def arrowString = "-(pf)->"
   def copy[U >: T](t1: Exp[Option[U]]): PartialFuncExp[S, U] = FuncExp.makePartialFun(t1, x)
