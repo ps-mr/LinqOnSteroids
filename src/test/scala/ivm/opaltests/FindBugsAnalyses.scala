@@ -229,10 +229,9 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
             // because Scala's type system is nominal and for the two branches different (_.name) methods (with the same
             // signature) are invoked.
             (instruction.ifInstanceOf[GETFIELD] map (_.name) orElse (instruction.ifInstanceOf[GETSTATIC] map (_.name))).get
-              //XXX: should we emulate support for `if` in some way? Yes of course!
-            /*if (asGETFIELD.isDefined)
+            /*if_ (asGETFIELD.isDefined)
               asGETFIELD.name
-            else if (asGETSTATIC.isDefined)
+            else_ if_ (asGETSTATIC.isDefined)
               asGETSTATIC.name*/
         })
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
@@ -257,7 +256,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
             } yield getFIELD.declaringClass === declaringClass) orElse
               (for {
                 getSTATIC <- instruction.ifInstanceOf[GETSTATIC]
-              } yield getSTATIC.declaringClass === declaringClass)).orElse(Some(false)).get
+              } yield getSTATIC.declaringClass === declaringClass)) getOrElse false
         } map {
           instruction ⇒
             // Note that we might not factor map (_.name) by writing:
@@ -304,7 +303,6 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
           // because Scala's type system is nominal and for the two branches different (_.name) methods (with the same
           // signature) are invoked.
             (instruction.ifInstanceOf[GETFIELD] map (_.name) orElse (instruction.ifInstanceOf[GETSTATIC] map (_.name))).get
-          //XXX: should we emulate support for `if` in some way? Yes of course!
           /*if (asGETFIELD.isDefined)
           asGETFIELD.name
         else if (asGETSTATIC.isDefined)
@@ -452,7 +450,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods if method.body.isDefined
         instruction ← method.body.get.code
-        if ({
+        if {
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
           val desc = MethodDescriptor(Seq(), VoidType)
@@ -461,10 +459,29 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
             asINVOKESTATIC.get.methodDescriptor === desc ||
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass === ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
               asINVOKEVIRTUAL.get.methodDescriptor === desc
-        })
+        }
       } yield (classFile, method, instruction))
     }
     benchQuery("DM_GC Los", garbageCollectingMethodsLos, garbageCollectingMethods)
+
+    val garbageCollectingMethodsLos2 = benchMark("DM_GC Los-2 Setup") {
+      Query(for {
+        classFile ← classFiles.asSmartCollection
+        method ← classFile.methods if method.body.isDefined
+        instruction ← method.body.get.code
+        if {
+          val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
+          val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
+          val desc = MethodDescriptor(Seq(), VoidType)
+
+          (asINVOKESTATIC.map(i => i.declaringClass === ObjectType("java/lang/System") && i.name == "gc" &&
+            i.methodDescriptor === desc) orElse
+            asINVOKEVIRTUAL.map(i => i.declaringClass === ObjectType("java/lang/Runtime") && i.name == "gc" &&
+              i.methodDescriptor === desc)) getOrElse false
+        }
+      } yield (classFile, method, instruction))
+    }
+    benchQuery("DM_GC Los-2", garbageCollectingMethodsLos2, garbageCollectingMethods)
   }
 
   test("PublicFinalizer") {

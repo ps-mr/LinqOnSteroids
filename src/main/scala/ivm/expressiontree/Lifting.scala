@@ -67,6 +67,7 @@ trait OptionLifting extends BaseExps {
     //provide a default which will never fail evalution through exceptions but only evaluate to None.
     //def getOrElse[U >: T](v: /*=> */ Exp[U]) = onExp(t, v)('Option$getOrElse, _ getOrElse _)
     def orElse[U >: T](v: /*=> */ Exp[Option[U]]) = onExp(t, v)('Option$orElse, _ orElse _)
+    def getOrElse[U >: T](default: /*=> */ Exp[U]) = OptionGetOrElse(t, default) //onExp(t, v)('Option$getOrElse, _ getOrElse _)
   }
 
   //Support let-bindings within for-comprehensions without relying on pattern-matching.

@@ -24,6 +24,11 @@ case class IfThenElse[T](cond: Exp[Boolean], thenBody: Exp[T], elseBody: Exp[T])
   def copy(cond: Exp[Boolean], thenBody: Exp[T], elseBody: Exp[T]) = IfThenElse(cond, thenBody, elseBody)
 }
 
+case class OptionGetOrElse[T](opt: Exp[Option[T]], default: Exp[T]) extends BinaryOpExp[Option[T], T, T, OptionGetOrElse[T]](opt, default) {
+  def interpret() = opt.interpret().getOrElse(default.interpret())
+  def copy(opt: Exp[Option[T]], default: Exp[T]) = OptionGetOrElse(opt, default)
+}
+
 object BooleanOperators {
   // convert formula to CNF using naive algorithm
   // contract: returns a set of clauses, each of which is a disjunction of literals
