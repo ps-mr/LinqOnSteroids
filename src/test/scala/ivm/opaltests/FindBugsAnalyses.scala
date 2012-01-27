@@ -33,18 +33,15 @@
 package ivm
 package opaltests
 
-import de.tud.cs.st._
+import de.tud.cs.st.bat
 import bat.resolved._
 import analyses._
 
 import reader.Java6Framework
 
-import expressiontree.{Lifting, FuncExp, TernaryOpExp, Exp, Util}
+import expressiontree.{Lifting, Util}
 import Lifting._
 import Util.ExtraImplicits._
-import optimization.Optimization
-import tests.TestUtil
-import performancetests.Benchmarking
 import org.scalatest.{FunSuite, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 
@@ -83,39 +80,10 @@ object FindBugsAnalyses {
   }
 }
 
-class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatchers with TestUtil with Benchmarking {
+class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
   val classHierarchy = new ClassHierarchy {}
   var classFiles: Seq[ClassFile] = _
   var getClassFile: Map[ObjectType, ClassFile] = _
-
-  def optimizerTable[T]: Seq[(String, Exp[T] => Exp[T])] = Seq((" - after optimization", identity _))
-
-  def benchInterpret[T, Coll <: Traversable[T]](msg: String,
-                        v: Exp[Coll],
-                        extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)(implicit f: Forceable[T, Coll]): Traversable[T] =
-  {
-    def doRun(msg: String, v: Exp[Coll]) = {
-      showExpNoVal(v, msg)
-      benchMark(msg)(v.expResult().force)
-    }
-
-    val res = doRun(msg, v)
-    for ((msgExtra, optim) <- optimizerTable[Coll] ++ extraOptims.asInstanceOf[Seq[(String, Exp[Coll] => Exp[Coll])]]) {
-      val resOpt = doRun(msg + msgExtra, optim(Optimization.optimize(v)))
-      resOpt should be (res)
-    }
-
-    res
-  }
-
-  def benchQuery[T, Coll <: Traversable[T]](msg: String,
-                    v: Exp[Coll],
-                    expectedResult: Traversable[T],
-                    extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)(implicit f: Forceable[T, Coll]): Traversable[T] = {
-    val res = benchInterpret[T, Coll](msg, v, extraOptims)
-    res should be (expectedResult)
-    res
-  }
 
   private def analyzeConfusedInheritanceNative() = {
     val protectedFields = benchMark("CI_CONFUSED_INHERITANCE") {
