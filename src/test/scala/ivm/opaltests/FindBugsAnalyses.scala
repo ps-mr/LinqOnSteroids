@@ -458,9 +458,9 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
           val desc = MethodDescriptor(Seq(), VoidType)
 
           asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass === ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
-            asINVOKESTATIC.get.methodDescriptor == desc ||
+            asINVOKESTATIC.get.methodDescriptor === desc ||
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass === ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
-              asINVOKEVIRTUAL.get.methodDescriptor == desc
+              asINVOKEVIRTUAL.get.methodDescriptor === desc
         })
       } yield (classFile, method, instruction))
     }
