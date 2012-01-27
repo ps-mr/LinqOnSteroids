@@ -3,7 +3,7 @@ package ivm.expressiontree
 import collection.immutable.HashMap
 import actors.threadpool.AtomicInteger
 
-// Not exactly sure what I should use to represent applications, but this is the standard App node, well known from
+//To represent function application, we use the standard App node, well known from
 // encodings of the STLC (simply typed lambda calculus).
 //Having explicit App nodes for application can be useful to represent application instead of computing it,
 //since computing it means inlining and can replicate terms.
@@ -52,7 +52,7 @@ abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
   }
 }
 
-class FuncExp[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S => T] {
+abstract class FuncExp[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S => T] {
   def interpret(): S => T =
     z => f(Const(z)).interpret()
 
