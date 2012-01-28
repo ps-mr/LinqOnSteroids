@@ -25,7 +25,7 @@ import collection.TraversableLike
 //
 // This way, a pipeline of message transformers becomes simply a sequencing through >>= of monadic actions.
 // However, since some reifiers will not work this way, we cannot enforce this structure.
-// TODO: We could use MonadPlus.mplus (or equivalent) for composing observables, e.g. in Union.
+// XXX: We could use MonadPlus.mplus (or equivalent) for composing observables, e.g. in Union.
 
 // Let us first implement incremental view maintenance for sets.
 

@@ -65,7 +65,7 @@ class IncHashSet[T] extends HashSet[T]
   override def companion = IncHashSet
 }
 
-// Next TODO: try to hide from the public interface of IncHashSet the methods from HashSet, so that people must call
+// XXX: try to hide from the public interface of IncHashSet the methods from HashSet, so that people must call
 // asCollection. Not sure whether it's a good idea. A possibly more sensible alternative is to hide methods from
 // Exp[Traversable[T]], so that people have to call asQueryable to get them. Indeed, the type Queryable provides only
 // methods from Exp[T], and one needs to call asCollection to access methods from the underlying collection.

@@ -992,8 +992,6 @@ object InstructionLifting {
 		def opcode = onExp(t)('opcode, _.opcode)
 		def mnemonic = onExp(t)('mnemonic, _.mnemonic)
 		def exceptions = onExp(t)('exceptions, _.exceptions)
-	// TODO [Java7] "invokedynamic" - resolve valid index into the bootstrap_methods array of the bootstrap method table 
-	
 		def name = onExp(t)('name, _.name)
 		def methodDescriptor = onExp(t)('methodDescriptor, _.methodDescriptor)
 	}

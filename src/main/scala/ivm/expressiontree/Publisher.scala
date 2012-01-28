@@ -79,9 +79,10 @@ trait IgnoringPublisher[+Evt, +Pub <: Publisher[Evt, Pub]] extends Publisher[Evt
  * DefaultPublisher hangs onto subscribers through weak references. The subscribers, instead, hang onto the nodes they
  * listen to through strong references. This way, whenever a query result is thrown away, the intermediate nodes which
  * were needed for it can be garbage collected.
- * If the original collection is no more referenced elsewhere, the query results will keep it in scope. However, if it
- * cannot be modified now, maybe one should allow it to be GC'ed? Not in general, because that would prevent reevaluation
- * of the results. TODO: We could introduce an IncrementalResult.detach() method for these situations.
+ * If the original collection C is no more referenced by the program itself, the query results will still keep it in scope.
+ * However, C cannot be modified at this point, so maybe we should allow C to be GC'ed? Not in general,
+ * because that would prevent reevaluation of the results, which could be triggered by some other object that results depend on.
+ * XXX: We could introduce an IncrementalResult.detach() method for these situations.
  * The alternative would be that the intermediate nodes keep only a weak reference to the base collections - which is
  * a special node anyway (it must be an incremental collection, like IncArrayBuffer or IncHashSet).
  * Moreover, also self-maintainable nodes could hang onto their sources through weak references.
