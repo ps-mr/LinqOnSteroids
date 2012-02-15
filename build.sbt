@@ -1,3 +1,6 @@
+import scalariform.formatter.preferences._
+import de.johoop.findbugs4sbt.FindBugs._
+
 name := "LinqOnSteroids"
 
 version := "0.1"
@@ -28,3 +31,17 @@ scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes", "-optimise"
 
 // This enables test integration with Jenkins, following instructions from https://github.com/ijuma/junit_xml_listener#readme
 testListeners <<= target.map(t => Seq(new eu.henkelmann.sbt.JUnitXmlTestsListener(t.getAbsolutePath)))
+
+seq(defaultScalariformSettings: _*)
+
+ScalariformKeys.preferences := FormattingPreferences().
+  setPreference(IndentWithTabs, false).
+  setPreference(DoubleIndentClassDeclaration, true).
+  setPreference(AlignSingleLineCaseStatements, true).
+  setPreference(MultilineScaladocCommentsStartOnFirstLine, true).
+  setPreference(PlaceScaladocAsterisksBeneathSecondAsterisk, true).
+  setPreference(PreserveSpaceBeforeArguments, true).
+  setPreference(AlignParameters, true)
+  
+//Add support for FindBugs
+seq(findbugsSettings : _*)
