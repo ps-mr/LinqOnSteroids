@@ -74,6 +74,7 @@ trait Benchmarking {
                (toBench: => T): (T, Double) = {
     var ret: T = null.asInstanceOf[T]
     if (!silent) {
+      println() //Empty line at beginning
       //XXX: Use Console.err instead of println and flush here.
       println("Benchmarking params: execLoops: %d, warmUpLoops: %d, sampleLoops: %d" format (execLoops, warmUpLoops, sampleLoops))
       if (!hasConsoleOutput)
