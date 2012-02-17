@@ -224,6 +224,7 @@ object OptimizationTransforms {
   val setIntersection: Exp[_] => Exp[_] =
     e => e match {
       case Filter(col: Exp[Traversable[t]], predFun @ FuncExpBody(Contains(col2, x))) if (x == predFun.x) =>
+        //XXX transformation not implemented
         e //col.join(col2)(identity, identity, _._1) //Somewhat expensive implementation of intersection.
         //e //Intersect(col, col2)
       case _ => e
@@ -233,6 +234,7 @@ object OptimizationTransforms {
   val setDifference: Exp[_] => Exp[_] =
     e => e match {
       case Filter(col, predFun @ FuncExpBody(Not(Contains(col2, x)))) if (x == predFun.x) =>
+        //XXX transformation not implemented
         e //Diff(col, col2) //We cannot use Diff because col is not a Set - but we can build a more complex operator for this case.
       case _ => e
     }

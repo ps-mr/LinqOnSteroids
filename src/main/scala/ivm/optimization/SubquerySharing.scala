@@ -89,6 +89,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     }
   }
 
+  /*
   val groupByShare: Exp[_] => Exp[_] = {
     e => e match {
       case Filter(View(c: Exp[Traversable[_ /*t*/]]), (f: FuncExp[t, _ /*Boolean*/]) & FuncExpBody(fEqBody: Eq[t2])) =>
@@ -103,7 +104,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       case _ => e
     }
   }
+  */
 
+  //Entry point
   def shareSubqueries[T](query: Exp[T]): Exp[T] = {
     query.transform(directsubqueryShare.andThen(groupByShare2))
   }
