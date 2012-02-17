@@ -246,6 +246,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
     }
     methodsNative should equal (m2Int)
   }
+
   @Test def testOpal() {
     // computing all method names that make an instance-of check in their body
 
@@ -344,19 +345,19 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
 
     // another version using type index but manual index application
     // (need to code this into optimizer - not quite obvious how to do it)
-
-    type SND[+T] = (Method, T)
-    val q: Exp[Set[SND[Instruction]]] = for (cf <- queryData;
-                 m <- cf.methods;
-                 ca <- m.attributes.typeFilter[CodeAttribute];
-                 i <- ca.code
-    ) yield (m, i)
+    type PairMethodAnd[+T] = (Method, T)
+    val q: Exp[Set[PairMethodAnd[Instruction]]] = for {
+      cf <- queryData
+      m <- cf.methods
+      ca <- m.attributes.typeFilter[CodeAttribute]
+      i <- ca.code
+    } yield (m, i)
 
     //Let us accept some limited overhead with explicit type annotations to create the index
     //val typeindex = q.groupByType(_._2)
     val typeindex = q.groupByTupleType2
     //This is normalization-by-evaluation over terms instead of functions (and who said it is limited to functions?)
-    val evaluatedtypeindex: Exp[TypeMapping[Set, SND]] = asExp(typeindex.interpret())
+    val evaluatedtypeindex: Exp[TypeMapping[Set, PairMethodAnd]] = asExp(typeindex.interpret())
     //println(evaluatedtypeindex.map.keys)
 
     //val methodsLos6 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
@@ -377,9 +378,48 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
 [error]  required: ivm.expressiontree.Exp[ivm.collections.TypeMapping[?0C,?0D]]
 [error]      val methodsLos6 = expToTypeMappingAppOps(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
     */
-    var m7Int: Traversable[String] = null
+    var m6Int: Traversable[String] = null
     benchMark("los6 (with index)") {
-      m7Int = methodsLos6.interpret()
+      m6Int = methodsLos6.interpret()
+    }
+    methodsNative should equal (m6Int)
+
+    // another version using type index, to try to understand how this could be coded more easily into the optimizer.
+    val idx1Base /*: Exp[Set[SND[Attribute]]]*/ = for {
+      cf <- queryData
+      m <- cf.methods
+      ca <- m.attributes
+    } yield (m, ca)
+    val typeIdx1 = idx1Base.groupByTupleType2
+    //NOTE: it is crucial to mention SND here.
+    val evTypeIdx1: Exp[TypeMapping[Set, PairMethodAnd]] = asExp(typeIdx1.interpret())
+    //Hmm: this index inverts a 1-1 mapping, is that a good idea performance-wise?
+    val idx1 = idx1Base.groupBySel(_._2, _._1)
+    val evIdx1 = asExp(idx1.interpret())
+
+    type PairCodeAttributeAnd[+T] = (CodeAttribute, T)
+    /*
+    val idx2Base = for {
+      pair <- idx1Base
+      ca <- pair._1.attributes.typeFilter[CodeAttribute]
+      i <- ca.code
+    } yield (ca, i)
+    val idx2 = idx2Base.groupByTupleType2
+    val evIdx2: Exp[TypeMapping[Set, PairCodeAttribute]] = idx2.interpret()
+    */
+    //val idx2BaseOpt = evIdx1.get[CodeAttribute].flatMap(ca => ca.code.map(i => (ca, i)))
+    val idx2BaseOpt /*: Exp[Set[PairCodeAttribute[Attribute]]]*/ = for {
+      pair <- evTypeIdx1.get[CodeAttribute]
+      i <- pair._2.code
+    } yield (pair._2, i)
+    val typeIdx2Opt = idx2BaseOpt.groupByTupleType2
+    val evTypeIdx2Opt: Exp[TypeMapping[Set, PairCodeAttributeAnd]] = asExp(typeIdx2Opt.interpret())
+
+    val methodsLos7 = evTypeIdx2Opt.get[INSTANCEOF].flatMap(x => evIdx1(x._1).map(_.name))
+
+    var m7Int: Traversable[String] = null
+    benchMark("los6 (with hierarchical indexing)") {
+      m7Int = methodsLos7.interpret()
     }
     methodsNative should equal (m7Int)
   }
