@@ -93,6 +93,10 @@ object OpenEncoding {
     case class FuncExp[T, +U, ExpT <: Exp[T]](f: ExpT => Exp[U])(implicit val cbeT: CanBuildExp[T, ExpT]) extends Exp[T => U] {
       def interpret = t => f(cbeT(Const(t))).interpret
     }
+    //XXX: in this encoding, I need there to write ExpT and not Exp[T], because
+    //that's where methods are made available. Instead, I could use the current
+    //technique (SimpleOpenEncoding) to make methods available, while using this
+    //technique to construct instances of more specific types at runtime.
   }
 
   trait NumExps {
