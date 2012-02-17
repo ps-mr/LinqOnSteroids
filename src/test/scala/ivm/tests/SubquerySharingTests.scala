@@ -23,12 +23,12 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val ress1 = s1.interpret()
     Optimization.addSubQuery(s1)
 
-    val q = l.map(p => (p._1 + 1, p._2 + 2)).withFilter( _._1 is 5)
+    val q = l.map(p => (p._1 + 1, p._2 + 2)).withFilter(_._1 === 5)
     val res = Optimization.shareSubqueries(q)
     res should not equal (q)
     res should equal (Const(ress1).withFilter( _._1 is 5))
 
-    val q2 = l.map(p => (p._1 + 2, p._2 + 1)).withFilter(_._1 is 5)
+    val q2 = l.map(p => (p._1 + 2, p._2 + 1)).withFilter(_._1 === 5)
     val res2 = Optimization.shareSubqueries(q2)
     res2 should equal (q2)
 
@@ -40,7 +40,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val indexres = index.interpret()
     Optimization.addSubQuery(index)
 
-    val testquery = l.withFilter(p => p._1 + p._2 is 5)
+    val testquery = l.withFilter(p => p._1 + p._2 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
     optimized should equal (App(Const(indexres),Const(5)))
 
@@ -52,7 +52,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val indexres = index.interpret()
     Optimization.addSubQuery(index)
 
-    val testquery = l.withFilter(p => p._2 + p._1 is 5)
+    val testquery = l.withFilter(p => p._2 + p._1 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
     optimized should equal (App(Const(indexres),Const(5)))
 
@@ -64,7 +64,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val indexres = index.interpret()
     Optimization.addSubQuery(index)
 
-    val testquery = l.withFilter(p => p._1 + p._2 is 5)
+    val testquery = l.withFilter(p => p._1 + p._2 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
     optimized should equal (App(Const(indexres),Const(5)))
 
@@ -76,7 +76,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val indexres = index.interpret()
     Optimization.addSubQuery(index)
 
-    val testquery = l.withFilter(p => (p._1 <= 7) && (p._1 + p._2 is 5))
+    val testquery = l.withFilter(p => p._1 <= 7 && p._1 + p._2 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
     optimized should equal (App(Const(indexres),Const(5)).withFilter(p => p._1 <= 7))
 
