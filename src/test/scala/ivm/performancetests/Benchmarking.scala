@@ -74,10 +74,11 @@ trait Benchmarking {
                (toBench: => T): (T, Double) = {
     def print(x: Any) = if (!silent) Console.err.print(x)
     def println(x: Any) = if (!silent) Console.err.println(x)
-    def println() = if (!silent) Console.err.println()
+    //Why not call this println()? Because overloading is not supported in local definitions (SLS §6.11).
+    def newLine() = if (!silent) Console.err.println()
 
     var ret: T = null.asInstanceOf[T]
-    println() //Empty line at beginning
+    newLine() //Make space at the beginning
     println("Benchmarking params: execLoops: %d, warmUpLoops: %d, sampleLoops: %d" format (execLoops, warmUpLoops, sampleLoops))
     if (!hasConsoleOutput)
       println(">>> Name = %s, starting warmup..." format name)
@@ -89,7 +90,7 @@ trait Benchmarking {
     System.gc()
 
     if (hasConsoleOutput)
-      println()
+      newLine()
     else
       print(" ending warmup, starting benchmarking...")
 
