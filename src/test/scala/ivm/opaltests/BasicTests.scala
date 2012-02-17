@@ -343,10 +343,36 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
     }
     methodsNative should equal (m5Int)
 
+    //Let's consider type indexing.
+    val methodsLos5Desugared = queryData.flatMap(cf => cf.methods
+      .flatMap(m => m.attributes.typeFilter[CodeAttribute]
+      .flatMap(ca => ca.code.typeFilter[INSTANCEOF]
+      .map(io => m.name))))
+    methodsNative should equal (methodsLos5Desugared.interpret())
+    //Rewrite (if possible) OuterQuery[FindSubcolls[coll1].map(subColl => RestQuery[subColl.typeFilter[T]])] //Extend to flatMap case later
+    //to OuterQuery[FindSubcolls[coll1].map()]
+
+    //coll0 is "m.attributes.typeFilter[CodeAttribute]" coll1 is "ca", FindSubcolls[coll1] is "coll1.code", RestQuery[res] is res.map(io => m.name),
+    //T is "INSTANCEOF"
+    //OuterQuery[S] is "queryData.flatMap(cf => cf.methods.flatMap(m => S))"
+    //So that the query becomes:
+    // queryData.flatMap(cf => cf.methods
+    //  .flatMap(m =>
+    //         coll0.flatMap(coll1 => RestQuery[FindSubcolls[coll1].typeFilter[T]]) ))"
+    //Now, we rewrite
+    //OuterQuery[coll0.flatMap(coll1 => RestQuery[FindSubcolls[coll1].typeFilter[T]])]
+    //to the application of an index (if existing) of form coll0
+    //OuterQuery[coll0.flatMap(coll1 => FindSubcolls[coll1].map(elem => (<free variables>, coll1, elem))]
+
+
+    //Rewrite (if possible) coll.withFilter(elem => F[elem] === k && OtherConds[elem]) to (coll.groupBy(elem => F[elem]))(k).withFilter(x => OtherConds[x]),
+    //with F and OtherConds expression contexts and under the condition that coll.groupBy(f) is already available as a precomputed subquery (i.e. an index).
+
+
     // another version using type index but manual index application
     // (need to code this into optimizer - not quite obvious how to do it)
     type PairMethodAnd[+T] = (Method, T)
-    val q: Exp[Set[PairMethodAnd[Instruction]]] = for {
+    val typeIdxBase: Exp[Set[PairMethodAnd[Instruction]]] = for {
       cf <- queryData
       m <- cf.methods
       ca <- m.attributes.typeFilter[CodeAttribute]
@@ -355,9 +381,9 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
 
     //Let us accept some limited overhead with explicit type annotations to create the index
     //val typeindex = q.groupByType(_._2)
-    val typeindex = q.groupByTupleType2
+    val typeIdx = typeIdxBase.groupByTupleType2
     //This is normalization-by-evaluation over terms instead of functions (and who said it is limited to functions?)
-    val evaluatedtypeindex: Exp[TypeMapping[Set, PairMethodAnd]] = asExp(typeindex.interpret())
+    val evaluatedtypeindex: Exp[TypeMapping[Set, PairMethodAnd]] = benchMark("los6 index creation")(asExp(typeIdx.interpret()))
     //println(evaluatedtypeindex.map.keys)
 
     //val methodsLos6 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
@@ -418,7 +444,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
     val methodsLos7 = evTypeIdx2Opt.get[INSTANCEOF].flatMap(x => evIdx1(x._1).map(_.name))
 
     var m7Int: Traversable[String] = null
-    benchMark("los6 (with hierarchical indexing)") {
+    benchMark("los7 (with hierarchical indexing)") {
       m7Int = methodsLos7.interpret()
     }
     methodsNative should equal (m7Int)
