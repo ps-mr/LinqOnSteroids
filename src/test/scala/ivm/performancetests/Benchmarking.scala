@@ -40,15 +40,28 @@ trait Benchmarking {
   def effectiveWarmUpLoops = if (debugBench) 0 else warmUpLoops
   def effectiveSampleLoops = if (debugBench) 1 else sampleLoops
 
-  def benchMarkTime(name: String, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  def benchMarkTime(name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                    (toBench: => Unit) = {
-    val (_, time) = benchMarkInternal(name, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)
+    val (_, time) = benchMarkInternal(name, silent, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)
     time
   }
 
-  def benchMark[T](name: String, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  /**
+   *
+   * @param name
+   * @param silent If silent is true, the benchmark output is supposed to still be saved (when output will be saved), but not displayed.
+   * @param execLoops
+   * @param warmUpLoops
+   * @param sampleLoops
+   * @param verbose
+   * @param hasConsoleOutput
+   * @param toBench
+   * @tparam T
+   * @return
+   */
+  def benchMark[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): T = {
-    val (ret, _) = benchMarkInternal(name, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)
+    val (ret, _) = benchMarkInternal(name, silent, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)
     ret
   }
   /**
@@ -57,23 +70,27 @@ trait Benchmarking {
    * @param toBench code to benchmark, which is supposed to always return the same value.
    * @returns the value returned by toBench
    */
-  private def benchMarkInternal[T](name: String, execLoops: Int, warmUpLoops: Int, sampleLoops: Int, verbose: Boolean, hasConsoleOutput: Boolean)
+  private def benchMarkInternal[T](name: String, silent: Boolean, execLoops: Int, warmUpLoops: Int, sampleLoops: Int, verbose: Boolean, hasConsoleOutput: Boolean)
                (toBench: => T): (T, Double) = {
     var ret: T = null.asInstanceOf[T]
-    //Use Console.err instead of println and flush here.
-    println("Benchmarking params: execLoops: %d, warmUpLoops: %d, sampleLoops: %d" format (execLoops, warmUpLoops, sampleLoops))
-    if (!hasConsoleOutput)
-      println(">>> Name = %s, starting warmup..." format name)
-    Console.flush()
+    if (!silent) {
+      //XXX: Use Console.err instead of println and flush here.
+      println("Benchmarking params: execLoops: %d, warmUpLoops: %d, sampleLoops: %d" format (execLoops, warmUpLoops, sampleLoops))
+      if (!hasConsoleOutput)
+        println(">>> Name = %s, starting warmup..." format name)
+      Console.flush()
+    }
 
     for (i <- 1 to warmUpLoops)
       toBench
     System.gc()
 
-    if (hasConsoleOutput)
-      println()
-    else
-      print(" ending warmup, starting benchmarking...")
+    if (!silent) {
+      if (hasConsoleOutput)
+        println()
+      else
+        print(" ending warmup, starting benchmarking...")
+    }
 
     val stats = new VarianceCalc
     for (i <- 1 to sampleLoops) {
@@ -83,16 +100,18 @@ trait Benchmarking {
       stats.update((System.nanoTime() - before) / execLoops)
       System.gc()
     }
-    if (!hasConsoleOutput)
+    if (!hasConsoleOutput && !silent)
       print(" ended benchmarking, name = %s, time = " format name)
     val avgMs = stats.avg / math.pow(10,6)
     if (verbose) {
       val devStdMs = math.sqrt(stats.variance) / math.pow(10,6)
       //The error of the measured average as an estimator of the average of the underlying random variable
       val stdErrMs = devStdMs / math.sqrt(sampleLoops)
-      if (hasConsoleOutput)
-        print(">>> Name = %s, time = " format name)
-      println("(%.3f +- %.3f (stdErr = %.3f)) ms" format (avgMs, devStdMs, stdErrMs))
+      if (!silent) {
+        if (hasConsoleOutput)
+          print(">>> Name = %s, time = " format name)
+        println("(%.3f +- %.3f (stdErr = %.3f)) ms" format (avgMs, devStdMs, stdErrMs))
+      }
     }
     (ret, avgMs)
   }

@@ -106,7 +106,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     val protectedFields = analyzeConfusedInheritanceNative()
     // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
     import BATLifting._
-    val protectedFieldsLos = benchMark("CI_CONFUSED_INHERITANCE Los Setup") {
+    val protectedFieldsLos = benchMark("CI_CONFUSED_INHERITANCE Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isFinal
         field ← classFile.fields if field.isProtected
@@ -207,7 +207,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     import BATLifting._
     import InstructionLifting._
 
-    val unusedFieldsLos /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los Setup") {
+    val unusedFieldsLos /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
@@ -240,7 +240,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
     benchQuery("UUF_UNUSED_FIELD Los", unusedFieldsLos, unusedFields, optims)
 
-    val unusedFieldsLos1_1 /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1.1 Setup") {
+    val unusedFieldsLos1_1 /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1.1 Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
@@ -275,7 +275,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
     benchQuery("UUF_UNUSED_FIELD Los-1.1", unusedFieldsLos1_1, unusedFields, optims)
 
-    val unusedFieldsLos1_2 /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1.2 Setup") {
+    val unusedFieldsLos1_2 /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1.2 Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
@@ -313,7 +313,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
     benchQuery("UUF_UNUSED_FIELD Los-1.2", unusedFieldsLos1_2, unusedFields, optims)
 
-    val unusedFieldsLos1bis /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1bis Setup") {
+    val unusedFieldsLos1bis /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1bis Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         declaringClass ← Let(classFile.thisClass)
@@ -337,7 +337,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
     benchQuery("UUF_UNUSED_FIELD Los-1bis", unusedFieldsLos1bis, unusedFields, optims)
 
-    val unusedFields2Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-2 Los Setup") {
+    val unusedFields2Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-2 Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
@@ -355,7 +355,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
     benchQuery("UUF_UNUSED_FIELD-2 Los", unusedFields2Los, unusedFields, optims)
 
-    val unusedFields3Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-3 Los Setup") {
+    val unusedFields3Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-3 Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
@@ -444,7 +444,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     import BATLifting._
     import InstructionLifting._
 
-    val garbageCollectingMethodsLos = benchMark("DM_GC Los Setup") {
+    val garbageCollectingMethodsLos = benchMark("DM_GC Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods if method.body.isDefined
@@ -463,7 +463,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
     benchQuery("DM_GC Los", garbageCollectingMethodsLos, garbageCollectingMethods)
 
-    val garbageCollectingMethodsLos2 = benchMark("DM_GC Los-2 Setup") {
+    val garbageCollectingMethodsLos2 = benchMark("DM_GC Los-2 Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods if method.body.isDefined
@@ -505,7 +505,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
 
     import BATLifting._
 
-    val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Los Setup") {
+    val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Los Setup", silent = true) {
       Query(for (
         classFile ← classFiles.asSmartCollection
         if classFile.methods.exists(method ⇒ method.name === "finalize" && method.isPublic && method.descriptor.returnType === VoidType && method.descriptor.parameterTypes.size === 0)
@@ -545,7 +545,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     classesWithoutDefaultConstructorLikeLos should be (classesWithoutDefaultConstructorLikeLos)
 
     import BATLifting._
-    val classesWithoutDefaultConstructorLos = benchMark("SE_NO_SUITABLE_CONSTRUCTOR Los Setup") {
+    val classesWithoutDefaultConstructorLos = benchMark("SE_NO_SUITABLE_CONSTRUCTOR Los Setup", silent = true) {
       Query(for {
         superclass ← classHierarchy.superclasses(serializableClasses).asSmartCollection if getClassFile.asSmartCollection.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
@@ -582,7 +582,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
 
     import BATLifting._
-    val catchesIllegalMonitorStateExceptionLos = benchMark("IMSE_DONT_CATCH_IMSE Los Setup") {
+    val catchesIllegalMonitorStateExceptionLos = benchMark("IMSE_DONT_CATCH_IMSE Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
         method ← classFile.methods if method.body.isDefined
