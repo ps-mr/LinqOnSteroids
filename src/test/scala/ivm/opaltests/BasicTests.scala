@@ -348,26 +348,25 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
       .flatMap(m => m.attributes.typeFilter[CodeAttribute]
       .flatMap(ca => ca.code.typeFilter[INSTANCEOF]
       .map(io => m.name))))
+    //No benchmarking as this code is the same as methodsLos5; this just checks that we indeed got the desugaring right.
     methodsNative should equal (methodsLos5Desugared.interpret())
-    //Rewrite (if possible) OuterQuery[FindSubcolls[coll1].map(subColl => RestQuery[subColl.typeFilter[T]])] //Extend to flatMap case later
-    //to OuterQuery[FindSubcolls[coll1].map()]
 
-    //coll0 is "m.attributes.typeFilter[CodeAttribute]" coll1 is "ca", FindSubcolls[coll1] is "coll1.code", RestQuery[res] is res.map(io => m.name),
-    //T is "INSTANCEOF"
-    //OuterQuery[S] is "queryData.flatMap(cf => cf.methods.flatMap(m => S))"
+    //////////////
+    // INDEXING //
+    //////////////
+
+    //Let coll0 be "m.attributes.typeFilter[CodeAttribute]", coll1 be "ca", FindSubcolls[coll1] be "coll1.code", RestQuery[res] be res.map(io => m.name),
+    //T be "INSTANCEOF"
+    //OuterQuery[S] be "queryData.flatMap(cf => cf.methods.flatMap(m => S))"
     //So that the query becomes:
     // queryData.flatMap(cf => cf.methods
     //  .flatMap(m =>
     //         coll0.flatMap(coll1 => RestQuery[FindSubcolls[coll1].typeFilter[T]]) ))"
-    //Now, we rewrite
+    //Under this conditions, methodsLos5Desugared is a an instance of the pattern:
     //OuterQuery[coll0.flatMap(coll1 => RestQuery[FindSubcolls[coll1].typeFilter[T]])]
-    //to the application of an index (if existing) of form coll0
-    //OuterQuery[coll0.flatMap(coll1 => FindSubcolls[coll1].map(elem => (<free variables>, coll1, elem))]
-
-
-    //Rewrite (if possible) coll.withFilter(elem => F[elem] === k && OtherConds[elem]) to (coll.groupBy(elem => F[elem]))(k).withFilter(x => OtherConds[x]),
-    //with F and OtherConds expression contexts and under the condition that coll.groupBy(f) is already available as a precomputed subquery (i.e. an index).
-
+    //which we rewrite to the application of an index (if existing) of the following form:
+    //OuterQuery[coll0.flatMap(coll1 => FindSubcolls[coll1].map(elem => (<free variables including coll1>, elem))]
+    //(see typeIdxBase, which manually optimizes this to omit ca which is not needed).
 
     // another version using type index but manual index application
     // (need to code this into optimizer - not quite obvious how to do it)
@@ -383,7 +382,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
     //val typeindex = q.groupByType(_._2)
     val typeIdx = typeIdxBase.groupByTupleType2
     //This is normalization-by-evaluation over terms instead of functions (and who said it is limited to functions?)
-    val evaluatedtypeindex: Exp[TypeMapping[Set, PairMethodAnd]] = benchMark("los6 index creation")(asExp(typeIdx.interpret()))
+    val evaluatedtypeindex: Exp[TypeMapping[Set, PairMethodAnd]] = benchMark("los6 index creation"){ asExp(typeIdx.interpret()) }
     //println(evaluatedtypeindex.map.keys)
 
     //val methodsLos6 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
@@ -418,10 +417,10 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
     } yield (m, ca)
     val typeIdx1 = idx1Base.groupByTupleType2
     //NOTE: it is crucial to mention SND here.
-    val evTypeIdx1: Exp[TypeMapping[Set, PairMethodAnd]] = asExp(typeIdx1.interpret())
+    val evTypeIdx1: Exp[TypeMapping[Set, PairMethodAnd]] = benchMark("los7: creation of index typeIdx1"){ asExp(typeIdx1.interpret()) }
     //Hmm: this index inverts a 1-1 mapping, is that a good idea performance-wise?
     val idx1 = idx1Base.groupBySel(_._2, _._1)
-    val evIdx1 = asExp(idx1.interpret())
+    val evIdx1 = benchMark("los7: creation of index idx1"){ asExp(idx1.interpret()) }
 
     type PairCodeAttributeAnd[+T] = (CodeAttribute, T)
     /*
@@ -439,7 +438,7 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
       i <- pair._2.code
     } yield (pair._2, i)
     val typeIdx2Opt = idx2BaseOpt.groupByTupleType2
-    val evTypeIdx2Opt: Exp[TypeMapping[Set, PairCodeAttributeAnd]] = asExp(typeIdx2Opt.interpret())
+    val evTypeIdx2Opt: Exp[TypeMapping[Set, PairCodeAttributeAnd]] = benchMark("los7: creation of index typeIdx2Opt"){ asExp(typeIdx2Opt.interpret()) }
 
     val methodsLos7 = evTypeIdx2Opt.get[INSTANCEOF].flatMap(x => evIdx1(x._1).map(_.name))
 
