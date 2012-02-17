@@ -16,7 +16,7 @@ import optimization.Optimization
 */
 
 class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
-  val l: Exp[Traversable[(Int,Int)]] = toExp(Vector.range(1,3).flatMap( (i) => Vector.range(1,2).map((i,_))))
+  val l: Exp[Traversable[(Int, Int)]] = toExp(Vector.range(1, 3).flatMap(i => Vector.range(1, 2).map((i, _))))
 
   @Test def testSimpleSharing {
     val s1 = l.map(p => (p._1 + 1, p._2 + 2))
@@ -42,7 +42,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val testquery = l.withFilter(p => p._1 + p._2 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
-    optimized should equal (App(Const(indexres),Const(5)))
+    optimized should equal (App(Const(indexres), Const(5)))
 
     Optimization.removeSubQuery(index)
   }
@@ -54,7 +54,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val testquery = l.withFilter(p => p._2 + p._1 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
-    optimized should equal (App(Const(indexres),Const(5)))
+    optimized should equal (App(Const(indexres), Const(5)))
 
     Optimization.removeSubQuery(index)
   }
@@ -66,7 +66,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val testquery = l.withFilter(p => p._1 + p._2 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
-    optimized should equal (App(Const(indexres),Const(5)))
+    optimized should equal (App(Const(indexres), Const(5)))
 
     Optimization.removeSubQuery(index)
   }
@@ -78,7 +78,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val testquery = l.withFilter(p => p._1 <= 7 && p._1 + p._2 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
-    optimized should equal (App(Const(indexres),Const(5)).withFilter(p => p._1 <= 7))
+    optimized should equal (App(Const(indexres), Const(5)).withFilter(p => p._1 <= 7))
 
     Optimization.removeSubQuery(index)
   }
