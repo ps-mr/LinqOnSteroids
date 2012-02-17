@@ -70,18 +70,18 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   //Code to be generated {{{
   implicit def expToDeveloperOps(t: Exp[Developer]) = new DeveloperOps(t)
   class DeveloperOps(t: Exp[Developer]) {
-    def name = onExp(t)('name, _.name)
-    def website = onExp(t)('website, _.website)
+    def name = onExp(t)('Developer$name, _.name)
+    def website = onExp(t)('Developer$website, _.website)
   }
 
   implicit def expToLibraryOps(t: Exp[Library]) = new LibraryOps(t)
   class LibraryOps(t: Exp[Library]) {
-    def name = onExp(t)('name, _.name)
-    def depends = onExp(t)('depends, _.depends)
-    def developers = onExp(t)('developers, _.developers)
+    def name = onExp(t)('Library$name, _.name)
+    def depends = onExp(t)('Library$depends, _.depends)
+    def developers = onExp(t)('Library$developers, _.developers)
   }
   //Code to be generated }}}
-  
+
   @Test
   def basicQueries() {
     //Let us define a special collection for our purposes.
