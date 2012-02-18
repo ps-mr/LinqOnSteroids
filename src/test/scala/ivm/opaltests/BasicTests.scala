@@ -247,24 +247,24 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
     methodsNative should equal (m2Int)
   }
 
+  // native Scala for-comprehension
+  val methodsNative: Set[String] = benchMark("native") {
+    for (cf <- testdata;
+         m <- cf.methods;
+         CodeAttribute(_,_,code,_,_) <- m.attributes;
+         INSTANCEOF(_) <- code) yield m.name
+  }
+
+  // using reified query; INSTANCEOF is here shadowed.
+  import BATLifting._
+  import BATLiftingExperimental._
+
   @Test def testOpal() {
     // computing all method names that make an instance-of check in their body
 
-    // native Scala for-comprehension
-    var methodsNative: Set[String] = null
-    benchMark("native") {
-      methodsNative  = for (cf <- testdata;
-                      m <- cf.methods;
-                      CodeAttribute(_,_,code,_,_) <- m.attributes;
-                      INSTANCEOF(_) <- code) yield m.name
-    }
     //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
     //Not very pretty, but better than nothing
     methodsNative.size should be (84)
-
-    // using reified query; INSTANCEOF is here shadowed.
-    import BATLifting._
-    import BATLiftingExperimental._
 
     intercept[ExoticTermException] {
       //The pattern-matches used here are unsound:
@@ -350,11 +350,15 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
       .map(io => m.name))))
     //No benchmarking as this code is the same as methodsLos5; this just checks that we indeed got the desugaring right.
     methodsNative should equal (methodsLos5Desugared.interpret())
+  }
 
-    //////////////
-    // INDEXING //
-    //////////////
 
+  //////////////
+  // INDEXING //
+  //////////////
+  type PairMethodAnd[+T] = (Method, T)
+
+  @Test def testOpalWithIndexing() {
     //Let coll0 be "m.attributes.typeFilter[CodeAttribute]", coll1 be "ca", FindSubcolls[coll1] be "coll1.code", RestQuery[res] be res.map(io => m.name),
     //T be "INSTANCEOF"
     //OuterQuery[S] be "queryData.flatMap(cf => cf.methods.flatMap(m => S))"
@@ -370,7 +374,6 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
 
     // another version using type index but manual index application
     // (need to code this into optimizer - not quite obvious how to do it)
-    type PairMethodAnd[+T] = (Method, T)
     val typeIdxBase: Exp[Set[PairMethodAnd[Instruction]]] = for {
       cf <- queryData
       m <- cf.methods
