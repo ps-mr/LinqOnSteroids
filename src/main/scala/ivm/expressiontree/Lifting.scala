@@ -131,7 +131,7 @@ trait ExpSugar {
 
 object Lifting
   extends BaseExps with OptionLifting
-  with TraversableOps with ForceOps with MapOps with SetOps with TypeFilterOps with NumOps with BaseTypesOps with ExpSugar
+  with TraversableOps with ForceOps with IterableOps with SeqOps with MapOps with SetOps with TypeFilterOps with NumOps with BaseTypesOps with ExpSugar
 {
   override def groupBySelImpl[T, Repr <: Traversable[T] with
     TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],

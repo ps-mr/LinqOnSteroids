@@ -90,7 +90,7 @@ trait TraversableOps {
   }
 
   trait WithFilterImpl[T, This <: Traversable[T] with TraversableLike[T, Repr], Repr <: Traversable[T] with TraversableLike[T, Repr]] extends WithFilterable[T, Repr] {
-    self: FilterMonadicOpsLike[T, Repr] =>
+    this: FilterMonadicOpsLike[T, Repr] =>
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Repr]] =
       newWithFilter(this.t, FuncExp(f))
   }
@@ -123,9 +123,6 @@ trait TraversableOps {
 
     def size = Size(this.t)
     def length = size
-
-    //XXX: Generate these wrappers
-    def toSet = onExp(this.t)('toSet, _.toSet)
     def isEmpty: Exp[Boolean] = IsEmpty(this.t)
     def nonEmpty: Exp[Boolean] = !isEmpty
 
@@ -156,6 +153,10 @@ trait TraversableOps {
       type ID[+T] = T
       TypeFilter[T, Traversable, ID, S](t, FuncExp(identity[Exp[T]]), classS)
     }
+
+    //XXX: Generate these wrappers, also for other methods.
+    def toSet = onExp(this.t)('TraversableLike$toSet, _.toSet)
+    def toSeq = onExp(this.t)('TraversableLike$toSeq, _.toSeq)
   }
 
   trait TraversableViewLikeOps[
@@ -251,6 +252,24 @@ trait MapOps {
   implicit def expToMapExp[K, V](t: Exp[Map[K, V]]): MapOps[K, V] = new MapOps(t)
   implicit def tToMapExp[K, V](t: Map[K, V]): MapOps[K, V] =
     expToMapExp(t)
+}
+
+trait IterableOps {
+  this: LiftingConvs with TraversableOps =>
+  class IterableOps[T](val t: Exp[Iterable[T]]) extends TraversableLikeOps[T, Iterable, Iterable[T]] with WithFilterImpl[T, Iterable[T], Iterable[T]]
+
+  implicit def expToIterableExp[T](t: Exp[Iterable[T]]): IterableOps[T] = new IterableOps(t)
+  implicit def tToIterableExp[T](t: Iterable[T]): IterableOps[T] =
+    expToIterableExp(t)
+}
+
+trait SeqOps {
+  this: LiftingConvs with TraversableOps =>
+  class SeqOps[T](val t: Exp[Seq[T]]) extends TraversableLikeOps[T, Seq, Seq[T]] with WithFilterImpl[T, Seq[T], Seq[T]]
+
+  implicit def expToSeqExp[T](t: Exp[Seq[T]]): SeqOps[T] = new SeqOps(t)
+  implicit def tToSeqExp[T](t: Seq[T]): SeqOps[T] =
+    expToSeqExp(t)
 }
 
 trait CollectionSetOps {
