@@ -409,6 +409,30 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
     }
     methodsNative should equal (m6Int)
 
+    {
+      //Same code as above, except that the index returns all free variables, so that the optimizer might find it.
+      type PairMethodAnd[+T] = ((ClassFile, Method, CodeAttribute), T)
+      val typeIdxBase: Exp[Set[PairMethodAnd[Instruction]]] = for {
+        cf <- queryData
+        m <- cf.methods
+        ca <- m.attributes.typeFilter[CodeAttribute]
+        i <- ca.code
+      } yield (asExp((cf, m, ca)), i)
+
+      val typeIdx = typeIdxBase.groupByTupleType2
+      // Interpreting takes a whopping 120 seconds. Why? Since the result is a set, each class file is being hashed once
+      // per each instruction.
+      val evaluatedtypeindex: Exp[TypeMapping[Set, PairMethodAnd]] = benchMark("los6 index (less manually optimized) creation"){ asExp(typeIdx.interpret()) }
+
+      val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name)
+
+      var m6Int: Traversable[String] = null
+      benchMark("los6 (with index, less manually optimized)") {
+        m6Int = methodsLos6.interpret()
+      }
+      methodsNative should equal (m6Int)
+    }
+
     // another version using type index, to try to understand how this could be coded more easily into the optimizer.
     val idx1Base /*: Exp[Set[SND[Attribute]]]*/ = for {
       cf <- queryData
