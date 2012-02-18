@@ -411,20 +411,21 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
 
     {
       //Same code as above, except that the index returns all free variables, so that the optimizer might find it.
-      type PairMethodAnd[+T] = ((ClassFile, Method, CodeAttribute), T)
+      type PairMethodAnd[+T] = ((/*ClassFile, */Method, CodeAttribute), T)
       val typeIdxBase: Exp[Set[PairMethodAnd[Instruction]]] = for {
         cf <- queryData
         m <- cf.methods
         ca <- m.attributes.typeFilter[CodeAttribute]
         i <- ca.code
-      } yield (asExp((cf, m, ca)), i)
+      } yield (asExp((/*cf, */m, ca)), i)
 
       val typeIdx = typeIdxBase.groupByTupleType2
       // Interpreting takes a whopping 120 seconds. Why? Since the result is a set, each class file is being hashed once
       // per each instruction.
       val evaluatedtypeindex: Exp[TypeMapping[Set, PairMethodAnd]] = benchMark("los6 index (less manually optimized) creation"){ asExp(typeIdx.interpret()) }
 
-      val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name)
+      //val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name) //XXX
+      val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._1.name)
 
       var m6Int: Traversable[String] = null
       benchMark("los6 (with index, less manually optimized)") {
