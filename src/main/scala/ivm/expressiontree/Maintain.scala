@@ -93,7 +93,7 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
   def fInt: T => Exp[TraversableOnce[U]]
   var subCollCache = new HashMap[T, Exp[TraversableOnce[U]]]
   val subCollListener: MsgSeqSubscriber[TraversableOnce[U], Exp[TraversableOnce[U]]] =
-    new MsgSeqSubscriber[TraversableOnce[U], Exp[TraversableOnce[U]]] {
+    new MsgSeqSubscriber[TraversableOnce[U], Exp[TraversableOnce[U]]] with Serializable {
       override def notify(pub: Exp[TraversableOnce[U]], evts: Seq[Message[TraversableOnce[U]]]) = {
         for (evt <- evts) {
           evt match {

@@ -11,7 +11,7 @@ import collection.immutable.HashSet
  * Date: 13/8/2011
  */
 
-sealed trait Message[+T] extends Serializable
+sealed trait Message[+T]
 case class Include[+T](t: T) extends TravMessage[T]
 /*class Include[T](_t: => T) extends Message[T] {
   lazy val t = _t
