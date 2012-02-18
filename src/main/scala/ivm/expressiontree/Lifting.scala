@@ -30,16 +30,17 @@ trait OptionLifting extends BaseExps {
     val OptionToIterableId = 'Option_option2Iterable
     val SomeId = 'Some
 
-    sealed trait FlatMappableTo[U] {
-      def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[U]): Exp[U]
+    sealed trait FlatMappableTo[-U, +Res] {
+      def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[U]): Exp[Res]
     }
-    implicit def option[U] = new FlatMappableTo[Option[U]] {
+    implicit def option[U] = new FlatMappableTo[Option[U], Option[U]] {
       override def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[Option[U]]): Exp[Option[U]] = onExp(t, FuncExp(f))(OptionFlatMapId, (a, b) => a flatMap b)
     }
-    implicit def traversable[U] = new FlatMappableTo[Traversable[U]] {
+    implicit def traversable[U] = new FlatMappableTo[Traversable[U], Traversable[U]] {
       override def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[Traversable[U]]) = (t: Exp[Iterable[T]]) flatMap f
     }
   }
+
   implicit def expToOptionOps[T](t: Exp[Option[T]]) = new OptionOps(t)
   class OptionOps[T](t: Exp[Option[T]]) {
     import OptionOps._
@@ -61,7 +62,7 @@ trait OptionLifting extends BaseExps {
     // but then type inference fails for f's domain type.
 
     //Tillmann's suggestion was to use Haskell-style overloading by emulating type classes with implicits:
-    def flatMap[That](f: Exp[T] => Exp[That])(implicit v: FlatMappableTo[That]): Exp[That] = v.flatMap(t, f)
+    def flatMap[U, That](f: Exp[T] => Exp[U])(implicit v: FlatMappableTo[U, That]): Exp[That] = v.flatMap(t, f)
 
     //Note: we do not support call-by-name parameters; therefore we currently provide only orElse, and expect the user to
     //provide a default which will never fail evalution through exceptions but only evaluate to None.
