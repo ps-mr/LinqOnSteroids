@@ -54,7 +54,7 @@ trait TraversableOps {
   Arity5Op[Exp[Repr],
     Exp[Traversable[S]],
     FuncExp[T, TKey], FuncExp[S, TKey], FuncExp[(T, S), TResult],
-    That](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
+    That, Join[T, Repr, S, TKey, TResult, That]](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
     override def copy(colouter: Exp[Repr],
                       colinner: Exp[Traversable[S]],
                       outerKeySelector: FuncExp[T, TKey],

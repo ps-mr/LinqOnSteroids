@@ -84,7 +84,7 @@ abstract class Arity3OpExp[T1, T2, T3, +R, Self <: Exp[R]](t1: Exp[T1], t2: Exp[
   extends Arity3Op[Exp[T1], Exp[T2], Exp[T3], R, Self](t1, t2, t3)
 
 //For Call4
-abstract class Arity4Op[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], +R](t1: T1, t2: T2, t3: T3, t4: T4)
+abstract class Arity4Op[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], +R, Self <: Exp[R]](t1: T1, t2: T2, t3: T3, t4: T4)
                                                                                         extends Exp[R] {
   override def nodeArity = 4
   def children = Seq(t1, t2, t3, t4)
@@ -97,11 +97,11 @@ abstract class Arity4Op[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], 
   def copy(t1: T1, t2: T2, t3: T3, t4: T4): Exp[R]
 }
 
-abstract class Arity4OpExp[T1, T2, T3, T4, +R](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3], t4: Exp[T4])
-  extends Arity4Op[Exp[T1], Exp[T2], Exp[T3], Exp[T4], R](t1, t2, t3, t4)
+abstract class Arity4OpExp[T1, T2, T3, T4, +R, Self <: Exp[R]](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3], t4: Exp[T4])
+  extends Arity4Op[Exp[T1], Exp[T2], Exp[T3], Exp[T4], R, Self](t1, t2, t3, t4)
 
 //For Join and Call5
-abstract class Arity5Op[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], T5 <: Exp[_], +R](t1: T1, t2: T2, t3: T3, t4: T4, t5: T5)
+abstract class Arity5Op[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], T5 <: Exp[_], +R, Self <: Exp[R]](t1: T1, t2: T2, t3: T3, t4: T4, t5: T5)
                                                                                                   extends Exp[R] {
   override def nodeArity = 5
   def children = Seq(t1, t2, t3, t4, t5)
@@ -114,6 +114,6 @@ abstract class Arity5Op[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], 
       v(4).asInstanceOf[T5])
   def copy(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5): Exp[R]
 }
-abstract class Arity5OpExp[T1, T2, T3, T4, T5, +R](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3], t4: Exp[T4], t5: Exp[T5])
-  extends Arity5Op[Exp[T1], Exp[T2], Exp[T3], Exp[T4], Exp[T5], R](t1, t2, t3, t4, t5)
+abstract class Arity5OpExp[T1, T2, T3, T4, T5, +R, Self <: Exp[R]](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3], t4: Exp[T4], t5: Exp[T5])
+  extends Arity5Op[Exp[T1], Exp[T2], Exp[T3], Exp[T4], Exp[T5], R, Self](t1, t2, t3, t4, t5)
 
