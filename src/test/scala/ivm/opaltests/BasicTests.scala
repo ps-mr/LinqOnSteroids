@@ -2,9 +2,6 @@ package ivm
 package opaltests
 
 
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
-import org.junit.Test
-
 import expressiontree._
 
 import scala.collection.JavaConversions._
@@ -20,6 +17,8 @@ import java.util.zip.ZipFile
 import java.io.File
 import performancetests.Benchmarking
 import collections.{TypeMapping, IncHashSet}
+import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.FunSuite
 
 /* (Very incomplete) boilerplate code for making use of BAT types convenient in queries.
  * This code should be generated */
@@ -149,11 +148,15 @@ object OpalTestData {
   val queryData = toExp(testdata)
 }
 
-class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarking {
+class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
   import OpalTestData._
 
   //A simple query, which does not use pattern matching.
-  @Test def basicQuery() {
+  test("basicQuery") {
+    basicQuery()
+  }
+
+  def basicQuery() {
     var methodsNative: Set[Attribute] = null
     // native Scala for-comprehension
     benchMark("native simple") {
@@ -183,7 +186,10 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
     //>>> Name = los simple, time = 59.698 +- 2.857
   }
 
-  @Test
+  test("testBuildTypeHierarchy") {
+    testBuildTypeHierarchy()
+  }
+
   def testBuildTypeHierarchy() {
     import BATLifting._
     import collection.{Set => CSet}
@@ -199,7 +205,11 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
   }
 
   // compute all method names that make an instance-of check in their body, using the .code member.
-  @Test def testOpalNewStyle() {
+  test("testOpalNewStyle") {
+    testOpalNewStyle()
+  }
+
+  def testOpalNewStyle() {
     var methodsNative: Set[String] = null
     benchMark("native-new") {
       methodsNative = for (cf <- testdata;
@@ -259,7 +269,11 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
   import BATLifting._
   import BATLiftingExperimental._
 
-  @Test def testOpal() {
+  test("testOpal") {
+    testOpal()
+  }
+
+  def testOpal() {
     // computing all method names that make an instance-of check in their body
 
     //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
@@ -358,7 +372,11 @@ class BasicTests extends JUnitSuite with ShouldMatchersForJUnit with Benchmarkin
   //////////////
   type PairMethodAnd[+T] = (Method, T)
 
-  @Test def testOpalWithIndexing() {
+  test("testOpalWithIndexing") {
+    testOpalWithIndexing()
+  }
+
+  def testOpalWithIndexing() {
     //Let coll0 be "m.attributes.typeFilter[CodeAttribute]", coll1 be "ca", FindSubcolls[coll1] be "coll1.code", RestQuery[res] be res.map(io => m.name),
     //T be "INSTANCEOF"
     //OuterQuery[S] be "queryData.flatMap(cf => cf.methods.flatMap(m => S))"
