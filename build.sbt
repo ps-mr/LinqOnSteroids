@@ -1,5 +1,7 @@
 import scalariform.formatter.preferences._
 import de.johoop.findbugs4sbt.FindBugs._
+import com.mojolly.scalate.ScalatePlugin._
+import com.typesafe.startscript.StartScriptPlugin
 
 name := "LinqOnSteroids"
 
@@ -42,6 +44,20 @@ ScalariformKeys.preferences := FormattingPreferences().
   setPreference(PlaceScaladocAsterisksBeneathSecondAsterisk, true).
   setPreference(PreserveSpaceBeforeArguments, true).
   setPreference(AlignParameters, true)
-  
+
 //Add support for FindBugs
 seq(findbugsSettings : _*)
+
+//Scalate settings
+libraryDependencies += "org.fusesource.scalate" % "scalate-core" % "1.5.3"
+
+seq(scalateSettings: _*)
+
+scalateTemplateDirectory in Compile <<= (baseDirectory) { _ / "src/main/resources" }
+
+//Generate start scripts
+seq(StartScriptPlugin.startScriptForClassesSettings: _*)
+
+mainClass := Some("ivm.generation.Generator")
+
+//Add "sourceGenerators in Compile <+= "
