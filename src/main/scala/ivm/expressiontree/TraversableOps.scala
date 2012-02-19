@@ -333,7 +333,7 @@ trait TypeFilterOps {
 
   /*
    * failed attempt to code GroupByType without type cast
-    case class GroupByType[T, C[X] <: Traversable[X], Repr <: TraversableLike[T, Repr]](base: Exp[C[T] with Repr]) extends UnaryOpExp[C[T] with Repr, TypeMapping[C]](base) {
+    case class GroupByType[T, C[X] <: Traversable[X], Repr <: TraversableLike[T, Repr]](base: Exp[C[T] with Repr]) extends Arity1OpExp[C[T] with Repr, TypeMapping[C]](base) {
     override def interpret() = {
       val x: C[T] with Repr = base.interpret()
       new TypeMapping[C](x.groupBy[ClassManifest[_]]( (_: Any) => ClassManifest.Int).asInstanceOf[Map[ClassManifest[_], C[_]]])
@@ -343,7 +343,7 @@ trait TypeFilterOps {
   }
  */
   case class TypeMappingApp[C[X] <: TraversableLike[X, C[X]], D[_], S](base: Exp[TypeMapping[C, D]])(implicit cS: ClassManifest[S])
-    extends UnaryOpExp[TypeMapping[C, D], C[D[S]], TypeMappingApp[C, D, S]](base) {
+    extends Arity1OpExp[TypeMapping[C, D], C[D[S]], TypeMappingApp[C, D, S]](base) {
     override def copy(base: Exp[TypeMapping[C, D]]) = TypeMappingApp[C, D, S](base)
     override def interpret() = {
       base.interpret().get[S]

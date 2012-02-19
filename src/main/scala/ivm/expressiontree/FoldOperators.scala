@@ -43,7 +43,7 @@ trait FoldOperators {
   def foldl[Out, In](coll: Exp[Traversable[In]])(f: IncBinOpC[Out, In], z: Out) = Foldl(coll, f, z)
 
   case class Foldl[Out, In](coll: Exp[Traversable[In]], f: IncBinOpC[Out, In], z: Out)
-    extends UnaryOpExp[Traversable[In], Out, Foldl[Out, In]](coll) with EvtTransformerEl[Traversable[In], Out, Traversable[In]]
+    extends Arity1OpExp[Traversable[In], Out, Foldl[Out, In]](coll) with EvtTransformerEl[Traversable[In], Out, Traversable[In]]
     with CachingExp[Out]
   {
     override def interpret() = {
@@ -71,7 +71,7 @@ trait FoldOperators {
 
   //Here I accept a primitive function because I believe the overhead for expression trees would be too significant, especially with all the wrapping and unwrapping done by convertBinFunInternal.
   //However, normalization-by-evaluation and a two-argument version of FuncExpInt could come to the rescue!
-  case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: T) extends UnaryOpExp[Traversable[T], T, TreeFold[T]](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T, Exp[T]] { //Arity2OpExp[Traversable[T], (T, T) => T, T](coll, f) {
+  case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: T) extends Arity1OpExp[Traversable[T], T, TreeFold[T]](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T, Exp[T]] { //Arity2OpExp[Traversable[T], (T, T) => T, T](coll, f) {
     private def combineIfAvailable(arr: Buffer[T], i: Int) =
       if (i + 1 < arr.size)
         f(arr(i), arr(i + 1))

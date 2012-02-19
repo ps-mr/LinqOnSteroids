@@ -28,7 +28,7 @@ object IfInstanceOf {
 }
 
 //Equality comparison must consider also classS. Therefore, classS must be a class parameter.
-case class IfInstanceOf[T, S](x: Exp[T], classS: Class[_]) extends UnaryOpExp[T, Option[S], IfInstanceOf[T, S]](x) {
+case class IfInstanceOf[T, S](x: Exp[T], classS: Class[_]) extends Arity1OpExp[T, Option[S], IfInstanceOf[T, S]](x) {
   def copy(x: Exp[T]) = IfInstanceOf(x, classS)
   def interpret() =
     Util.ifInstanceOfBody(x.interpret(), classS)

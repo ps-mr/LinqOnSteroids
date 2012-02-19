@@ -26,7 +26,7 @@ case class Times[T](override val t1: Exp[T], override val t2: Exp[T])(implicit v
   def copy(x: Exp[T], y: Exp[T]) = Times(x, y)
 }
 
-case class Negate[T: Numeric](override val t1: Exp[T]) extends UnaryOpExp[T, T, Negate[T]](t1) {
+case class Negate[T: Numeric](override val t1: Exp[T]) extends Arity1OpExp[T, T, Negate[T]](t1) {
   def copy(t1: Exp[T]) = Negate(t1)
   def interpret() = - t1.interpret()
 }

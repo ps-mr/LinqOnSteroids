@@ -76,7 +76,7 @@ case class LiftTuple${arity}[${tparams}](${paramsDecl}) extends Arity${arity}OpE
 }
 
 #for (i <- 1 to arity)
-case class Tuple${arity}Proj${i}[${tparams}](p: Exp[(${tparams})]) extends UnaryOpExp[(${tparams}), A${i}, Tuple${arity}Proj${i}[${tparams}]](p) {
+case class Tuple${arity}Proj${i}[${tparams}](p: Exp[(${tparams})]) extends Arity1OpExp[(${tparams}), A${i}, Tuple${arity}Proj${i}[${tparams}]](p) {
   def copy(p: Exp[(${tparams})]) = Tuple${arity}Proj${i}(p)
   def interpret() = p.interpret()._${i}
 }

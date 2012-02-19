@@ -13,7 +13,7 @@ trait NullaryExp[+R] extends Exp[R] {
   def checkedGenericConstructor = _ => this
 }
 
-trait UnaryOpTrait[T1 <: Exp[_], +R, Self <: Exp[R]] extends Exp[R] {
+trait Arity1OpTrait[T1 <: Exp[_], +R, Self <: Exp[R]] extends Exp[R] {
   this: Self =>
   def t1: T1
   override def nodeArity = 1
@@ -22,15 +22,15 @@ trait UnaryOpTrait[T1 <: Exp[_], +R, Self <: Exp[R]] extends Exp[R] {
   def copy(t1: T1): Self
 }
 
-abstract class UnaryOp[T1 <: Exp[_], +R, Self <: Exp[R]](val t1: T1) extends UnaryOpTrait[T1, R, Self] {
+abstract class Arity1Op[T1 <: Exp[_], +R, Self <: Exp[R]](val t1: T1) extends Arity1OpTrait[T1, R, Self] {
   this: Self =>
 }
 
-trait UnaryOpExpTrait[T1, +R, Self <: Exp[R]] extends UnaryOpTrait[Exp[T1], R, Self] {
+trait Arity1OpExpTrait[T1, +R, Self <: Exp[R]] extends Arity1OpTrait[Exp[T1], R, Self] {
   this: Self =>
 }
 
-abstract class UnaryOpExp[T1, R, Self <: Exp[R]](t1: Exp[T1]) extends UnaryOp[Exp[T1], R, Self](t1) {
+abstract class Arity1OpExp[T1, R, Self <: Exp[R]](t1: Exp[T1]) extends Arity1Op[Exp[T1], R, Self](t1) {
   this: Self =>
 }
 

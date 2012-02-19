@@ -36,7 +36,7 @@ case class WithFilter[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr],
   override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = WithFilter[T, Repr](base, f)
 }
 
-case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr with TraversableLike[T, Repr]]) extends UnaryOpExp[Repr, TraversableView[T, Repr], View[T, Repr]](base) {
+case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr with TraversableLike[T, Repr]]) extends Arity1OpExp[Repr, TraversableView[T, Repr], View[T, Repr]](base) {
   override def interpret() = base.interpret().view
   override def copy(base: Exp[Repr]) = View(base)
 }
@@ -44,13 +44,13 @@ case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr with Travers
 case class Force[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl], That]
                 (base: Exp[ViewColl with TraversableViewLike[T, Repr, ViewColl]])
-                (implicit protected[this] val bf: CanBuildFrom[Repr, T, That]) extends UnaryOpExp[ViewColl, That, Force[T, Repr, ViewColl, That]](base) {
+                (implicit protected[this] val bf: CanBuildFrom[Repr, T, That]) extends Arity1OpExp[ViewColl, That, Force[T, Repr, ViewColl, That]](base) {
   override def interpret() = base.interpret().force
   override def copy(base: Exp[ViewColl]) = Force[T, Repr, ViewColl, That](base)
 }
 
 //A bit of a hack, since it does not return the most precise type possible.
-case class ForceIfPossible[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr with TraversableLike[T, Repr]]) extends UnaryOpExp[Repr, Traversable[T], ForceIfPossible[T, Repr]](base) {
+case class ForceIfPossible[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr with TraversableLike[T, Repr]]) extends Arity1OpExp[Repr, Traversable[T], ForceIfPossible[T, Repr]](base) {
   override def interpret() = {
     Lifting.TraversableForceable.force(base.interpret())
   }
@@ -68,12 +68,12 @@ case class Diff[T, Repr <: collection.Set[T] with SetLike[T, Repr]](base: Exp[Re
   override def copy(base: Exp[Repr], that: Exp[GenTraversableOnce[T]]) = Diff[T, Repr](base, that)
 }
 
-case class Size[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) extends UnaryOpExp[Repr, Int, Size[T, Repr]](t) {
+case class Size[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) extends Arity1OpExp[Repr, Int, Size[T, Repr]](t) {
   def interpret() = t.interpret().size
   def copy(t: Exp[Repr]) = Size(t)
 }
 
-case class IsEmpty[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) extends UnaryOpExp[Repr, Boolean, IsEmpty[T, Repr]](t) {
+case class IsEmpty[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) extends Arity1OpExp[Repr, Boolean, IsEmpty[T, Repr]](t) {
   def interpret() = t.interpret().isEmpty
   def copy(t: Exp[Repr]) = IsEmpty(t)
 }
@@ -110,7 +110,7 @@ case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](b
 
 //Note: this class also handles IVM, though in an incomplete way
 case class Forall[T](coll: Exp[Traversable[T]], f: FuncExp[T, Boolean])
-  extends UnaryOpExp[Traversable[T], Boolean, Forall[T]](coll) with EvtTransformerEl[Traversable[T], Boolean, Traversable[T]]
+  extends Arity1OpExp[Traversable[T], Boolean, Forall[T]](coll) with EvtTransformerEl[Traversable[T], Boolean, Traversable[T]]
   with ExpWithCache[Boolean]
 {
   var countFalse: Int = 0

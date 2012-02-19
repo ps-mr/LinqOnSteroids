@@ -31,7 +31,7 @@ abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
   //(even if probably not a contribution)!
   /*private[ivm]*/ override def children = Seq(body)
   //private[ivm] override def closedTermChildren: Seq[Exp[_]] = Seq()
-  //Copied from UnaryOpTrait:
+  //Copied from Arity1OpTrait:
   override def nodeArity = 1
 
   // by using varzero, this definition makes sure that alpha-equivalent functions have the same hashcode
@@ -59,7 +59,7 @@ abstract class FuncExp[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T
   def arrowString = "=>"
   def copy[U >: T](t1: Exp[U]): FuncExp[S, U] = FuncExp.makefun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[FuncExp[_,_]]
-  //Copied from UnaryOpTrait:
+  //Copied from Arity1OpTrait:
   def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[T]])
 }
 
@@ -73,7 +73,7 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
   def arrowString = "-(pf)->"
   def copy[U >: T](t1: Exp[Option[U]]): PartialFuncExp[S, U] = FuncExp.makePartialFun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[PartialFuncExp[_,_]]
-  //Copied from UnaryOpTrait:
+  //Copied from Arity1OpTrait:
   def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[Option[T]]])
 }
 

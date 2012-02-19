@@ -14,7 +14,7 @@ case class Or(t1: Exp[Boolean], t2: Exp[Boolean]) extends Arity2OpSymmExp[Boolea
   def interpret() = t1.interpret() || t2.interpret()
 }
 
-case class Not(t1: Exp[Boolean]) extends UnaryOpExpTrait[Boolean, Boolean, Not] {
+case class Not(t1: Exp[Boolean]) extends Arity1OpExpTrait[Boolean, Boolean, Not] {
   def copy(x: Exp[Boolean]) = Not(x)
   def interpret() = !t1.interpret()
 }

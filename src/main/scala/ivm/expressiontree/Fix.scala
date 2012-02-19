@@ -24,7 +24,7 @@ case class Fix[T](col: Exp[Traversable[T]], f: FuncExp[Traversable[T], Traversab
   }
 }
 
-case class TransitiveClosure[T](rel: Exp[Traversable[(T, T)]]) extends UnaryOpExp[Traversable[(T, T)], Traversable[(T, T)], TransitiveClosure[T]](rel) {
+case class TransitiveClosure[T](rel: Exp[Traversable[(T, T)]]) extends Arity1OpExp[Traversable[(T, T)], Traversable[(T, T)], TransitiveClosure[T]](rel) {
   def copy(rel: Exp[Traversable[(T, T)]]) = TransitiveClosure(rel)
   def interpret() = {
     //XXX: crappy (and untested) implementation, with complexity O(n^3) per fixpoint iteration, worse than Floyd-Warshall (O(n^3) overall).
