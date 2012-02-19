@@ -3,36 +3,43 @@ package ivm.expressiontree
 <%
   escapeMarkup = false
   val maxArity = 10
-  def defParamsLoop(arity: Int)(formatStr: String, prefix: String, sep: String = ", ") = (1 to arity) map (formatStr format (prefix, _)) mkString sep
-%>
-#for (arity <- 2 to maxArity)
-<%
+  def baseParLoop(arity: Int)(formatter: Int => String, sep: String = ", ") = (1 to arity) map formatter mkString sep
+
+  def defParamsLoop(arity: Int)(formatStr: String, prefix: String, sep: String = ", ") = baseParLoop(arity)(formatStr format (prefix, _), sep)
+  def defParamsLoop2(arity: Int)(formatStr: String, sep: String = ", ") = baseParLoop(arity)(formatStr format _, sep)
+  val tpPfx = "A"
   val subNodePfx = "t"
+%>
+#for (arity <- 1 to maxArity)
+<%
   def paramsLoop(formatStr: String, prefix: String = subNodePfx) = defParamsLoop(arity)(formatStr, prefix)
-  val tparams = paramsLoop("%s%s", "A")
-  val paramsDecl = paramsLoop("%s%s: Exp[A%<s]")
-  val params = paramsLoop("%s%s")
-  val interpretParams = paramsLoop("%s%s.interpret()")
+
+  def paramsLoop2(formatStr: String, sep: String = ", ") = defParamsLoop2(arity)(formatStr, sep)
+
+  val tparams = paramsLoop2("A%d")
+  val paramsDecl = paramsLoop2(subNodePfx + "%d: Exp[" + tpPfx + "%<d]")
+  val params = paramsLoop2(subNodePfx + "%d")
+  val interpretParams = paramsLoop2(subNodePfx + "%d.interpret()")
   %>
 ///////////////////////////////////////////////////
 // SUPPORT FOR OPERATION NODES OF ARITY ${arity} //
 ///////////////////////////////////////////////////
 
 //Passing Self allows to prevent statically the only boilerplate-related copy-n-paste bug in defining tree classes.
-trait Arity${arity}OpTrait[${paramsLoop("%s%s <: Exp[_]", "A")}, +R, Self <: Exp[R]] extends Exp[R] {<%--
+trait Arity${arity}OpTrait[${paramsLoop2("A%s <: Exp[_]")}, +R, Self <: Exp[R]] extends Exp[R] {<%--
   Ensure that Self is actually correct: --%>
   this: Self =>
-  ${defParamsLoop(arity)("def %s%s: A%<s", subNodePfx, "\n  ")}
+  ${paramsLoop2("def " + subNodePfx + "%s: A%<s", "\n  ")}
   override def nodeArity = ${arity}
   def children = Seq(${params})
   def checkedGenericConstructor =
-    v => copy(${paramsLoop("v(%2$s - 1).asInstanceOf[A%<s]")})
-<%-- 
+    v => copy(${baseParLoop(arity)(i => "v(%d).asInstanceOf[A%d]" format (i - 1, i))})
+<%--
   Ensure that copy returns the correct type. --%>
-  def copy(${paramsLoop("%s%s: A%<s")}): Self
+  def copy(${paramsLoop2(subNodePfx + "%d: A%<d")}): Self
 }
 
-abstract class Arity${arity}Op[${paramsLoop("%s%s <: Exp[_]", "A")}, +R, Self <: Exp[R]](${paramsLoop("val %s%s: A%<s")}) extends Arity${arity}OpTrait[${tparams}, R, Self] {
+abstract class Arity${arity}Op[${paramsLoop2(tpPfx + "%d <: Exp[_]")}, +R, Self <: Exp[R]](${paramsLoop2("val " + subNodePfx + "%d: A%<d")}) extends Arity${arity}OpTrait[${tparams}, R, Self] {
   this: Self =>
 }
 <%--
@@ -40,7 +47,7 @@ Should this inherit from Arity2OpExpTrait or from Arity2Op? Does it matter? I ho
 stay an implementation detail.
 --%>
 abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDecl})
-  extends Arity${arity}Op[${paramsLoop("Exp[%s%s]", "A")}, R, Self](${params}) {
+  extends Arity${arity}Op[${paramsLoop("Exp[" + tpPfx + "%s]")}, R, Self](${params}) {
   this: Self =>
 }
 
@@ -48,10 +55,10 @@ abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDecl})
 <%
   val argPfx = "arg"
   %>
-#for (arity <- 2 to maxArity)
+#for (arity <- 1 to maxArity)
 <%
   def paramsLoop(formatStr: String, prefix: String = argPfx) = defParamsLoop(arity)(formatStr, prefix)
-  val tparams = paramsLoop("%s%s", "A")
+  val tparams = paramsLoop("%s%s", tpPfx)
   val paramsDecl = paramsLoop("%s%s: Exp[A%<s]")
   val params = paramsLoop("%s%s")
   val interpretParams = paramsLoop("%s%s.interpret()")
@@ -66,6 +73,15 @@ case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparam
   def interpret() = callfunc(${interpretParams})
 }
 
+#end
+#for (arity <- 2 to maxArity)
+<%
+  def paramsLoop(formatStr: String, prefix: String = argPfx) = defParamsLoop(arity)(formatStr, prefix)
+  val tparams = paramsLoop("%s%s", tpPfx)
+  val paramsDecl = paramsLoop("%s%s: Exp[A%<s]")
+  val params = paramsLoop("%s%s")
+  val interpretParams = paramsLoop("%s%s.interpret()")
+  %>
 //////////////////////////////////////////
 // SUPPORT FOR TUPLES OF ARITY ${arity} //
 //////////////////////////////////////////
@@ -95,10 +111,10 @@ trait AutoTupleOps {
   ////////////////////////////////////////////
   <%
     def paramsLoop(formatStr: String, prefix: String = argPfx) = defParamsLoop(arity)(formatStr, prefix)
-    val tparams = paramsLoop("%s%s", "A")
+    val tparams = paramsLoop("%s%s", tpPfx)
     %>
 
-  implicit def tuple${arity}ToTuple${arity}Exp[${tparams}](tuple: (${paramsLoop("Exp[%s%s]", "A")})): LiftTuple${arity}[${tparams}] =
+  implicit def tuple${arity}ToTuple${arity}Exp[${tparams}](tuple: (${paramsLoop("Exp[%s%s]", tpPfx)})): LiftTuple${arity}[${tparams}] =
     LiftTuple${arity}[${tparams}](${paramsLoop("%s%s", "tuple._")})
 
   class Tuple${arity}Ops[${tparams}](p: Exp[(${tparams})]) {
