@@ -10,18 +10,18 @@ package ivm.expressiontree
     (defParamsLoop(arity) _, (defParamsLoop(arity)(commaSpace)(_)))
 
   val tpPfx = "A"
-  val subNodePfx = "t"
-  val argPfx = "arg"
+
+  var argPfx = "t"
+  var (paramsLoop, paramsLoopComma) = defParamsLoops(0)
+
+  def tparams = paramsLoopComma(tpPfx + "%d")
+  def paramsDecl = paramsLoopComma(argPfx + "%d: Exp[" + tpPfx + "%<d]")
+  def paramsDeclOverride = paramsLoopComma("override val " + argPfx + "%d: Exp[" + tpPfx + "%<d]")
+  def params = paramsLoopComma(argPfx + "%d")
+  def interpretParams = paramsLoopComma(argPfx + "%d.interpret()")
 %>
 #for (arity <- 1 to maxArity)
-<%
-  val (paramsLoop, paramsLoopComma) = defParamsLoops(arity)
-
-  val tparams = paramsLoopComma(tpPfx + "%d")
-  val paramsDecl = paramsLoopComma(subNodePfx + "%d: Exp[" + tpPfx + "%<d]")
-  val params = paramsLoopComma(subNodePfx + "%d")
-  val interpretParams = paramsLoopComma(subNodePfx + "%d.interpret()")
-  %>
+<% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2 %>
 ///////////////////////////////////////////////////
 // SUPPORT FOR OPERATION NODES OF ARITY ${arity} //
 ///////////////////////////////////////////////////
@@ -30,17 +30,17 @@ package ivm.expressiontree
 trait Arity${arity}OpTrait[${paramsLoopComma("A%d <: Exp[_]")}, +R, Self <: Exp[R]] extends Exp[R] {<%--
   //Ensure that Self is actually correct: --%>
   this: Self =>
-  ${paramsLoop("\n  ")("def " + subNodePfx + "%d: A%<d")}
+  ${paramsLoop("\n  ")("def " + argPfx + "%d: A%<d")}
   override def nodeArity = ${arity}
   def children = Seq(${params})
   def checkedGenericConstructor =
     v => copy(${baseParLoop(arity)(i => "v(%d).asInstanceOf[A%d]" format (i - 1, i))})
 <%--
   //Ensure that copy returns the correct type. --%>
-  def copy(${paramsLoopComma(subNodePfx + "%d: A%<d")}): Self
+  def copy(${paramsLoopComma(argPfx + "%d: A%<d")}): Self
 }
 
-abstract class Arity${arity}Op[${paramsLoopComma(tpPfx + "%d <: Exp[_]")}, +R, Self <: Exp[R]](${paramsLoopComma("val " + subNodePfx + "%d: A%<d")}) extends Arity${arity}OpTrait[${tparams}, R, Self] {
+abstract class Arity${arity}Op[${paramsLoopComma(tpPfx + "%d <: Exp[_]")}, +R, Self <: Exp[R]](${paramsLoopComma("val " + argPfx + "%d: A%<d")}) extends Arity${arity}OpTrait[${tparams}, R, Self] {
   this: Self =>
 }
 <%--
@@ -52,41 +52,24 @@ abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDecl})
   this: Self =>
 }
 
-#end
-#for (arity <- 1 to maxArity)
-<%
-  val (paramsLoop, paramsLoopComma) = defParamsLoops(arity)
-
-  val tparams = paramsLoopComma(tpPfx + "%d")
-  val paramsDecl = paramsLoopComma(argPfx + "%d: Exp[A%<d]")
-  val params = paramsLoopComma(argPfx + "%d")
-  val interpretParams = paramsLoopComma(argPfx + "%d.interpret()")
-  %>
 /////////////////////////////////////////
 // SUPPORT FOR CALLs OF ARITY ${arity} //
 /////////////////////////////////////////
 
-case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparams}) => Res, ${paramsDecl})
+case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparams}) => Res, ${paramsDeclOverride})
     extends Arity${arity}OpExp[${tparams}, Res, Call${arity}[${tparams}, Res]](${params}) with Call[Res] {
   def copy(${paramsDecl}) = new Call${arity}(id, callfunc, ${params})
   def interpret() = callfunc(${interpretParams})
 }
 
-#end
+#end <%-- //We close and reopen the loop because there are no unary tuples. --%>
 #for (arity <- 2 to maxArity)
-<%
-  val (paramsLoop, paramsLoopComma) = defParamsLoops(arity)
-
-  val tparams = paramsLoopComma(tpPfx + "%d")
-  val paramsDecl = paramsLoopComma(argPfx + "%d: Exp[A%<d]")
-  val params = paramsLoopComma(argPfx + "%d")
-  val interpretParams = paramsLoopComma(argPfx + "%d.interpret()")
-  %>
+<% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2 %>
 //////////////////////////////////////////
 // SUPPORT FOR TUPLES OF ARITY ${arity} //
 //////////////////////////////////////////
 
-case class LiftTuple${arity}[${tparams}](${paramsDecl}) extends Arity${arity}OpExp[${tparams}, (${tparams}), LiftTuple${arity}[${tparams}]](${params}) {
+case class LiftTuple${arity}[${tparams}](${paramsDeclOverride}) extends Arity${arity}OpExp[${tparams}, (${tparams}), LiftTuple${arity}[${tparams}]](${params}) {
   def copy(${paramsDecl}) = LiftTuple${arity}(${params})
   def interpret() = (${interpretParams})
 }
@@ -105,14 +88,11 @@ case class Tuple${arity}Proj${i}[${tparams}](p: Exp[(${tparams})]) extends Arity
 
 trait AutoTupleOps {
   this: FunctionOps =>
-  #for (arity <- 2 to maxArity)
+#for (arity <- 2 to maxArity)
   ////////////////////////////////////////////
   // AUTOMATIC CONVERSIONS - ARITY ${arity} //
   ////////////////////////////////////////////
-  <%
-    val (paramsLoop, paramsLoopComma) = defParamsLoops(arity)
-    val tparams = paramsLoopComma(tpPfx + "%d")
-    %>
+  <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2 %>
 
   implicit def tuple${arity}ToTuple${arity}Exp[${tparams}](tuple: (${paramsLoopComma("Exp[" + tpPfx + "%d]")})): LiftTuple${arity}[${tparams}] =
     LiftTuple${arity}[${tparams}](${paramsLoopComma("tuple._%d")})
@@ -122,22 +102,5 @@ trait AutoTupleOps {
   }
 
   implicit def toTuple${arity}Ops[${tparams}](e: Exp[(${tparams})]): Tuple${arity}Ops[${tparams}] = new Tuple${arity}Ops(e)
-  #end
+#end
 }
-
-
-
-  <%--
-  DEAD CODE - DO NOT USE
-  #set (tparams)
-    #for (j <- 1 to arity - 1)
-    A${j},
-    #end
-    A${arity}
-  #end
-  #set (paramsDecl)
-    #for (j <- 1 to arity - 1)
-    a${j}: Exp[A${j}],
-    #end
-    a${arity}: Exp[A${arity}]
-  #end--%>
