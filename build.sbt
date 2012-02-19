@@ -48,7 +48,7 @@ ScalariformKeys.preferences := FormattingPreferences().
 //Add support for FindBugs
 seq(findbugsSettings : _*)
 
-//Scalate settings
+//Scalate settings - this auto-generates the Scala code, not the output!
 libraryDependencies += "org.fusesource.scalate" % "scalate-core" % "1.5.3"
 
 seq(scalateSettings: _*)
@@ -58,6 +58,33 @@ scalateTemplateDirectory in Compile <<= (baseDirectory) { _ / "src/main/resource
 //Generate start scripts
 seq(StartScriptPlugin.startScriptForClassesSettings: _*)
 
-mainClass := Some("ivm.generation.Generator")
+//mainClass in Compile := Some("ivm.generation.Generator")
 
-//Add "sourceGenerators in Compile <+= "
+// define the statements initially evaluated when entering 'console', 'console-quick', or 'console-project'
+initialCommands := """
+  import System.{currentTimeMillis => now}
+  def time[T](f: => T): T = {
+    val start = now
+    try { f } finally { println("Elapsed: " + (now - start)/1000.0 + " s") }
+  }
+"""
+
+// set the initial commands when entering 'console' or 'console-quick', but not 'console-project'
+initialCommands in console := """
+    import ivm._
+    import expressiontree._
+    import optimization._
+"""
+
+sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory) map { (dir, baseDir) =>
+  for {
+    base <- Generator.templates
+    file = dir / (base + ".scala")
+  } yield {
+    if (!file.exists() || (baseDir / "src" / "main" / "resources" / (base + ".ssp") newerThan file))
+      Generator.main(Array(dir.absolutePath))
+    //XXX relies on "stage" having been run
+    //Process(baseDir / "target" / "start", dir.getAbsolutePath()).run.exitCode()
+    file
+  }
+}
