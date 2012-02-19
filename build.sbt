@@ -51,10 +51,10 @@ seq(findbugsSettings : _*)
 
 // define the statements initially evaluated when entering 'console', 'console-quick', or 'console-project'
 initialCommands := """
-  import System.{currentTimeMillis => now}
+  import System.{nanoTime => now}
   def time[T](f: => T): T = {
     val start = now
-    try { f } finally { println("Elapsed: " + (now - start)/1000.0 + " s") }
+    try { f } finally { println("Elapsed: " + (now - start)/(1000.0 * 1000.0) + " ms") }
   }
 """
 
