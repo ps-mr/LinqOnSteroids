@@ -6,17 +6,16 @@ package ivm.expressiontree
   val commaSpace = ", "
   def baseParLoop(arity: Int)(formatter: Int => String, sep: String = commaSpace) = (1 to arity) map formatter mkString sep
   def defParamsLoop(arity: Int)(sep: String)(formatStr: String) = baseParLoop(arity)(formatStr format _, sep)
-  def defParamsLoopComma(arity: Int)(formatStr: String) = defParamsLoop(arity)(commaSpace)(formatStr)
+  def defParamsLoops(arity: Int) =
+    (defParamsLoop(arity) _, (defParamsLoop(arity)(commaSpace)(_)))
 
-  //def defParamsLoopOld(arity: Int)(formatStr: String, prefix: String, sep: String = commaSpace) = baseParLoop(arity)(formatStr format (prefix, _), sep)
   val tpPfx = "A"
   val subNodePfx = "t"
   val argPfx = "arg"
 %>
 #for (arity <- 1 to maxArity)
 <%
-  val paramsLoop = defParamsLoop(arity) _
-  val paramsLoopComma = defParamsLoopComma(arity) _
+  val (paramsLoop, paramsLoopComma) = defParamsLoops(arity)
 
   val tparams = paramsLoopComma(tpPfx + "%d")
   val paramsDecl = paramsLoopComma(subNodePfx + "%d: Exp[" + tpPfx + "%<d]")
@@ -56,9 +55,7 @@ abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDecl})
 #end
 #for (arity <- 1 to maxArity)
 <%
-  //def paramsLoop(formatStr: String, prefix: String = argPfx) = defParamsLoopOld(arity)(formatStr, prefix)
-  val paramsLoop = defParamsLoop(arity) _
-  val paramsLoopComma = paramsLoop(commaSpace)
+  val (paramsLoop, paramsLoopComma) = defParamsLoops(arity)
 
   val tparams = paramsLoopComma(tpPfx + "%d")
   val paramsDecl = paramsLoopComma(argPfx + "%d: Exp[A%<d]")
@@ -78,9 +75,7 @@ case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparam
 #end
 #for (arity <- 2 to maxArity)
 <%
-  //def paramsLoop(formatStr: String, prefix: String = argPfx) = defParamsLoopOld(arity)(formatStr, prefix)
-  val paramsLoop = defParamsLoop(arity) _
-  val paramsLoopComma = paramsLoop(commaSpace)
+  val (paramsLoop, paramsLoopComma) = defParamsLoops(arity)
 
   val tparams = paramsLoopComma(tpPfx + "%d")
   val paramsDecl = paramsLoopComma(argPfx + "%d: Exp[A%<d]")
@@ -115,9 +110,7 @@ trait AutoTupleOps {
   // AUTOMATIC CONVERSIONS - ARITY ${arity} //
   ////////////////////////////////////////////
   <%
-    //def paramsLoop(formatStr: String, prefix: String = argPfx) = defParamsLoopOld(arity)(formatStr, prefix)
-    val paramsLoop = defParamsLoop(arity) _
-    val paramsLoopComma = paramsLoop(commaSpace)
+    val (paramsLoop, paramsLoopComma) = defParamsLoops(arity)
     val tparams = paramsLoopComma(tpPfx + "%d")
     %>
 
