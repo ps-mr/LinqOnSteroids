@@ -67,6 +67,7 @@ trait Arity2OpSymmExp[Arg, +R, Self <: Exp[R]] extends Arity2OpExpTrait[Arg, Arg
 }
 
 trait Arity3OpTrait[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R, Self <: Exp[R]] extends Exp[R] {
+  this: Self =>
   def t1: T1
   def t2: T2
   def t3: T3
