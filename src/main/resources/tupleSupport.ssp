@@ -18,21 +18,27 @@ package ivm.expressiontree
 // SUPPORT FOR OPERATION NODES OF ARITY ${arity} //
 ///////////////////////////////////////////////////
 
-trait Arity${arity}OpTrait[${paramsLoop("%s%s <: Exp[_]", "A")}, +R, Self <: Exp[R]] extends Exp[R] {
+//Passing Self allows to prevent statically the only boilerplate-related copy-n-paste bug in defining tree classes.
+trait Arity${arity}OpTrait[${paramsLoop("%s%s <: Exp[_]", "A")}, +R, Self <: Exp[R]] extends Exp[R] {<%--
+  Ensure that Self is actually correct: --%>
   this: Self =>
   ${defParamsLoop(arity)("def %s%s: A%<s", subNodePfx, "\n  ")}
   override def nodeArity = ${arity}
   def children = Seq(${params})
   def checkedGenericConstructor =
     v => copy(${paramsLoop("v(%2$s - 1).asInstanceOf[A%<s]")})
+<%-- 
+  Ensure that copy returns the correct type. --%>
   def copy(${paramsLoop("%s%s: A%<s")}): Self
 }
 
-abstract class Arity${arity}Op[${paramsLoop("%s%s <: Exp[_]", "A")}, +R, Self <: Exp[R]](${paramsLoop("val %s%s: A%<s")})
-    extends Arity${arity}OpTrait[${tparams}, R, Self] {
+abstract class Arity${arity}Op[${paramsLoop("%s%s <: Exp[_]", "A")}, +R, Self <: Exp[R]](${paramsLoop("val %s%s: A%<s")}) extends Arity${arity}OpTrait[${tparams}, R, Self] {
   this: Self =>
 }
-
+<%--
+Should this inherit from Arity2OpExpTrait or from Arity2Op? Does it matter? I hope not - these classes should
+stay an implementation detail.
+--%>
 abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDecl})
   extends Arity${arity}Op[${paramsLoop("Exp[%s%s]", "A")}, R, Self](${params}) {
   this: Self =>
@@ -54,7 +60,7 @@ abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDecl})
 // SUPPORT FOR CALLs OF ARITY ${arity} //
 /////////////////////////////////////////
 
-case class Call${arity}[${tparams}, Res](val id: Symbol, callfunc: (${tparams}) => Res, ${paramsDecl})
+case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparams}) => Res, ${paramsDecl})
     extends Arity${arity}OpExp[${tparams}, Res, Call${arity}[${tparams}, Res]](${params}) with Call[Res] {
   def copy(${paramsDecl}) = new Call${arity}(id, callfunc, ${params})
   def interpret() = callfunc(${interpretParams})
