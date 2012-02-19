@@ -10,10 +10,11 @@ package ivm.expressiontree
     (defParamsLoop(arity) _, (defParamsLoop(arity)(commaSpace)(_)))
 
   val tpPfx = "A"
+  val argPfx = "t"
 
-  var argPfx = "t"
   var (paramsLoop, paramsLoopComma) = defParamsLoops(0)
 
+  //These refer to mutable variables, hence must be definitions!
   def tparams = paramsLoopComma(tpPfx + "%d")
   def paramsDecl = paramsLoopComma(argPfx + "%d: Exp[" + tpPfx + "%<d]")
   def paramsDeclOverride = paramsLoopComma("override val " + argPfx + "%d: Exp[" + tpPfx + "%<d]")
