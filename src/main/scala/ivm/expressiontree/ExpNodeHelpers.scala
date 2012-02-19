@@ -35,7 +35,7 @@ abstract class UnaryOpExp[T1, R, Self <: Exp[R]](t1: Exp[T1]) extends UnaryOp[Ex
 }
 
 //Passing Self allows to prevent statically the only boilerplate-related copy-n-paste bug in defining tree classes.
-trait BinaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], +R, Self <: Exp[R]] extends Exp[R] {
+trait Arity2OpTrait[T1 <: Exp[_], T2 <: Exp[_], +R, Self <: Exp[R]] extends Exp[R] {
   //Ensure that Self is actually correct:
   this: Self =>
   def t1: T1
@@ -48,21 +48,21 @@ trait BinaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], +R, Self <: Exp[R]] extends Exp[
   def copy(t1: T1, t2: T2): Self
 }
 
-abstract class BinaryOp[T1 <: Exp[_], T2 <: Exp[_], +R, Self <: Exp[R]](val t1: T1, val t2: T2) extends BinaryOpTrait[T1, T2, R, Self] {
+abstract class Arity2Op[T1 <: Exp[_], T2 <: Exp[_], +R, Self <: Exp[R]](val t1: T1, val t2: T2) extends Arity2OpTrait[T1, T2, R, Self] {
   this: Self =>
 }
 
-trait BinaryOpExpTrait[T1, T2, +R, Self <: Exp[R]] extends BinaryOpTrait[Exp[T1], Exp[T2], R, Self] {
+trait Arity2OpExpTrait[T1, T2, +R, Self <: Exp[R]] extends Arity2OpTrait[Exp[T1], Exp[T2], R, Self] {
   this: Self =>
 }
 
-// Should this inherit from BinaryOpExpTrait or from BinaryOp? Does it matter? I hope not - these classes should
+// Should this inherit from Arity2OpExpTrait or from Arity2Op? Does it matter? I hope not - these classes should
 // stay an implementation detail.
-abstract class BinaryOpExp[T1, T2, +R, Self <: Exp[R]](t1: Exp[T1], t2: Exp[T2]) extends BinaryOp[Exp[T1], Exp[T2], R, Self](t1, t2) {
+abstract class Arity2OpExp[T1, T2, +R, Self <: Exp[R]](t1: Exp[T1], t2: Exp[T2]) extends Arity2Op[Exp[T1], Exp[T2], R, Self](t1, t2) {
   this: Self =>
 }
 //Note: descendents of this class are not necessarily supposed to be commutative, just to have type (A, A) => B.
-trait BinaryOpSymmExp[Arg, +R, Self <: Exp[R]] extends BinaryOpExpTrait[Arg, Arg, R, Self] {
+trait Arity2OpSymmExp[Arg, +R, Self <: Exp[R]] extends Arity2OpExpTrait[Arg, Arg, R, Self] {
   this: Self =>
 }
 

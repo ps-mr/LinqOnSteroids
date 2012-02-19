@@ -7,7 +7,7 @@ import actors.threadpool.AtomicInteger
 // encodings of the STLC (simply typed lambda calculus).
 //Having explicit App nodes for application can be useful to represent application instead of computing it,
 //since computing it means inlining and can replicate terms.
-case class App[T, U](f: Exp[T => U], t: Exp[T]) extends BinaryOpExp[T => U, T, U, App[T, U]](f, t) {
+case class App[T, U](f: Exp[T => U], t: Exp[T]) extends Arity2OpExp[T => U, T, U, App[T, U]](f, t) {
   def interpret() = f.interpret()(t.interpret())
   override def copy(f: Exp[T => U], t: Exp[T]) = App(f, t)
 }
@@ -148,7 +148,7 @@ class ScalaThreadLocal[T](v: => T) extends ThreadLocal[T] {
   }
 }
 
-case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends BinaryOpExp[PartialFunction[S,T], S, Boolean, IsDefinedAt[S, T]](f, a) {
+case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends Arity2OpExp[PartialFunction[S,T], S, Boolean, IsDefinedAt[S, T]](f, a) {
   def interpret() = f.interpret().isDefinedAt(a.interpret())
   override def copy(f: Exp[PartialFunction[S, T]], a: Exp[S]) = IsDefinedAt(f, a)
 }

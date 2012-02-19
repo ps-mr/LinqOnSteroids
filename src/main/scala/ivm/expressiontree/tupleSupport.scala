@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-case class LiftTuple2[A, B](a: Exp[A], b: Exp[B]) extends BinaryOpExp[A, B, (A, B), LiftTuple2[A, B]](a, b) {
+case class LiftTuple2[A, B](a: Exp[A], b: Exp[B]) extends Arity2OpExp[A, B, (A, B), LiftTuple2[A, B]](a, b) {
   def copy(a: Exp[A], b: Exp[B]) = LiftTuple2(a, b)
   def interpret() = (a.interpret(), b.interpret())
 }

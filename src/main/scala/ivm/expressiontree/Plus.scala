@@ -5,7 +5,7 @@ import Numeric.Implicits._
 //Root node for all binary, associative and commutative operations. The
 //intuition is that many operations (including optimizations) might apply
 //for all of those - e.g. expression normalization.
-trait CommutativeOp[T, Self <: Exp[T]] extends BinaryOpSymmExp[T, T, Self] {
+trait CommutativeOp[T, Self <: Exp[T]] extends Arity2OpSymmExp[T, T, Self] {
   this: Self =>
 }
 

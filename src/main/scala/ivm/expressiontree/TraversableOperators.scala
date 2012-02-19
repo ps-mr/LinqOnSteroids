@@ -11,27 +11,27 @@ import collection._
 // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
 case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
                    U, That](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
-                            (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[Repr], FuncExp[T, TraversableOnce[U]], That, FlatMap[T, Repr, U, That]](base, f) {
+                            (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, TraversableOnce[U]], That, FlatMap[T, Repr, U, That]](base, f) {
   override def interpret() = base.interpret() flatMap f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]]) = FlatMap[T, Repr, U, That](base, f)
 }
 
 case class MapOp[T, Repr <: FilterMonadic[T, Repr],
                  U, That](base: Exp[Repr], f: FuncExp[T, U])
-                          (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends BinaryOp[Exp[Repr], FuncExp[T, U], That, MapOp[T, Repr, U, That]](base, f) {
+                          (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, U], That, MapOp[T, Repr, U, That]](base, f) {
   override def interpret() = base.interpret() map f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, U]) = MapOp[T, Repr, U, That](base, f)
 }
 
 case class Filter[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr],
-                                                      f: FuncExp[T, Boolean]) extends BinaryOp[Exp[Repr], FuncExp[T, Boolean], Repr, Filter[T, Repr]](base, f) {
+                                                      f: FuncExp[T, Boolean]) extends Arity2Op[Exp[Repr], FuncExp[T, Boolean], Repr, Filter[T, Repr]](base, f) {
   override def interpret() = base.interpret() filter f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = Filter(base, f)
  }
 
 case class WithFilter[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr],
                                                       f: FuncExp[T, Boolean])
-                                                      extends BinaryOp[Exp[Repr], FuncExp[T, Boolean], TraversableView[T, Repr], WithFilter[T, Repr]](base, f) {
+                                                      extends Arity2Op[Exp[Repr], FuncExp[T, Boolean], TraversableView[T, Repr], WithFilter[T, Repr]](base, f) {
   override def interpret() = base.interpret().view filter f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = WithFilter[T, Repr](base, f)
 }
@@ -58,12 +58,12 @@ case class ForceIfPossible[T, Repr <: Traversable[T] with TraversableLike[T, Rep
 }
 
 case class Union[T, Repr <: TraversableLike[T, Repr], That](base: Exp[Repr], that: Exp[Traversable[T]])
-                                   (implicit protected[this] val c: CanBuildFrom[Repr, T, That]) extends BinaryOpExp[Repr, Traversable[T], That, Union[T, Repr, That]](base, that) {
+                                   (implicit protected[this] val c: CanBuildFrom[Repr, T, That]) extends Arity2OpExp[Repr, Traversable[T], That, Union[T, Repr, That]](base, that) {
   override def interpret() = base.interpret() ++ that.interpret()
   override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = Union[T, Repr, That](base, that)
 }
 
-case class Diff[T, Repr <: collection.Set[T] with SetLike[T, Repr]](base: Exp[Repr], that: Exp[GenTraversableOnce[T]]) extends BinaryOpExp[Repr, GenTraversableOnce[T], Repr, Diff[T, Repr]](base, that) {
+case class Diff[T, Repr <: collection.Set[T] with SetLike[T, Repr]](base: Exp[Repr], that: Exp[GenTraversableOnce[T]]) extends Arity2OpExp[Repr, GenTraversableOnce[T], Repr, Diff[T, Repr]](base, that) {
   override def interpret() = base.interpret() -- that.interpret()
   override def copy(base: Exp[Repr], that: Exp[GenTraversableOnce[T]]) = Diff[T, Repr](base, that)
 }
@@ -85,7 +85,7 @@ object TypeFilter {
 
 //Just like for IfInstanceOf, equality comparison must consider also classS. Therefore, classS must be a class parameter.
 case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], classS: Class[_])
-                                  extends BinaryOp[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]], TypeFilter[T, C, D, S]](base, f) {
+                                  extends Arity2Op[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]], TypeFilter[T, C, D, S]](base, f) {
   override def interpret() = {
     val b: C[D[T]] = base.interpret()
     b.filter(x => classS.isInstance(f.interpret()(x))).asInstanceOf[C[D[S]]]
@@ -98,7 +98,7 @@ case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this 
 case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](base: Exp[Repr],
                                                                                f: Exp[D[T] => T])(implicit cS: ClassManifest[S],
                                                                                                   cb: CanBuildFrom[Repr, S, That])
-  extends BinaryOp[Exp[Repr], Exp[D[T] => T], That, TypeFilter2[T, D, Repr, S, That]](base, f)
+  extends Arity2Op[Exp[Repr], Exp[D[T] => T], That, TypeFilter2[T, D, Repr, S, That]](base, f)
 {
   private[this] val classS = IfInstanceOf.getErasure(cS)
   def interpret() = {

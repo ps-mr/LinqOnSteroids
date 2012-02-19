@@ -15,7 +15,7 @@ object Fix {
 
 //Exploration into the design space.
 case class Fix[T](col: Exp[Traversable[T]], f: FuncExp[Traversable[T], Traversable[T]])
-  extends BinaryOp[Exp[Traversable[T]], FuncExp[Traversable[T], Traversable[T]], Traversable[T], Fix[T]](col, f)
+  extends Arity2Op[Exp[Traversable[T]], FuncExp[Traversable[T], Traversable[T]], Traversable[T], Fix[T]](col, f)
 {
   def copy(col: Exp[Traversable[T]], f: FuncExp[Traversable[T], Traversable[T]]) = Fix(col, f)
   override def interpret() = {

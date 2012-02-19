@@ -38,7 +38,7 @@ trait TraversableOps {
       newFlatMap(this.t, FuncExp(f))
   }
 
-  case class GroupBy[T, Repr <: TraversableLike[T, Repr], K](base: Exp[Repr], f: Exp[T => K]) extends BinaryOpExp[Repr,
+  case class GroupBy[T, Repr <: TraversableLike[T, Repr], K](base: Exp[Repr], f: Exp[T => K]) extends Arity2OpExp[Repr,
     T => K, Map[K, Repr], GroupBy[T, Repr, K]](base, f) {
     override def interpret() = base.interpret() groupBy f.interpret()
     override def copy(base: Exp[Repr], f: Exp[T => K]) = GroupBy(base, f)
@@ -278,7 +278,7 @@ trait CollectionSetOps {
   //and get the right type.
   import collection.{Set => GenSet}
 
-  case class Contains[T](set: Exp[GenSet[T]], v: Exp[T]) extends BinaryOpExp[GenSet[T], T, Boolean, Contains[T]](set, v) {
+  case class Contains[T](set: Exp[GenSet[T]], v: Exp[T]) extends Arity2OpExp[GenSet[T], T, Boolean, Contains[T]](set, v) {
     def interpret() = set.interpret().contains(v.interpret())
     def copy(set: Exp[GenSet[T]], v: Exp[T]) = Contains(set: Exp[GenSet[T]], v: Exp[T])
   }
@@ -310,7 +310,7 @@ trait SetOps extends CollectionSetOps {
 
 trait TypeFilterOps {
   this: TupleOps with FunctionOps with TraversableOps =>
-  case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends BinaryOpExp[C[D[T]], D[T] => T, TypeMapping[C, D],
+  case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends Arity2OpExp[C[D[T]], D[T] => T, TypeMapping[C, D],
     GroupByType[T, C, D]](base, f) {
     override def interpret() = {
       val x: C[D[T]] = base.interpret()

@@ -23,7 +23,7 @@ trait FoldOperators {
   }
 
   //Allow reusing an IncBinOp to build expression nodes. Not sure yet how useful this is...
-  case class ExpBinOp[Out, In](a: Exp[Out], b: Exp[In], op: BinOp[Out, In]) extends BinaryOpExp[Out, In, Out, ExpBinOp[Out, In]](a, b) {
+  case class ExpBinOp[Out, In](a: Exp[Out], b: Exp[In], op: BinOp[Out, In]) extends Arity2OpExp[Out, In, Out, ExpBinOp[Out, In]](a, b) {
     def interpret() = op(a.interpret(), b.interpret())
     def copy(a: Exp[Out], b: Exp[In]) = ExpBinOp(a, b, op)
   }
@@ -71,7 +71,7 @@ trait FoldOperators {
 
   //Here I accept a primitive function because I believe the overhead for expression trees would be too significant, especially with all the wrapping and unwrapping done by convertBinFunInternal.
   //However, normalization-by-evaluation and a two-argument version of FuncExpInt could come to the rescue!
-  case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: T) extends UnaryOpExp[Traversable[T], T, TreeFold[T]](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T, Exp[T]] { //BinaryOpExp[Traversable[T], (T, T) => T, T](coll, f) {
+  case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: T) extends UnaryOpExp[Traversable[T], T, TreeFold[T]](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T, Exp[T]] { //Arity2OpExp[Traversable[T], (T, T) => T, T](coll, f) {
     private def combineIfAvailable(arr: Buffer[T], i: Int) =
       if (i + 1 < arr.size)
         f(arr(i), arr(i + 1))
