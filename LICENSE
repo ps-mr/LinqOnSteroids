@@ -75,3 +75,7 @@ license information:
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
+
+project/Generator.scala is derived from ScalaQuery, released under a GPLv2
+license; however, the derived code was essentially just a reference for the use
+of the Scalate API. OTOH, we will take more code from there.

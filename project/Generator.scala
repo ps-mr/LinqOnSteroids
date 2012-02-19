@@ -3,6 +3,9 @@ import org.fusesource.scalate._
 import sbt._
 
 /**
+ * Heavily modified from:
+ * http://code.google.com/p/scala-integrated-query/source/browse/trunk/generator-src/generator.scala
+ * released under a GPLv2 license.
  * User: pgiarrusso
  * Date: 19/2/2012
  */
