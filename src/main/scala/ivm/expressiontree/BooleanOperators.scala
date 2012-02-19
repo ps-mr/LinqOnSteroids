@@ -19,7 +19,7 @@ case class Not(t1: Exp[Boolean]) extends UnaryOpExpTrait[Boolean, Boolean, Not] 
   def interpret() = !t1.interpret()
 }
 
-case class IfThenElse[T](cond: Exp[Boolean], thenBody: Exp[T], elseBody: Exp[T]) extends TernaryOpExp[Boolean, T, T, T](cond, thenBody, elseBody) {
+case class IfThenElse[T](cond: Exp[Boolean], thenBody: Exp[T], elseBody: Exp[T]) extends TernaryOpExp[Boolean, T, T, T, IfThenElse[T]](cond, thenBody, elseBody) {
   def interpret() = if (cond.interpret()) thenBody.interpret() else elseBody.interpret()
   def copy(cond: Exp[Boolean], thenBody: Exp[T], elseBody: Exp[T]) = IfThenElse(cond, thenBody, elseBody)
 }
