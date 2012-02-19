@@ -74,18 +74,23 @@ trait Arity3OpTrait[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R, Self <: Exp[R]
   def children = Seq(t1, t2, t3)
   def checkedGenericConstructor =
     v => copy(v(0).asInstanceOf[T1], v(1).asInstanceOf[T2], v(2).asInstanceOf[T3])
-  def copy(t1: T1, t2: T2, t3: T3): Exp[R]
+  def copy(t1: T1, t2: T2, t3: T3): Self
 }
 
 abstract class Arity3Op[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R, Self <: Exp[R]](val t1: T1, val t2: T2, val t3: T3)
-  extends Arity3OpTrait[T1, T2, T3, R, Self]
+  extends Arity3OpTrait[T1, T2, T3, R, Self] {
+  this: Self =>
+}
 
 abstract class Arity3OpExp[T1, T2, T3, +R, Self <: Exp[R]](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3])
-  extends Arity3Op[Exp[T1], Exp[T2], Exp[T3], R, Self](t1, t2, t3)
+  extends Arity3Op[Exp[T1], Exp[T2], Exp[T3], R, Self](t1, t2, t3) {
+  this: Self =>
+}
 
 //For Call4
 abstract class Arity4Op[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], +R, Self <: Exp[R]](t1: T1, t2: T2, t3: T3, t4: T4)
                                                                                         extends Exp[R] {
+  this: Self =>
   override def nodeArity = 4
   def children = Seq(t1, t2, t3, t4)
   def checkedGenericConstructor =
@@ -94,15 +99,18 @@ abstract class Arity4Op[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], 
       v(1).asInstanceOf[T2],
       v(2).asInstanceOf[T3],
       v(3).asInstanceOf[T4])
-  def copy(t1: T1, t2: T2, t3: T3, t4: T4): Exp[R]
+  def copy(t1: T1, t2: T2, t3: T3, t4: T4): Self
 }
 
 abstract class Arity4OpExp[T1, T2, T3, T4, +R, Self <: Exp[R]](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3], t4: Exp[T4])
-  extends Arity4Op[Exp[T1], Exp[T2], Exp[T3], Exp[T4], R, Self](t1, t2, t3, t4)
+  extends Arity4Op[Exp[T1], Exp[T2], Exp[T3], Exp[T4], R, Self](t1, t2, t3, t4) {
+  this: Self =>
+}
 
 //For Join and Call5
 abstract class Arity5Op[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], T5 <: Exp[_], +R, Self <: Exp[R]](t1: T1, t2: T2, t3: T3, t4: T4, t5: T5)
                                                                                                   extends Exp[R] {
+  this: Self =>
   override def nodeArity = 5
   def children = Seq(t1, t2, t3, t4, t5)
   def checkedGenericConstructor =
@@ -112,8 +120,10 @@ abstract class Arity5Op[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], 
       v(2).asInstanceOf[T3],
       v(3).asInstanceOf[T4],
       v(4).asInstanceOf[T5])
-  def copy(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5): Exp[R]
+  def copy(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5): Self
 }
 abstract class Arity5OpExp[T1, T2, T3, T4, T5, +R, Self <: Exp[R]](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3], t4: Exp[T4], t5: Exp[T5])
-  extends Arity5Op[Exp[T1], Exp[T2], Exp[T3], Exp[T4], Exp[T5], R, Self](t1, t2, t3, t4, t5)
+  extends Arity5Op[Exp[T1], Exp[T2], Exp[T3], Exp[T4], Exp[T5], R, Self](t1, t2, t3, t4, t5) {
+  this: Self =>
+}
 
