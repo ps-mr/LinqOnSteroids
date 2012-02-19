@@ -28,10 +28,10 @@ package ivm.expressiontree
 ///////////////////////////////////////////////////
 
 //Passing Self allows to prevent statically the only boilerplate-related copy-n-paste bug in defining tree classes.
-trait Arity${arity}OpTrait[${paramsLoopComma("A%s <: Exp[_]")}, +R, Self <: Exp[R]] extends Exp[R] {<%--
+trait Arity${arity}OpTrait[${paramsLoopComma("A%d <: Exp[_]")}, +R, Self <: Exp[R]] extends Exp[R] {<%--
   //Ensure that Self is actually correct: --%>
   this: Self =>
-  ${paramsLoop("\n  ")("def " + subNodePfx + "%s: A%<s")}
+  ${paramsLoop("\n  ")("def " + subNodePfx + "%d: A%<d")}
   override def nodeArity = ${arity}
   def children = Seq(${params})
   def checkedGenericConstructor =
@@ -49,7 +49,7 @@ Should this inherit from Arity2OpExpTrait or from Arity2Op? Does it matter? I ho
 stay an implementation detail.
 --%>
 abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDecl})
-  extends Arity${arity}Op[${paramsLoopComma("Exp[" + tpPfx + "%s]")}, R, Self](${params}) {
+  extends Arity${arity}Op[${paramsLoopComma("Exp[" + tpPfx + "%d]")}, R, Self](${params}) {
   this: Self =>
 }
 
@@ -60,10 +60,10 @@ abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDecl})
   val paramsLoop = defParamsLoop(arity) _
   val paramsLoopComma = paramsLoop(commaSpace)
 
-  val tparams = paramsLoopComma(tpPfx + "%s")
-  val paramsDecl = paramsLoopComma(argPfx + "%s: Exp[A%<s]")
-  val params = paramsLoopComma(argPfx + "%s")
-  val interpretParams = paramsLoopComma(argPfx + "%s.interpret()")
+  val tparams = paramsLoopComma(tpPfx + "%d")
+  val paramsDecl = paramsLoopComma(argPfx + "%d: Exp[A%<d]")
+  val params = paramsLoopComma(argPfx + "%d")
+  val interpretParams = paramsLoopComma(argPfx + "%d.interpret()")
   %>
 /////////////////////////////////////////
 // SUPPORT FOR CALLs OF ARITY ${arity} //
@@ -82,10 +82,10 @@ case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparam
   val paramsLoop = defParamsLoop(arity) _
   val paramsLoopComma = paramsLoop(commaSpace)
 
-  val tparams = paramsLoopComma(tpPfx + "%s")
-  val paramsDecl = paramsLoopComma(argPfx + "%s: Exp[A%<s]")
-  val params = paramsLoopComma(argPfx + "%s")
-  val interpretParams = paramsLoopComma(argPfx + "%s.interpret()")
+  val tparams = paramsLoopComma(tpPfx + "%d")
+  val paramsDecl = paramsLoopComma(argPfx + "%d: Exp[A%<d]")
+  val params = paramsLoopComma(argPfx + "%d")
+  val interpretParams = paramsLoopComma(argPfx + "%d.interpret()")
   %>
 //////////////////////////////////////////
 // SUPPORT FOR TUPLES OF ARITY ${arity} //
@@ -118,10 +118,10 @@ trait AutoTupleOps {
     //def paramsLoop(formatStr: String, prefix: String = argPfx) = defParamsLoopOld(arity)(formatStr, prefix)
     val paramsLoop = defParamsLoop(arity) _
     val paramsLoopComma = paramsLoop(commaSpace)
-    val tparams = paramsLoopComma(tpPfx + "%s")
+    val tparams = paramsLoopComma(tpPfx + "%d")
     %>
 
-  implicit def tuple${arity}ToTuple${arity}Exp[${tparams}](tuple: (${paramsLoopComma("Exp[" + tpPfx + "%s]")})): LiftTuple${arity}[${tparams}] =
+  implicit def tuple${arity}ToTuple${arity}Exp[${tparams}](tuple: (${paramsLoopComma("Exp[" + tpPfx + "%d]")})): LiftTuple${arity}[${tparams}] =
     LiftTuple${arity}[${tparams}](${paramsLoopComma("tuple._%d")})
 
   class Tuple${arity}Ops[${tparams}](p: Exp[(${tparams})]) {
