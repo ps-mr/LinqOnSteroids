@@ -2,8 +2,6 @@ import scalariform.formatter.preferences._
 import de.johoop.findbugs4sbt.FindBugs._
 //import com.typesafe.startscript.StartScriptPlugin
 
-//import com.mojolly.scalate.ScalatePlugin._
-
 name := "LinqOnSteroids"
 
 version := "0.1"
@@ -78,3 +76,9 @@ sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, scalaV
     file
   }
 }
+
+//This code is currently not needed.
+////Generate start scripts
+//seq(StartScriptPlugin.startScriptForClassesSettings: _*)
+
+//mainClass in Compile := Some("ivm.generation.Generator")
