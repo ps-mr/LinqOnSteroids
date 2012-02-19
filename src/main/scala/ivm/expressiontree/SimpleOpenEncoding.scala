@@ -88,34 +88,8 @@ trait TupleOps extends AutoTupleOps {
 
   //To "unlift" a pair, here's my first solution:
   /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Tuple2Proj1(pair), Tuple2Proj2(pair))
-  /*
-  //Unfortunately this conversion is not redundant; we may want to have a special node to support this, or to
-  //remove LiftTuple2 constructors applied on top of other pair constructors.
-  implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): LiftTuple2[A, B] =
-    (LiftTuple2[A, B] _).tupled(unliftPair(pair))
-  */
-
-  /*
-  //Here's the second one, adapted from Klaus code. It represents but does not build a tuple (once one adds lazy vals).
-  //However, one cannot do pattern matching against the result, not with the existing pattern.
-  //Lesson: Scala does not allow to define additional extractors for a given pattern type, and syntax shortcuts such
-  //as tuples or => are simply built-in in the language.
-  class PairOps[A, B](p: Exp[(A, B)]) {
-    def _1 = Tuple2Proj1(p)
-    def _2 = Tuple2Proj2(p)
-  }
-
-  implicit def toPairOps[A, B](e: Exp[(A, B)]): PairOps[A, B] = new PairOps(e)
-
-  implicit def tripleToTripleExp[A, B, C](triple: (Exp[A], Exp[B], Exp[C])): Exp[(A, B, C)] = onExp(triple._1, triple._2, triple._3)('Tuple3, Tuple3.apply)
-
-  class TripleOps[A, B, C](e: Exp[(A, B, C)]) {
-    def _1 = onExp(e)('_1, _._1)
-    def _2 = onExp(e)('_2, _._2)
-    def _3 = onExp(e)('_3, _._3)
-  }
-  implicit def toTripleOps[A, B, C](e: Exp[(A, B, C)]) = new TripleOps(e)
-  */
+  //
+  //The second one is just pimpl-my-library.
 }
 
 trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
