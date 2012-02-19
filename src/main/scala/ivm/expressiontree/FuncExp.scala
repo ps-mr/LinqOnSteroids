@@ -116,7 +116,7 @@ object FuncExpInt {
 }
 
 class FuncExpInt2[S1, S2, T](val foasBody: Exp[T], v1: TypedVar[S1], v2: TypedVar[S2])
-  extends FuncExp[(S1, S2), T](p => foasBody.substSubTerm(v1, Proj1(p)).substSubTerm(v2, Proj2(p)))
+  extends FuncExp[(S1, S2), T](p => foasBody.substSubTerm(v1, Tuple2Proj1(p)).substSubTerm(v2, Tuple2Proj2(p)))
 {
   override def arrowString = "=i=>"
   override def interpret() = {
@@ -173,7 +173,7 @@ object FuncExp {
   def makePartialFun[S, T](e: Exp[Option[T]], v: TypedVar[S]): PartialFuncExp[S, T] = PartialFuncExp(closeOver(e, v))
   def makepairfun[S1, S2, T](e: Exp[T], v1: TypedVar[/*S1*/_], v2: TypedVar[/*S2*/_]): FuncExp[(S1, S2), T] = {
     //This implementation is correct but slow!
-    //FuncExp(p => e.substSubTerm(v1, Proj1(p)).substSubTerm(v2, Proj2(p)))
+    //FuncExp(p => e.substSubTerm(v1, Tuple2Proj1(p)).substSubTerm(v2, Tuple2Proj2(p)))
     //This implementation is correct but limits further optimizations since it uses the opaque onExp
     /*FuncExp(arg =>
       App(

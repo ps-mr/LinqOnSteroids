@@ -84,15 +84,15 @@ trait FunctionOps {
 
 trait TupleOps {
   this: FunctionOps =>
-  implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): Pair[A, B] = Pair[A, B](pair._1, pair._2)
+  implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): LiftTuple2[A, B] = LiftTuple2[A, B](pair._1, pair._2)
 
   //To "unlift" a pair, here's my first solution:
-  /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Proj1(pair), Proj2(pair))
+  /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Tuple2Proj1(pair), Tuple2Proj2(pair))
   /*
   //Unfortunately this conversion is not redundant; we may want to have a special node to support this, or to
-  //remove Pair constructors applied on top of other pair constructors.
-  implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): Pair[A, B] =
-    (Pair[A, B] _).tupled(unliftPair(pair))
+  //remove LiftTuple2 constructors applied on top of other pair constructors.
+  implicit def expPairToPairExp[A, B](pair: Exp[(A, B)]): LiftTuple2[A, B] =
+    (LiftTuple2[A, B] _).tupled(unliftPair(pair))
   */
 
   //Here's the second one, adapted from Klaus code. It represents but does not build a tuple (once one adds lazy vals).
@@ -100,8 +100,8 @@ trait TupleOps {
   //Lesson: Scala does not allow to define additional extractors for a given pattern type, and syntax shortcuts such
   //as tuples or => are simply built-in in the language.
   class PairOps[A, B](p: Exp[(A, B)]) {
-    lazy val _1 = Proj1(p)
-    lazy val _2 = Proj2(p)
+    def _1 = Tuple2Proj1(p)
+    def _2 = Tuple2Proj2(p)
   }
 
   implicit def toPairOps[A, B](e: Exp[(A, B)]): PairOps[A, B] = new PairOps(e)
