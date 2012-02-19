@@ -51,7 +51,7 @@ trait TraversableOps {
                                                                                innerKeySelector: FuncExp[S, TKey],
                                                                                resultSelector: FuncExp[(T, S), TResult])
                                                                               (implicit cbf: CanBuildFrom[Repr, TResult, That]) extends
-  QuinaryOp[Exp[Repr],
+  Arity5Op[Exp[Repr],
     Exp[Traversable[S]],
     FuncExp[T, TKey], FuncExp[S, TKey], FuncExp[(T, S), TResult],
     That](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
