@@ -2,7 +2,7 @@ package ivm.expressiontree
 
 <%
   escapeMarkup = false
-  val maxArity = 10
+  val maxArity = 5
   val commaSpace = ", "
   def baseParLoop(arity: Int)(formatter: Int => String, sep: String = commaSpace) = (1 to arity) map formatter mkString sep
   def defParamsLoop(arity: Int)(sep: String)(formatStr: String) = baseParLoop(arity)(formatStr format _, sep)
