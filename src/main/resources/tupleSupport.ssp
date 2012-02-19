@@ -24,7 +24,7 @@ trait Arity${arity}OpTrait[${paramsLoop("%s%s <: Exp[_]", "A")}, +R, Self <: Exp
   override def nodeArity = ${arity}
   def children = Seq(${params})
   def checkedGenericConstructor =
-    v => copy(${paramsLoop("v(%2$s).asInstanceOf[A%<s]")})
+    v => copy(${paramsLoop("v(%2$s - 1).asInstanceOf[A%<s]")})
   def copy(${paramsLoop("%s%s: A%<s")}): Self
 }
 
