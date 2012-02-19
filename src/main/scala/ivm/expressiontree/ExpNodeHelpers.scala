@@ -66,7 +66,7 @@ trait Arity2OpSymmExp[Arg, +R, Self <: Exp[R]] extends Arity2OpExpTrait[Arg, Arg
   this: Self =>
 }
 
-trait TernaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R, Self <: Exp[R]] extends Exp[R] {
+trait Arity3OpTrait[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R, Self <: Exp[R]] extends Exp[R] {
   def t1: T1
   def t2: T2
   def t3: T3
@@ -77,11 +77,11 @@ trait TernaryOpTrait[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R, Self <: Exp[R
   def copy(t1: T1, t2: T2, t3: T3): Exp[R]
 }
 
-abstract class TernaryOp[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R, Self <: Exp[R]](val t1: T1, val t2: T2, val t3: T3)
-  extends TernaryOpTrait[T1, T2, T3, R, Self]
+abstract class Arity3Op[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], +R, Self <: Exp[R]](val t1: T1, val t2: T2, val t3: T3)
+  extends Arity3OpTrait[T1, T2, T3, R, Self]
 
-abstract class TernaryOpExp[T1, T2, T3, +R, Self <: Exp[R]](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3])
-  extends TernaryOp[Exp[T1], Exp[T2], Exp[T3], R, Self](t1, t2, t3)
+abstract class Arity3OpExp[T1, T2, T3, +R, Self <: Exp[R]](t1: Exp[T1], t2: Exp[T2], t3: Exp[T3])
+  extends Arity3Op[Exp[T1], Exp[T2], Exp[T3], R, Self](t1, t2, t3)
 
 //For Call4
 abstract class QuaternaryOp[T1 <: Exp[_], T2 <: Exp[_], T3 <: Exp[_], T4 <: Exp[_], +R](t1: T1, t2: T2, t3: T3, t4: T4)
