@@ -2,10 +2,46 @@ package ivm.expressiontree
 
 <%
   escapeMarkup = false
-  val maxArity = 5
-  val argPfx = "arg"
-  def defParamsLoop(arity: Int)(formatStr: String, prefix: String = argPfx, sep: String = ", ") = (1 to arity) map (formatStr format (prefix, _)) mkString sep
+  val maxArity = 10
+  def defParamsLoop(arity: Int)(formatStr: String, prefix: String, sep: String = ", ") = (1 to arity) map (formatStr format (prefix, _)) mkString sep
 %>
+#for (arity <- 2 to maxArity)
+<%
+  val subNodePfx = "t"
+  def paramsLoop(formatStr: String, prefix: String = subNodePfx) = defParamsLoop(arity)(formatStr, prefix)
+  val tparams = paramsLoop("%s%s", "A")
+  val paramsDecl = paramsLoop("%s%s: Exp[A%<s]")
+  val params = paramsLoop("%s%s")
+  val interpretParams = paramsLoop("%s%s.interpret()")
+  %>
+///////////////////////////////////////////////////
+// SUPPORT FOR OPERATION NODES OF ARITY ${arity} //
+///////////////////////////////////////////////////
+
+trait Arity${arity}OpTrait[${paramsLoop("%s%s <: Exp[_]", "A")}, +R, Self <: Exp[R]] extends Exp[R] {
+  this: Self =>
+  ${defParamsLoop(arity)("def %s%s: A%<s", subNodePfx, "\n  ")}
+  override def nodeArity = ${arity}
+  def children = Seq(${params})
+  def checkedGenericConstructor =
+    v => copy(${paramsLoop("v(%2$s).asInstanceOf[A%<s]")})
+  def copy(${paramsLoop("%s%s: A%<s")}): Self
+}
+
+abstract class Arity${arity}Op[${paramsLoop("%s%s <: Exp[_]", "A")}, +R, Self <: Exp[R]](${paramsLoop("val %s%s: A%<s")})
+    extends Arity${arity}OpTrait[${tparams}, R, Self] {
+  this: Self =>
+}
+
+abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDecl})
+  extends Arity${arity}Op[${paramsLoop("Exp[%s%s]", "A")}, R, Self](${params}) {
+  this: Self =>
+}
+
+#end
+<%
+  val argPfx = "arg"
+  %>
 #for (arity <- 2 to maxArity)
 <%
   def paramsLoop(formatStr: String, prefix: String = argPfx) = defParamsLoop(arity)(formatStr, prefix)
@@ -14,6 +50,16 @@ package ivm.expressiontree
   val params = paramsLoop("%s%s")
   val interpretParams = paramsLoop("%s%s.interpret()")
   %>
+/////////////////////////////////////////
+// SUPPORT FOR CALLs OF ARITY ${arity} //
+/////////////////////////////////////////
+
+case class Call${arity}[${tparams}, Res](val id: Symbol, callfunc: (${tparams}) => Res, ${paramsDecl})
+    extends Arity${arity}OpExp[${tparams}, Res, Call${arity}[${tparams}, Res]](${params}) with Call[Res] {
+  def copy(${paramsDecl}) = new Call${arity}(id, callfunc, ${params})
+  def interpret() = callfunc(${interpretParams})
+}
+
 //////////////////////////////////////////
 // SUPPORT FOR TUPLES OF ARITY ${arity} //
 //////////////////////////////////////////
@@ -31,10 +77,16 @@ case class Tuple${arity}Proj${i}[${tparams}](p: Exp[(${tparams})]) extends Unary
 #end
 
 #end
+////////////////////////////////////////////////
+// SUPPORT FOR TUPLES - AUTOMATIC CONVERSIONS //
+////////////////////////////////////////////////
 
 trait AutoTupleOps {
   this: FunctionOps =>
   #for (arity <- 2 to maxArity)
+  ////////////////////////////////////////////
+  // AUTOMATIC CONVERSIONS - ARITY ${arity} //
+  ////////////////////////////////////////////
   <%
     def paramsLoop(formatStr: String, prefix: String = argPfx) = defParamsLoop(arity)(formatStr, prefix)
     val tparams = paramsLoop("%s%s", "A")
@@ -51,50 +103,6 @@ trait AutoTupleOps {
   #end
 }
 
-#for (arity <- maxArity + 1 to 10)
-<%
-  val subNodePfx = "t"
-  def paramsLoop(formatStr: String, prefix: String = subNodePfx) = defParamsLoop(arity)(formatStr, prefix)
-  val tparams = paramsLoop("%s%s", "A")
-  val paramsDecl = paramsLoop("%s%s: Exp[A%<s]")
-  val params = paramsLoop("%s%s")
-  val interpretParams = paramsLoop("%s%s.interpret()")
-  %>
-//////////////////////////////////////////
-// SUPPORT FOR OPERATION NODES OF ARITY ${arity} //
-//////////////////////////////////////////
-
-trait Arity${arity}OpTrait[${paramsLoop("%s%s <: Exp[_]", "A")}, +R, Self <: Exp[R]] extends Exp[R] {
-  this: Self =>
-  ${defParamsLoop(arity)("def %s%s: A%<s", subNodePfx, "\n  ")}
-  override def nodeArity = ${arity}
-  def children = Seq(${params})
-  def checkedGenericConstructor =
-    v => copy(${paramsLoop("v(%2$s).asInstanceOf[A%<s]")})
-  def copy(${paramsLoop("%s%s: A%<s")}): Self
-}
-
-abstract class Arity${arity}Op[${paramsLoop("%s%s <: Exp[_]", "A")}, +R, Self <: Exp[R]](${paramsLoop("%s%s: A%<s")})
-    extends Arity${arity}OpTrait[${tparams}, R, Self] {
-  this: Self =>
-}
-
-abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDecl})
-  extends Arity${arity}Op[${paramsLoop("Exp[%s%s]", "A")}, R, Self](${params}) {
-  this: Self =>
-}
-
-//////////////////////////////////////////
-// SUPPORT FOR CALLs OF ARITY ${arity} //
-//////////////////////////////////////////
-
-case class Call${arity}[${tparams}, Res](val id: Symbol, callfunc: (${tparams}) => Res, ${paramsDecl})
-    extends Arity${arity}OpExp[${tparams}, Res, Call${arity}[${tparams}, Res]](${params}) with Call[Res] {
-  def copy(${paramsDecl}) = new Call${arity}(id, callfunc, ${params})
-  def interpret() = callfunc(${interpretParams})
-}
-
-#end
 
 
   <%--
