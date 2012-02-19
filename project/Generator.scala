@@ -8,9 +8,30 @@ import sbt._
  */
 
 object Generator {
+  val templates = Seq("tupleSupport")
+}
+
+class Generator(scalaVersion: String) {
+  import Generator._
+
   val engine = new TemplateEngine()
+  // XXX: workaround to big bug, as discussed here:
+  // http://groups.google.com/group/scalate/browse_frm/thread/b17acb9a345badbc/3a9cbc742edf6cda?#3a9cbc742edf6cda
+  //In practice, it is quite robust wrt. non-invasive changes to SBT.
   engine.combinedClassPath = true
-  engine.classpath = (new File(System.getProperty("user.home")) / ".ivy2" / "cache" / "org.scala-lang" / "scala-library" / "jars" / "scala-library-2.9.1.jar").absolutePath
+  engine.classpath = (new File(System.getProperty("user.home")) / ".ivy2" / "cache" / "org.scala-lang" / "scala-library" / "jars" / ("scala-library-" + scalaVersion + ".jar")).absolutePath
+
+  //ScalaInstance(scalaVersion)
+  //ScalaInstance()
+  /*
+  {
+    val state: State = State.
+    val extracted: Extracted = Project.extract(state)
+    //val scope: Scope
+    val scala-version: Option[String] = Keys.scalaVersion in extracted.currentRef get extracted.structure.data
+  }
+  //ScalaInstance()
+  */
 
   //This generates (once and for all) _source_ files.
   def renderOnce[A](name: String, inFileName: String = "", outFileName: String = "", args: Map[String, A] = Map[String, A]()) {
@@ -35,15 +56,18 @@ object Generator {
     outStream.close()
   }
 
-  val templates = Seq("tupleSupport")
-  def main(args: Array[String]) {
+  def generate(outPath: String) {
     try {
       //render("tupleSupport", "src/main/scala/0_generated/")
       for (t <- templates)
-        render(args(0), t)
+        render(outPath, t)
       //new scalate.$_scalate_$tupleSupport_ssp()
     } finally {
       //System.exit(0) //Ensure that the process actually exits - scalate has a tendency to not do so.
     }
+  }
+
+  def main(args: Array[String]) {
+    generate(args(0))
   }
 }

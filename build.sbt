@@ -1,7 +1,8 @@
 import scalariform.formatter.preferences._
 import de.johoop.findbugs4sbt.FindBugs._
-import com.mojolly.scalate.ScalatePlugin._
-import com.typesafe.startscript.StartScriptPlugin
+//import com.typesafe.startscript.StartScriptPlugin
+
+//import com.mojolly.scalate.ScalatePlugin._
 
 name := "LinqOnSteroids"
 
@@ -48,18 +49,6 @@ ScalariformKeys.preferences := FormattingPreferences().
 //Add support for FindBugs
 seq(findbugsSettings : _*)
 
-//Scalate settings - this auto-generates the Scala code, not the output!
-libraryDependencies += "org.fusesource.scalate" % "scalate-core" % "1.5.3"
-
-seq(scalateSettings: _*)
-
-scalateTemplateDirectory in Compile <<= (baseDirectory) { _ / "src/main/resources" }
-
-//Generate start scripts
-seq(StartScriptPlugin.startScriptForClassesSettings: _*)
-
-//mainClass in Compile := Some("ivm.generation.Generator")
-
 // define the statements initially evaluated when entering 'console', 'console-quick', or 'console-project'
 initialCommands := """
   import System.{currentTimeMillis => now}
@@ -76,13 +65,14 @@ initialCommands in console := """
     import optimization._
 """
 
-sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory) map { (dir, baseDir) =>
+sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, scalaVersion) map { (dir, baseDir, scalaVer) =>
+  val gen = new Generator(scalaVer)
   for {
     base <- Generator.templates
     file = dir / (base + ".scala")
   } yield {
     if (!file.exists() || (baseDir / "src" / "main" / "resources" / (base + ".ssp") newerThan file))
-      Generator.main(Array(dir.absolutePath))
+      gen.generate(dir.absolutePath)
     //XXX relies on "stage" having been run
     //Process(baseDir / "target" / "start", dir.getAbsolutePath()).run.exitCode()
     file
