@@ -24,18 +24,6 @@ class Generator(scalaVersion: String) {
   engine.combinedClassPath = true
   engine.classpath = (new File(System.getProperty("user.home")) / ".ivy2" / "cache" / "org.scala-lang" / "scala-library" / "jars" / ("scala-library-" + scalaVersion + ".jar")).absolutePath
 
-  //ScalaInstance(scalaVersion)
-  //ScalaInstance()
-  /*
-  {
-    val state: State = State.
-    val extracted: Extracted = Project.extract(state)
-    //val scope: Scope
-    val scala-version: Option[String] = Keys.scalaVersion in extracted.currentRef get extracted.structure.data
-  }
-  //ScalaInstance()
-  */
-
   //This generates (once and for all) _source_ files.
   def renderOnce[A](name: String, inFileName: String = "", outFileName: String = "", args: Map[String, A] = Map[String, A]()) {
     val file = "src" + File.separator + (if (outFileName != "") outFileName else name) + ".scala"
@@ -50,7 +38,6 @@ class Generator(scalaVersion: String) {
 
   def renderHelper[A](name: String, inFileName: String = "", outFileName: String, args: Map[String, A]) {
     val file = (if (inFileName != "") inFileName else name)
-    //val output = engine.layout("templates/" + (file) + ".ssp", args)
     val output = engine.layout("src/main/resources/" + file + ".ssp", args)
     new File(outFileName).getParentFile.mkdirs()
     val outStream = new PrintStream(new FileOutputStream(outFileName))
@@ -61,16 +48,10 @@ class Generator(scalaVersion: String) {
 
   def generate(outPath: String) {
     try {
-      //render("tupleSupport", "src/main/scala/0_generated/")
       for (t <- templates)
         render(outPath, t)
       //new scalate.$_scalate_$tupleSupport_ssp()
     } finally {
-      //System.exit(0) //Ensure that the process actually exits - scalate has a tendency to not do so.
     }
-  }
-
-  def main(args: Array[String]) {
-    generate(args(0))
   }
 }
