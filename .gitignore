@@ -1,3 +1,6 @@
+*.DS_Store
+target/
+*~
 *_managed
 .idea/dictionaries
 .idea/workspace.xml
