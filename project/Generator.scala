@@ -47,11 +47,8 @@ class Generator(scalaVersion: String) {
   }
 
   def generate(outPath: String) {
-    try {
-      for (t <- templates)
-        render(outPath, t)
-      //new scalate.$_scalate_$tupleSupport_ssp()
-    } finally {
-    }
+    for (t <- templates)
+      render(outPath, t)
+    //new scalate.$_scalate_$tupleSupport_ssp()
   }
 }
