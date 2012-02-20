@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-case class Const[T](x: T) extends NullaryExp[T] {
+case class Const[T](x: T) extends Arity0Exp[T] {
   override def interpret() = x
   override def toString = {
     val s =

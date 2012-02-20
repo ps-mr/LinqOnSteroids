@@ -24,7 +24,7 @@ package expressiontree
 
 //Probably Repr is also needed, especially if the produced Iterable must also offer stronger
 //interfaces.
-trait Queryable[T, +CC[_], Repr] extends NullaryExp[CC[T]] {
+trait Queryable[T, +CC[_], Repr] extends Arity0Exp[CC[T]] {
   self: CC[T] with Repr =>
   //type Pub = Queryable[T, Repr] //XXX? Should this be defined here already? Or should Pub be even more specific?
   def asQueryable: Exp[CC[T]] = this

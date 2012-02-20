@@ -7,7 +7,7 @@ package ivm.expressiontree
 
 case class ExoticTermException(msg: String) extends IllegalArgumentException(msg)
 
-case class TypedVar[+T](id: Int) extends NullaryExp[T] {
+case class TypedVar[+T](id: Int) extends Arity0Exp[T] {
   def name = "v" + id
   override def toString() = name
   def interpret(): T = {

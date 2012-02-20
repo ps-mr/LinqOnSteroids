@@ -7,7 +7,7 @@ package ivm.expressiontree
  * Date: 1/9/2011
  */
 
-trait NullaryExp[+R] extends Exp[R] {
+trait Arity0Exp[+R] extends Exp[R] {
   override def nodeArity = 0
   def children = Seq()
   def checkedGenericConstructor = _ => this
