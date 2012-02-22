@@ -16,9 +16,9 @@ import optimization.Optimization
 */
 
 class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
-  val l: Exp[Traversable[(Int, Int)]] = toExp(Vector.range(1, 3).flatMap(i => Vector.range(1, 2).map((i, _))))
+  val l: Exp[Seq[(Int, Int)]] = asExp(Vector.range(1, 3).flatMap(i => Vector.range(1, 2).map((i, _))))
 
-  @Test def testSimpleSharing {
+  @Test def testSimpleSharing() {
     val s1 = l.map(p => (p._1 + 1, p._2 + 2))
     val ress1 = s1.interpret()
     Optimization.addSubQuery(s1)
@@ -33,6 +33,29 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     res2 should equal (q2)
 
     Optimization.removeSubQuery(s1)
+  }
+
+  @Test def testComplexIndexing() {
+    val l2: Exp[Seq[Int]] =
+      for {
+        i <- Vector.range(1, 10).asSmartCollection
+        j <- onExp(i)('Vector$range_1, Vector.range(1, _))
+        if (j === 5)
+      } yield i + j
+
+    val l2IdxBase = for {
+      i <- Vector.range(1, 10).asSmartCollection
+      j <- onExp(i)('Vector$range_1, Vector.range(1, _))
+    } yield (i, j)
+
+    val l2Idx = l2IdxBase groupBy { _._2 }
+    val optQueryExpected = l2Idx(5) map (p => p._1 + p._2)
+    l2.interpret() should be (optQueryExpected.interpret())
+    Optimization.addSubQuery(l2Idx)
+    val optQuery = Optimization.shareSubqueries(l2)
+    Optimization.removeSubQuery(l2Idx)
+
+    optQuery should be (optQueryExpected)
   }
 
   @Test def testIndexing {
