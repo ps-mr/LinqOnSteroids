@@ -370,7 +370,9 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       methodsLos5Seq.interpret()
     }
     methodsNative should equal (m5SeqInt)
+
     //Let's consider type indexing.
+    //First let's look at the desugared query
     val methodsLos5Desugared = queryData.flatMap(cf => cf.methods
       .flatMap(m => m.attributes.typeFilter[CodeAttribute]
       .flatMap(ca => ca.code.typeFilter[INSTANCEOF]
