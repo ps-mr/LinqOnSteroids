@@ -152,8 +152,8 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
       libDev <- lib.developers
       dev <- testHackers //change 2 (not really needed here, but...)
     } yield asExp((lib, asExp(dev)))
-    //Ugly type:
-    assertType[Exp[Traversable[ivm.expressiontree.Exp[(Library, Developer)]]]](LibrariesAndHackersTest2)
+    //Not so ugly type anymore:
+    assertType[Exp[Traversable[(Library, Developer)]]](LibrariesAndHackersTest2)
   }
 
   @Test

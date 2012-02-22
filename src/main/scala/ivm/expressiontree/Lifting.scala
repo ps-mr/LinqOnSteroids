@@ -79,6 +79,8 @@ trait OptionLifting extends BaseExps {
     override protected def checkedGenericConstructor: Seq[Exp[_]] => Exp[Seq[T]] = v => ExpSeq((v.asInstanceOf[Seq[Exp[T]]]): _*)
     override def interpret() = children.map(_.interpret())
   }
+
+  implicit def SeqExp2ExpSeq[T](a: Seq[Exp[T]]): Exp[Seq[T]] = ExpSeq(a: _*)
 }
 
 trait ExpSugar extends ConversionDisabler2 {
