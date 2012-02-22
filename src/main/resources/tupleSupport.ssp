@@ -1,4 +1,5 @@
 package ivm.expressiontree
+import annotation.switch
 
 <%
   escapeMarkup = false
@@ -87,6 +88,16 @@ case class Tuple${arity}Proj${i}[${tparams}](p: Exp[(${tparams})]) extends Arity
 // SUPPORT FOR TUPLES - AUTOMATIC CONVERSIONS //
 ////////////////////////////////////////////////
 
+trait ExpProduct {
+  def productArity: Exp[Int]
+
+  //How to implement this?
+  //def productElement(n: Exp[Int]): Exp[Any]
+  //Better name prefix?
+  def metaProductArity: Int
+  def metaProductElement(n: Int): Exp[Any]
+}
+
 trait AutoTupleOps {
   this: FunctionOps =>
 #for (arity <- 2 to maxArity)
@@ -99,9 +110,17 @@ trait AutoTupleOps {
     LiftTuple${arity}[${tparams}](${paramsLoopComma("tuple._%d")})
 
   class Tuple${arity}Ops[${tparams}](p: Exp[(${tparams})]) {
-    ${defParamsLoop(arity)("\n    ")("def _%d = Tuple" + arity + "Proj%<d(p)")}
+    ${paramsLoop("\n    ")("def _%d = Tuple" + arity + "Proj%<d(p)")}
+    def metaProductArity: Int = ${arity}
+    def metaProductElement(n: Int): Exp[Any] = (n: @switch) match {
+      ${baseParLoop(arity)(i => "case %d => Tuple%dProj%d(p)" format (i - 1, arity, i), "\n      ")}
+    }
   }
 
   implicit def toTuple${arity}Ops[${tparams}](e: Exp[(${tparams})]): Tuple${arity}Ops[${tparams}] = new Tuple${arity}Ops(e)
 #end
+}
+
+object TupleSupport {
+  //def projector(i: Int, n: Int)
 }
