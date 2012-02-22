@@ -111,7 +111,9 @@ trait AutoTupleOps {
 
   class Tuple${arity}Ops[${tparams}](p: Exp[(${tparams})]) {
     ${paramsLoop("\n    ")("def _%d = Tuple" + arity + "Proj%<d(p)")}
+
     def metaProductArity: Int = ${arity}
+
     def metaProductElement(n: Int): Exp[Any] = (n: @switch) match {
       ${baseParLoop(arity)(i => "case %d => Tuple%dProj%d(p)" format (i - 1, arity, i), "\n      ")}
     }
