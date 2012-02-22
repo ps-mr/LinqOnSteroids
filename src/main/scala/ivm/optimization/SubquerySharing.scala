@@ -93,44 +93,27 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     }
   }
 
+  def par[A, B, C](f: (A, B) => C): ((A, B), (A, B)) => (C, C) = { case ((a1, b1), (a2, b2)) => (f(a1, b1), f(a2, b2))}
+
   //Next step: collect free variables relevant to the query... maybe...
   def lookupEq[T](e: Exp[T]): Set[Exp[_]] = {
     e match {
       case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
-        def par2[A, B, C](f: (A, B) => C): ((A, B), (A, B)) => (C, C) = { case ((a1, b1), (a2, b2)) => (f(a1, b1), f(a2, b2))}
-        def union[T] = (_: Seq[T]) union (_: Seq[T])
-        def union2[T] = (_: Set[T]) union (_: Set[T])
+        def unionSeq[T] = (_: Seq[T]) union (_: Seq[T])
+        def unionSet[T] = (_: Set[T]) union (_: Set[T])
 
         val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
 
-        /*conds.map {
-          case eq @ Eq(l, r) => l.find {case Var(_) => true}.toSet[Exp[Any]]
-          case _ => Set.empty[Exp[Any]]
-        }.fold(Set.empty[Exp[Any]])(_)
-
         conds.map {
-          case eq @ Eq(l, r) => ((l.find {case Var(_) => true}).toSet, Set[Exp[_]](eq))
+          case eq @ Eq(l, r) => (((l.find {case Var(_) => true}) union r.find {case Var(_) => true}).toSet, Set[Exp[_]](eq))
           case _ => (Set.empty[Exp[_]], Set.empty[Exp[_]])
-        }.fold((Set.empty[Exp[_]], Set.empty[Exp[_]]))(par2(union2))*/
-        /*
-        //
-        [error]  found   : [T](scala.collection.Set[T], scala.collection.Set[T]) => scala.collection.Set[T]
-[error]  required: (Iterable[ivm.expressiontree.Exp[_]] with Int with ivm.expressiontree.Exp[Any] => Any, scala.collection.Set[ivm.expressiontree.Exp[_]]) => scala.collection.Set[ivm.expressiontree.Exp[_]]
-[error]         }.fold((Set.empty[Exp[_]], Set.empty[Exp[_]]))(par2(union2))
-[error]                                                             ^
-
-        */
-        /*
-        import scalaz._
-        import Scalaz._
-        */
-        def par[A, B, C](f: (A, B) => C): ((A, A), (B, B)) => (C, C) = { case ((a1, a2), (b1, b2)) => (f(a1, b1), f(a2, b2))}
+        }.fold((Set.empty[Exp[_]], Set.empty[Exp[_]]))(par(unionSet))
 
         //Using Sets here directly is close to impossible, due to the number of wildcards and the invariance of Set.
         conds.map {
-          case eq @ Eq(l, r) => (l.find {case Var(_) => true}, Seq[Exp[_]](eq))
+          case eq @ Eq(l, r) => (l.find {case Var(_) => true} union r.find {case Var(_) => true}, Seq[Exp[_]](eq))
           case _ => (Seq.empty, Seq.empty)
-        }.fold((Seq.empty, Seq.empty))(par2(union))
+        }.fold((Seq.empty, Seq.empty))(par(unionSeq))
 
         conds.map {
           case eq @ Eq(l, r) => l.find {case Var(_) => true} union r.find {case Var(_) => true}
