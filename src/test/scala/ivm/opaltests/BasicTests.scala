@@ -255,6 +255,32 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       m2Int = methodsLos2.interpret()
     }
     methodsNative should equal (m2Int)
+
+    val methodsLos5 =
+      for {
+        cf <- queryData
+        m <- cf.methods
+        mBody <- Let(m.body)
+        if mBody.isDefined
+        io <- mBody.get.code.typeFilter[INSTANCEOF]
+      } yield m.name
+    val m5Int: Traversable[String] = benchMark("los5-new") {
+      methodsLos5.interpret()
+    }
+    methodsNative should equal (m5Int)
+
+    val methodsLos5Seq =
+      (for {
+        cf <- queryData.toSeq
+        m <- cf.methods
+        mBody <- Let(m.body)
+        if mBody.isDefined
+        io <- mBody.get.code.typeFilter[INSTANCEOF]
+      } yield m.name).toSet
+    val m5SeqInt: Traversable[String] = benchMark("los5-new-Seq") {
+      methodsLos5Seq.interpret()
+    }
+    methodsNative should equal (m5SeqInt)
   }
 
   // native Scala for-comprehension
