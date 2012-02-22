@@ -436,7 +436,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     //is to have the index evaluated at all - otherwise there would be no speed-up. However, the proper solution is to
     //wrap the query result in something similar to IncrementalResult's constructor: Exp[T] -> Exp[T] - so that the result
     //is materialized and incrementally maintained.
-    val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1.name)
+    val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1.name).toSet
     //val methodsLos6 = expToTypeMappingAppOps[Set, SND](evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
     //If I omit type parameters, not type inference, but typechecking here fails after figuring the right type, even if expToTypeMappingAppOps is explicitly called.
     //As you see, it fails to unify D[_] with [B](de.tud.cs.st.bat.resolved.Method_Info, B).
@@ -451,7 +451,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     */
     var m6Int: Traversable[String] = null
     benchMark("los6 (with index)") {
-      m6Int = methodsLos6.interpret().toSet
+      m6Int = methodsLos6.interpret()
     }
     methodsNative should equal (m6Int)
 
@@ -471,11 +471,11 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       // after that, the optimizer would again find a matching subquery. The new runtime is ~ 0.3-0.4 sec.
       val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd]] = benchMark("los6 Seq-index (less manually optimized) creation"){ asExp(typeIdx.interpret()) }
 
-      val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name)
+      val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name).toSet
 
       var m6Int: Traversable[String] = null
       benchMark("los6 (with index, less manually optimized)") {
-        m6Int = methodsLos6.interpret().toSet
+        m6Int = methodsLos6.interpret()
       }
       methodsNative should equal (m6Int)
     }
