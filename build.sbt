@@ -60,7 +60,18 @@ initialCommands := """
 initialCommands in console := """
     import ivm._
     import expressiontree._
+    import Lifting._
     import optimization._
+"""
+
+initialCommands in (Test, console) := """
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import optimization._
+    import tests._
+    import opaltests._
+    import performancetests._
 """
 
 sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, scalaVersion) map { (dir, baseDir, scalaVer) =>
@@ -71,8 +82,6 @@ sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, scalaV
   } yield {
     if (!file.exists() || (baseDir / "src" / "main" / "resources" / (base + ".ssp") newerThan file))
       gen.generate(dir.absolutePath)
-    //XXX relies on "stage" having been run
-    //Process(baseDir / "target" / "start", dir.getAbsolutePath()).run.exitCode()
     file
   }
 }
