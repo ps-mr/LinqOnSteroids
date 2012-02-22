@@ -347,13 +347,15 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
     type ID[T] = T
 
-    val methodsLos5 =  for (cf <- queryData;
-                         m <- cf.methods;
-                         ca <- m.attributes.typeFilter[CodeAttribute];
-                         io <- ca.code.typeFilter[INSTANCEOF]) yield m.name
-    var m5Int: Traversable[String] = null
-    benchMark("los5") {
-      m5Int = methodsLos5.interpret()
+    val methodsLos5 =
+      for {
+        cf <- queryData
+        m <- cf.methods
+        ca <- m.attributes.typeFilter[CodeAttribute]
+        io <- ca.code.typeFilter[INSTANCEOF]
+      } yield m.name
+    val m5Int: Traversable[String] = benchMark("los5") {
+      methodsLos5.interpret()
     }
     methodsNative should equal (m5Int)
 
