@@ -37,6 +37,10 @@ trait LiftingConvs extends ConversionDisabler {
   //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
   //parameter of Exp here.
   def asExp[T](t: Exp[T]) = t
+
+  class WithAsSmartCollection[T](t: T) {
+    def asSmartCollection = asExp(t)
+  }
 }
 
 trait FunctionOps {

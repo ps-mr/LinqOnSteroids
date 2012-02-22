@@ -86,18 +86,15 @@ trait ExpSugar {
   //XXX: evaluate whether this interface is good.
   def NULL = toExp(null)
 
-  class Pimper[T](t: T) {
-    def asSmartCollection = asExp(t)
-  }
-  implicit def toPimper[T](t: T) = new Pimper(t)
+  implicit def toPimper[T](t: T) = new WithAsSmartCollection(t)
 
   implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
 
-  class ArrayPimper[T](t: Array[T]) {
+  class ArrayWithAsSmartCollection[T](t: Array[T]) {
     def asSmartCollection = t: Exp[Seq[T]]
   }
-  implicit def toArrayPimper[T](t: Array[T]) = new ArrayPimper(t)
-  //Either we use ArrayPimper, or we create an implicit conversion from Exp[Array[T]] to TraverableOps[T] by adding the final cast to TraversableOps[T] here.
+  implicit def toArrayPimper[T](t: Array[T]) = new ArrayWithAsSmartCollection(t)
+  //Either we use ArrayWithAsSmartCollection, or we create an implicit conversion from Exp[Array[T]] to TraverableOps[T] by adding the final cast to TraversableOps[T] here.
   //Since this is an implicit conversion, we can't just return Exp[Seq[T]] and rely on an additional implicit conversion to supply lifted collection methods.
   //implicit def expArrayToExpSeq[T](x: Exp[Array[T]]) = onExp(x)('castToSeq, x => x: Seq[T]): TraversableOps[T]
 
