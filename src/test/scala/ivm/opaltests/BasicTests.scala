@@ -157,10 +157,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
   }
 
   def basicQuery() {
-    var methodsNative: Set[Attribute] = null
     // native Scala for-comprehension
-    benchMark("native simple") {
-      methodsNative =
+    val methodsNative: Set[Attribute] = benchMark("native simple") {  
         for (cf <- testdata;
              m <- cf.methods;
              attrib <- m.attributes)
@@ -176,9 +174,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
            attrib <- m.attributes)
       yield attrib
 
-    var methods: Traversable[Attribute] = null
-    benchMark("los simple") {
-      methods = methodsQuery.interpret()
+    val methods: Traversable[Attribute] = benchMark("los simple") {
+      methodsQuery.interpret()
     }
 
     //Result on my system (PG - Core 2 @2.66 GHz):
@@ -210,9 +207,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
   }
 
   def testOpalNewStyle() {
-    var methodsNative: Set[String] = null
-    benchMark("native-new") {
-      methodsNative = for (cf <- testdata;
+    val methodsNative: Set[String] = benchMark("native-new") {
+      for (cf <- testdata;
                            m <- cf.methods if m.body.isDefined;
                            INSTANCEOF(_) <- m.body.get.code) yield m.name
     }
@@ -237,9 +233,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
       println(methodsLos1) //Fails because the terms are inadequate
 
-      var m1Int: Traversable[String] = null
-      benchMark("los1-new") {
-        m1Int = methodsLos1.interpret()
+      val m1Int: Traversable[String] = benchMark("los1-new") {
+        methodsLos1.interpret()
       }
       methodsNative should equal (m1Int)
     }
@@ -250,9 +245,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .collect(i => i.ifInstanceOf[INSTANCEOF])
       .map(_ => m.name)))
 
-    var m2Int: Traversable[String] = null
-    benchMark("los2-new") {
-      m2Int = methodsLos2.interpret()
+    val m2Int: Traversable[String] = benchMark("los2-new") {
+      methodsLos2.interpret()
     }
     methodsNative should equal (m2Int)
 
@@ -315,9 +309,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
       println(methodsLos1) //Fails because the terms are inadequate
 
-      var m1Int: Traversable[String] = null
-      benchMark("los1") {
-        m1Int = methodsLos1.interpret()
+      val m1Int: Traversable[String] = benchMark("los1") {
+        methodsLos1.interpret()
       }
       methodsNative should equal (m1Int)
     }
@@ -329,9 +322,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .collect( i => i.ifInstanceOf[INSTANCEOF])
       .map( _ => m.name)))
 
-    var m2Int: Traversable[String] = null
-    benchMark("los2") {
-      m2Int = methodsLos2.interpret()
+    val m2Int: Traversable[String] = benchMark("los2") {
+      methodsLos2.interpret()
     }
     methodsNative should equal (m2Int)
 
@@ -349,9 +341,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .filter( a => onExp(a)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF]))
       .map( _ => m.name)))
 
-    var m3Int: Traversable[String] = null
-    benchMark("los3") {
-      m3Int = methodsLos3.interpret()
+    val m3Int: Traversable[String] = benchMark("los3") {
+      methodsLos3.interpret()
     }
     methodsNative should equal (m3Int)
 
@@ -365,9 +356,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         i <- a.asInstanceOf[Exp[CodeAttribute]].code //This cast works perfectly
         if onExp(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
       } yield m.name
-    var m4Int: Traversable[String] = null
-    benchMark("los4") {
-      m4Int = methodsLos4.interpret()
+    val m4Int: Traversable[String] = benchMark("los4") {
+      methodsLos4.interpret()
     }
     methodsNative should equal (m4Int)
 
@@ -475,9 +465,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 [error]  required: ivm.expressiontree.Exp[ivm.collections.TypeMapping[?0C,?0D]]
 [error]      val methodsLos6 = expToTypeMappingAppOps(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
     */
-    var m6Int: Traversable[String] = null
-    benchMark("los6 (with index)") {
-      m6Int = methodsLos6.interpret()
+    val m6Int: Traversable[String] = benchMark("los6 (with index)") {
+      methodsLos6.interpret()
     }
     methodsNative should equal (m6Int)
 
@@ -499,9 +488,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
       val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name).toSet
 
-      var m6Int: Traversable[String] = null
-      benchMark("los6 (with index, less manually optimized)") {
-        m6Int = methodsLos6.interpret()
+      val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized)") {
+        methodsLos6.interpret()
       }
       methodsNative should equal (m6Int)
     }
@@ -539,9 +527,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
     val methodsLos7 = evTypeIdx2Opt.get[INSTANCEOF].flatMap(x => evIdx1(x._1).map(_.name))
 
-    var m7Int: Traversable[String] = null
-    benchMark("los7 (with hierarchical indexing)") {
-      m7Int = methodsLos7.interpret().toSet
+    val m7Int: Traversable[String] = benchMark("los7 (with hierarchical indexing)") {
+      methodsLos7.interpret().toSet
     }
     methodsNative should equal (m7Int)
   }
