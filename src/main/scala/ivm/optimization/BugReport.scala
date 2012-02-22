@@ -15,39 +15,18 @@ class BugReport {
   def bugReports_v2[T](e: Exp[T]) {
     val conds: Set[Exp[Boolean]] = null
 
-    conds.map {
-      case eq @ Eq(l, r) => l.find {case Var(_) => true}.toSet[Exp[Any]]
-      case _ => Set.empty[Exp[Any]]
-    }.fold(Set.empty[Exp[Any]])(_);
+    //Both the following expressions must be present to trigger the bug.
 
     conds.map {
-      case eq @ Eq(l, r) => l.find {case Var(_) => true}.toSet[Exp[Any]]
-      case _ => Set.empty[Exp[Any]]
-    }.fold(Set.empty[Exp[Any]]) _
-    //}
-    /*conds.map {
-      case eq @ Eq(l, r) => l.find {case Var(_) => true}.toSet
-      case _ => Set.empty
-    }.fold(Set.empty[Exp[Any]]) _*/
+      case eq @ Eq(l, r) => l.find {case Var(_) => true}
+      case _ => Seq.empty
+    }.fold(Seq.empty)(_);
+
+
+    conds.map {
+      case eq @ Eq(l, r) => l.find {case Var(_) => true}
+      case _ => Seq.empty
+    }.fold(Set.empty) _
   }
-
-  /*def bugReports[T](e: Exp[T]) {
-    e match {
-      case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
-        val conds: Set[Exp[Boolean]] = null
-
-        conds.map {
-          case eq @ Eq(l, r) => l.find {case Var(_) => true}.toSet[Exp[Any]]
-          case _ => Set.empty[Exp[Any]]
-        }.fold(Set.empty[Exp[Any]])(_)
-
-
-        //Works:
-        conds.map {
-          case eq @ Eq(l, r) => l.find {case Var(_) => true}.toSet[Exp[Any]]
-          case _ => Set.empty[Exp[Any]]
-        }.fold(Set.empty[Exp[Any]]) _
-    }
-  }*/
 }
 */
