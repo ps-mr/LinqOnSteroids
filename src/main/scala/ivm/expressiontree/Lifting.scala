@@ -81,7 +81,7 @@ trait OptionLifting extends BaseExps {
   }
 }
 
-trait ExpSugar {
+trait ExpSugar extends ConversionDisabler2 {
   this: BaseExps =>
   //XXX: evaluate whether this interface is good.
   def NULL = toExp(null)

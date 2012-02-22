@@ -43,6 +43,11 @@ trait LiftingConvs extends ConversionDisabler {
   }
 }
 
+trait ConversionDisabler2 extends LiftingConvs {
+  //Disable conversion
+  implicit def noAsSmartCollForExp[T](t: Exp[T]): WithAsSmartCollection[Exp[T]] = null
+}
+
 trait FunctionOps {
   this: LiftingConvs =>
   // these functions are explicitly not implicit :)
