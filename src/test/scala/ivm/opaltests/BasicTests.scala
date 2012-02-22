@@ -158,11 +158,11 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
   def basicQuery() {
     // native Scala for-comprehension
-    val methodsNative: Set[Attribute] = benchMark("native simple") {  
-        for (cf <- testdata;
-             m <- cf.methods;
-             attrib <- m.attributes)
-        yield attrib
+    val methodsNative: Set[Attribute] = benchMark("native simple") {
+      for (cf <- testdata;
+           m <- cf.methods;
+           attrib <- m.attributes)
+      yield attrib
     }
 
     // using reified query
@@ -209,8 +209,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
   def testOpalNewStyle() {
     val methodsNative: Set[String] = benchMark("native-new") {
       for (cf <- testdata;
-                           m <- cf.methods if m.body.isDefined;
-                           INSTANCEOF(_) <- m.body.get.code) yield m.name
+           m <- cf.methods if m.body.isDefined;
+           INSTANCEOF(_) <- m.body.get.code) yield m.name
     }
     //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
     //Not very pretty, but better than nothing
