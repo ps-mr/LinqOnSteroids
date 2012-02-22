@@ -1,32 +1,22 @@
-package ivm
-package optimization
-
-import expressiontree._
-import scala.collection.Set
-
-
-/**
- * User: pgiarrusso
- * Date: 22/2/2012
- */
-
-/*
 class BugReport {
-  def bugReports_v2[T](e: Exp[T]) {
+  trait Exp[+T] {
+    //def find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = null
+  }
+  case class Foo[T](v: Exp[T]) extends Exp[T]
+
+  def bugReports() {
     val conds: Set[Exp[Boolean]] = null
 
     //Both the following expressions must be present to trigger the bug.
 
     conds.map {
-      case eq @ Eq(l, r) => l.find {case Var(_) => true}
+      case /*eq @ */Foo(l) => l//.find {case _ => true}
       case _ => Seq.empty
     }.fold(Seq.empty)(_);
 
-
     conds.map {
-      case eq @ Eq(l, r) => l.find {case Var(_) => true}
+      case /*eq @ */Foo(l) => l//.find {case _ => true}
       case _ => Seq.empty
-    }.fold(Set.empty) _
+    }.fold(Seq.empty) _
   }
 }
-*/
