@@ -44,6 +44,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   }
 
   private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[FilterMonadic[T, Traversable[T]]] = {
+    //This special case is an optimization which should not be needed. We need other optimizations to remove the extra resulting stuff.
     if (conds.isEmpty)
       return e
     val residualcond: Exp[Boolean] = conds.reduce(And)
@@ -89,6 +90,39 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f)(_))
         optimized.getOrElse(e)
       case _ => e
+    }
+  }
+
+  //Next step: collect free variables relevant to the query... maybe...
+  def lookupEq[T](e: Exp[T]): Set[Exp[_]] = {
+    e match {
+      case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
+        val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
+        //Using Sets here directly is close to impossible, due to the number of wildcards and the invariance of Set.
+        conds.map {
+          case Eq(l, r) => l.find {case Var(_) => true}
+          case _ => Seq.empty
+        }.fold(Seq.empty)(_ union _).toSet
+      case FlatMap(c, f) =>
+        //Add to this the variables on which the free vars of subexp depend?
+        lookupEq(c) union lookupEq(f.body)
+      case MapOp(c, f) =>
+        lookupEq(c) union lookupEq(f.body)
+      case _ => Set.empty
+    }
+  }
+
+  val groupByShare3: Exp[_] => Exp[_] = {
+    e => {
+      if (lookupEq(e).nonEmpty) {}
+
+      e match {
+        case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
+          val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
+          val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f)(_))
+          optimized.getOrElse(e)
+        case _ => e
+      }
     }
   }
 
