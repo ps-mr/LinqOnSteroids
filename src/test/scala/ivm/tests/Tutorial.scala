@@ -145,7 +145,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
       dev <- testHackers //change 2 (not really needed here, but...)
     } yield (lib, dev)
     //Ugly type:
-    assertType[Exp[Traversable[(ivm.expressiontree.Exp[Library], Developer)]]](LibrariesAndHackersTest)
+    assertType[Exp[Seq[(ivm.expressiontree.Exp[Library], Developer)]]](LibrariesAndHackersTest)
     //checkResult(LibrariesAndHackersTest) //Can't be called
     val LibrariesAndHackersTest2 = for {
       lib <- testLibs.asSmartCollection //change 1
@@ -153,7 +153,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
       dev <- testHackers //change 2 (not really needed here, but...)
     } yield asExp((lib, asExp(dev)))
     //Not so ugly type anymore:
-    assertType[Exp[Traversable[(Library, Developer)]]](LibrariesAndHackersTest2)
+    assertType[Exp[Seq[(Library, Developer)]]](LibrariesAndHackersTest2)
   }
 
   @Test
