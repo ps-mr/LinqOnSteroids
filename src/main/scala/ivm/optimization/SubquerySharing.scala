@@ -96,41 +96,43 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   def par[A, B, C](f: (A, B) => C): ((A, B), (A, B)) => (C, C) = { case ((a1, b1), (a2, b2)) => (f(a1, b1), f(a2, b2))}
 
   //Next step: collect free variables relevant to the query... maybe...
-  def lookupEq[T](e: Exp[T]): Set[Exp[_]] = {
+  def lookupEq(e: Exp[_], freeVars: Set[Exp[_]]): Set[Exp[_]] = {
     e match {
       case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
-        def unionSeq[T] = (_: Seq[T]) union (_: Seq[T])
-        def unionSet[T] = (_: Set[T]) union (_: Set[T])
-
         val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
+        val allFreeVars = freeVars + f.x
+        def usesVar(e: Exp[_]) = e.findTotFun(allFreeVars(_)).nonEmpty
+
+        /*def unionSeq[T] = (_: Seq[T]) union (_: Seq[T])
 
         conds.map {
           case eq @ Eq(l, r) => (((l.find {case Var(_) => true}) union r.find {case Var(_) => true}).toSet, Set[Exp[_]](eq))
-          case _ => (Set.empty[Exp[_]], Set.empty[Exp[_]])
+          case _ => Set.empty[Exp[_]], Set.empty[Exp[_]])
         }.fold((Set.empty[Exp[_]], Set.empty[Exp[_]]))(par(unionSet))
 
-        //Using Sets here directly is close to impossible, due to the number of wildcards and the invariance of Set.
         conds.map {
           case eq @ Eq(l, r) => (l.find {case Var(_) => true} union r.find {case Var(_) => true}, Seq[Exp[_]](eq))
           case _ => (Seq.empty, Seq.empty)
-        }.fold((Seq.empty, Seq.empty))(par(unionSeq))
+        }.fold((Seq.empty, Seq.empty))(par(unionSeq))*/
 
+        //Using Sets here directly is close to impossible, due to the number of wildcards and the invariance of Set.
         conds.map {
-          case eq @ Eq(l, r) => l.find {case Var(_) => true} union r.find {case Var(_) => true}
-          case _ => Seq.empty
-        }.fold(Seq.empty)(_ union _).toSet
+          case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty && (usesVar(l) && !usesVar(r) || usesVar(r) && !usesVar(l)) =>
+            Set[Exp[_]](eq)
+          case _ => Set.empty[Exp[_]]
+        }.fold(Set.empty[Exp[_]])(_ union _)
       case FlatMap(c, f) =>
         //Add to this the variables on which the free vars of subexp depend? No. Add all free variables bound in the location.
-        lookupEq(c) union lookupEq(f.body)
+        lookupEq(c, freeVars) union lookupEq(f.body, freeVars + f.x)
       case MapOp(c, f) =>
-        lookupEq(c) union lookupEq(f.body)
+        lookupEq(c, freeVars) union lookupEq(f.body, freeVars + f.x)
       case _ => Set.empty
     }
   }
 
   val groupByShare3: Exp[_] => Exp[_] = {
     e => {
-      if (lookupEq(e).nonEmpty) {}
+      if (lookupEq(e, Set.empty).nonEmpty) {}
 
       e match {
         case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
