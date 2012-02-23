@@ -16,7 +16,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   }
 
   private def groupByShareBody[T, T2](c: Exp[Traversable[T]],
-                                      f: FuncExp[T, Boolean],
+                                      fx: Var,
                                       fEqBody: Eq[T2], constantEqSide: Exp[T2], varEqSide: Exp[T2]) = {
     /*
     //How the heck does this typecheck?
@@ -34,7 +34,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     //val groupedBy = c.map(identity).groupBy(FuncExp.makefun[T, T2](fEqBody.y, f.x).f)
     //expands to this:
 
-    val groupedBy = c.groupBy[T2](FuncExp.makefun[T, T2](varEqSide, f.x).f)
+    val groupedBy = c.groupBy[T2](FuncExp.makefun[T, T2](varEqSide, fx).f)
 
     assertType[Exp[T2 => Traversable[T]]](groupedBy) //Just for documentation.
     subqueries.get(Optimization.normalize(groupedBy)) match {
@@ -53,17 +53,17 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
   private def tryGroupBy[T](c: Exp[Traversable[T]],
                             allConds: Set[Exp[Boolean]],
-                            f: FuncExp[T, Boolean])
+                            fx: Var)
                            (cond: Exp[Boolean]): Option[Exp[FilterMonadic[T, Traversable[T]]]] =
     cond match {
       case eq: Eq[t2] =>
         val oq: Option[Exp[Traversable[T]]] =
-          if (eq.t1.isOrContains(f.x) && !eq.t2.isOrContains(f.x))
-            groupByShareBody[T, t2](c, f, eq, eq.t2, eq.t1)
-          else if (eq.t2.isOrContains(f.x) && !eq.t1.isOrContains(f.x))
-            groupByShareBody[T, t2](c, f, eq, eq.t1, eq.t2)
+          if (eq.t1.isOrContains(fx) && !eq.t2.isOrContains(fx))
+            groupByShareBody[T, t2](c, fx, eq, eq.t2, eq.t1)
+          else if (eq.t2.isOrContains(fx) && !eq.t1.isOrContains(fx))
+            groupByShareBody[T, t2](c, fx, eq, eq.t1, eq.t2)
           else None
-        oq.map(e => residualQuery(e, allConds - eq, f.x))
+        oq.map(e => residualQuery(e, allConds - eq, fx))
       case _ => None
     }
 
@@ -87,7 +87,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     e => e match {
       case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
         val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
-        val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f)(_))
+        val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f.x.asInstanceOf[Var])(_))
         optimized.getOrElse(e)
       case _ => e
     }
