@@ -74,7 +74,7 @@ trait Benchmarking {
    * @param warmUpLoops: Warm up the VM - should be more
    * @param sampleLoops Iterations to measure variance.
    * @param toBench code to benchmark, which is supposed to always return the same value.
-   * @returns the value returned by toBench
+   * @return the value returned by toBench
    */
   private def benchMarkInternal[T](name: String, silent: Boolean, execLoops: Int, warmUpLoops: Int, sampleLoops: Int, verbose: Boolean, hasConsoleOutput: Boolean)
                (toBench: => T): (T, Double) = {
