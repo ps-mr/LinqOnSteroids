@@ -4,7 +4,7 @@ package object expressiontree {
   type TravMessage[+T] = Message[Traversable[T]]
   type TravMsgSeqPublisher[+T, +Pub <: TravMsgSeqPublisher[T, Pub]] = MsgSeqPublisher[Traversable[T], Pub]
   type TravMsgSeqSubscriber[-T, -Repr] = MsgSeqSubscriber[Traversable[T], Repr]
-  type Var = TypedVar[Nothing]
+  type Var = TypedVar[_]
 
   //From http://stackoverflow.com/questions/6834000/scala-partialfunctions-from-concrete-ones, altered by avoiding
   //refinement types.

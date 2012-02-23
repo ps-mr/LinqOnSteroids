@@ -18,7 +18,7 @@ abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
 
   def xName = x.name
   protected[this] lazy val internX = gensym[S]()
-  def x: TypedVar[_] = internX //Functions are contravariant in S, so TypedVar[S] cannot be a return type for a public method.
+  def x: Var = internX //Functions are contravariant in S, so TypedVar[S] cannot be a return type for a public method.
 
   lazy val lazyBody: Exp[T] = f(internX)
   def body: Exp[T] = lazyBody

@@ -68,8 +68,8 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
       case _ => exp
     })
 
-  /*private[ivm]*/ def freeVars: Set[TypedVar[_]] = {
-    def mapper(e: Exp[_], c: Seq[Set[TypedVar[_]]]): Set[TypedVar[_]] = e match {
+  /*private[ivm]*/ def freeVars: Set[Var] = {
+    def mapper(e: Exp[_], c: Seq[Set[Var]]): Set[Var] = e match {
       case v@Var(_) => Set(v)
       case fe@FuncExp(_) => c.fold(Set.empty)(_ union _).filter(!_.equals(fe.x))
       case _ => c.fold(Set.empty)(_ union _)
