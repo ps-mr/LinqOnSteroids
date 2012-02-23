@@ -4,6 +4,9 @@ package performancetests
 import expressiontree.Exp
 import optimization._
 import Optimization._
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.io.{PrintWriter, FileWriter, BufferedWriter}
 
 object Benchmarking {
   val debugBench = false
@@ -23,6 +26,9 @@ object Benchmarking {
       sumSq / count - t * t
     }
   }
+  private val testDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance.getTime)
+  private val logPath = "LOSTestLog.csv"
+  private val logWriter = new PrintWriter(new BufferedWriter(new FileWriter(logPath, true)))
 }
 
 trait Benchmarking {
@@ -105,14 +111,18 @@ trait Benchmarking {
     if (!hasConsoleOutput)
       print(" ended benchmarking, name = %s, time = " format name)
     val avgMs = stats.avg / math.pow(10,6)
+    val devStdMs = math.sqrt(stats.variance) / math.pow(10,6)
+    //The error of the measured average as an estimator of the average of the underlying random variable
+    val stdErrMs = devStdMs / math.sqrt(sampleLoops)
+
     if (verbose) {
-      val devStdMs = math.sqrt(stats.variance) / math.pow(10,6)
-      //The error of the measured average as an estimator of the average of the underlying random variable
-      val stdErrMs = devStdMs / math.sqrt(sampleLoops)
       if (hasConsoleOutput)
         print(">>> Name = %s, time = " format name)
       println("(%.3f +- %.3f (stdErr = %.3f)) ms" format (avgMs, devStdMs, stdErrMs))
     }
+    logWriter.println("%s;%s;%f;%f;%f" format (testDate, name.replace(';', '_'), avgMs, devStdMs, stdErrMs))
+    logWriter.flush()
+
     (ret, avgMs)
   }
 
