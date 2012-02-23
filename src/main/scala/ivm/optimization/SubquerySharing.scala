@@ -3,7 +3,6 @@ package ivm.optimization
 import ivm.expressiontree._
 import Lifting._
 import Util.assertType
-import collection.generic.FilterMonadic
 import scala.collection.Map
 
 // Contract: Each map entry has the form Exp[T] -> T for some T
@@ -43,7 +42,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     }
   }
 
-  private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[FilterMonadic[T, Traversable[T]]] = {
+  private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[Traversable[T]] = {
     //This special case is an optimization which should not be needed. We need other optimizations to remove the extra resulting stuff.
     if (conds.isEmpty)
       return e
@@ -54,7 +53,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   private def tryGroupBy[T](c: Exp[Traversable[T]],
                             allConds: Set[Exp[Boolean]],
                             fx: Var)
-                           (cond: Exp[Boolean]): Option[Exp[FilterMonadic[T, Traversable[T]]]] =
+                           (cond: Exp[Boolean]): Option[Exp[Traversable[T]]] =
     cond match {
       case eq: Eq[t2] =>
         val oq: Option[Exp[Traversable[T]]] =
@@ -128,7 +127,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   private def tryGroupByNested[T](c: Exp[Traversable[T]],
                             allConds: Set[Exp[Boolean]],
                             fx: Var)
-                           (cond: Exp[Boolean]): Option[Exp[FilterMonadic[T, Traversable[T]]]] =
+                           (cond: Exp[Boolean]): Option[Exp[Traversable[T]]] =
     cond match {
       case eq: Eq[t2] =>
         val oq: Option[Exp[Traversable[T]]] =
