@@ -93,54 +93,72 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     }
   }
 
-  def par[A, B, C](f: (A, B) => C): ((A, B), (A, B)) => (C, C) = { case ((a1, b1), (a2, b2)) => (f(a1, b1), f(a2, b2))}
-
-  //Next step: collect free variables relevant to the query... maybe...
-  def lookupEq(e: Exp[_], freeVars: Set[Exp[_]]): Set[Exp[_]] = {
+  //Preconditions:
+  //Postconditions: when extracting Some(parent), filterExp, foundEqs, allFVSeq, parent is a MapOp/FlatMap node which
+  // contains filterExp as child as base collection (and not through a FuncExp node).
+  def lookupEq(parent: Option[Exp[_]],
+               e: Exp[_],
+               freeVars: Set[Exp[_]] = Set.empty,
+               fvSeq: Seq[Exp[_]] = Seq.empty): Seq[(Option[Exp[_]], Exp[_], Set[Exp[_]], Seq[Exp[_]])] = {
+    require (fvSeq.toSet == freeVars)
     e match {
-      case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
+      case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) if parent.isDefined =>
         val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
         val allFreeVars = freeVars + f.x
-        def usesVar(e: Exp[_]) = e.findTotFun(allFreeVars(_)).nonEmpty
+        def usesFVars(e: Exp[_]) = e.findTotFun(allFreeVars(_)).nonEmpty
 
-        /*def unionSeq[T] = (_: Seq[T]) union (_: Seq[T])
-
-        conds.map {
-          case eq @ Eq(l, r) => (((l.find {case Var(_) => true}) union r.find {case Var(_) => true}).toSet, Set[Exp[_]](eq))
-          case _ => Set.empty[Exp[_]], Set.empty[Exp[_]])
-        }.fold((Set.empty[Exp[_]], Set.empty[Exp[_]]))(par(unionSet))
-
-        conds.map {
-          case eq @ Eq(l, r) => (l.find {case Var(_) => true} union r.find {case Var(_) => true}, Seq[Exp[_]](eq))
-          case _ => (Seq.empty, Seq.empty)
-        }.fold((Seq.empty, Seq.empty))(par(unionSeq))*/
-
-        //Using Sets here directly is close to impossible, due to the number of wildcards and the invariance of Set.
-        conds.map {
-          case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty && (usesVar(l) && !usesVar(r) || usesVar(r) && !usesVar(l)) =>
-            Set[Exp[_]](eq)
-          case _ => Set.empty[Exp[_]]
-        }.fold(Set.empty[Exp[_]])(_ union _)
+        //Using Sets here directly is very difficult, due to the number of wildcards and the invariance of Set.
+        //I managed, but it was beyond the abilities of type inference.
+        val foundEqs =
+          conds.map {
+            case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty && (usesFVars(l) && !usesFVars(r) || usesFVars(r) && !usesFVars(l)) =>
+              Seq(eq)
+            case _ => Seq.empty
+          }.fold(Seq.empty)(_ union _).toSet[Exp[_]]
+        Seq((parent, e, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway.
       case FlatMap(c, f) =>
-        //Add to this the variables on which the free vars of subexp depend? No. Add all free variables bound in the location.
-        lookupEq(c, freeVars) union lookupEq(f.body, freeVars + f.x)
+        //Add all free variables bound in the location.
+        lookupEq(Some(e), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
       case MapOp(c, f) =>
-        lookupEq(c, freeVars) union lookupEq(f.body, freeVars + f.x)
-      case _ => Set.empty
+        lookupEq(Some(e), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
+      case _ => Seq.empty
     }
   }
 
-  val groupByShare3: Exp[_] => Exp[_] = {
-    e => {
-      if (lookupEq(e, Set.empty).nonEmpty) {}
+  private def tryGroupByNested[T](c: Exp[Traversable[T]],
+                            allConds: Set[Exp[Boolean]],
+                            fx: Var)
+                           (cond: Exp[Boolean]): Option[Exp[FilterMonadic[T, Traversable[T]]]] =
+    cond match {
+      case eq: Eq[t2] =>
+        val oq: Option[Exp[Traversable[T]]] =
+          if (eq.t1.isOrContains(fx) && !eq.t2.isOrContains(fx))
+            groupByShareBody[T, t2](c, fx, eq, eq.t2, eq.t1)
+          else if (eq.t2.isOrContains(fx) && !eq.t1.isOrContains(fx))
+            groupByShareBody[T, t2](c, fx, eq, eq.t1, eq.t2)
+          else None
+        oq.map(e => residualQuery(e, allConds - eq, fx))
+      case _ => None
+    }
 
-      e match {
-        case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
-          val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
-          val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f)(_))
-          optimized.getOrElse(e)
-        case _ => e
-      }
+  val groupByShareNested: Exp[_] => Exp[_] = {
+    e => {
+      (for {
+        (Some(parent), filterExp, foundEqs, allFVSeq) <- lookupEq(None, e)
+      } yield {
+        //if (foundEqs.nonEmpty) {}
+        filterExp match {
+          case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
+            val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
+            val replacementBase = OptimizationTransforms.stripViewUntyped(c).asInstanceOf[Exp[Traversable[t]]]
+            val indexQuery = replacementBase map (x => Seq(allFVSeq :+ x: _*))
+
+            val indexToLookup = e.substSubTerm(parent, indexQuery).asInstanceOf[Exp[Traversable[t]]]
+            val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexToLookup, conds, f.x.asInstanceOf[Var])(_))
+            optimized.getOrElse(e)
+          //case _ => e //Unneeded
+        }
+      }).headOption.getOrElse(e)
     }
   }
 
