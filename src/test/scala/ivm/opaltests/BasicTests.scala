@@ -505,7 +505,14 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     val evTypeIdx1: Exp[TypeMapping[Seq, PairMethodAnd]] = benchMark("los7: creation of index typeIdx1"){ asExp(typeIdx1.interpret()) }
     //Hmm: this index inverts a 1-1 mapping, is that a good idea performance-wise?
     val idx1 = idx1Base.groupBySel(_._2, _._1)
+    val idx1BaseWithSeqs = for {
+      cf <- queryData.toSeq
+      m <- cf.methods
+      ca <- m.attributes
+    } yield Seq(m, ca)
+    val idx1WithSeqs = idx1BaseWithSeqs.groupBySel(_(1), _(0))
     val evIdx1 = benchMark("los7: creation of index idx1"){ asExp(idx1.interpret()) }
+    val evIdx1WithSeqs = benchMark("los7: creation of index idx1 with seqs"){ asExp(idx1WithSeqs.interpret()) }
 
     type PairCodeAttributeAnd[+T] = (CodeAttribute, T)
     /*
