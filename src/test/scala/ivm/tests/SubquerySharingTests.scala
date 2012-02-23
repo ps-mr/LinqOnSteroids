@@ -49,7 +49,8 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     } yield Seq(i, j)
 
     val l2Idx = l2IdxBase groupBy { _(1) }
-    val optQueryExpected = l2Idx(5) map (p => p(0) + p(1))
+    val l2IdxRes = l2Idx.interpret()
+    val optQueryExpected = asExp(l2IdxRes)(5) map (p => p(0) + p(1))
     l2.interpret() should be (optQueryExpected.interpret())
     Optimization.addSubQuery(l2Idx)
     val optQuery = Optimization.shareSubqueries(l2)
