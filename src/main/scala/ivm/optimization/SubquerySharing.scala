@@ -19,7 +19,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                                       f: FuncExp[T, Boolean],
                                       fEqBody: Eq[T2], constantEqSide: Exp[T2], varEqSide: Exp[T2]) = {
     /*
-    //How the fuck does this typecheck?
+    //How the heck does this typecheck?
     val groupedBy2: Exp[T => Traversable[T]] = c.map(identity).groupBy(FuncExp.makefun[T, T2](fEqBody.y, f.x).f)
     //Reason: a FuncExp[T, T2] is also FuncExp[T, Any]; groupBy(f: FuncExp[T, Any]) gives Map[Any, Repr]
     // (where Repr = Traversable[T] here) which can be _upcast_ to Any => Repr and then further upcast to T => Repr.
