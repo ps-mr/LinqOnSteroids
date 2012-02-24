@@ -33,11 +33,14 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     val groupedBy = c.groupBy[U](FuncExp.makefun[T, U](varEqSide, fx).f)
 
     assertType[Exp[U => Traversable[T]]](groupedBy) //Just for documentation.
-    subqueries.get(Optimization.normalize(groupedBy)) match {
+    val toLookup = Optimization.normalize(groupedBy)
+    subqueries.get(toLookup) match {
       //Note: x flatMap identity, on x: Option[Seq[T]], implements monadic join. We could also use x getOrElse Traversable.empty.
       //In both cases, the type of the resulting expression becomes Traversable, which might lead to the result having the wrong dynamic type.
       case Some(t) => Some(asExp(t.asInstanceOf[Map[U, Traversable[T]]]) get constantEqSide flatMap identity)
-      case None => None
+      case None =>
+        println("No index found of form " + toLookup)
+        None
     }
   }
 
@@ -127,10 +130,13 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     val groupedBy = indexBaseToLookup.groupBy[U](FuncExp.makefun[Seq[T], U](varEqSideTransf, fx).f)
 
     assertType[Exp[U => Traversable[Seq[T]]]](groupedBy) //Just for documentation.
-    subqueries.get(Optimization.normalize(groupedBy)) match {
+    val toLookup = Optimization.normalize(groupedBy)
+    subqueries.get(toLookup) match {
       case Some(t) =>
         Some(asExp(t.asInstanceOf[Map[U, Traversable[Seq[T]]]]) get constantEqSide flatMap identity)
-      case None => None
+      case None =>
+        println("No index found of form " + toLookup)
+        None
     }
   }
 
