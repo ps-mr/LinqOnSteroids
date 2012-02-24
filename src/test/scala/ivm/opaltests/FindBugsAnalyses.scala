@@ -548,7 +548,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       method ← classFile.methods
     //if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
     } yield Seq(classFile, method)).groupBy(_(1).asInstanceOf[Exp[Method]].name)
-    Optimization.addSubquery(idx)
+    benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(idx))
 
     val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Los Setup", silent = true) {
       Query(for {
