@@ -9,7 +9,7 @@ import scala.collection.Map
 class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   val directsubqueryShare: Exp[_] => Exp[_] = {
     e => subqueries.get(Optimization.normalize(e)) match {
-      case Some(t) => Const(t)
+      case Some(t) => asExp(t)
       case None => e
     }
   }
@@ -123,7 +123,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
     assertType[Exp[U => Traversable[Seq[T]]]](groupedBy) //Just for documentation.
     subqueries.get(Optimization.normalize(groupedBy)) match {
-      case Some(t) => Some(App(Const(t.asInstanceOf[U => Traversable[Seq[T]]]), constantEqSide))
+      case Some(t) =>
+        Some(asExp(t.asInstanceOf[U => Traversable[Seq[T]]]).apply(constantEqSide))
       case None => None
     }
   }
