@@ -21,7 +21,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test def testSimpleSharing() {
     val s1 = l.map(p => (p._1 + 1, p._2 + 2))
     val ress1 = s1.interpret()
-    Optimization.addSubQuery(s1)
+    Optimization.addSubquery(s1)
 
     val q = l.map(p => (p._1 + 1, p._2 + 2)).withFilter(_._1 === 5)
     val res = Optimization.shareSubqueries(q)
@@ -32,7 +32,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val res2 = Optimization.shareSubqueries(q2)
     res2 should equal (q2)
 
-    Optimization.removeSubQuery(s1)
+    Optimization.removeSubquery(s1)
   }
 
   @Test def testComplexIndexing() {
@@ -62,56 +62,56 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test def testIndexing {
     val index = l.groupBy(p => p._1 + p._2)
     val indexres = index.interpret()
-    Optimization.addSubQuery(index)
+    Optimization.addSubquery(index)
 
     val testquery = l.withFilter(p => p._1 + p._2 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
     optimized should equal (App(Const(indexres), Const(5)))
 
-    Optimization.removeSubQuery(index)
+    Optimization.removeSubquery(index)
   }
 
   @Test def testIndexingQueryNorm() {
     val index = l.groupBy(p => p._1 + p._2)
     val indexres = index.interpret()
-    Optimization.addSubQuery(index)
+    Optimization.addSubquery(index)
 
     val testquery = l.withFilter(p => p._2 + p._1 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
     optimized should equal (App(Const(indexres), Const(5)))
 
-    Optimization.removeSubQuery(index)
+    Optimization.removeSubquery(index)
   }
 
   @Test def testIndexingIndexNorm() {
     val index = l.groupBy(p => p._2 + p._1) //The index should be normalized, test this
     val indexres = index.interpret()
-    Optimization.addSubQuery(index)
+    Optimization.addSubquery(index)
 
     val testquery = l.withFilter(p => p._1 + p._2 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
     optimized should equal (App(Const(indexres), Const(5)))
 
-    Optimization.removeSubQuery(index)
+    Optimization.removeSubquery(index)
   }
 
   @Test def testCNFconversion {
     val index = l.groupBy(p => p._1 + p._2)
     val indexres = index.interpret()
-    Optimization.addSubQuery(index)
+    Optimization.addSubquery(index)
 
     val testquery = l.withFilter(p => p._1 <= 7 && p._1 + p._2 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
     optimized should equal (App(Const(indexres), Const(5)).withFilter(p => p._1 <= 7))
 
-    Optimization.removeSubQuery(index)
+    Optimization.removeSubquery(index)
   }
 
 
   @Test def testRemoveSubquery() {
     val index = l.groupBy(p => p._1 + p._2)
-    Optimization.addSubQuery(index)
-    Optimization.removeSubQuery(index)
+    Optimization.addSubquery(index)
+    Optimization.removeSubquery(index)
     Optimization.subqueries should be (Map.empty)
   }
 }
