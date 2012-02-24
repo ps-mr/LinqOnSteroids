@@ -109,16 +109,14 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   }
 
   private def groupByShareBodyNested[T, U](indexBaseToLookup: Exp[Traversable[Seq[T]]],
-                                      fx: Var,
+                                      fx: TypedVar[Seq[T]],
                                       fEqBody: Eq[U],
                                       constantEqSide: Exp[U], 
                                       varEqSide: Exp[U],
                                       allFVSeq: Seq[Exp[_]],
                                       parentNode: Exp[_/*T*/], parentF: FuncExp[_, _/*T, U*/],
                                       tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U]): Option[Exp[Traversable[Seq[T]]]] = {
-    //val fxIdx = allFVSeq.indexOf(fx)
-    //val tupleV = FuncExp.gensym
-    val varEqSideTransf = tuplingTransform(varEqSide, fx.asInstanceOf[TypedVar[Seq[T]]]).asInstanceOf[Exp[U]]
+    val varEqSideTransf = tuplingTransform(varEqSide, fx)
     val groupedBy = indexBaseToLookup.groupBy[U](FuncExp.makefun[Seq[T], U](varEqSideTransf, fx).f)
 
     assertType[Exp[U => Traversable[Seq[T]]]](groupedBy) //Just for documentation.
@@ -136,7 +134,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       case eq: Eq[u] =>
         val allFVSeq = FVSeq :+ fx
         val allFVMap = allFVSeq.zipWithIndex.toMap
-        //val allFreeVars = allFVSeq.toSet
         def usesFVars(e: Exp[_]) = e.findTotFun(allFVMap.contains(_)).nonEmpty
         def tuplingTransform[T, U](e: Exp[T], v: TypedVar[Seq[U]]) = e.transform(
           e => allFVMap.get(e) match {
@@ -144,25 +141,26 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
             case None => e
           })
 
+        //XXX we should use gensym, not duplicate vars!
+        val newVar = fx.asInstanceOf[TypedVar[Seq[T]]]
         val oq: Option[Exp[Traversable[Seq[T]]]] =
           if (usesFVars(eq.t1) && !usesFVars(eq.t2))
-            groupByShareBodyNested[T, u](indexBaseToLookup, fx, eq, eq.t2, eq.t1, allFVSeq, parentNode, parentF, tuplingTransform)
+            groupByShareBodyNested[T, u](indexBaseToLookup, newVar, eq, eq.t2, eq.t1, allFVSeq, parentNode, parentF, tuplingTransform)
           else if (usesFVars(eq.t2) && !usesFVars(eq.t1))
-            groupByShareBodyNested[T, u](indexBaseToLookup, fx, eq, eq.t1, eq.t2, allFVSeq, parentNode, parentF, tuplingTransform)
+            groupByShareBodyNested[T, u](indexBaseToLookup, newVar, eq, eq.t1, eq.t2, allFVSeq, parentNode, parentF, tuplingTransform)
           else None
-        //We need replacements both in allConds and in parentF
-        //First transform parentF. Note that fx is _not_ in scope in its body, but it uses another variable; we need it to use
-        //the same variable for our purposes.
-        //XXX we should use gensym, not duplicate vars!
-        val newVar = fx.asInstanceOf[TypedVar[Seq[Any]]]
-        val transfParentF = parentF.body.substSubTerm(parentF.x, newVar)
+        //We need to apply tuplingTransform both to allConds and to parentF.
+        //About parentF, note that fx is _not_ in scope in its body, which uses another variable, which
+        //iterates over the same collection as fx, so it should be considered equivalent to fx from the point of view of
+        //tuplingTransform. Hence let's perform the desired alpha-conversion.
+        val alphaRenamedParentF = parentF.body.substSubTerm(parentF.x, newVar)
         val step1 = oq.map(e => residualQuery(e, (allConds - eq).map(tuplingTransform(_, newVar)), newVar))
         
         parentNode match {
           case MapOp(_, _) =>
-            step1.map(e => e map FuncExp.makefun[Seq[T], T](tuplingTransform(transfParentF.asInstanceOf[Exp[T]], newVar), newVar).f)
+            step1.map(e => e map FuncExp.makefun[Seq[T], T](tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[T]], newVar), newVar).f)
           case FlatMap(_, _) =>
-            step1.map(e => e flatMap FuncExp.makefun[Seq[T], TraversableOnce[T]](tuplingTransform(transfParentF.asInstanceOf[Exp[TraversableOnce[T]]], newVar), newVar).f)
+            step1.map(e => e flatMap FuncExp.makefun[Seq[T], TraversableOnce[T]](tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[TraversableOnce[T]]], newVar), newVar).f)
         }
           //Note that we use always _map_ inside!
       case _ => None
@@ -177,13 +175,13 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         filterExp match {
           case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
             val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
-            val replacementBase = OptimizationTransforms.stripViewUntyped(c).asInstanceOf[Exp[Traversable[t]]]
+            val replacementBase = OptimizationTransforms.stripView(c)
             val indexQuery = replacementBase map (x => Seq(allFVSeq :+ x: _*))
 
             val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Seq[Any]]]]
-            val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x.asInstanceOf[Var], allFVSeq, parentNode, parentF)(_))
+            val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, parentF)(_))
             optimized.getOrElse(e)
-          //case _ => e //Unneeded
+          //case _ => e //Execution must not get here - hence, throw an exception
         }
       }).headOption.getOrElse(e)
     }
