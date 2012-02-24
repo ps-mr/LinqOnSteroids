@@ -629,6 +629,15 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
 
     import BATLifting._
+    val idxBase = for {
+      classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
+      method ← classFile.methods if method.body.isDefined
+      exceptionHandler ← method.body.get.exceptionTable
+    } yield Seq(classFile, method, exceptionHandler)
+    val idx = idxBase groupBy (_(2).asInstanceOf[Exp[ExceptionTableEntry]].catchType)
+
+    benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(idx))
+
     val catchesIllegalMonitorStateExceptionLos = benchMark("IMSE_DONT_CATCH_IMSE Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
