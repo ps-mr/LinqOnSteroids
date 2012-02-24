@@ -19,7 +19,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     if (conds.isEmpty)
       return e
     val residualcond: Exp[Boolean] = conds.reduce(And)
-    e.withFilter(FuncExp.makefun[T, Boolean](residualcond, v))
+    //Note that withFilter will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
+    // instance from the HOAS representation produced.
+    e withFilter FuncExp.makefun[T, Boolean](residualcond, v)
   }
 
   private def groupByShareBody[T, U](c: Exp[Traversable[T]],
@@ -141,9 +143,10 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
             case None => e
           })
 
-        //XXX we should use gensym, not duplicate vars!
+        //We never want to duplicate variables and take care of scoping.
+        //However, we can reuse fx here while still getting a free variable in the end.
         val newVar = fx.asInstanceOf[TypedVar[Seq[T]]]
-        val oq: Option[Exp[Traversable[Seq[T]]]] =
+        val step1Opt: Option[Exp[Traversable[Seq[T]]]] =
           if (usesFVars(eq.t1) && !usesFVars(eq.t2))
             groupByShareBodyNested[T, u](indexBaseToLookup, newVar, eq, eq.t2, eq.t1, allFVSeq, parentNode, parentF, tuplingTransform)
           else if (usesFVars(eq.t2) && !usesFVars(eq.t1))
@@ -154,15 +157,18 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         //iterates over the same collection as fx, so it should be considered equivalent to fx from the point of view of
         //tuplingTransform. Hence let's perform the desired alpha-conversion.
         val alphaRenamedParentF = parentF.body.substSubTerm(parentF.x, newVar)
-        val step1 = oq.map(e => residualQuery(e, (allConds - eq).map(tuplingTransform(_, newVar)), newVar))
+        val step2Opt = step1Opt.map(e => residualQuery(e, (allConds - eq).map(tuplingTransform(_, newVar)), newVar))
 
+        //Note that here, map/flatMap will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
+        // instance from the HOAS representation produced.
         parentNode match {
           case MapOp(_, _) =>
-            step1.map(e => e map FuncExp.makefun[Seq[T], T](tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[T]], newVar), newVar).f)
+            step2Opt.map(e => e map FuncExp.makefun[Seq[T], T](
+              tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[T]], newVar), newVar))
           case FlatMap(_, _) =>
-            step1.map(e => e flatMap FuncExp.makefun[Seq[T], TraversableOnce[T]](tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[TraversableOnce[T]]], newVar), newVar).f)
+            step2Opt.map(e => e flatMap FuncExp.makefun[Seq[T], TraversableOnce[T]](
+              tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[TraversableOnce[T]]], newVar), newVar))
         }
-          //Note that we use always _map_ inside!
       case _ => None
     }
 
