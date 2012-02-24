@@ -99,7 +99,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
             case _ => Seq.empty
           }.fold(Seq.empty)(_ union _).toSet[Exp[_]]
         Seq((parent, e, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway.
-      case FlatMap(c, f: FuncExp[t, u]) =>
+      case FlatMap(c, f: FuncExp[t, Traversable[u]]) =>
         //Add all free variables bound in the location.
         lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
       case MapOp(c, f: FuncExp[t, u]) =>
