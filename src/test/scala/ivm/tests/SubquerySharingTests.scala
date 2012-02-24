@@ -41,7 +41,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     query.interpret() should be (expectedOptQuery.interpret())
 
     Optimization.addSubquery(idx)
-    val optQuery = Optimization.shareSubqueries(query)
+    val optQuery = Optimization.optimize(query)
     Optimization.removeSubquery(idx)
 
     optQuery should be (expectedOptQuery)
@@ -72,6 +72,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       if (k === 5)
     } yield i + j + k
 
+  //The if will get lifted by optimizations - that's why l3IdxBase_j needs to be used during indexing.
   val l3_j: Exp[Seq[Int]] =
     for {
       i <- Vector.range(1, 10).asSmartCollection
@@ -80,19 +81,28 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       if (j === 5)
     } yield i + j + k
 
-  val l3IdxBase = for {
+  val l3IdxBase_k = for {
     i <- Vector.range(1, 10).asSmartCollection
     j <- onExp(i)('Vector$range_1, Vector.range(1, _))
     k <- onExp(j)('Vector$range_1, Vector.range(1, _))
   } yield Seq(i, j, k)
 
+  val l3IdxBase_j: Exp[Seq[Seq[Int]]] = for {
+    i <- Vector.range(1, 10).asSmartCollection
+    j <- onExp(i)('Vector$range_1, Vector.range(1, _))
+  } yield Seq(i, j)
+
   @Test def testComplexIndexing3Level_j() {
-    val l3Idx = l3IdxBase groupBy { _(1) }
-    indexingTest(l3_j, l3Idx){ asExp(_)(5) map (p => p(0) + p(1) + p(2)) }
+    val l3Idx = l3IdxBase_j groupBy { _(1) }
+    //Here p(0) and p(1) have type Exp[Int] but only by chance. If the index were tuple-based, it'd have type Exp[Seq[(Int, Int)]]. Since the tuple members have the same type,
+    //the seq-based index has type Exp[Seq[Seq[Int]]].
+    //Exp[Seq[(Int, String)]] would become Exp[Seq[Seq[Any]]], and p(0) would then have type Any.
+    indexingTest(l3_j, l3Idx){ asExp(_)(5) flatMap (p => for (k <- onExp(p(1))('Vector$range_1, Vector.range(1, _))) yield p(0) + p(1) + k) }
+    indexingTest(l3_shifted, l3Idx){ asExp(_)(5) flatMap (p => for (k <- onExp(p(1))('Vector$range_1, Vector.range(1, _))) yield p(0) + p(1) + k) }
   }
 
   @Test def testComplexIndexing3Level_k() {
-    val l3Idx = l3IdxBase groupBy { _(2) }
+    val l3Idx = l3IdxBase_k groupBy { _(2) }
     indexingTest(l3_k, l3Idx){ asExp(_)(5) map (p => p(0) + p(1) + p(2)) }
   }
 
@@ -103,11 +113,6 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       if (j === 5)
       k <- onExp(j)('Vector$range_1, Vector.range(1, _))
     } yield i + j + k
-
-  @Test def testComplexIndexing3Level_shifted() {
-    val l3Idx = l3IdxBase groupBy { _(1) }
-    indexingTest(l3_shifted, l3Idx){ asExp(_)(5) map (p => p(0) + p(1) + p(2)) }
-  }
 
   @Test def testIndexing {
     val index = l.groupBy(p => p._1 + p._2)
