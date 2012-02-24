@@ -17,22 +17,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   private def groupByShareBody[T, T2](c: Exp[Traversable[T]],
                                       fx: Var,
                                       fEqBody: Eq[T2], constantEqSide: Exp[T2], varEqSide: Exp[T2]) = {
-    /*
-    //How the heck does this typecheck?
-    val groupedBy2: Exp[T => Traversable[T]] = c.map(identity).groupBy(FuncExp.makefun[T, T2](fEqBody.y, f.x).f)
-    //Reason: a FuncExp[T, T2] is also FuncExp[T, Any]; groupBy(f: FuncExp[T, Any]) gives Map[Any, Repr]
-    // (where Repr = Traversable[T] here) which can be _upcast_ to Any => Repr and then further upcast to T => Repr.
-    // It's an interesting anomaly of type inference with variance, but it does not produce unsoundness.
-    // Indeed, since Map[A, +B] is invariant in A, we can't upcast Map[Any, Repr] to Map[T, Repr] - see groupedBy5.
-    //val groupedBy3: Exp[T => Traversable[T]] = c.map(identity).groupBy[T2](FuncExp.makefun[T, T2](fEqBody.y, f.x).f)
-    val groupedBy4: Exp[T => Traversable[T]] = c.map(identity).groupBy[Any](FuncExp.makefun[T, T2](fEqBody.y, f.x).f)
-    //
-    val groupedBy5: Exp[Map[Any, Traversable[T]]] = c.map(identity).groupBy[Any](FuncExp.makefun[T, T2](fEqBody.y, f.x).f)
-    */
-    //This code:
-    //val groupedBy = c.map(identity).groupBy(FuncExp.makefun[T, T2](fEqBody.y, f.x).f)
-    //expands to this:
-
     val groupedBy = c.groupBy[T2](FuncExp.makefun[T, T2](varEqSide, fx).f)
 
     assertType[Exp[T2 => Traversable[T]]](groupedBy) //Just for documentation.
@@ -204,23 +188,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       }).headOption.getOrElse(e)
     }
   }
-
-  /*
-  val groupByShare: Exp[_] => Exp[_] = {
-    e => e match {
-      case Filter(View(c: Exp[Traversable[_ /*t*/]]), (f: FuncExp[t, _ /*Boolean*/]) & FuncExpBody(fEqBody: Eq[t2])) =>
-        val Eq(lhs, rhs) = fEqBody
-        val coll = OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]])
-        if (rhs.isOrContains(f.x) && !lhs.isOrContains(f.x))
-          groupByShareBody[t, t2](coll, f, fEqBody, lhs, rhs).getOrElse(e)
-        else if (lhs.isOrContains(f.x) && !rhs.isOrContains(f.x))
-          groupByShareBody[t, t2](coll, f, fEqBody, rhs, lhs).getOrElse(e)
-        else
-          e
-      case _ => e
-    }
-  }
-  */
 
   //Entry point
   def shareSubqueries[T](query: Exp[T]): Exp[T] = {
