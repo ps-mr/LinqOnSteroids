@@ -111,7 +111,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   private def groupByShareBodyNested[T, U](indexBaseToLookup: Exp[Traversable[Seq[T]]],
                                       fx: TypedVar[Seq[T]],
                                       fEqBody: Eq[U],
-                                      constantEqSide: Exp[U], 
+                                      constantEqSide: Exp[U],
                                       varEqSide: Exp[U],
                                       allFVSeq: Seq[Exp[_]],
                                       parentNode: Exp[_/*T*/], parentF: FuncExp[_, _/*T, U*/],
@@ -155,7 +155,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         //tuplingTransform. Hence let's perform the desired alpha-conversion.
         val alphaRenamedParentF = parentF.body.substSubTerm(parentF.x, newVar)
         val step1 = oq.map(e => residualQuery(e, (allConds - eq).map(tuplingTransform(_, newVar)), newVar))
-        
+
         parentNode match {
           case MapOp(_, _) =>
             step1.map(e => e map FuncExp.makefun[Seq[T], T](tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[T]], newVar), newVar).f)
