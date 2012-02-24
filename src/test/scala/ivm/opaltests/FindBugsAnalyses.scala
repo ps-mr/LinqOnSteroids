@@ -503,6 +503,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
       ) yield classFile).force
     }
+    classesWithPublicFinalizeMethodsLikeLos should be (classesWithPublicFinalizeMethods)
 
     import BATLifting._
 
@@ -538,6 +539,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
       } yield classFile
     }
+    classesWithPublicFinalizeMethodsLikeLos should be (classesWithPublicFinalizeMethods)
 
     import BATLifting._
 
