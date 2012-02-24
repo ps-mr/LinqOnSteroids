@@ -34,7 +34,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
     assertType[Exp[U => Traversable[T]]](groupedBy) //Just for documentation.
     subqueries.get(Optimization.normalize(groupedBy)) match {
-      case Some(t) => Some(asExp(t.asInstanceOf[U => Traversable[T]]).apply(constantEqSide))
+      //Note: x flatMap identity, on x: Option[Seq[T]], implements monadic join. We could also use x getOrElse Traversable.empty.
+      //In both cases, the type of the resulting expression becomes Traversable, which might lead to the result having the wrong dynamic type.
+      case Some(t) => Some(asExp(t.asInstanceOf[Map[U, Traversable[T]]]) get constantEqSide flatMap identity)
       case None => None
     }
   }
@@ -127,7 +129,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     assertType[Exp[U => Traversable[Seq[T]]]](groupedBy) //Just for documentation.
     subqueries.get(Optimization.normalize(groupedBy)) match {
       case Some(t) =>
-        Some(asExp(t.asInstanceOf[U => Traversable[Seq[T]]]).apply(constantEqSide))
+        Some(asExp(t.asInstanceOf[Map[U, Traversable[Seq[T]]]]) get constantEqSide flatMap identity)
       case None => None
     }
   }

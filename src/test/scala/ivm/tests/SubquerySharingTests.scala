@@ -35,7 +35,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     Optimization.removeSubquery(s1)
   }
 
-  def indexingTest[T, U, V](query: Exp[Seq[T]], idx: Exp[Map[U, Seq[V]]])(expectedOptQueryProducer: Exp[Map[U, Seq[V]]] => Exp[Seq[T]]) {
+  def indexingTest[T, U, V](query: Exp[Seq[T]], idx: Exp[Map[U, Seq[V]]])(expectedOptQueryProducer: Exp[Map[U, Seq[V]]] => Exp[Traversable[T]]) {
     val idxRes = asExp(idx.interpret())
     val expectedOptQuery = expectedOptQueryProducer(idxRes)
     query.interpret() should be (expectedOptQuery.interpret())
@@ -61,7 +61,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test def testComplexIndexing() {
     val l2Idx = l2IdxBase groupBy { _(1) }
-    indexingTest(l2, l2Idx){ _(5) map (p => p(0) + p(1)) }
+    indexingTest(l2, l2Idx){ _ get 5 flatMap identity map (p => p(0) + p(1)) }
   }
 
   val l3_k: Exp[Seq[Int]] =
@@ -97,13 +97,13 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     //Here p(0) and p(1) have type Exp[Int] but only by chance. If the index were tuple-based, it'd have type Exp[Seq[(Int, Int)]]. Since the tuple members have the same type,
     //the seq-based index has type Exp[Seq[Seq[Int]]].
     //Exp[Seq[(Int, String)]] would become Exp[Seq[Seq[Any]]], and p(0) would then have type Any.
-    indexingTest(l3_j, l3Idx){ _(5) flatMap (p => for (k <- onExp(p(1))('Vector$range_1, Vector.range(1, _))) yield p(0) + p(1) + k) }
-    indexingTest(l3_shifted, l3Idx){ _(5) flatMap (p => for (k <- onExp(p(1))('Vector$range_1, Vector.range(1, _))) yield p(0) + p(1) + k) }
+    indexingTest(l3_j, l3Idx){ _ get 5 flatMap identity flatMap (p => for (k <- onExp(p(1))('Vector$range_1, Vector.range(1, _))) yield p(0) + p(1) + k) }
+    indexingTest(l3_shifted, l3Idx){ _ get 5 flatMap identity flatMap (p => for (k <- onExp(p(1))('Vector$range_1, Vector.range(1, _))) yield p(0) + p(1) + k) }
   }
 
   @Test def testComplexIndexing3Level_k() {
     val l3Idx = l3IdxBase_k groupBy { _(2) }
-    indexingTest(l3_k, l3Idx){ _(5) map (p => p(0) + p(1) + p(2)) }
+    indexingTest(l3_k, l3Idx){ _ get 5 flatMap identity map (p => p(0) + p(1) + p(2)) }
   }
 
   val l3_shifted: Exp[Seq[Int]] =
@@ -121,7 +121,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val testquery = l.withFilter(p => p._1 + p._2 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
-    optimized should equal (App(Const(indexres), Const(5)))
+    optimized should equal (asExp(indexres) get 5 flatMap identity)
 
     Optimization.removeSubquery(index)
   }
@@ -133,7 +133,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val testquery = l.withFilter(p => p._2 + p._1 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
-    optimized should equal (App(Const(indexres), Const(5)))
+    optimized should equal (asExp(indexres) get 5 flatMap identity)
 
     Optimization.removeSubquery(index)
   }
@@ -145,7 +145,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val testquery = l.withFilter(p => p._1 + p._2 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
-    optimized should equal (App(Const(indexres), Const(5)))
+    optimized should equal (asExp(indexres) get 5 flatMap identity)
 
     Optimization.removeSubquery(index)
   }
@@ -157,7 +157,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val testquery = l.withFilter(p => p._1 <= 7 && p._1 + p._2 === 5)
     val optimized = Optimization.shareSubqueries(testquery)
-    optimized should equal (App(Const(indexres), Const(5)).withFilter(p => p._1 <= 7))
+    optimized should equal (asExp(indexres) get 5 flatMap identity withFilter (p => p._1 <= 7))
 
     Optimization.removeSubquery(index)
   }
