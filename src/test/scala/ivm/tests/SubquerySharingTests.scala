@@ -64,6 +64,25 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     indexingTest(l2, l2Idx){ asExp(_)(5) map (p => p(0) + p(1)) }
   }
 
+  val l3: Exp[Seq[Int]] =
+    for {
+      i <- Vector.range(1, 10).asSmartCollection
+      j <- onExp(i)('Vector$range_1, Vector.range(1, _))
+      k <- onExp(j)('Vector$range_1, Vector.range(1, _))
+      if (k === 5) //Let's try j === 5 later.
+    } yield i + j + k
+
+  val l3IdxBase = for {
+    i <- Vector.range(1, 10).asSmartCollection
+    j <- onExp(i)('Vector$range_1, Vector.range(1, _))
+    k <- onExp(j)('Vector$range_1, Vector.range(1, _))
+  } yield Seq(i, j, k)
+
+  @Test def testComplexIndexing3Level() {
+    val l3Idx = l3IdxBase groupBy { _(2) }
+    indexingTest(l3, l3Idx){ asExp(_)(5) map (p => p(0) + p(1) + p(2)) }
+  }
+
   @Test def testIndexing {
     val index = l.groupBy(p => p._1 + p._2)
     val indexres = index.interpret()
