@@ -66,7 +66,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   //is visible.
   //Rewrite (if possible) coll.withFilter(elem => F[elem] === k && OtherConds[elem]) to (coll.groupBy(elem => F[elem]))(k).withFilter(x => OtherConds[x]),
   //with F and OtherConds expression contexts and under the condition that coll.groupBy(f) is already available as a precomputed subquery (i.e. an index).
-  val groupByShare2: Exp[_] => Exp[_] = {
+  val groupByShare: Exp[_] => Exp[_] = {
     e => e match {
       case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
         val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
@@ -191,6 +191,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
   //Entry point
   def shareSubqueries[T](query: Exp[T]): Exp[T] = {
-    query.transform(directsubqueryShare.andThen(groupByShare2).andThen(groupByShareNested))
+    query.transform(directsubqueryShare.andThen(groupByShare).andThen(groupByShareNested))
   }
 }
