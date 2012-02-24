@@ -39,11 +39,12 @@ import analyses._
 
 import reader.Java6Framework
 
-import expressiontree.{Lifting, Util}
+import expressiontree.{Exp, Lifting, Util}
 import Lifting._
 import Util.ExtraImplicits._
 import org.scalatest.{FunSuite, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
+import optimization.Optimization
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -512,6 +513,50 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       ) yield classFile)
     }
     benchQuery("FI_PUBLIC_SHOULD_BE_PROTECTED Los", classesWithPublicFinalizeMethodsLos, classesWithPublicFinalizeMethods)
+  }
+
+
+  test("PublicFinalizer2") {
+    analyzePublicFinalizer2()
+  }
+  def analyzePublicFinalizer2() {
+    // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
+
+    val classesWithPublicFinalizeMethods = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED-2") {
+      for {
+        classFile ← classFiles
+        method ← classFile.methods
+        if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
+      } yield classFile
+    }
+    println("\tViolations: " + classesWithPublicFinalizeMethods.length)
+    
+    val classesWithPublicFinalizeMethodsLikeLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED-2 Native Like Los") {
+      for {
+        classFile ← classFiles.view
+        method ← classFile.methods
+        if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
+      } yield classFile
+    }
+
+    import BATLifting._
+
+    val idx = (for {
+      classFile ← classFiles.asSmartCollection
+      method ← classFile.methods
+    //if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
+    } yield Seq(classFile, method)).groupBy(_(1).asInstanceOf[Exp[Method]].name)
+    Optimization.addSubquery(idx)
+
+    val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Los Setup", silent = true) {
+      Query(for {
+        classFile ← classFiles.asSmartCollection
+        method ← classFile.methods
+        if method.name === "finalize" && method.isPublic && method.descriptor.returnType === VoidType && method.descriptor.parameterTypes.size === 0
+      } yield classFile)
+    }
+    benchQuery("FI_PUBLIC_SHOULD_BE_PROTECTED-2 Los", classesWithPublicFinalizeMethodsLos, classesWithPublicFinalizeMethods)
+    Optimization.removeSubquery(idx)
   }
 
   test("SerializableNoConstructor") {
