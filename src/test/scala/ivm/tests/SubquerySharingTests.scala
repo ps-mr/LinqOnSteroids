@@ -35,28 +35,33 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     Optimization.removeSubquery(s1)
   }
 
-  @Test def testComplexIndexing() {
-    val l2: Exp[Seq[Int]] =
-      for {
-        i <- Vector.range(1, 10).asSmartCollection
-        j <- onExp(i)('Vector$range_1, Vector.range(1, _))
-        if (j === 5)
-      } yield i + j
-
-    val l2IdxBase = for {
+  val l2: Exp[Seq[Int]] =
+    for {
       i <- Vector.range(1, 10).asSmartCollection
       j <- onExp(i)('Vector$range_1, Vector.range(1, _))
-    } yield Seq(i, j)
+      if (j === 5)
+    } yield i + j
 
+  val l2IdxBase = for {
+    i <- Vector.range(1, 10).asSmartCollection
+    j <- onExp(i)('Vector$range_1, Vector.range(1, _))
+  } yield Seq(i, j)
+
+  def indexingTest[T, U, V](query: Exp[Seq[T]], idx: Exp[Map[U, Seq[V]]])(expectedOptQueryProducer: Map[U, Seq[V]] => Exp[Seq[T]]) {
+    val idxRes = idx.interpret()
+    val expectedOptQuery = expectedOptQueryProducer(idxRes)
+    query.interpret() should be (expectedOptQuery.interpret())
+
+    Optimization.addSubquery(idx)
+    val optQuery = Optimization.shareSubqueries(query)
+    Optimization.removeSubquery(idx)
+
+    optQuery should be (expectedOptQuery)
+  }
+
+  @Test def testComplexIndexing() {
     val l2Idx = l2IdxBase groupBy { _(1) }
-    val l2IdxRes = l2Idx.interpret()
-    val optQueryExpected = asExp(l2IdxRes)(5) map (p => p(0) + p(1))
-    l2.interpret() should be (optQueryExpected.interpret())
-    Optimization.addSubQuery(l2Idx)
-    val optQuery = Optimization.shareSubqueries(l2)
-    Optimization.removeSubQuery(l2Idx)
-
-    optQuery should be (optQueryExpected)
+    indexingTest(l2, l2Idx){ asExp(_)(5) map (p => p(0) + p(1)) }
   }
 
   @Test def testIndexing {
