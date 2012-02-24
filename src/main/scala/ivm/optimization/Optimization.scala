@@ -433,8 +433,8 @@ object Optimization {
 
   val subqueries: Map[Exp[_], Any] = Map.empty
 
-  def addSubquery[T](_query: Exp[T]) {
-    val query = OptimizationTransforms.stripViewUntyped(_query)
+  def addSubquery[T](_query: Dummy[Exp[T]]) {
+    val query = OptimizationTransforms.stripViewUntyped(_query.v)
     val optquery = optimize(query)
     val intQuery = optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret() again!
     //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the optimizer.
@@ -443,7 +443,8 @@ object Optimization {
     subqueries += normalize(optquery) -> intQuery
   }
 
-  def removeSubquery[T](query: Exp[T]) {
+  def removeSubquery[T](_query: Dummy[Exp[T]]) {
+    val query = _query.v
     subqueries -= normalize(query)
     subqueries -= normalize(optimize(query))
   }

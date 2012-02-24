@@ -103,13 +103,15 @@ trait ExpSugar extends ConversionDisabler2 {
   //Simplest possible definition of Query:
   //def Query[Repr](t: Exp[Repr]): Exp[Repr] = t
 
-  class Dummy[T](val v: T)
+  class Dummy[+T](val v: T)
 
   //This way, using Query verifies that it's argument is of type Exp[Traversable[T]] without needing to convert it. We could
   //maybe also restrict the result of Query so that only expResult() can be called on it.
   //
   implicit def toQuery[T](t: Exp[Traversable[T]]) = new Dummy(t)
   def Query[T](t: Dummy[Exp[Traversable[T]]]) = t.v
+
+  //Note: all the below is probably made unnecessary once Dummy becomes covariant.
 
   //With all variants underneath, Scala does not manage to apply toQuery implicitly.
   //implicit def toQuery[Repr](t: Exp[Repr]): Dummy[Exp[Repr]] = new Dummy(t)
