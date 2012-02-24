@@ -14,6 +14,14 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     }
   }
 
+  private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[Traversable[T]] = {
+    //This special case is an optimization which should not be needed. We need other optimizations to remove the extra resulting stuff.
+    if (conds.isEmpty)
+      return e
+    val residualcond: Exp[Boolean] = conds.reduce(And)
+    e.withFilter(FuncExp.makefun[T, Boolean](residualcond, v))
+  }
+
   private def groupByShareBody[T, T2](c: Exp[Traversable[T]],
                                       fx: Var,
                                       fEqBody: Eq[T2], constantEqSide: Exp[T2], varEqSide: Exp[T2]) = {
@@ -24,14 +32,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       case Some(t) => Some(asExp(t.asInstanceOf[T2 => Traversable[T]]).apply(constantEqSide))
       case None => None
     }
-  }
-
-  private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[Traversable[T]] = {
-    //This special case is an optimization which should not be needed. We need other optimizations to remove the extra resulting stuff.
-    if (conds.isEmpty)
-      return e
-    val residualcond: Exp[Boolean] = conds.reduce(And)
-    e.withFilter(FuncExp.makefun[T, Boolean](residualcond, v))
   }
 
   private def tryGroupBy[T](c: Exp[Traversable[T]],
