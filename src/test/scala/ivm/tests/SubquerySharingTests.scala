@@ -100,7 +100,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     for {
       i <- Vector.range(1, 10).asSmartCollection
       j <- onExp(i)('Vector$range_1, Vector.range(1, _))
-      if (j === 5) //k === 5 also works.
+      if (j === 5)
       k <- onExp(j)('Vector$range_1, Vector.range(1, _))
     } yield i + j + k
 
