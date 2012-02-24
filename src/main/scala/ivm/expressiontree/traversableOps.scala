@@ -238,9 +238,13 @@ trait ForceOps {
 
 //XXX: we'll probably have to duplicate this for Maps, as for Sets below. Or rather, we could drop this if we define
 //implicit conversions for both WithFilterImpl and TraversableLikeOps.
-trait MapOps {
-  this: LiftingConvs with TraversableOps =>
-  class MapOps[K, V](val t: Exp[Map[K, V]]) extends TraversableLikeOps[(K, V), Iterable, Map[K, V]] with WithFilterImpl[(K, V), Map[K, V], Map[K, V]] {
+trait CollectionMapOps {
+  this: LiftingConvs with TraversableOps with FunctionOps =>
+  import collection.{Map, MapLike}
+
+  trait MapLikeOps[K, V, Coll[K, V] <: Map[K, V] with MapLike[K, V, Coll[K, V]]]
+    extends TraversableLikeOps[(K, V), Iterable, Coll[K, V]] with WithFilterImpl[(K, V), Coll[K, V], Coll[K, V]] {
+    def get(key: Exp[K]): Exp[Option[V]] = onExp(t, key)('Map$get, _ get _)
     /*
     //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
     case class WithFilter(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[IterableView[(K, V), Map[K, V]]] {
@@ -248,6 +252,18 @@ trait MapOps {
     }
     */
   }
+
+  class CollectionMapOps[K, V](val t: Exp[Map[K, V]]) extends MapLikeOps[K, V, Map]
+
+  implicit def expToCollectionMapExp[K, V](t: Exp[Map[K, V]]): CollectionMapOps[K, V] = new CollectionMapOps(t)
+  implicit def tToCollectionMapExp[K, V](t: Map[K, V]): CollectionMapOps[K, V] =
+    expToCollectionMapExp(t)
+}
+
+trait MapOps extends CollectionMapOps {
+  this: LiftingConvs with TraversableOps with FunctionOps =>
+
+  class MapOps[K, V](val t: Exp[Map[K, V]]) extends MapLikeOps[K, V, Map]
 
   implicit def expToMapExp[K, V](t: Exp[Map[K, V]]): MapOps[K, V] = new MapOps(t)
   implicit def tToMapExp[K, V](t: Map[K, V]): MapOps[K, V] =
