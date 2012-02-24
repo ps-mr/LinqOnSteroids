@@ -6,6 +6,9 @@ import Util.assertType
 import scala.collection.Map
 
 // Contract: Each map entry has the form Exp[T] -> T for some T
+/**
+ * Note: this code is not allowed to create expression nodes through their constructors, as with {@see Optimization}.
+ */
 class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   val directsubqueryShare: Exp[_] => Exp[_] = {
     e => subqueries.get(Optimization.normalize(e)) match {

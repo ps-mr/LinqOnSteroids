@@ -19,6 +19,16 @@ object FuncExpIdentity {
 //Pattern match to connect two conditions
 object & { def unapply[A](a: A) = Some(a, a) }
 
+/*
+ * Note: it is crucial that optimization do not build expression nodes through their constructors, as they are not part
+ * of the interface exported to the optimization module. The rationale is that different semantics, for instance
+ * incremental view maintenance, require different nodes to be used for the same operation. The only constraint which is part of the
+ * interface is that the same extractor work for those nodes as well; in practice, different semantics refine expression
+ * nodes by subclassing them.
+ *
+ * This is IMHO relevant for the paper.
+ */
+
 //XXX: make transform require a function of type Exp[T] to Exp[T]!
 object OptimizationTransforms {
   private def buildJoin[T, S, TKey, TResult](fmColl: Exp[Traversable[T]],
