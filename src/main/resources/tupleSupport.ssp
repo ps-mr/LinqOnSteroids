@@ -99,7 +99,7 @@ trait ExpProduct {
 }
 
 trait AutoTupleOps {
-  this: FunctionOps =>
+  this: LiftingConvs =>
 #for (arity <- 2 to maxArity)
   ////////////////////////////////////////////
   // AUTOMATIC CONVERSIONS - ARITY ${arity} //
@@ -123,6 +123,26 @@ trait AutoTupleOps {
 #end
 }
 
-object TupleSupport {
-  //def projector(i: Int, n: Int)
+<%
+def nothingN(arity: Int) = Seq.fill(arity)("Nothing") mkString ", "
+%>
+object TupleSupport extends AutoTupleOps with LiftingConvs {
+  def projectionTo[T](e: Var, arity: Int, idx: Int): Exp[T] =
+    ((arity: @switch) match {
+#for (arity <- 2 to maxArity)
+      case ${arity} => toTuple${arity}Ops(e.asInstanceOf[Exp[(${nothingN(arity)})]]).metaProductElement(idx)
+#end
+    }).asInstanceOf[Exp[T]]
+}
+
+object TupleSupport2 {
+  def projectionTo[T](e: Var, arity: Int, idx: Int): Exp[T] =
+    (arity: @switch) match {
+#for (arity <- 2 to maxArity)
+      case ${arity} =>
+        (idx: @switch) match {
+          ${baseParLoop(arity)(i => "case %d => Tuple%dProj%d(e.asInstanceOf[Exp[(%s)]])" format (i - 1, arity, i, nothingN(arity)), "\n          ")}
+        }
+#end
+    }
 }

@@ -92,7 +92,7 @@ trait FunctionOps {
 }
 
 trait TupleOps extends AutoTupleOps {
-  this: FunctionOps =>
+  this: LiftingConvs =>
   //implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): LiftTuple2[A, B] = LiftTuple2[A, B](pair._1, pair._2)
 
   //To "unlift" a pair, here's my first solution:
