@@ -22,14 +22,14 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     e.withFilter(FuncExp.makefun[T, Boolean](residualcond, v))
   }
 
-  private def groupByShareBody[T, T2](c: Exp[Traversable[T]],
+  private def groupByShareBody[T, U](c: Exp[Traversable[T]],
                                       fx: Var,
-                                      fEqBody: Eq[T2], constantEqSide: Exp[T2], varEqSide: Exp[T2]) = {
-    val groupedBy = c.groupBy[T2](FuncExp.makefun[T, T2](varEqSide, fx).f)
+                                      fEqBody: Eq[U], constantEqSide: Exp[U], varEqSide: Exp[U]) = {
+    val groupedBy = c.groupBy[U](FuncExp.makefun[T, U](varEqSide, fx).f)
 
-    assertType[Exp[T2 => Traversable[T]]](groupedBy) //Just for documentation.
+    assertType[Exp[U => Traversable[T]]](groupedBy) //Just for documentation.
     subqueries.get(Optimization.normalize(groupedBy)) match {
-      case Some(t) => Some(asExp(t.asInstanceOf[T2 => Traversable[T]]).apply(constantEqSide))
+      case Some(t) => Some(asExp(t.asInstanceOf[U => Traversable[T]]).apply(constantEqSide))
       case None => None
     }
   }
@@ -39,12 +39,12 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                             fx: Var)
                            (cond: Exp[Boolean]): Option[Exp[Traversable[T]]] =
     cond match {
-      case eq: Eq[t2] =>
+      case eq: Eq[u] =>
         val oq: Option[Exp[Traversable[T]]] =
           if (eq.t1.isOrContains(fx) && !eq.t2.isOrContains(fx))
-            groupByShareBody[T, t2](c, fx, eq, eq.t2, eq.t1)
+            groupByShareBody[T, u](c, fx, eq, eq.t2, eq.t1)
           else if (eq.t2.isOrContains(fx) && !eq.t1.isOrContains(fx))
-            groupByShareBody[T, t2](c, fx, eq, eq.t1, eq.t2)
+            groupByShareBody[T, u](c, fx, eq, eq.t1, eq.t2)
           else None
         oq.map(e => residualQuery(e, allConds - eq, fx))
       case _ => None
@@ -133,7 +133,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                             fx: Var, FVSeq: Seq[Exp[_]], parentNode: Exp[Traversable[T]], parentF: FuncExp[_ /*T*/, _/*U*/])
                            (cond: Exp[Boolean]): Option[Exp[Traversable[T]]] =
     cond match {
-      case eq: Eq[t2] =>
+      case eq: Eq[u] =>
         val allFVSeq = FVSeq :+ fx
         val allFVMap = allFVSeq.zipWithIndex.toMap
         //val allFreeVars = allFVSeq.toSet
@@ -146,9 +146,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
         val oq: Option[Exp[Traversable[Seq[T]]]] =
           if (usesFVars(eq.t1) && !usesFVars(eq.t2))
-            groupByShareBodyNested[T, t2](indexBaseToLookup, fx, eq, eq.t2, eq.t1, allFVSeq, parentNode, parentF, tuplingTransform)
+            groupByShareBodyNested[T, u](indexBaseToLookup, fx, eq, eq.t2, eq.t1, allFVSeq, parentNode, parentF, tuplingTransform)
           else if (usesFVars(eq.t2) && !usesFVars(eq.t1))
-            groupByShareBodyNested[T, t2](indexBaseToLookup, fx, eq, eq.t1, eq.t2, allFVSeq, parentNode, parentF, tuplingTransform)
+            groupByShareBodyNested[T, u](indexBaseToLookup, fx, eq, eq.t1, eq.t2, allFVSeq, parentNode, parentF, tuplingTransform)
           else None
         //We need replacements both in allConds and in parentF
         //First transform parentF. Note that fx is _not_ in scope in its body, but it uses another variable; we need it to use
