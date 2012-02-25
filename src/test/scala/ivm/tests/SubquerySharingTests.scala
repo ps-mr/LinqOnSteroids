@@ -35,7 +35,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     Optimization.removeSubquery(s1)
   }
 
-  def indexingTest[T, U, V](query: Exp[Seq[T]], idx: Exp[Map[U, Seq[V]]])(expectedOptQueryProducer: Exp[Map[U, Seq[V]]] => Exp[Traversable[T]]) {
+  def indexingTest[T, U, TupleT](query: Exp[Seq[T]], idx: Exp[Map[U, TupleT]])(expectedOptQueryProducer: Exp[Map[U, TupleT]] => Exp[Traversable[T]]) {
     val idxRes = asExp(idx.interpret())
     val expectedOptQuery = expectedOptQueryProducer(idxRes)
     query.interpret() should be (expectedOptQuery.interpret())
@@ -57,11 +57,11 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l2IdxBase = for {
     i <- Vector.range(1, 10).asSmartCollection
     j <- onExp(i)('Vector$range_1, Vector.range(1, _))
-  } yield Seq(i, j)
+  } yield (i, j)
 
   @Test def testComplexIndexing() {
-    val l2Idx = l2IdxBase groupBy { _(1) }
-    indexingTest(l2, l2Idx){ _ get 5 flatMap identity map (p => p(0) + p(1)) }
+    val l2Idx = l2IdxBase groupBy { _._2 }
+    indexingTest(l2, l2Idx){ _ get 5 flatMap identity map (p => p._1 + p._2) }
   }
 
   val l3_k: Exp[Seq[Int]] =
@@ -85,25 +85,26 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     i <- Vector.range(1, 10).asSmartCollection
     j <- onExp(i)('Vector$range_1, Vector.range(1, _))
     k <- onExp(j)('Vector$range_1, Vector.range(1, _))
-  } yield Seq(i, j, k)
+  } yield (i, j, k)
 
-  val l3IdxBase_j: Exp[Seq[Seq[Int]]] = for {
+  val l3IdxBase_j: Exp[Seq[(Int, Int)]] = for {
     i <- Vector.range(1, 10).asSmartCollection
     j <- onExp(i)('Vector$range_1, Vector.range(1, _))
-  } yield Seq(i, j)
+  } yield (i, j)
 
   @Test def testComplexIndexing3Level_j() {
-    val l3Idx = l3IdxBase_j groupBy { _(1) }
+    val l3Idx = l3IdxBase_j groupBy { _._2 }
     //Here p(0) and p(1) have type Exp[Int] but only by chance. If the index were tuple-based, it'd have type Exp[Seq[(Int, Int)]]. Since the tuple members have the same type,
     //the seq-based index has type Exp[Seq[Seq[Int]]].
     //Exp[Seq[(Int, String)]] would become Exp[Seq[Seq[Any]]], and p(0) would then have type Any.
-    indexingTest(l3_j, l3Idx){ _ get 5 flatMap identity flatMap (p => for (k <- onExp(p(1))('Vector$range_1, Vector.range(1, _))) yield p(0) + p(1) + k) }
-    indexingTest(l3_shifted, l3Idx){ _ get 5 flatMap identity flatMap (p => for (k <- onExp(p(1))('Vector$range_1, Vector.range(1, _))) yield p(0) + p(1) + k) }
+    //indexingTest(l3_j, l3Idx){ _ get 5 flatMap identity flatMap (p => for (k <- onExp(p(1))('Vector$range_1, Vector.range(1, _))) yield p(0) + p(1) + k) }
+    indexingTest(l3_j, l3Idx){ _ get 5 flatMap identity flatMap (p => for (k <- onExp(p._2)('Vector$range_1, Vector.range(1, _))) yield p._1 + p._2 + k) }
+    indexingTest(l3_shifted, l3Idx){ _ get 5 flatMap identity flatMap (p => for (k <- onExp(p._2)('Vector$range_1, Vector.range(1, _))) yield p._1 + p._2 + k) }
   }
 
   @Test def testComplexIndexing3Level_k() {
-    val l3Idx = l3IdxBase_k groupBy { _(2) }
-    indexingTest(l3_k, l3Idx){ _ get 5 flatMap identity map (p => p(0) + p(1) + p(2)) }
+    val l3Idx = l3IdxBase_k groupBy { _._3 }
+    indexingTest(l3_k, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
   }
 
   val l3_shifted: Exp[Seq[Int]] =

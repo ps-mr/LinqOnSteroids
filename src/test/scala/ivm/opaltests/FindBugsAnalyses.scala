@@ -547,7 +547,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       classFile ← classFiles.asSmartCollection
       method ← classFile.methods
     //if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
-    } yield Seq(classFile, method)).groupBy(_(1).asInstanceOf[Exp[Method]].name)
+    } yield (classFile, method)).groupBy(_._2.name)
     benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(idx))
 
     val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Los Setup", silent = true) {
@@ -633,8 +633,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
       method ← classFile.methods if method.body.isDefined
       exceptionHandler ← method.body.get.exceptionHandlers
-    } yield Seq(classFile, method, exceptionHandler)
-    val idx = idxBase groupBy (_(2).asInstanceOf[Exp[ExceptionHandler]].catchType)
+    } yield (classFile, method, exceptionHandler)
+    val idx = idxBase groupBy (_._3.catchType)
 
     benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(idx))
 
