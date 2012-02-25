@@ -138,6 +138,10 @@ object TupleSupport extends AutoTupleOps with LiftingConvs {
 object TupleSupport2 {
   def projectionTo[T](e: Var, arity: Int, idx: Int): Exp[T] =
     (arity: @switch) match {
+      case 1 =>
+        idx match {
+          case 0 => e.asInstanceOf[Exp[Nothing]]
+        }
 #for (arity <- 2 to maxArity)
       case ${arity} =>
         (idx: @switch) match {
@@ -145,4 +149,13 @@ object TupleSupport2 {
         }
 #end
     }
+  def toTuple(exps: Seq[Exp[_]]): Exp[_] = {
+    val arity = exps.length
+    (arity: @switch) match {
+      case 1 => exps(0)
+#for (arity <- 2 to maxArity)
+      case ${arity} => LiftTuple${arity}(${baseParLoop(arity)(i => "exps(%d)" format i - 1)})
+#end
+    }
+  }
 }

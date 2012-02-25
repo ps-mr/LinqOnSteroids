@@ -151,7 +151,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         def usesFVars(e: Exp[_]) = e.findTotFun(allFVMap.contains(_)).nonEmpty
         def tuplingTransform[T, U](e: Exp[T], v: TypedVar[Seq[U]]) = e.transform(
           e => allFVMap.get(e) match {
-            case Some(idx) => v(idx)
+            case Some(idx) =>
+              TupleSupport2.projectionTo(v, allFVSeq.length, idx)
+              //v(idx)
             case None => e
           })
 
@@ -192,7 +194,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
           case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
             val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
             val replacementBase = OptimizationTransforms.stripView(c)
-            val indexQuery = replacementBase map (x => Seq(allFVSeq :+ x: _*))
+            val indexQuery = replacementBase map (x => TupleSupport2.toTuple(allFVSeq :+ x))
 
             val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Seq[Any]]]]
             val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, parentF)(_))
