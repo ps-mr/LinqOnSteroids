@@ -70,14 +70,14 @@ object BATLifting {
     def parameterTypes = onExp(t)('parameterTypes, _.parameterTypes)
   }
 
-  implicit def expToCodeAttributeOps(t: Exp[CodeAttribute]) = new CodeAttributeOps(t)
-  class CodeAttributeOps(t: Exp[CodeAttribute]) {
-    def code: Exp[Seq[Instruction]] = onExp(t)('code, _.code)
-    def exceptionTable = onExp(t)('exceptionTable, _.exceptionTable)
+  implicit def expToCodeOps(t: Exp[Code]) = new CodeOps(t)
+  class CodeOps(t: Exp[Code]) {
+    def instructions: Exp[Seq[Instruction]] = onExp(t)('instructions, _.instructions)
+    def exceptionHandlers = onExp(t)('exceptionHandlers, _.exceptionHandlers)
   }
 
-  implicit def expToExceptionTableEntryOps(t: Exp[ExceptionTableEntry]) = new ExceptionTableEntryOps(t)
-  class ExceptionTableEntryOps(t: Exp[ExceptionTableEntry]) {
+  implicit def expToExceptionTableEntryOps(t: Exp[ExceptionHandler]) = new ExceptionTableEntryOps(t)
+  class ExceptionTableEntryOps(t: Exp[ExceptionHandler]) {
     def catchType = onExp(t)('catchType, _.catchType)
   }
 }
@@ -86,21 +86,21 @@ object BATLifting {
  * More experimental boilerplate code - this needs to evolve into something that we can generate.
  */
 object BATLiftingExperimental {
-  object CodeAttribute {
+  object Code {
     // We need to specify Exp[Seq[Instruction]] instead of Exp[Array[Instruction]] because one cannot convert
     // Exp[Array[T]] to Exp[Seq[T]], so we must request here an implicit conversion (LowPriorityImplicits.wrapRefArray)
     // before wrapping everything within Exp.
     def unapply(t: Exp[_]): Option[(Exp[Int], Exp[Int],
       Exp[Seq[Instruction]], //doing something special here!
-      Exp[ExceptionTable],
+      Exp[ExceptionHandlers],
       Exp[Attributes])] = {
       if (t ne null) {
         //Calling interpret here makes the result an exotic term - doesn't it?
         t.interpret() match {
-          case ca: CodeAttribute =>
+          case ca: Code =>
             assert(ca != null) //This is satisfied because of the pattern match.
             Some((ca.maxStack, ca.maxLocals,
-              ca.code, ca.exceptionTable, ca.attributes))
+              ca.instructions, ca.exceptionHandlers, ca.attributes))
           case _ =>
             None
         }
@@ -114,9 +114,9 @@ object BATLiftingExperimental {
           case ca: Code_attribute =>
             assert(ca != null) //This is satisfied because of the pattern match.
             Some((ca.maxStack, ca.maxLocals,
-              toExp(ca.code), //This is needed to allow predefined implicit conversions to trigger.
-              // We can call toExp unconditionally in the generated version of this code.
-              ca.exceptionTable, ca.attributes))
+              toExp(ca.instructions), //This is needed to allow predefined implicit conversions to trigger.
+              // We can call toExp unconditionally in the generated version of this instructions.
+              ca.exceptionHandlers, ca.attributes))
           case _ =>
             None
         }, t)
@@ -201,7 +201,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     subClassesMap.interpret()
   }
 
-  // compute all method names that make an instance-of check in their body, using the .code member.
+  // compute all method names that make an instance-of check in their body, using the .instructions member.
   test("testOpalNewStyle") {
     testOpalNewStyle()
   }
@@ -210,7 +210,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     val methodsNative: Set[String] = benchMark("native-new") {
       for (cf <- testdata;
            m <- cf.methods if m.body.isDefined;
-           INSTANCEOF(_) <- m.body.get.code) yield m.name
+           INSTANCEOF(_) <- m.body.get.instructions) yield m.name
     }
     //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
     //Not very pretty, but better than nothing
@@ -228,7 +228,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
           m <- cf.methods
           mBody <- Let(m.body)
           if mBody.isDefined
-          INSTANCEOF(_) <- mBody.get.code
+          INSTANCEOF(_) <- mBody.get.instructions
         } yield m.name
 
       println(methodsLos1) //Fails because the terms are inadequate
@@ -241,7 +241,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
     val methodsLos2 = queryData.flatMap(cf => cf.methods
       .withFilter(m => m.body.isDefined)
-      .flatMap(m => m.body.get.code
+      .flatMap(m => m.body.get.instructions
       .collect(i => i.ifInstanceOf[INSTANCEOF])
       .map(_ => m.name)))
 
@@ -256,7 +256,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         m <- cf.methods
         mBody <- Let(m.body)
         if mBody.isDefined
-        io <- mBody.get.code.typeFilter[INSTANCEOF]
+        io <- mBody.get.instructions.typeFilter[INSTANCEOF]
       } yield m.name
     val m5Int: Traversable[String] = benchMark("los5-new") {
       methodsLos5.interpret()
@@ -269,7 +269,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         m <- cf.methods
         mBody <- Let(m.body)
         if mBody.isDefined
-        io <- mBody.get.code.typeFilter[INSTANCEOF]
+        io <- mBody.get.instructions.typeFilter[INSTANCEOF]
       } yield m.name).toSet
     val m5SeqInt: Traversable[String] = benchMark("los5-new-Seq") {
       methodsLos5Seq.interpret()
@@ -281,8 +281,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
   val methodsNative: Set[String] = benchMark("native") {
     for (cf <- testdata;
          m <- cf.methods;
-         CodeAttribute(_,_,code,_,_) <- m.attributes;
-         INSTANCEOF(_) <- code) yield m.name
+         Code(_,_,instructions,_,_) <- m.attributes;
+         INSTANCEOF(_) <- instructions) yield m.name
   }
 
   // using reified query; INSTANCEOF is here shadowed.
@@ -304,8 +304,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       //The pattern-matches used here are unsound:
       val methodsLos1 = for (cf <- queryData;
                              m <- cf.methods;
-                             CodeAttribute(_,_,code,_,_) <- m.attributes;
-                             INSTANCEOF(_) <- code) yield m.name
+                             Code(_,_,instructions,_,_) <- m.attributes;
+                             INSTANCEOF(_) <- instructions) yield m.name
 
       println(methodsLos1) //Fails because the terms are inadequate
 
@@ -317,8 +317,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
     val methodsLos2 = queryData.flatMap( cf => cf.methods
       .flatMap( m => m.attributes
-      .collect( x => x.ifInstanceOf[CodeAttribute])
-      .flatMap( c => c.code)
+      .collect( x => x.ifInstanceOf[Code])
+      .flatMap( c => c.instructions)
       .collect( i => i.ifInstanceOf[INSTANCEOF])
       .map( _ => m.name)))
 
@@ -334,10 +334,10 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .collect(
       a => onExp(a)('instanceOf$CodeAttribute,
         x =>
-          if (x.isInstanceOf[CodeAttribute])
-            Some(x.asInstanceOf[CodeAttribute])
+          if (x.isInstanceOf[Code])
+            Some(x.asInstanceOf[Code])
           else None))
-      .flatMap( c => c.code)
+      .flatMap( c => c.instructions)
       .filter( a => onExp(a)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF]))
       .map( _ => m.name)))
 
@@ -352,8 +352,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         cf <- queryData
         m <- cf.methods
         a <- m.attributes
-        if onExp(a)('instanceOf$CodeAttribute, _.isInstanceOf[CodeAttribute])
-        i <- a.asInstanceOf[Exp[CodeAttribute]].code //This cast works perfectly
+        if onExp(a)('instanceOf$CodeAttribute, _.isInstanceOf[Code])
+        i <- a.asInstanceOf[Exp[Code]].instructions //This cast works perfectly
         if onExp(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
       } yield m.name
     val m4Int: Traversable[String] = benchMark("los4") {
@@ -367,8 +367,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       for {
         cf <- queryData
         m <- cf.methods
-        ca <- m.attributes.typeFilter[CodeAttribute]
-        io <- ca.code.typeFilter[INSTANCEOF]
+        ca <- m.attributes.typeFilter[Code]
+        io <- ca.instructions.typeFilter[INSTANCEOF]
       } yield m.name
     val m5Int: Traversable[String] = benchMark("los5") {
       methodsLos5.interpret()
@@ -379,8 +379,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       (for {
         cf <- queryData.toSeq
         m <- cf.methods
-        ca <- m.attributes.typeFilter[CodeAttribute]
-        io <- ca.code.typeFilter[INSTANCEOF]
+        ca <- m.attributes.typeFilter[Code]
+        io <- ca.instructions.typeFilter[INSTANCEOF]
       } yield m.name).toSet
     val m5SeqInt: Traversable[String] = benchMark("los5-Seq") {
       methodsLos5Seq.interpret()
@@ -390,8 +390,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     //Let's consider type indexing.
     //First let's look at the desugared query
     val methodsLos5Desugared = queryData.flatMap(cf => cf.methods
-      .flatMap(m => m.attributes.typeFilter[CodeAttribute]
-      .flatMap(ca => ca.code.typeFilter[INSTANCEOF]
+      .flatMap(m => m.attributes.typeFilter[Code]
+      .flatMap(ca => ca.instructions.typeFilter[INSTANCEOF]
       .map(io => m.name))))
     //No benchmarking as this code is the same as methodsLos5; this just checks that we indeed got the desugaring right.
     methodsNative should equal (methodsLos5Desugared.interpret())
@@ -408,7 +408,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
   }
 
   def testOpalWithIndexing() {
-    //Let coll0 be "m.attributes.typeFilter[CodeAttribute]", coll1 be "ca", FindSubcolls[coll1] be "coll1.code", RestQuery[res] be res.map(io => m.name),
+    //Let coll0 be "m.attributes.typeFilter[Code]", coll1 be "ca", FindSubcolls[coll1] be "coll1.instructions", RestQuery[res] be res.map(io => m.name),
     //T be "INSTANCEOF"
     //OuterQuery[S] be "queryData.flatMap(cf => cf.methods.flatMap(m => S))"
     //So that the query becomes:
@@ -426,16 +426,16 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     val typeIdxBase: Exp[Set[PairMethodAnd[Instruction]]] = for {
       cf <- queryData
       m <- cf.methods
-      ca <- m.attributes.typeFilter[CodeAttribute]
-      i <- ca.code
+      ca <- m.attributes.typeFilter[Code]
+      i <- ca.instructions
     } yield (m, i)
     benchMark("los6 index-base creation")(typeIdxBase.interpret())
 
     val typeIdxBaseSeq: Exp[Seq[PairMethodAnd[Instruction]]] = for {
       cf <- queryData.toSeq
       m <- cf.methods
-      ca <- m.attributes.typeFilter[CodeAttribute]
-      i <- ca.code
+      ca <- m.attributes.typeFilter[Code]
+      i <- ca.instructions
     } yield (m, i)
     benchMark("los6 Seq-index-base creation")(typeIdxBaseSeq.interpret())
     //Let us accept some limited overhead with explicit type annotations to create the index
@@ -470,14 +470,14 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     }
     methodsNative should equal (m6Int)
 
-    type QueryAnd[+T] = ((ClassFile, Method, CodeAttribute), T);
+    type QueryAnd[+T] = ((ClassFile, Method, Code), T);
     {
       //Same code as above, except that the index returns all free variables, so that the optimizer might find it.
       val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
         cf <- queryData.toSeq
         m <- cf.methods
-        ca <- m.attributes.typeFilter[CodeAttribute]
-        i <- ca.code
+        ca <- m.attributes.typeFilter[Code]
+        i <- ca.instructions
       } yield (asExp((cf, m, ca)), i)
 
       val typeIdx = typeIdxBase.groupByTupleType2
@@ -514,20 +514,20 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     val evIdx1 = benchMark("los7: creation of index idx1"){ asExp(idx1.interpret()) }
     val evIdx1WithSeqs = benchMark("los7: creation of index idx1 with seqs"){ asExp(idx1WithSeqs.interpret()) }
 
-    type PairCodeAttributeAnd[+T] = (CodeAttribute, T)
+    type PairCodeAttributeAnd[+T] = (Code, T)
     /*
     val idx2Base = for {
       pair <- idx1Base
-      ca <- pair._1.attributes.typeFilter[CodeAttribute]
-      i <- ca.code
+      ca <- pair._1.attributes.typeFilter[Code]
+      i <- ca.instructions
     } yield (ca, i)
     val idx2 = idx2Base.groupByTupleType2
     val evIdx2: Exp[TypeMapping[Set, PairCodeAttribute]] = idx2.interpret()
     */
-    //val idx2BaseOpt = evIdx1.get[CodeAttribute].flatMap(ca => ca.code.map(i => (ca, i)))
+    //val idx2BaseOpt = evIdx1.get[Code].flatMap(ca => ca.instructions.map(i => (ca, i)))
     val idx2BaseOpt /*: Exp[Set[PairCodeAttribute[Attribute]]]*/ = for {
-      pair <- evTypeIdx1.get[CodeAttribute]
-      i <- pair._2.code
+      pair <- evTypeIdx1.get[Code]
+      i <- pair._2.instructions
     } yield (pair._2, i)
     val typeIdx2Opt = idx2BaseOpt.groupByTupleType2
     val evTypeIdx2Opt: Exp[TypeMapping[Seq, PairCodeAttributeAnd]] = benchMark("los7: creation of index typeIdx2Opt"){ asExp(typeIdx2Opt.interpret()) }
