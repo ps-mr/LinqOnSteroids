@@ -188,9 +188,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     e => {
       (for {
         (Some((parentNode: Exp[Traversable[t]], parentF)), filterExp, foundEqs, allFVSeq) <- lookupEq(None, e)
-      } yield {
-        //if (foundEqs.nonEmpty) {}
-        filterExp match {
+        optim <- filterExp match {
           case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
             val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
             val replacementBase = OptimizationTransforms.stripView(c)
@@ -198,10 +196,10 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
             val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Seq[Any]]]]
             val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, parentF)(_))
-            optimized.getOrElse(e)
+            optimized
           //case _ => e //Execution must not get here - hence, throw an exception
         }
-      }).headOption.getOrElse(e)
+      } yield optim).headOption.getOrElse(e)
     }
   }
 
