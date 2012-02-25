@@ -3,6 +3,7 @@ import annotation.switch
 
 <%
   escapeMarkup = false
+  val minTupleArity = 2
   val maxArity = 5
   val commaSpace = ", "
   def baseParLoop(arity: Int)(formatter: Int => String, sep: String = commaSpace) = (1 to arity) map formatter mkString sep
@@ -65,7 +66,7 @@ case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparam
 }
 
 #end <%-- //We close and reopen the loop because there are no unary tuples. --%>
-#for (arity <- 2 to maxArity)
+#for (arity <- minTupleArity to maxArity)
 <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2 %>
 //////////////////////////////////////////
 // SUPPORT FOR TUPLES OF ARITY ${arity} //
@@ -100,7 +101,7 @@ trait ExpProduct {
 
 trait AutoTupleOps {
   this: LiftingConvs =>
-#for (arity <- 2 to maxArity)
+#for (arity <- minTupleArity to maxArity)
   ////////////////////////////////////////////
   // AUTOMATIC CONVERSIONS - ARITY ${arity} //
   ////////////////////////////////////////////
@@ -129,7 +130,7 @@ def nothingN(arity: Int) = Seq.fill(arity)("Nothing") mkString ", "
 object TupleSupport extends AutoTupleOps with LiftingConvs {
   def projectionTo[T](e: Var, arity: Int, idx: Int): Exp[T] =
     ((arity: @switch) match {
-#for (arity <- 2 to maxArity)
+#for (arity <- minTupleArity to maxArity)
       case ${arity} => toTuple${arity}Ops(e.asInstanceOf[Exp[(${nothingN(arity)})]]).metaProductElement(idx)
 #end
     }).asInstanceOf[Exp[T]]
@@ -142,7 +143,7 @@ object TupleSupport2 {
         idx match {
           case 0 => e.asInstanceOf[Exp[Nothing]]
         }
-#for (arity <- 2 to maxArity)
+#for (arity <- minTupleArity to maxArity)
       case ${arity} =>
         (idx: @switch) match {
           ${baseParLoop(arity)(i => "case %d => Tuple%dProj%d(e.asInstanceOf[Exp[(%s)]])" format (i - 1, arity, i, nothingN(arity)), "\n          ")}
@@ -153,7 +154,7 @@ object TupleSupport2 {
     val arity = exps.length
     (arity: @switch) match {
       case 1 => exps(0)
-#for (arity <- 2 to maxArity)
+#for (arity <- minTupleArity to maxArity)
       case ${arity} => LiftTuple${arity}(${baseParLoop(arity)(i => "exps(%d)" format i - 1)})
 #end
     }
