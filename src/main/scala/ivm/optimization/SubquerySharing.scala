@@ -80,7 +80,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     e => e match {
       case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
         val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
-        val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f.x.asInstanceOf[Var])(_))
+        val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f.x)(_))
         optimized.getOrElse(e)
       case _ => e
     }
