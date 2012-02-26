@@ -38,9 +38,10 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       //Note: x flatMap identity, on x: Option[Seq[T]], implements monadic join. We could also use x getOrElse Traversable.empty.
       //In both cases, the type of the resulting expression becomes Traversable, which might lead to the result having the wrong dynamic type.
       case Some(t) =>
+        println("Found simple index of form " + toLookup)
         Some(asExp(t.asInstanceOf[Map[U, Traversable[T]]]) get constantEqSide flatMap identity)
       case None =>
-        println("No index found of form " + toLookup)
+        println("Found no simple index of form " + toLookup)
         None
     }
   }
@@ -160,10 +161,10 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     val toLookup = Optimization.normalize(groupedBy)
     subqueries.get(toLookup) match {
       case Some(t) =>
-        println("Index found of form " + toLookup)
+        println("Found nested index of form " + toLookup)
         Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) get constantEqSide flatMap identity)
       case None =>
-        println("No index found of form " + toLookup)
+        println("Found no nested index of form " + toLookup)
         None
     }
   }
@@ -237,6 +238,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   }
 
   //Entry point
-  def shareSubqueries[T](query: Exp[T]): Exp[T] =
+  def shareSubqueries[T](query: Exp[T]): Exp[T] = {
+    println("Index lookup on query: " + query)
     query.transform(directsubqueryShare andThen groupByShare andThen groupByShareNested)
+  }
 }
