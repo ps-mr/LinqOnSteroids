@@ -133,6 +133,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     val toLookup = Optimization.normalize(groupedBy)
     subqueries.get(toLookup) match {
       case Some(t) =>
+        println("Index found of form " + toLookup)
         Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) get constantEqSide flatMap identity)
       case None =>
         println("No index found of form " + toLookup)
