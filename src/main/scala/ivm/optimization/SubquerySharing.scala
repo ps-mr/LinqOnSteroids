@@ -96,7 +96,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   def lookupEq(parent: Option[(Exp[Traversable[_]], FuncExp[_, _])],
                e: Exp[_],
                freeVars: Set[Var] = Set.empty,
-               fvSeq: Seq[Var] = Seq.empty): Seq[(Option[(Exp[Traversable[_]], FuncExp[_, _])], FoundFilter[_], Set[Exp[Boolean]], Set[Var], Seq[Var])] = {
+               fvSeq: Seq[Var] = Seq.empty): Seq[(Option[(Exp[Traversable[_]], FuncExp[_, _])], FoundFilter[_], Set[Exp[Boolean]], Set[Exp[_]], Seq[Exp[_]])] = {
     require (fvSeq.toSet == freeVars)
     import OptionOps._
 
@@ -148,7 +148,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                                       fEqBody: Eq[U],
                                       constantEqSide: Exp[U],
                                       varEqSide: Exp[U],
-                                      allFVSeq: Seq[Var],
+                                      allFVSeq: Seq[Exp[_]],
                                       parentNode: Exp[_/*T*/], parentF: FuncExp[_, _/*T, U*/],
                                       tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U]): Option[Exp[Traversable[TupleT]]] = {
     val varEqSideTransf = tuplingTransform(varEqSide, fx)
@@ -168,7 +168,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
   private def tryGroupByNested[TupleT, T /*, U, V*/](indexBaseToLookup: Exp[Traversable[TupleT]],
                             allConds: Set[Exp[Boolean]],
-                            fx: Var, FVSeq: Seq[Var],
+                            fx: Var, FVSeq: Seq[Exp[_]],
                             parentNode: Exp[Traversable[T]],
                             parentF: FuncExp[_ /*T*/, _/*U*/],
                             isOption: Boolean)
