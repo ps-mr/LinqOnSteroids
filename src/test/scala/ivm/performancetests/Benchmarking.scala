@@ -120,6 +120,9 @@ trait Benchmarking {
         print(">>> Name = %s, time = " format name)
       println("(%.3f +- %.3f (stdErr = %.3f)) ms" format (avgMs, devStdMs, stdErrMs))
     }
+    //Format output for Jenkins' Measurement Plot plugin - https://wiki.jenkins-ci.org/display/JENKINS/Measurement+Plots+Plugin
+    println(<measurement><name>{name}</name><value>{avgMs}</value></measurement>)
+    //Format output for R
     logWriter.println("%s;%s;%f;%f;%f" format (testDate, name.replace(';', '_'), avgMs, devStdMs, stdErrMs))
     logWriter.flush()
 
