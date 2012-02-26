@@ -90,6 +90,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   case class FoundFilter[T](c: Exp[Traversable[T]], f: FuncExp[T, Boolean], isOption: Boolean = false) extends FoundNode
   case class FoundMap[T, U](c: Exp[Traversable[T]], f: FuncExp[T, U], isOption: Boolean = false) extends FoundNode
 
+  def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = e.findTotFun { case v: Var => fvContains(v); case _ => false }.nonEmpty
+
   //Preconditions:
   //Postconditions: when extracting Some(parent), filterExp, foundEqs, allFVSeq, parent is a MapOp/FlatMap node which
   // contains filterExp as child as base collection (and not through a FuncExp node).
@@ -124,7 +126,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         assert (parent.isDefined)
         val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
         val allFreeVars: Set[Var] = freeVars + f.x
-        def usesFVars(e: Exp[_]) = e.findTotFun { case v: Var => allFreeVars(v); case _ => false }.nonEmpty
+        val usesFVars = defUseFVars(allFreeVars) _
 
         //Using Sets here directly is very difficult, due to the number of wildcards and the invariance of Set.
         //I managed, but it was beyond the abilities of type inference.
@@ -148,7 +150,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                                       fEqBody: Eq[U],
                                       constantEqSide: Exp[U],
                                       varEqSide: Exp[U],
-                                      allFVSeq: Seq[Exp[_]],
+                                      allFVSeq: Seq[Var],
                                       parentNode: Exp[_/*T*/], parentF: FuncExp[_, _/*T, U*/],
                                       tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U]): Option[Exp[Traversable[TupleT]]] = {
     val varEqSideTransf = tuplingTransform(varEqSide, fx)
@@ -168,7 +170,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
   private def tryGroupByNested[TupleT, T /*, U, V*/](indexBaseToLookup: Exp[Traversable[TupleT]],
                             allConds: Set[Exp[Boolean]],
-                            fx: Var, FVSeq: Seq[Exp[_]],
+                            fx: Var, FVSeq: Seq[Var],
                             parentNode: Exp[Traversable[T]],
                             parentF: FuncExp[_ /*T*/, _/*U*/],
                             isOption: Boolean)
@@ -177,13 +179,13 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       case eq: Eq[u] =>
         val allFVSeq = FVSeq :+ fx
         val allFVMap = allFVSeq.zipWithIndex.toMap
-        def usesFVars(e: Exp[_]) = e.findTotFun(allFVMap.contains(_)).nonEmpty
+        val usesFVars = defUseFVars(allFVMap contains _) _
         def tuplingTransform[T, U](e: Exp[T], v: TypedVar[Seq[U]]) = e.transform(
-          e => allFVMap.get(e) match {
-            case Some(idx) =>
-              TupleSupport2.projectionTo(v, allFVSeq.length, idx)
-              //v(idx)
-            case None => e
+          exp => exp match {
+            case v: Var if allFVMap contains v =>
+              TupleSupport2.projectionTo(v, allFVSeq.length, allFVMap(v))
+            case _ =>
+              exp
           })
 
         //We never want to duplicate variables and take care of scoping.
