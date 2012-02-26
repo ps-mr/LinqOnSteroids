@@ -107,26 +107,34 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     require (fvSeq.toSet == freeVars)
     import OptionOps._
 
-    val matchResult: Option[FoundNode] = e match {
+    val matchResult: Either[Exp[_], FoundNode] = e match {
       case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) if parent.isDefined =>
-        Some(FoundFilter(c, f))
+        Right(FoundFilter(c, f))
       case Call2(OptionFilterId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, _]) if parent.isDefined =>
         //XXX not so sure we want to optimize such a one-element filter.
         //But it can be a one-element filter on top of various navigation operations, so it can still make sense.
-        Some(FoundFilter(subColl, f.asInstanceOf[FuncExp[t, Boolean]], true))
+        Right(FoundFilter(subColl, f.asInstanceOf[FuncExp[t, Boolean]], true))
       case FlatMap(c: Exp[Traversable[_]], f: FuncExp[t, Traversable[u]]) =>
-        Some(FoundMap(c, f))
+        Right(FoundMap(c, f))
       case MapOp(c: Exp[Traversable[_]], f: FuncExp[t, u]) =>
-        Some(FoundMap(c, f))
+        Right(FoundMap(c, f))
       case Call2(OptionMapId, _, subColl: Exp[Traversable[_]], f: FuncExp[t, u]) =>
-        Some(FoundMap(subColl.asInstanceOf[Exp[Traversable[t]]], f, true))
+        Right(FoundMap(subColl.asInstanceOf[Exp[Traversable[t]]], f, true))
       case Call2(OptionFlatMapId, _, subColl: Exp[Traversable[_]], f: FuncExp[t, TraversableOnce[u]]) =>
-        Some(FoundMap(subColl.asInstanceOf[Exp[Traversable[t]]], f, true))
+        Right(FoundMap(subColl.asInstanceOf[Exp[Traversable[t]]], f, true))
       case _ =>
-        None
+        Left(e)
     }
 
-    matchResult.toSeq flatMap (_ match {
+    matchResult.fold(
+      _ match {
+        case f: FuncExp[_, _] =>
+          lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
+        case exp => exp.children flatMap {
+          lookupEq(None, _, freeVars, fvSeq)
+        }
+      },
+      _ match {
       case ff @ FoundFilter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/], _) =>
         assert (parent.isDefined)
         val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
