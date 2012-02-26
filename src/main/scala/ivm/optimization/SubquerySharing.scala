@@ -96,7 +96,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   def lookupEq(parent: Option[(Exp[Traversable[_]], FuncExp[_, _])],
                e: Exp[_],
                freeVars: Set[Exp[_]] = Set.empty,
-               fvSeq: Seq[Exp[_]] = Seq.empty): Seq[(Option[(Exp[Traversable[_]], FuncExp[_, _])], FoundFilter[_], Set[Exp[_]], Seq[Exp[_]])] = {
+               fvSeq: Seq[Exp[_]] = Seq.empty): Seq[(Option[(Exp[Traversable[_]], FuncExp[_, _])], FoundFilter[_], Set[Exp[Boolean]], Set[Exp[_]], Seq[Exp[_]])] = {
     require (fvSeq.toSet == freeVars)
     import OptionOps._
 
@@ -134,7 +134,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
               Seq(eq)
             case _ => Seq.empty
           }.fold(Seq.empty)(_ union _).toSet[Exp[_]]
-        Seq((parent, ff, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway - hence fvSeq, not allFVSeq
+        Seq((parent, ff, conds, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway - hence fvSeq, not allFVSeq
       //case FlatMap(c, f: FuncExp[t, Traversable[u]]) =>
         //lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
       case FoundMap(c, f: FuncExp[t, u], _) =>
@@ -219,10 +219,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   val groupByShareNested: Exp[_] => Exp[_] = {
     e => {
       (for {
-        (Some((parentNode: Exp[Traversable[t]], parentF)), filterExp, foundEqs, allFVSeq) <- lookupEq(None, e)
+        (Some((parentNode: Exp[Traversable[t]], parentF)), filterExp, conds, foundEqs, allFVSeq) <- lookupEq(None, e)
         optim <- filterExp match {
           case FoundFilter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/], isOption) =>
-            val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
             val replacementBase = OptimizationTransforms.stripView(c)
             val indexQuery = replacementBase map (x => TupleSupport2.toTuple(allFVSeq :+ x))
 
