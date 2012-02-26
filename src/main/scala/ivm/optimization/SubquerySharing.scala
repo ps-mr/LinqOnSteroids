@@ -135,27 +135,27 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         }
       },
       _ match {
-      case ff @ FoundFilter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/], _) =>
-        assert (parent.isDefined)
-        val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
-        val allFreeVars: Set[Var] = freeVars + f.x
-        val usesFVars = defUseFVars(allFreeVars) _
+        case ff @ FoundFilter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/], _) =>
+          assert (parent.isDefined)
+          val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
+          val allFreeVars: Set[Var] = freeVars + f.x
+          val usesFVars = defUseFVars(allFreeVars) _
 
-        //Using Sets here directly is very difficult, due to the number of wildcards and the invariance of Set.
-        //I managed, but it was beyond the abilities of type inference.
-        val foundEqs =
-          conds.map {
-            case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty && (usesFVars(l) && !usesFVars(r) || usesFVars(r) && !usesFVars(l)) =>
-              Seq(eq)
-            case _ => Seq.empty
-          }.fold(Seq.empty)(_ union _).toSet[Exp[_]]
-        Seq((parent, ff, conds, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway - hence fvSeq, not allFVSeq
-      //case FlatMap(c, f: FuncExp[t, Traversable[u]]) =>
+          //Using Sets here directly is very difficult, due to the number of wildcards and the invariance of Set.
+          //I managed, but it was beyond the abilities of type inference.
+          val foundEqs =
+            conds.map {
+              case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty && (usesFVars(l) && !usesFVars(r) || usesFVars(r) && !usesFVars(l)) =>
+                Seq(eq)
+              case _ => Seq.empty
+            }.fold(Seq.empty)(_ union _).toSet[Exp[_]]
+          Seq((parent, ff, conds, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway - hence fvSeq, not allFVSeq
+        //case FlatMap(c, f: FuncExp[t, Traversable[u]]) =>
         //lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
-      case FoundMap(c, f: FuncExp[t, u], _) =>
-        //Add all free variables bound in the location.
-        lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
-    })
+        case FoundMap(c, f: FuncExp[t, u], _) =>
+          //Add all free variables bound in the location.
+          lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
+      })
   }
 
   private def groupByShareBodyNested[TupleT, T, U](indexBaseToLookup: Exp[Traversable[TupleT]],
