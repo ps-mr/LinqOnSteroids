@@ -37,7 +37,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     subqueries.get(toLookup) match {
       //Note: x flatMap identity, on x: Option[Seq[T]], implements monadic join. We could also use x getOrElse Traversable.empty.
       //In both cases, the type of the resulting expression becomes Traversable, which might lead to the result having the wrong dynamic type.
-      case Some(t) => Some(asExp(t.asInstanceOf[Map[U, Traversable[T]]]) get constantEqSide flatMap identity)
+      case Some(t) =>
+        Some(asExp(t.asInstanceOf[Map[U, Traversable[T]]]) get constantEqSide flatMap identity)
       case None =>
         println("No index found of form " + toLookup)
         None
@@ -151,10 +152,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                                       constantEqSide: Exp[U],
                                       varEqSide: Exp[U],
                                       allFVSeq: Seq[Var],
-                                      parentNode: Exp[_/*T*/], parentF: FuncExp[_, _/*T, U*/],
                                       tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U]): Option[Exp[Traversable[TupleT]]] = {
     val varEqSideTransf = tuplingTransform(varEqSide, fx)
-    val groupedBy = indexBaseToLookup.groupBy[U](FuncExp.makefun[TupleT, U](varEqSideTransf, fx).f)
+    val groupedBy = indexBaseToLookup.groupBy[U](FuncExp.makefun[TupleT, U](varEqSideTransf, fx))
 
     assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
     val toLookup = Optimization.normalize(groupedBy)
@@ -194,9 +194,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         //XXX probably this should get Exp[Traversable] or Exp[Option], depending on isOption.
         val step1Opt: Option[Exp[Traversable[TupleT]]] =
           if (usesFVars(eq.t1) && !usesFVars(eq.t2))
-            groupByShareBodyNested[TupleT, T, u](indexBaseToLookup, newVar, eq, eq.t2, eq.t1, allFVSeq, parentNode, parentF, tuplingTransform)
+            groupByShareBodyNested[TupleT, T, u](indexBaseToLookup, newVar, eq, eq.t2, eq.t1, allFVSeq, tuplingTransform)
           else if (usesFVars(eq.t2) && !usesFVars(eq.t1))
-            groupByShareBodyNested[TupleT, T, u](indexBaseToLookup, newVar, eq, eq.t1, eq.t2, allFVSeq, parentNode, parentF, tuplingTransform)
+            groupByShareBodyNested[TupleT, T, u](indexBaseToLookup, newVar, eq, eq.t1, eq.t2, allFVSeq, tuplingTransform)
           else None
         //We need to apply tuplingTransform both to allConds and to parentF.
         //About parentF, note that fx is _not_ in scope in its body, which uses another variable, which
@@ -237,7 +237,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   }
 
   //Entry point
-  def shareSubqueries[T](query: Exp[T]): Exp[T] = {
-    query.transform(directsubqueryShare.andThen(groupByShare).andThen(groupByShareNested))
-  }
+  def shareSubqueries[T](query: Exp[T]): Exp[T] =
+    query.transform(directsubqueryShare andThen groupByShare andThen groupByShareNested)
 }
