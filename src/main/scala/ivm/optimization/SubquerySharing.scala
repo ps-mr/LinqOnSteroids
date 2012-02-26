@@ -95,8 +95,11 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = e.findTotFun { case v: Var => fvContains(v); case _ => false }.nonEmpty
 
   //Preconditions:
-  //Postconditions: when extracting Some(parent), filterExp, foundEqs, allFVSeq, parent is a MapOp/FlatMap node which
-  // contains filterExp as child as base collection (and not through a FuncExp node).
+  //Postconditions: when extracting Some((parentNode, parentF)), filterExp, conds, foundEqs, allFVSeq, parentNode is a MapOp/FlatMap node which
+  // contains a filter expression as base collection (and not through a FuncExp node); the filter expression is returned, after being transformed
+  // to a FoundFilter instance, inside filterExp. filterExp.isOption tells whether both filterExp and parentNode are of type Exp[Option[_]] instead of
+  //Exp[Traversable[_]] - they cannot differ in this regard (currently). If we allow for conversion nodes later, this assumption will not hold
+  //any more - we should normalize away such conversions if possible.
   def lookupEq(parent: Option[(Exp[Traversable[_]], FuncExp[_, _])],
                e: Exp[_],
                freeVars: Set[Var] = Set.empty,
@@ -169,6 +172,20 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     }
   }
 
+  /**
+   *
+   * @param indexBaseToLookup
+   * @param allConds
+   * @param fx
+   * @param FVSeq
+   * @param parentNode
+   * @param parentF
+   * @param isOption whether parentNode and the contained node have type Exp[ Option[_] ] rather than Exp[ Traversable[_] ]
+   * @param cond one of allConds
+   * @tparam TupleT
+   * @tparam T
+   * @return
+   */
   private def tryGroupByNested[TupleT, T /*, U, V*/](indexBaseToLookup: Exp[Traversable[TupleT]],
                             allConds: Set[Exp[Boolean]],
                             fx: Var, FVSeq: Seq[Var],
@@ -208,11 +225,12 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
         //Note that here, map/flatMap will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
         // instance from the HOAS representation produced.
+        import OptionOps._
         parentNode match {
-          case MapOp(_, _) =>
+          case Call2(OptionMapId, _, _, _) | MapOp(_, _) =>
             step2Opt.map(e => e map FuncExp.makefun[TupleT, T](
               tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[T]], newVar), newVar))
-          case FlatMap(_, _) =>
+          case Call2(OptionFlatMapId, _, _, _) | FlatMap(_, _) =>
             step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, TraversableOnce[T]](
               tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[TraversableOnce[T]]], newVar), newVar))
         }
