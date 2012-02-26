@@ -168,7 +168,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
   private def tryGroupByNested[TupleT, T /*, U, V*/](indexBaseToLookup: Exp[Traversable[TupleT]],
                             allConds: Set[Exp[Boolean]],
-                            fx: Var, FVSeq: Seq[Exp[_]], parentNode: Exp[Traversable[T]], parentF: FuncExp[_ /*T*/, _/*U*/])
+                            fx: Var, FVSeq: Seq[Exp[_]],
+                            parentNode: Exp[Traversable[T]],
+                            parentF: FuncExp[_ /*T*/, _/*U*/])
                            (cond: Exp[Boolean]): Option[Exp[Traversable[T]]] =
     cond match {
       case eq: Eq[u] =>
