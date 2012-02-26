@@ -170,7 +170,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                             allConds: Set[Exp[Boolean]],
                             fx: Var, FVSeq: Seq[Exp[_]],
                             parentNode: Exp[Traversable[T]],
-                            parentF: FuncExp[_ /*T*/, _/*U*/])
+                            parentF: FuncExp[_ /*T*/, _/*U*/],
+                            isOption: Boolean)
                            (cond: Exp[Boolean]): Option[Exp[Traversable[T]]] =
     cond match {
       case eq: Eq[u] =>
@@ -188,6 +189,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         //We never want to duplicate variables and take care of scoping.
         //However, we can reuse fx here while still getting a free variable in the end.
         val newVar = fx.asInstanceOf[TypedVar[Seq[T]]]
+        //XXX probably this should get Exp[Traversable] or Exp[Option], depending on isOption.
         val step1Opt: Option[Exp[Traversable[TupleT]]] =
           if (usesFVars(eq.t1) && !usesFVars(eq.t2))
             groupByShareBodyNested[TupleT, T, u](indexBaseToLookup, newVar, eq, eq.t2, eq.t1, allFVSeq, parentNode, parentF, tuplingTransform)
@@ -219,13 +221,13 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       (for {
         (Some((parentNode: Exp[Traversable[t]], parentF)), filterExp, foundEqs, allFVSeq) <- lookupEq(None, e)
         optim <- filterExp match {
-          case FoundFilter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/], _) =>
+          case FoundFilter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/], isOption) =>
             val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
             val replacementBase = OptimizationTransforms.stripView(c)
             val indexQuery = replacementBase map (x => TupleSupport2.toTuple(allFVSeq :+ x))
 
             val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Any]]]
-            val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, parentF)(_))
+            val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, parentF, isOption)(_))
             optimized
           //case _ => e //Execution must not get here - hence, throw an exception
         }
