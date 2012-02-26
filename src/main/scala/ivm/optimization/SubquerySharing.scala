@@ -252,8 +252,16 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         optim <- filterExp match {
           case FoundFilter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/], isOption) =>
             val replacementBase = OptimizationTransforms.stripView(c)
+            //Here we produce an open term, because vars in allFVSeq are not bound...
             val indexQuery = replacementBase map (x => TupleSupport2.toTuple(allFVSeq :+ x))
 
+            //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
+            //now bound. Note: e might well be an open term - we don't check it explicitly anywhere, even if we should.
+            //However, index lookup is going to fail when open terms are passed - the query repository contains only
+            //closed queries.
+            //
+            //Note: this means that we built the index we search by substitution in the original query; an alternative
+            //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
             val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Any]]]
             val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, parentF, isOption)(_))
             optimized
