@@ -96,7 +96,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   def lookupEq(parent: Option[(Exp[Traversable[_]], FuncExp[_, _])],
                e: Exp[_],
                freeVars: Set[Var] = Set.empty,
-               fvSeq: Seq[Var] = Seq.empty): Seq[(Option[(Exp[Traversable[_]], FuncExp[_, _])], FoundFilter[_], Set[Exp[Boolean]], Set[Var], Seq[Exp[_]])] = {
+               fvSeq: Seq[Var] = Seq.empty): Seq[(Option[(Exp[Traversable[_]], FuncExp[_, _])], FoundFilter[_], Set[Exp[Boolean]], Set[Exp[_]], Seq[Var])] = {
     require (fvSeq.toSet == freeVars)
     import OptionOps._
 
