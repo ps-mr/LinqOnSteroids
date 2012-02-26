@@ -344,11 +344,14 @@ object OptimizationTransforms {
         val transformed = insideConv.substSubTerm(letNode, coll).asInstanceOf[Exp[Traversable[U]]] //Note that the type, in fact, should change somehow!
         val transformed2 = transformed transform (e2 => e2 match {
           //The type annotations on subColl reflect on purpose types after transformation
-          case Call2(OptionMapId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, u]) => subColl map f.asInstanceOf[FuncExp[t, u]].f
+          case Call2(OptionMapId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, u]) =>
+            subColl map f.asInstanceOf[FuncExp[t, u]].f
           case Call2(OptionFilterId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, _]) =>
-            //Let's just guess that the query was written with withFilter and use that.
+            //Let's just guess that the query was written with withFilter instead of filter, and use withFilter in the
+            //transformed query
             subColl withFilter f.asInstanceOf[FuncExp[t, Boolean]].f
-          case Call2(OptionFlatMapId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, TraversableOnce[u]]) => subColl flatMap f.asInstanceOf[FuncExp[t, TraversableOnce[u]]].f
+          case Call2(OptionFlatMapId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, TraversableOnce[u]]) =>
+            subColl flatMap f.asInstanceOf[FuncExp[t, TraversableOnce[u]]].f
           case _ => e2
         })
         //coll.map(FuncExp.makefun(transformed2, v).f)
