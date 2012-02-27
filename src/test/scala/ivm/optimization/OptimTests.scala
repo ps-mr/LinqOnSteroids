@@ -141,4 +141,13 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
     transf should be (((1 to 10) asSmartCollection) flatMap (Seq(_)))
     flatMapToMap(transf) should be (query)
   }
+
+  @Test
+  def testMapToFlatMapAndBackOpt() {
+    val query = for (i <- Let(1)) yield i
+    import Optimization._
+    val transf = mapToFlatMap(query)
+    transf should be ((Let(1)) flatMap (Let(_)))
+    flatMapToMap(transf) should be (query)
+  }
 }

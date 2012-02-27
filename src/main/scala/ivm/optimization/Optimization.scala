@@ -12,6 +12,10 @@ object FuncExpBody {
   def unapply[S, T](f: FuncExp[S, T]): Option[Exp[T]] = Some(f.body)
 }
 
+object FuncExpBodyUntyped {
+  def unapply(f: FuncExp[_, _]): Option[Exp[_]] = Some(f.body)
+}
+
 object FuncExpIdentity {
   def unapply[S, T](f: FuncExp[S, T]): Boolean = f.body == f.x
 }
@@ -424,18 +428,27 @@ object OptimizationTransforms {
       }
     }
 
-  val mapToFlatMap: Exp[_] => Exp[_] =
+  val mapToFlatMap: Exp[_] => Exp[_] = {
+    import OptionOps._
     e => e match {
-      case MapOp(c: Exp[Traversable[t]], f) => c flatMap FuncExp.makefun(Seq(f.body), f.x)
+      case MapOp(c: Exp[Traversable[t]], f) =>
+        c flatMap FuncExp.makefun(Seq(f.body), f.x)
+      case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
+        c flatMap FuncExp.makefun(Let(f.body), f.x)
       case _ => e
     }
+  }
 
-  val flatMapToMap: Exp[_] => Exp[_] =
+  val flatMapToMap: Exp[_] => Exp[_] = {
+    import OptionOps._
     e => e match {
+      case Call2(OptionFlatMapId, _, c: Exp[Option[_ /*t*/]], f @ FuncExpBodyUntyped(Call1(SomeId, _, body: Exp[TraversableOnce[u]]))) =>
+        c map FuncExp.makefun(body, f.x)
       case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(body))) =>
         c map FuncExp.makefun(body, f.x)
       case _ => e
     }
+  }
 
   val normalizer: Exp[_] => Exp[_] =
     e => e match {
