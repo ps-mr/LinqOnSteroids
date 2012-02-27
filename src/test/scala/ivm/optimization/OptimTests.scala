@@ -132,4 +132,13 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
     v.ifInstanceOf[Int] should not be v.ifInstanceOf[Long]
     baseCol.typeFilter[Int] should not be (baseCol.typeFilter[Long])
   }
+
+  @Test
+  def testMapToFlatMapAndBack() {
+    val query = for (i <- (1 to 10) asSmartCollection) yield i
+    import Optimization._
+    val transf = mapToFlatMap(query)
+    transf should be (((1 to 10) asSmartCollection) flatMap (Seq(_)))
+    flatMapToMap(transf) should be (query)
+  }
 }
