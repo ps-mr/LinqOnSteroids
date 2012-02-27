@@ -446,6 +446,7 @@ object Optimization {
 
   val subqueries: Map[Exp[_], Any] = Map.empty
 
+  def resetSubqueries() = subqueries.clear()
   def addSubquery[T](_query: Dummy[Exp[T]]) {
     val query = OptimizationTransforms.stripViewUntyped(_query.v)
     val optquery = optimize(query)

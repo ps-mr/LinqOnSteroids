@@ -166,6 +166,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test def testRemoveSubquery() {
     val index = l.groupBy(p => p._1 + p._2)
+    Optimization.resetSubqueries()
     Optimization.addSubquery(index)
     Optimization.removeSubquery(index)
     Optimization.subqueries should be (Map.empty)
