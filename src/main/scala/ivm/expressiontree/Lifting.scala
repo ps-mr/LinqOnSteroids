@@ -63,6 +63,8 @@ trait OptionLifting extends BaseExps {
 
     //Tillmann's suggestion was to use Haskell-style overloading by emulating type classes with implicits:
     def flatMap[U, That](f: Exp[T] => Exp[U])(implicit v: FlatMappableTo[U, That]): Exp[That] = v.flatMap(t, f)
+    //TODO apparently, the implicit conversions from Scala are not that powerful; for instance, Some(1) flatMap (Seq(_))
+    // is not accepted. I guess I should revert this.
 
     //Note: we do not support call-by-name parameters; therefore we currently provide only orElse, and expect the user to
     //provide a default which will never fail evalution through exceptions but only evaluate to None.
