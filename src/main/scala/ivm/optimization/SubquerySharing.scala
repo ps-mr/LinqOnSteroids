@@ -87,10 +87,10 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       case _ => e
     }
   }
-  
+
   sealed trait FoundNode
-  case class FoundFilter[T](c: Exp[Traversable[T]], f: FuncExp[T, Boolean], isOption: Boolean = false) extends FoundNode
-  case class FoundMap[T, U](c: Exp[Traversable[T]], f: FuncExp[T, U], isOption: Boolean = false) extends FoundNode
+  case class FoundFilter[T](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, Boolean], isOption: Boolean = false) extends FoundNode
+  case class FoundMap[T, U](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, U], isOption: Boolean = false) extends FoundNode
 
   def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = e.findTotFun { case v: Var => fvContains(v); case _ => false }.nonEmpty
 
@@ -109,15 +109,15 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
     val matchResult: Either[Exp[_], FoundNode] = e match {
       case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) if parent.isDefined =>
-        Right(FoundFilter(c, f))
+        Right(FoundFilter(Right(c), f))
       case Call2(OptionFilterId, _, subColl: Exp[Option[t]], f: FuncExp[_, _]) if parent.isDefined =>
         //XXX not so sure we want to optimize such a one-element filter.
         //But it can be a one-element filter on top of various navigation operations, so it can still make sense.
-        Right(FoundFilter(subColl, f.asInstanceOf[FuncExp[t, Boolean]], true))
+        Right(FoundFilter(Left(subColl), f.asInstanceOf[FuncExp[t, Boolean]], true))
       case FlatMap(c: Exp[Traversable[_]], f: FuncExp[t, Traversable[u]]) =>
-        Right(FoundMap(c, f))
+        Right(FoundMap(Right(c), f))
       case Call2(OptionFlatMapId, _, subColl: Exp[Option[_]], f: FuncExp[t, TraversableOnce[u]]) =>
-        Right(FoundMap(subColl.asInstanceOf[Exp[Traversable[t]]], f, true))
+        Right(FoundMap(Left(subColl.asInstanceOf[Exp[Option[t]]]), f, true))
       case _ =>
         Left(e)
     }
@@ -131,7 +131,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         }
       },
       _ match {
-        case ff @ FoundFilter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/], _) =>
+        case ff @ FoundFilter(_ /*: Exp[Traversable[_ /*t*/]]*/, f: FuncExp[t, _ /*Boolean*/], _) =>
           assert (parent.isDefined)
           val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
           val allFreeVars: Set[Var] = freeVars + f.x
@@ -150,7 +150,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         //lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
         case FoundMap(c, f: FuncExp[t, u], _) =>
           //Add all free variables bound in the location.
-          lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
+          lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c.fold(identity, identity), freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
       })
   }
 
@@ -243,19 +243,12 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       (for {
         (Some((parentNode: Exp[Traversable[t]], parentF)), filterExp, conds, foundEqs, allFVSeq) <- lookupEq(None, e)
         optim <- filterExp match {
-          /*
-          case FoundFilter(c: Exp[Option[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/], isOption) if isOption =>
-            val replacementBase = c
-            //Similar to below
-            val indexQuery = (replacementBase map (x => TupleSupport2.toTuple(allFVSeq :+ x))): Exp[Iterable[t]]
-            val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Any]]]
-            val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, parentF, isOption)(_))
-            optimized
-            */
-          case FoundFilter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/], isOption) =>
-            val replacementBase = OptimizationTransforms.stripView(c)
+          case FoundFilter(c, f: FuncExp[t, _ /*Boolean*/], isOption) =>
             //Here we produce an open term, because vars in allFVSeq are not bound...
-            val indexQuery = replacementBase map (x => TupleSupport2.toTuple(allFVSeq :+ x))
+            def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
+            val indexQuery = c fold (
+              cOpt  => (cOpt map buildTuple): Exp[Iterable[Any /*t*/]],
+              cTrav => OptimizationTransforms.stripView(cTrav) map buildTuple)
 
             //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
             //now bound. Note: e might well be an open term - we don't check it explicitly anywhere, even if we should.
