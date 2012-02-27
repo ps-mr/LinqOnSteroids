@@ -4,7 +4,7 @@ import collection.TraversableLike
 import collection.generic.CanBuildFrom
 
 trait OptionLifting extends BaseExps {
-  this: TraversableOps =>
+  this: IterableOps =>
   implicit def expOption2Iterable[T](t: Exp[Option[T]]) = onExp(t)(OptionOps.OptionToIterableId, x => x: Iterable[T])
 
   // We would like to have this conversion available:
@@ -36,7 +36,7 @@ trait OptionLifting extends BaseExps {
     implicit def option[U] = new FlatMappableTo[Option[U], Option[U]] {
       override def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[Option[U]]): Exp[Option[U]] = onExp(t, FuncExp(f))(OptionFlatMapId, (a, b) => a flatMap b)
     }
-    implicit def traversable[U] = new FlatMappableTo[Traversable[U], Traversable[U]] {
+    implicit def traversable[U] = new FlatMappableTo[Traversable[U], Iterable[U]] {
       override def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[Traversable[U]]) = (t: Exp[Iterable[T]]) flatMap f
     }
   }
