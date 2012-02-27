@@ -95,7 +95,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = e.findTotFun { case v: Var => fvContains(v); case _ => false }.nonEmpty
 
   //Preconditions:
-  //Postconditions: when extracting Some((parentNode, parentF)), filterExp, conds, foundEqs, allFVSeq, parentNode is a MapOp/FlatMap node which
+  //Postconditions: when extracting Some((parentNode, parentF)), filterExp, conds, foundEqs, allFVSeq, parentNode is a FlatMap node which
   // contains a filter expression as base collection (and not through a FuncExp node); the filter expression is returned, after being transformed
   // to a FoundFilter instance, inside filterExp. filterExp.isOption tells whether both filterExp and parentNode are of type Exp[Option[_]] instead of
   //Exp[Traversable[_]] - they cannot differ in this regard (currently). If we allow for conversion nodes later, this assumption will not hold
@@ -116,10 +116,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         Right(FoundFilter(subColl, f.asInstanceOf[FuncExp[t, Boolean]], true))
       case FlatMap(c: Exp[Traversable[_]], f: FuncExp[t, Traversable[u]]) =>
         Right(FoundMap(c, f))
-      case MapOp(c: Exp[Traversable[_]], f: FuncExp[t, u]) =>
-        Right(FoundMap(c, f))
-      case Call2(OptionMapId, _, subColl: Exp[Option[_]], f: FuncExp[t, u]) =>
-        Right(FoundMap(subColl.asInstanceOf[Exp[Traversable[t]]], f, true))
       case Call2(OptionFlatMapId, _, subColl: Exp[Option[_]], f: FuncExp[t, TraversableOnce[u]]) =>
         Right(FoundMap(subColl.asInstanceOf[Exp[Traversable[t]]], f, true))
       case _ =>
@@ -235,9 +231,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         // instance from the HOAS representation produced.
         import OptionOps._
         parentNode match {
-          case Call2(OptionMapId, _, _, _) | MapOp(_, _) =>
-            step2Opt.map(e => e map FuncExp.makefun[TupleT, T](
-              tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[T]], newVar), newVar))
           case Call2(OptionFlatMapId, _, _, _) | FlatMap(_, _) =>
             step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, TraversableOnce[T]](
               tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[TraversableOnce[T]]], newVar), newVar))
