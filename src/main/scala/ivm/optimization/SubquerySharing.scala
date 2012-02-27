@@ -110,7 +110,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     val matchResult: Either[Exp[_], FoundNode] = e match {
       case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) if parent.isDefined =>
         Right(FoundFilter(c, f))
-      case Call2(OptionFilterId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, _]) if parent.isDefined =>
+      case Call2(OptionFilterId, _, subColl: Exp[Option[t]], f: FuncExp[_, _]) if parent.isDefined =>
         //XXX not so sure we want to optimize such a one-element filter.
         //But it can be a one-element filter on top of various navigation operations, so it can still make sense.
         Right(FoundFilter(subColl, f.asInstanceOf[FuncExp[t, Boolean]], true))
