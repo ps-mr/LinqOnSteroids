@@ -206,10 +206,10 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         val allFVSeq = FVSeq :+ fx
         val allFVMap = allFVSeq.zipWithIndex.toMap
         val usesFVars = defUseFVars(allFVMap contains _) _
-        def tuplingTransform[T, U](e: Exp[T], v: TypedVar[Seq[U]]) = e.transform(
+        def tuplingTransform[T, U](e: Exp[T], tupleVar: TypedVar[Seq[U]]) = e.transform(
           exp => exp match {
             case v: Var if allFVMap contains v =>
-              TupleSupport2.projectionTo(v, allFVSeq.length, allFVMap(v))
+              TupleSupport2.projectionTo(tupleVar, allFVSeq.length, allFVMap(v))
             case _ =>
               exp
           })
