@@ -118,9 +118,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         Right(FoundMap(c, f))
       case MapOp(c: Exp[Traversable[_]], f: FuncExp[t, u]) =>
         Right(FoundMap(c, f))
-      case Call2(OptionMapId, _, subColl: Exp[Traversable[_]], f: FuncExp[t, u]) =>
+      case Call2(OptionMapId, _, subColl: Exp[Option[_]], f: FuncExp[t, u]) =>
         Right(FoundMap(subColl.asInstanceOf[Exp[Traversable[t]]], f, true))
-      case Call2(OptionFlatMapId, _, subColl: Exp[Traversable[_]], f: FuncExp[t, TraversableOnce[u]]) =>
+      case Call2(OptionFlatMapId, _, subColl: Exp[Option[_]], f: FuncExp[t, TraversableOnce[u]]) =>
         Right(FoundMap(subColl.asInstanceOf[Exp[Traversable[t]]], f, true))
       case _ =>
         Left(e)
