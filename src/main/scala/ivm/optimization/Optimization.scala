@@ -467,20 +467,6 @@ object Optimization {
 
   def cartProdToAntiJoin[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.cartProdToAntiJoin)
 
-  def optimize[T](exp: Exp[T]): Exp[T] = {
-    shareSubqueries(
-      //removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
-        reassociateOps(
-          mergeMaps(
-            mergeFilters(
-              hoistFilter( //Do this before merging filters!
-                cartProdToAntiJoin(
-                  optimizeCartProdToJoin(
-                    removeRedundantOption(toTypeFilter(
-                      sizeToEmpty(
-                        removeIdentityMaps(exp)))))))))))
-  }
-
   def reassociateOps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.reassociateOps)
 
   def mergeMaps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeMaps)
@@ -503,5 +489,19 @@ object Optimization {
 
   def shareSubqueries[T](query: Exp[T]): Exp[T] = {
       new SubquerySharing(subqueries).shareSubqueries(query)
+  }
+
+  def optimize[T](exp: Exp[T]): Exp[T] = {
+    shareSubqueries(
+      //removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
+      reassociateOps(
+        mergeMaps(
+          mergeFilters(
+            hoistFilter( //Do this before merging filters!
+              cartProdToAntiJoin(
+                optimizeCartProdToJoin(
+                  removeRedundantOption(toTypeFilter(
+                    sizeToEmpty(
+                      removeIdentityMaps(exp)))))))))))
   }
 }
