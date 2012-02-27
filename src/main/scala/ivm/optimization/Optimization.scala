@@ -493,15 +493,15 @@ object Optimization {
 
   def optimize[T](exp: Exp[T]): Exp[T] = {
     shareSubqueries(
-      //removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
-      reassociateOps(
-        mergeMaps(
-          mergeFilters(
-            hoistFilter( //Do this before merging filters!
-              cartProdToAntiJoin(
-                optimizeCartProdToJoin(
-                  removeRedundantOption(toTypeFilter(
-                    sizeToEmpty(
-                      removeIdentityMaps(exp)))))))))))
+      removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
+        reassociateOps(
+          mergeMaps(
+            mergeFilters(
+              hoistFilter( //Do this before merging filters!
+                cartProdToAntiJoin(
+                  optimizeCartProdToJoin(
+                    removeRedundantOption(toTypeFilter(
+                      sizeToEmpty(
+                        removeIdentityMaps(exp))))))))))))
   }
 }
