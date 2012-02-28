@@ -84,6 +84,13 @@ trait TraversableOps {
     }
   }
 
+  case class ExpSeq[T](children: Exp[T]*) extends Exp[Seq[T]] {
+    override def nodeArity = children.size
+    override protected def checkedGenericConstructor: Seq[Exp[_]] => Exp[Seq[T]] = v => ExpSeq((v.asInstanceOf[Seq[Exp[T]]]): _*)
+    override def interpret() = children.map(_.interpret())
+  }
+  implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e.toSeq: _*) //null//onExp(e)('Traversable, Traversable(_))
+
   //This is just an interface for documentation purposes.
   trait WithFilterable[T, Repr] {
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Repr]]
@@ -117,7 +124,7 @@ trait TraversableOps {
     // XXX: This cannot be called + to avoid ambiguity with the conversion to NumericOps - probably that's an artifact of it being
     // declared in a subclass
     def :+[U >: T, That <: Traversable[U]](that: Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-      this union onExp(that)('Traversable, Traversable(_))
+      this union Traversable(that)
     def ++[U >: T, That <: Traversable[U]](that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
       union(that)
 
@@ -282,6 +289,8 @@ trait IterableOps {
 trait SeqOps {
   this: LiftingConvs with TraversableOps =>
   class SeqOps[T](val t: Exp[Seq[T]]) extends TraversableLikeOps[T, Seq, Seq[T]] with WithFilterImpl[T, Seq[T], Seq[T]]
+
+  implicit def SeqExp2ExpSeq[T](e: Seq[Exp[T]]): Exp[Seq[T]] = ExpSeq(e: _*)
 
   implicit def expToSeqExp[T](t: Exp[Seq[T]]): SeqOps[T] = new SeqOps(t)
   implicit def tToSeqExp[T](t: Seq[T]): SeqOps[T] =

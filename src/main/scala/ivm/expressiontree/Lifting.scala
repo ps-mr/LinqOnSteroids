@@ -75,14 +75,10 @@ trait OptionLifting extends BaseExps {
 
   //Support let-bindings within for-comprehensions without relying on pattern-matching.
   def Let[T](v: Exp[T]): Exp[Option[T]] = onExp(v)(OptionOps.SomeId, Some(_))
-
-  case class ExpSeq[T](children: Exp[T]*) extends Exp[Seq[T]] {
-    override def nodeArity = children.size
-    override protected def checkedGenericConstructor: Seq[Exp[_]] => Exp[Seq[T]] = v => ExpSeq((v.asInstanceOf[Seq[Exp[T]]]): _*)
-    override def interpret() = children.map(_.interpret())
+  case class ExpOption[T](e: Option[Exp[T]]) extends Arity0Exp[Option[T]] {
+    override def interpret() = e.map(_.interpret())
   }
-
-  implicit def SeqExp2ExpSeq[T](a: Seq[Exp[T]]): Exp[Seq[T]] = ExpSeq(a: _*)
+  implicit def OptionExp2ExpSome[T](e: Option[Exp[T]]): Exp[Option[T]] = ExpOption(e)
 }
 
 trait ExpSugar extends ConversionDisabler2 {
