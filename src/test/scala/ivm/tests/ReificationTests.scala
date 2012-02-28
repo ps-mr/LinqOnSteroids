@@ -99,5 +99,20 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
     val query21ExpectedOpt = for (i <- base.typeFilter[Int]; iCast <- asExp(Some(i)) if iCast % 2 === 1) yield iCast
     Optimization.toTypeFilter(query21) should be (query21ExpectedOpt)
   }
+  
+  @Test
+  def testTypeCase() {
+    case class TypeCase[S, T](cS: ClassManifest[S], f: FuncExp[S, T])
+    //def when[S, T](f: Exp[S] => Exp[T])(implicit cS: ClassManifest[S]) = TypeCase(cS, FuncExp(f))
+    object when {
+      def apply[S] = new {
+        def apply[T](f: Exp[S] => Exp[T])(implicit cS: ClassManifest[S]) = TypeCase(cS, FuncExp(f))
+      }
+    }
+    implicit def pimpl[T](e: Exp[Traversable[T]]) = new {
+      def typeCase[T](cases: TypeCase[_, T]*) = null
+    } 
+    println(asExp(Seq(1)) typeCase (when[Int](_.toString), when[String](identity)))
+  }
 }
 
