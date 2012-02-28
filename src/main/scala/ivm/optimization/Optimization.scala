@@ -146,6 +146,20 @@ object OptimizationTransforms {
       case _ => e
     }
 
+  //Express in the type system that transformations need to preserve typing:
+  trait Transformer {
+    def apply[T](e: Exp[T]): Exp[T]
+  }
+  val mergeMaps2: Transformer = new Transformer {
+    def apply[T](e: Exp[T]) = e match {
+      case MapOp(MapOp(coll: Exp[Traversable[t]], f1), f2) =>
+        mergeMaps2(buildMergedMaps(coll, f1, f2)).
+          //Note the need for this cast.
+          asInstanceOf[Exp[T]]
+      case _ => e
+    }
+  }
+
   // Reassociation similarly to what is described in "Advanced Compiler Design and Implementation", page 337-...,
   // Sec 12.3.1 and Fig 12.6. We refer to their reduction rules with their original codes, like R1, R2, ..., R9.
   // We don't apply distributivity, nor (yet) rules not involving just Plus (i.e., involving Minus or Times).
