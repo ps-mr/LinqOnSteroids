@@ -72,7 +72,19 @@ trait OptionLifting extends BaseExps {
     def getOrElse[U >: T](default: /*=> */ Exp[U]) = OptionGetOrElse(t, default) //onExp(t, v)('Option$getOrElse, _ getOrElse _)
   }
 
-  case class ExpOption[T](e: Option[Exp[T]]) extends Arity0Exp[Option[T]] {
+  //Note: even though ExpOption does not directly contain Exp nodes, it contains them indirectly, and they also need to be
+  //transformed.
+  case class ExpOption[T](e: Option[Exp[T]]) extends Exp[Option[T]] {
+    override def children = e.toSeq
+    override def nodeArity = e.size
+    override protected def checkedGenericConstructor: Seq[Exp[_]] => Exp[Option[T]] = {
+      //Note: the length of the input sequence is checked by genericConstructor and will match the current one.
+      //Knowing that does not lead to simplifying this code though.
+      case Seq() =>
+        ExpOption(None)
+      case Seq(e) =>
+        ExpOption(Some(e.asInstanceOf[Exp[T]]))
+    }
     override def interpret() = e.map(_.interpret())
   }
   implicit def OptionExp2ExpSome[T](e: Option[Exp[T]]): Exp[Option[T]] = ExpOption(e)
