@@ -28,7 +28,6 @@ trait OptionLifting extends BaseExps {
     val OptionFilterId = 'Option$filter
     val OptionFlatMapId = 'Option$flatMap
     val OptionToIterableId = 'Option_option2Iterable
-    val SomeId = 'Some
 
     sealed trait FlatMappableTo[-U, +Res] {
       def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[U]): Exp[Res]
@@ -73,8 +72,6 @@ trait OptionLifting extends BaseExps {
     def getOrElse[U >: T](default: /*=> */ Exp[U]) = OptionGetOrElse(t, default) //onExp(t, v)('Option$getOrElse, _ getOrElse _)
   }
 
-  //Support let-bindings within for-comprehensions without relying on pattern-matching.
-  def Let[T](v: Exp[T]): Exp[Option[T]] = onExp(v)(OptionOps.SomeId, Some(_))
   case class ExpOption[T](e: Option[Exp[T]]) extends Arity0Exp[Option[T]] {
     override def interpret() = e.map(_.interpret())
   }
@@ -132,6 +129,10 @@ object Lifting
   extends BaseExps with OptionLifting
   with TraversableOps with ForceOps with IterableOps with SeqOps with MapOps with SetOps with TypeFilterOps with NumOps with BaseTypesOps with ExpSugar
 {
+  //Support let-bindings within for-comprehensions without relying on pattern-matching.
+  //def Let[T](e: Exp[T]): Exp[Seq[T]] = Seq(e)
+  def Let[T](e: Exp[T]): Exp[Option[T]] = Some(e)
+
   override def groupBySelImpl[T, Repr <: Traversable[T] with
     TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],
                                              g: Exp[T] => Exp[Rest])(

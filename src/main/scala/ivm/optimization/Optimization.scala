@@ -289,7 +289,7 @@ object OptimizationTransforms {
       case instanceOfNode@IfInstanceOf(X, _) if containingX.forall(_ == instanceOfNode) =>
         //Aargh! Do something about this mess, to allow expressing it in a nicer way.
         val v = FuncExp.gensym()
-        val transformed = fmFun.body.substSubTerm(instanceOfNode, Let(v))
+        val transformed = fmFun.body.substSubTerm(instanceOfNode, Some(v))
         //Note: on the result we would really like to drop all the 'Option'-ness, but that's a separate step.
         buildTypeFilter(coll, instanceOfNode.classS, FuncExp.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v))
       case _ =>
@@ -312,7 +312,7 @@ object OptimizationTransforms {
   }
 
   //removeRedundantOption is supposed to eliminate redundant lets from code like:
-  //for (i <- base.typeFilter[Int]; j <- Let(i) if j % 2 === 0) yield j
+  //for (i <- base.typeFilter[Int]; j <- Some(i) if j % 2 === 0) yield j
   //which is for instance produced by toTypeFilter.
   //This optimization does not extend to normal bindings as used in FindBugsAnalyses. There we need to produce the usual
   //desugaring of Let - i.e. to use letExp.
@@ -341,7 +341,7 @@ object OptimizationTransforms {
     val X = fmFun.x
     val containingX = insideConv.findTotFun(_.children.contains(X))
     containingX.head match {
-      case letNode@Call1(SomeId, _, X) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
+      case letNode@ExpOption(Some(X)) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
         //Aargh! Do something about this mess, to allow expressing it in a nicer way.
         //val v = FuncExp.gensym()
         //val transformed = insideConv.substSubTerm(letNode, v).asInstanceOf[Exp[U]] //Note that the type, in fact, should change somehow!
@@ -434,7 +434,7 @@ object OptimizationTransforms {
       case MapOp(c: Exp[Traversable[t]], f) =>
         c flatMap FuncExp.makefun(Seq(f.body), f.x)
       case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
-        c flatMap FuncExp.makefun(Let(f.body), f.x)
+        c flatMap FuncExp.makefun(Some(f.body), f.x)
       case _ => e
     }
   }
@@ -442,7 +442,7 @@ object OptimizationTransforms {
   val flatMapToMap: Exp[_] => Exp[_] = {
     import OptionOps._
     e => e match {
-      case Call2(OptionFlatMapId, _, c: Exp[Option[_ /*t*/]], f @ FuncExpBodyUntyped(Call1(SomeId, _, body: Exp[TraversableOnce[u]]))) =>
+      case Call2(OptionFlatMapId, _, c: Exp[Option[_ /*t*/]], f @ FuncExpBodyUntyped(ExpOption(Some(body: Exp[TraversableOnce[u]])))) =>
         c map FuncExp.makefun(body, f.x)
       case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(body))) =>
         c map FuncExp.makefun(body, f.x)
