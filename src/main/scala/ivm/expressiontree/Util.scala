@@ -6,6 +6,16 @@ import collection.generic.CanBuildFrom
 object Util {
   def assertType[T](t: T) {}
 
+  /**
+   * Check that `v` and `typeParam` have the same type; if used as the returned expression, it also checks that the return type
+   * also matches.
+   * @param typeParam value whose type is the expected type
+   * @param v value to return
+   * @tparam T the type of `typeParam`; `v` must conform to this type.
+   * @return `v`
+   */
+  def checkSameTypeAndRet[T](typeParam: T)(v: T): T = v
+
   def ifInstanceOfBody[T, S](v: T, classS: Class[_]): Option[S] =
     if (v == null || !classS.isInstance(v))
       None

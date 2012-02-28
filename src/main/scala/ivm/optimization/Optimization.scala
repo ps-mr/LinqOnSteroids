@@ -274,9 +274,11 @@ object OptimizationTransforms {
       case _ => e
     }
 
-  private def buildTypeFilter[S, T, U](coll: Exp[Traversable[T]], classS: Class[S], f: FuncExp[S, Traversable[U]]): Exp[Traversable[U]] =
-    //coll.typeFilter(cS).map(f.f)
-    coll.typeFilterClass(classS).flatMap(f.f)
+  private def buildTypeFilter[S, T, U](coll: Exp[Traversable[T]], classS: Class[S], f: FuncExp[S, Traversable[U]], origFmFun: FuncExp[T, TraversableOnce[U]]): Exp[Traversable[U]] = {
+    val res = coll.typeFilterClass(classS).flatMap(f.f)
+    //Check that the transformed expression has overall the same type as the original one:
+    Util.checkSameTypeAndRet(coll flatMap origFmFun)(res)
+  }
 
   private def tryBuildTypeFilter[T, U](coll: Exp[Traversable[T]],
                                        fmFun: FuncExp[T, TraversableOnce[U]],
@@ -291,7 +293,7 @@ object OptimizationTransforms {
         val v = FuncExp.gensym()
         val transformed = fmFun.body.substSubTerm(instanceOfNode, Some(v))
         //Note: on the result we would really like to drop all the 'Option'-ness, but that's a separate step.
-        buildTypeFilter(coll, instanceOfNode.classS, FuncExp.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v))
+        buildTypeFilter(coll, instanceOfNode.classS, FuncExp.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)
       case _ =>
         e
     }
