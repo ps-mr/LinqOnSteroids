@@ -123,7 +123,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
     //that is Res <: AnyRef; this is valid for all types but Res <: AnyVal, i.e. for primitive types, but since Res is a type
     //parameter, it will be erased to java.lang.Object and even primitive types will be passed boxed.
     //Hence in practice v: Res can be casted to AnyRef and compared against null.
-    case class TypeCaseExp[Base, Res](e: Exp[Traversable[Base]], cases: Seq[TypeCase[_, Res]]) extends Exp[Traversable[Res]] {
+    case class TypeCaseExp[Base, Res](e: Exp[Traversable[Base]], cases: Seq[TypeCase[_ /*Case_i*/, Res]]) extends Exp[Traversable[Res]] {
       override def nodeArity = cases.length + 1
       override def children = e +: (cases map (_.f))
       override def checkedGenericConstructor: Seq[Exp[_]] => Exp[Traversable[Res]] = v => TypeCaseExp(v.head.asInstanceOf[Exp[Traversable[Base]]], (cases, v.tail).zipped map ((tc, f) => TypeCase(tc.classS.asInstanceOf[Class[Any]], f.asInstanceOf[FuncExp[Any, Res]])))
@@ -138,8 +138,8 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
         (e.interpret() map checkF).view filter (_.asInstanceOf[AnyRef] ne null)
       }
       //cases map { case TypeCase(classS, f) => (v: Base) => if (v == null || !classS.isInstance(v)) Util.ifInstanceOfBody(v, classS)}
-        
     }
+
     implicit def pimpl[Base](e: Exp[Traversable[Base]]) = new {
       def typeCase[Res](cases: TypeCase[_, Res]*) = TypeCaseExp(e, cases)
     }
