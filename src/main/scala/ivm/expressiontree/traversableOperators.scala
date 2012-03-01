@@ -108,7 +108,14 @@ case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](b
   def copy(base: Exp[Repr], f: Exp[D[T] => T]) = TypeFilter2[T, D, Repr, S, That](base, f)
 }
 
-case class TypeCase[Case, Res](classS: Class[Case], guard: FuncExp[Case, Boolean], f: FuncExp[Case, Res])
+case class TypeCase[Case, Res](classS: Class[Case], guard: FuncExp[Case, Boolean], f: FuncExp[Case, Res]) {
+  private[expressiontree] var guardInt: Case => Boolean = null
+  private[expressiontree] var fInt: Case => Res = null
+  private[expressiontree] def preInterpret() {
+    guardInt = guard.interpret()
+    fInt = f.interpret()
+  }
+}
 
 //The implementation of this function relies on details of erasure for performance:
 //- We use null instead of relying on Option, but we filter null values away. In theory this is only allowed if Res >: Null
@@ -125,12 +132,15 @@ case class TypeCaseExp[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, That <:
 
   private def checkF(v: BaseT): Res = {
     for (t: TypeCase[Any, Res] <- cases.asInstanceOf[Seq[TypeCase[Any, Res]]]) {
-      if (t.classS.isInstance(v) && t.guard.interpret()(v))
-        return t.f.interpret()(v).asInstanceOf[Res]
+      if (t.classS.isInstance(v) && t.guardInt(v))
+        return t.fInt(v).asInstanceOf[Res]
     }
     null.asInstanceOf[Res]
   }
   override def interpret() = {
+    //Since cases can contain open terms, preInterpret() must be called at each call of interpret() - the environment might be different and we might thus get different
+    //results. We needn't call them once per element of e, since TypeCaseExp binds no variable iterating over e.
+    cases foreach (_ preInterpret())
     (e.interpret() map checkF).view filter (_.asInstanceOf[AnyRef] ne null)
   }
   //cases map { case TypeCase(classS, f) => (v: Base) => if (v == null || !classS.isInstance(v)) Util.ifInstanceOfBody(v, classS)}
