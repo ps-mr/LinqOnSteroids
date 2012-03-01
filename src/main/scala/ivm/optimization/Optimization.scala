@@ -498,7 +498,7 @@ object Optimization {
   def resetSubqueries() = subqueries.clear()
   def addSubquery[T](_query: Dummy[Exp[T]]) {
     val query = OptimizationTransforms.stripViewUntyped(_query.v)
-    val optquery = optimize(query)
+    val optquery = optimizeIdx(query)
     val intQuery = optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret() again!
 
     //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the
@@ -546,8 +546,8 @@ object Optimization {
   def shareSubqueries[T](query: Exp[T]): Exp[T] =
     new SubquerySharing(subqueries).shareSubqueries(query)
 
-  def optimize[T](exp: Exp[T]): Exp[T] =
-    flatMapToMap(letTransformer(shareSubqueries(mapToFlatMap(
+  private def optimizeBase[T](exp: Exp[T]): Exp[T] =
+    shareSubqueries(mapToFlatMap(
       removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
         reassociateOps(
           mergeMaps(
@@ -557,5 +557,14 @@ object Optimization {
                   optimizeCartProdToJoin(
                     removeRedundantOption(toTypeFilter(
                       sizeToEmpty(
-                        removeIdentityMaps(exp)))))))))))))))
+                        removeIdentityMaps(exp)))))))))))))
+
+  //The result of letTransformer is not understood by the index optimizer.
+  //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
+  //subquery sharing.
+  private def optimizeIdx[T](exp: Exp[T]): Exp[T] =
+    flatMapToMap(optimizeBase(exp))
+
+  def optimize[T](exp: Exp[T]): Exp[T] =
+    flatMapToMap(letTransformer(optimizeBase(exp)))
 }
