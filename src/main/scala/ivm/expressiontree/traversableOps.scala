@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
 import collection.generic.CanBuildFrom
-import collection.{GenTraversableView, TraversableView, TraversableViewLike, TraversableLike, GenTraversableOnce, mutable}
+import collection.{GenTraversableView, TraversableView, TraversableViewLike, TraversableLike}
 import ivm.collections.TypeMapping
 
 trait TraversableOps {
@@ -314,7 +314,7 @@ trait CollectionSetOps {
     extends TraversableLikeOps[T, Coll, Coll[T]] with WithFilterImpl[T, Coll[T]] {
     def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
     def contains(el: Exp[T]) = apply(el)
-    def --(that: Exp[GenTraversableOnce[T]]): Exp[Coll[T]] =
+    def --(that: Exp[TraversableOnce[T]]): Exp[Coll[T]] =
       Diff(t, that)
   }
   class CollectionSetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set]
