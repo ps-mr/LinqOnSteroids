@@ -500,8 +500,9 @@ object Optimization {
     val query = OptimizationTransforms.stripViewUntyped(_query.v)
     val optquery = optimize(query)
     val intQuery = optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret() again!
-    //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the optimizer.
-    // TODO: Reconsider again whether this is a good idea.
+
+    //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the
+    // optimizer. TODO: Reconsider again whether this is a good idea.
     subqueries += normalize(query) -> intQuery
     subqueries += normalize(optquery) -> intQuery
   }
@@ -542,12 +543,11 @@ object Optimization {
 
   def letTransformer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformer)
 
-  def shareSubqueries[T](query: Exp[T]): Exp[T] = {
-      new SubquerySharing(subqueries).shareSubqueries(query)
-  }
+  def shareSubqueries[T](query: Exp[T]): Exp[T] =
+    new SubquerySharing(subqueries).shareSubqueries(query)
 
-  def optimize[T](exp: Exp[T]): Exp[T] = {
-    flatMapToMap(shareSubqueries(letTransformer(mapToFlatMap(
+  def optimize[T](exp: Exp[T]): Exp[T] =
+    flatMapToMap(letTransformer(shareSubqueries(mapToFlatMap(
       removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
         reassociateOps(
           mergeMaps(
@@ -558,5 +558,4 @@ object Optimization {
                     removeRedundantOption(toTypeFilter(
                       sizeToEmpty(
                         removeIdentityMaps(exp)))))))))))))))
-  }
 }
