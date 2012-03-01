@@ -90,7 +90,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
   sealed trait FoundNode
   case class FoundFilter[T](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, Boolean], isOption: Boolean = false) extends FoundNode
-  case class FoundMap[T, U](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, U], isOption: Boolean = false) extends FoundNode
+  case class FoundFlatMap[T, U](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, TraversableOnce[U]], isOption: Boolean = false) extends FoundNode
 
   def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = e.findTotFun { case v: Var => fvContains(v); case _ => false }.nonEmpty
 
@@ -114,10 +114,10 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         //XXX not so sure we want to optimize such a one-element filter.
         //But it can be a one-element filter on top of various navigation operations, so it can still make sense.
         Right(FoundFilter(Left(subColl), f.asInstanceOf[FuncExp[t, Boolean]], true))
-      case FlatMap(c: Exp[Traversable[_]], f: FuncExp[t, Traversable[u]]) =>
-        Right(FoundMap(Right(c), f))
+      case FlatMap(c: Exp[Traversable[_]], f: FuncExp[t, TraversableOnce[u]]) =>
+        Right(FoundFlatMap(Right(c), f))
       case Call2(OptionFlatMapId, _, subColl: Exp[Option[_]], f: FuncExp[t, TraversableOnce[u]]) =>
-        Right(FoundMap(Left(subColl.asInstanceOf[Exp[Option[t]]]), f, true))
+        Right(FoundFlatMap(Left(subColl.asInstanceOf[Exp[Option[t]]]), f, true))
       case _ =>
         Left(e)
     }
@@ -148,7 +148,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
           Seq((parent, ff, conds, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway - hence fvSeq, not allFVSeq
         //case FlatMap(c, f: FuncExp[t, Traversable[u]]) =>
         //lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
-        case FoundMap(c, f: FuncExp[t, u], _) =>
+        case FoundFlatMap(c, f: FuncExp[t, Traversable[u]], _) =>
           //Add all free variables bound in the location.
           lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c.fold(identity, identity), freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
       })
