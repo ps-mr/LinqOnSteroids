@@ -144,7 +144,6 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     } yield i + j + k
 
 
-  @Ignore
   @Test def testComplexIndexing3Level_k_opt() {
     val l3IdxBase_k_opt = for {
       i <- Vector.range(1, 10).asSmartCollection
@@ -156,7 +155,6 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     indexingTest(l3_k_opt, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
   }
 
-  @Ignore
   @Test def testComplexIndexing3Level_k_opt_workaround() {
     val l3IdxBase_k_opt = for {
       i <- Vector.range(1, 10).asSmartCollection
