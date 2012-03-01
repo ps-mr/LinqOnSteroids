@@ -312,7 +312,27 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields))
     }
-    benchQuery("UUF_UNUSED_FIELD Los-1.2", unusedFieldsLos1_2, unusedFields, optims)
+    benchQuery("UUF_UNUSED_FIELD Los-1.2", unusedFieldsLos1_2, unusedFields, optims);
+
+    {
+      val unusedFieldsLos1_2 /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1.3 Setup", silent = true) {
+        Query(for {
+          classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
+          instructions ← Let(for {
+            method ← classFile.methods if method.body.isDefined
+            instruction ← method.body.get.instructions
+          } yield instruction)
+          declaringClass ← Let(classFile.thisClass)
+          privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
+          usedPrivateFields ← Let(instructions.typeCase(
+            when[GETFIELD](asGETFIELD => asGETFIELD.declaringClass === declaringClass, _.name),
+            when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass === declaringClass, _.name)))
+          unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+          if unusedPrivateFields.size > 0
+        } yield (classFile, privateFields))
+      }
+      benchQuery("UUF_UNUSED_FIELD Los-1.3", unusedFieldsLos1_2, unusedFields, optims)
+    }
 
     val unusedFieldsLos1bis /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1bis Setup", silent = true) {
       Query(for {
