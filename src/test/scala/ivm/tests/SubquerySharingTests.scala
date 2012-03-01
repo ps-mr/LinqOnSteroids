@@ -156,6 +156,48 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     indexingTest(l3_k_opt, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
   }
 
+  @Ignore
+  @Test def testComplexIndexing3Level_k_opt_workaround() {
+    val l3IdxBase_k_opt = for {
+      i <- Vector.range(1, 10).asSmartCollection
+      j <- asExp(Seq(i + 1))
+      k <- Seq(i + j + 2): Exp[Iterable[Int]]
+    } yield (i, j, k)
+
+    val l3Idx = l3IdxBase_k_opt groupBy { _._3 }
+    indexingTest(l3_k_opt, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
+  }
+
+  val l3_k_seqlet: Exp[Seq[Int]] =
+    for {
+      i <- Vector.range(1, 10).asSmartCollection
+      j <- asExp(Seq(i + 1))
+      k <- asExp(Seq(i + j + 2))
+      if (k === 5)
+    } yield i + j + k
+
+  @Test def testComplexIndexing3Level_k_seqlet() {
+    val l3IdxBase_k_seqlet = for {
+      i <- Vector.range(1, 10).asSmartCollection
+      j <- asExp(Seq(i + 1))
+      k <- asExp(Seq(i + j + 2))
+    } yield (i, j, k)
+
+    val l3Idx = l3IdxBase_k_seqlet groupBy { _._3 }
+    indexingTest(l3_k_seqlet, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
+  }
+
+  @Test def testComplexIndexing3Level_k_seqlet_workaround() {
+    val l3IdxBase_k_seqlet = for {
+      i <- Vector.range(1, 10).asSmartCollection
+      j <- asExp(Seq(i + 1))
+      k <- Seq(i + j + 2): Exp[Iterable[Int]]
+    } yield (i, j, k)
+
+    val l3Idx = l3IdxBase_k_seqlet groupBy { _._3 }
+    indexingTest(l3_k_seqlet, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
+  }
+
   @Test def testIndexing {
     val index = l.groupBy(p => p._1 + p._2)
     val indexres = index.interpret()
