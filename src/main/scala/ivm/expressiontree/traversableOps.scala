@@ -96,7 +96,7 @@ trait TraversableOps {
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Repr]]
   }
 
-  trait WithFilterImpl[T, This <: Traversable[T] with TraversableLike[T, Repr], Repr <: Traversable[T] with TraversableLike[T, Repr]] extends WithFilterable[T, Repr] {
+  trait WithFilterImpl[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends WithFilterable[T, Repr] {
     this: FilterMonadicOpsLike[T, Repr] =>
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Repr]] =
       newWithFilter(this.t, FuncExp(f))
@@ -182,7 +182,7 @@ trait TraversableOps {
     //TODO: override operations to avoid using CanBuildFrom
   }
 
-  class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable, Traversable[T]] with WithFilterImpl[T, Traversable[T], Traversable[T]]
+  class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable, Traversable[T]] with WithFilterImpl[T,  Traversable[T]]
 
   class TraversableViewOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val t: Exp[TraversableView[T, Repr]])
     extends TraversableViewLikeOps[T, Repr, Traversable, TraversableView[T, Repr]]
@@ -252,7 +252,7 @@ trait CollectionMapOps {
   import collection.{Map, MapLike}
 
   trait MapLikeOps[K, V, Coll[K, V] <: Map[K, V] with MapLike[K, V, Coll[K, V]]]
-    extends TraversableLikeOps[(K, V), Iterable, Coll[K, V]] with WithFilterImpl[(K, V), Coll[K, V], Coll[K, V]] {
+    extends TraversableLikeOps[(K, V), Iterable, Coll[K, V]] with WithFilterImpl[(K, V), Coll[K, V]] {
     def get(key: Exp[K]): Exp[Option[V]] = onExp(t, key)('Map$get, _ get _)
     /*
     //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
@@ -281,7 +281,7 @@ trait MapOps extends CollectionMapOps {
 
 trait IterableOps {
   this: LiftingConvs with TraversableOps =>
-  class IterableOps[T](val t: Exp[Iterable[T]]) extends TraversableLikeOps[T, Iterable, Iterable[T]] with WithFilterImpl[T, Iterable[T], Iterable[T]]
+  class IterableOps[T](val t: Exp[Iterable[T]]) extends TraversableLikeOps[T, Iterable, Iterable[T]] with WithFilterImpl[T, Iterable[T]]
 
   implicit def expToIterableExp[T](t: Exp[Iterable[T]]): IterableOps[T] = new IterableOps(t)
   implicit def tToIterableExp[T](t: Iterable[T]): IterableOps[T] =
@@ -290,7 +290,7 @@ trait IterableOps {
 
 trait SeqOps {
   this: LiftingConvs with TraversableOps =>
-  class SeqOps[T](val t: Exp[Seq[T]]) extends TraversableLikeOps[T, Seq, Seq[T]] with WithFilterImpl[T, Seq[T], Seq[T]]
+  class SeqOps[T](val t: Exp[Seq[T]]) extends TraversableLikeOps[T, Seq, Seq[T]] with WithFilterImpl[T, Seq[T]]
 
   implicit def SeqExp2ExpSeq[T](e: Seq[Exp[T]]): Exp[Seq[T]] = ExpSeq(e: _*)
 
@@ -310,7 +310,7 @@ trait CollectionSetOps {
     def copy(set: Exp[GenSet[T]], v: Exp[T]) = Contains(set: Exp[GenSet[T]], v: Exp[T])
   }
 
-  class CollectionGenSetOps[T](val t: Exp[GenSet[T]]) extends TraversableLikeOps[T, GenSet, GenSet[T]] with WithFilterImpl[T, GenSet[T], GenSet[T]] {
+  class CollectionGenSetOps[T](val t: Exp[GenSet[T]]) extends TraversableLikeOps[T, GenSet, GenSet[T]] with WithFilterImpl[T, GenSet[T]] {
     def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
     def contains(el: Exp[T]) = apply(el)
     def --(that: Exp[GenTraversableOnce[T]]): Exp[GenSet[T] /* Repr */] =
@@ -327,7 +327,7 @@ trait SetOps extends CollectionSetOps {
   // This class differs from CollectionSetOps because it extends TraversableLikeOps[T, collection.immutable.Set, collection.immutable.Set[T]]
   // instead of TraversableLikeOps[T, collection.Set, collection.Set[T]].
   // XXX: abstract the commonalities in SetLikeOps, even if for now it takes more code than it saves.
-  class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set, Set[T]] with WithFilterImpl[T, Set[T], Set[T]] {
+  class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set, Set[T]] with WithFilterImpl[T, Set[T]] {
     def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
     def contains(el: Exp[T]) = apply(el)
   }
