@@ -303,21 +303,23 @@ trait CollectionSetOps {
   this: LiftingConvs with TraversableOps =>
   //We want this lifting to apply to all Sets, not just the immutable ones, so that we can call map also on IncHashSet
   //and get the right type.
-  import collection.{Set => GenSet}
+  import collection.{SetLike, Set}
 
-  case class Contains[T](set: Exp[GenSet[T]], v: Exp[T]) extends Arity2OpExp[GenSet[T], T, Boolean, Contains[T]](set, v) {
+  case class Contains[T](set: Exp[Set[T]], v: Exp[T]) extends Arity2OpExp[Set[T], T, Boolean, Contains[T]](set, v) {
     def interpret() = set.interpret().contains(v.interpret())
-    def copy(set: Exp[GenSet[T]], v: Exp[T]) = Contains(set: Exp[GenSet[T]], v: Exp[T])
+    def copy(set: Exp[Set[T]], v: Exp[T]) = Contains(set: Exp[Set[T]], v: Exp[T])
   }
 
-  class CollectionGenSetOps[T](val t: Exp[GenSet[T]]) extends TraversableLikeOps[T, GenSet, GenSet[T]] with WithFilterImpl[T, GenSet[T]] {
+  trait SetLikeOps[T, Coll[T] <: Set[T] with SetLike[T, Coll[T]]]
+    extends TraversableLikeOps[T, Coll, Coll[T]] with WithFilterImpl[T, Coll[T]] {
     def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
     def contains(el: Exp[T]) = apply(el)
-    def --(that: Exp[GenTraversableOnce[T]]): Exp[GenSet[T] /* Repr */] =
+    def --(that: Exp[GenTraversableOnce[T]]): Exp[Coll[T]] =
       Diff(t, that)
   }
-  implicit def expToCollectionGenSetExp[T](t: Exp[GenSet[T]]): CollectionGenSetOps[T] = new CollectionGenSetOps(t)
-  implicit def tToCollectionGenSetExp[T](t: GenSet[T]): CollectionGenSetOps[T] = expToCollectionGenSetExp(t)
+  class CollectionSetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set]
+  implicit def expToCollectionSetExp[T](t: Exp[Set[T]]): CollectionSetOps[T] = new CollectionSetOps(t)
+  implicit def tToCollectionSetExp[T](t: Set[T]): CollectionSetOps[T] = expToCollectionSetExp(t)
 }
 
 trait SetOps extends CollectionSetOps {
@@ -326,11 +328,11 @@ trait SetOps extends CollectionSetOps {
 
   // This class differs from CollectionSetOps because it extends TraversableLikeOps[T, collection.immutable.Set, collection.immutable.Set[T]]
   // instead of TraversableLikeOps[T, collection.Set, collection.Set[T]].
-  // XXX: abstract the commonalities in SetLikeOps, even if for now it takes more code than it saves.
-  class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set, Set[T]] with WithFilterImpl[T, Set[T]] {
+  class SetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set]
+  /*class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set, Set[T]] with WithFilterImpl[T, Set[T]] {
     def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
     def contains(el: Exp[T]) = apply(el)
-  }
+  }*/
   implicit def expToSetExp[T](t: Exp[Set[T]]): SetOps[T] = new SetOps(t)
   implicit def tToSetExp[T](t: Set[T]): SetOps[T] = expToSetExp(t)
 }
