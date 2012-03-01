@@ -164,6 +164,8 @@ trait TraversableOps {
     //XXX: Generate these wrappers, also for other methods.
     def toSet = onExp(this.t)('TraversableLike$toSet, _.toSet)
     def toSeq = onExp(this.t)('TraversableLike$toSeq, _.toSeq)
+
+    def typeCase[Res, That <: TraversableLike[Res, That]](cases: TypeCase[_, Res]*)(implicit c: CanBuildFrom[Repr, Res, That]): Exp[That] = TypeCaseExp(this.t, cases)
   }
 
   trait TraversableViewLikeOps[
@@ -416,9 +418,5 @@ trait TypeFilterOps {
           asInstanceOf[Class[Case]],
           FuncExp(f))
     }
-  }
-
-  implicit def pimplTypeCase[Base](e: Exp[Traversable[Base]]) = new {
-    def typeCase[Res](cases: TypeCase[_, Res]*) = TypeCaseExp(e, cases)
   }
 }
