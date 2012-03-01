@@ -466,6 +466,13 @@ object OptimizationTransforms {
     }
   }
 
+  val letTransformer: Exp[_] => Exp[_] = {
+    e => e match {
+      case FlatMap(ExpSeq(v), f) => letExp(v)(f)
+      case _ => e
+    }
+  }
+
   val normalizer: Exp[_] => Exp[_] =
     e => e match {
       case p@Plus(x, y) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum)
@@ -533,12 +540,14 @@ object Optimization {
 
   def flatMapToMap[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.flatMapToMap)
 
+  def letTransformer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformer)
+
   def shareSubqueries[T](query: Exp[T]): Exp[T] = {
       new SubquerySharing(subqueries).shareSubqueries(query)
   }
 
   def optimize[T](exp: Exp[T]): Exp[T] = {
-    flatMapToMap(shareSubqueries(mapToFlatMap(
+    flatMapToMap(shareSubqueries(letTransformer(mapToFlatMap(
       removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
         reassociateOps(
           mergeMaps(
@@ -548,6 +557,6 @@ object Optimization {
                   optimizeCartProdToJoin(
                     removeRedundantOption(toTypeFilter(
                       sizeToEmpty(
-                        removeIdentityMaps(exp))))))))))))))
+                        removeIdentityMaps(exp)))))))))))))))
   }
 }

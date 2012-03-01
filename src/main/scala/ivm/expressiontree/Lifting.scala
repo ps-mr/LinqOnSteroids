@@ -142,8 +142,8 @@ object Lifting
   with TraversableOps with ForceOps with IterableOps with SeqOps with MapOps with SetOps with TypeFilterOps with NumOps with BaseTypesOps with ExpSugar
 {
   //Support let-bindings within for-comprehensions without relying on pattern-matching.
-  //def Let[T](e: Exp[T]): Exp[Seq[T]] = Seq(e)
-  def Let[T](e: Exp[T]): Exp[Option[T]] = Some(e)
+  def Let[T](e: Exp[T]): Exp[Seq[T]] = Seq(e)
+  //def Let[T](e: Exp[T]): Exp[Option[T]] = Some(e)
 
   override def groupBySelImpl[T, Repr <: Traversable[T] with
     TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],
