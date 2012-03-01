@@ -57,8 +57,6 @@ object OptimizationTransforms {
    *   l.flatMap(k => j.withFilter(l(k) is r(_)).map(mcf(k, _)))
    * into:
    *   l.join(j, l, r, (p: Exp[(Int, Int)]) => mcf(p._1, p._2))
-   * A problem appears if l or j is only FilterMonadic but not Traversable - and that won't be detected by the pattern
-   * match.
    */
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
