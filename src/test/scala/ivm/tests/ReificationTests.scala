@@ -103,46 +103,6 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testTypeCase() {
-    case class TypeCase[Case, Res](classS: Class[Case], f: FuncExp[Case, Res])
-    //def when[Case, Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) = TypeCase(cS, FuncExp(f))
-    trait WhenResult[Case] {
-      def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]): TypeCase[Case, Res]
-    }
-    object when {
-      def apply[Case] = new WhenResult[Case] {
-        override def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
-          TypeCase(IfInstanceOf.getErasure(cS).
-            //XXX: This cast is only guaranteed to succeed because of erasure
-            asInstanceOf[Class[Case]],
-            FuncExp(f))
-      }
-    }
-
-    //The implementation of this function relies on details of erasure for performance:
-    //- We use null instead of relying on Option, but we filter null values away. In theory this is only allowed if Res >: Null
-    //that is Res <: AnyRef; this is valid for all types but Res <: AnyVal, i.e. for primitive types, but since Res is a type
-    //parameter, it will be erased to java.lang.Object and even primitive types will be passed boxed.
-    //Hence in practice v: Res can be casted to AnyRef and compared against null.
-    case class TypeCaseExp[Base, Res](e: Exp[Traversable[Base]], cases: Seq[TypeCase[_ /*Case_i*/, Res]]) extends Exp[Traversable[Res]] {
-      override def nodeArity = cases.length + 1
-      override def children = e +: (cases map (_.f))
-      override def checkedGenericConstructor: Seq[Exp[_]] => Exp[Traversable[Res]] = v => TypeCaseExp(v.head.asInstanceOf[Exp[Traversable[Base]]], (cases, v.tail).zipped map ((tc, f) => TypeCase(tc.classS.asInstanceOf[Class[Any]], f.asInstanceOf[FuncExp[Any, Res]])))
-      private def checkF(v: Base): Res = {
-        for (TypeCase(classS, f: FuncExp[s, _/*Res*/]) <- cases) {
-          if (classS.isInstance(v))
-            return f.interpret()(v.asInstanceOf[s]).asInstanceOf[Res]
-        }
-        null.asInstanceOf[Res]
-      }
-      override def interpret() = {
-        (e.interpret() map checkF).view filter (_.asInstanceOf[AnyRef] ne null)
-      }
-      //cases map { case TypeCase(classS, f) => (v: Base) => if (v == null || !classS.isInstance(v)) Util.ifInstanceOfBody(v, classS)}
-    }
-
-    implicit def pimpl[Base](e: Exp[Traversable[Base]]) = new {
-      def typeCase[Res](cases: TypeCase[_, Res]*) = TypeCaseExp(e, cases)
-    }
     val exp = Seq(1).asSmartCollection typeCase (when[Int](_.toString), when[String](identity))
     println(exp)
     println(exp.interpret())

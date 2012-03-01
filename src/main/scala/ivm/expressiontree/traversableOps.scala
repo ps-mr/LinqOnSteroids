@@ -401,4 +401,24 @@ trait TypeFilterOps {
     def groupByTupleType2 /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, FuncExp(_._2))
   }
   implicit def expToGroupByTupleType[T, U, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps(t)
+
+  //typeCase method
+
+  //def when[Case, Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) = TypeCase(cS, FuncExp(f))
+  trait WhenResult[Case] {
+    def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]): TypeCase[Case, Res]
+  }
+  object when {
+    def apply[Case] = new WhenResult[Case] {
+      override def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
+        TypeCase(IfInstanceOf.getErasure(cS).
+          //XXX: This cast is only guaranteed to succeed because of erasure
+          asInstanceOf[Class[Case]],
+          FuncExp(f))
+    }
+  }
+
+  implicit def pimplTypeCase[Base](e: Exp[Traversable[Base]]) = new {
+    def typeCase[Res](cases: TypeCase[_, Res]*) = TypeCaseExp(e, cases)
+  }
 }
