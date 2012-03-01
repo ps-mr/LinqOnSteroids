@@ -108,7 +108,7 @@ case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](b
   def copy(base: Exp[Repr], f: Exp[D[T] => T]) = TypeFilter2[T, D, Repr, S, That](base, f)
 }
 
-case class TypeCase[Case, Res](classS: Class[Case], f: FuncExp[Case, Res])
+case class TypeCase[Case, Res](classS: Class[Case], guard: FuncExp[Case, Boolean], f: FuncExp[Case, Res])
 
 //The implementation of this function relies on details of erasure for performance:
 //- We use null instead of relying on Option, but we filter null values away. In theory this is only allowed if Res >: Null
@@ -116,13 +116,17 @@ case class TypeCase[Case, Res](classS: Class[Case], f: FuncExp[Case, Res])
 //parameter, it will be erased to java.lang.Object and even primitive types will be passed boxed.
 //Hence in practice v: Res can be casted to AnyRef and compared against null.
 case class TypeCaseExp[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, That <: TraversableLike[Res, That]](e: Exp[Repr with TraversableLike[BaseT, Repr]], cases: Seq[TypeCase[_ /*Case_i*/, Res]])(implicit protected[this] val c: CanBuildFrom[Repr, Res, That]) extends Exp[TraversableView[Res, That]] {
-  override def nodeArity = cases.length + 1
-  override def children = e +: (cases map (_.f))
-  override def checkedGenericConstructor: Seq[Exp[_]] => Exp[TraversableView[Res, That]] = v => TypeCaseExp(v.head.asInstanceOf[Exp[Repr]], (cases, v.tail).zipped map ((tc, f) => TypeCase(tc.classS.asInstanceOf[Class[Any]], f.asInstanceOf[FuncExp[Any, Res]])))
+  override def nodeArity = 2 * cases.length + 1
+  override def children = e +: (cases.flatMap /*[Exp[_], Seq[Exp[_]]] */(c => Seq[Exp[_]](c.guard, c.f)))
+  override def checkedGenericConstructor: Seq[Exp[_]] => Exp[TraversableView[Res, That]] =
+    v => TypeCaseExp(
+      v.head.asInstanceOf[Exp[Repr]],
+      (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS.asInstanceOf[Class[Any]], guard.asInstanceOf[FuncExp[Any, Boolean]], f.asInstanceOf[FuncExp[Any, Res]])})
+
   private def checkF(v: BaseT): Res = {
-    for (TypeCase(classS, f: FuncExp[s, _/*Res*/]) <- cases) {
-      if (classS.isInstance(v))
-        return f.interpret()(v.asInstanceOf[s]).asInstanceOf[Res]
+    for (TypeCase(classS, guard, f: FuncExp[s, _/*Res*/]) <- cases) {
+      if (classS.isInstance(v) && guard.asInstanceOf[FuncExp[s, Boolean]].interpret()(v.asInstanceOf[s]))
+        return f.interpret()(v.asInstanceOf[s]).asInstanceOf[Res] //Remove all casts please!
     }
     null.asInstanceOf[Res]
   }

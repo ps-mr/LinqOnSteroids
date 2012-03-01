@@ -338,7 +338,7 @@ trait SetOps extends CollectionSetOps {
 }
 
 trait TypeFilterOps {
-  this: TupleOps with FunctionOps with TraversableOps =>
+  this: LiftingConvs with TupleOps with FunctionOps with TraversableOps =>
   case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends Arity2OpExp[C[D[T]], D[T] => T, TypeMapping[C, D],
     GroupByType[T, C, D]](base, f) {
     override def interpret() = {
@@ -411,14 +411,18 @@ trait TypeFilterOps {
   //def when[Case, Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) = TypeCase(cS, FuncExp(f))
   trait WhenResult[Case] {
     def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]): TypeCase[Case, Res]
+    def apply[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]): TypeCase[Case, Res]
   }
   object when {
     def apply[Case] = new WhenResult[Case] {
-      override def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
+      override def apply[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
         TypeCase(IfInstanceOf.getErasure(cS).
           //XXX: This cast is only guaranteed to succeed because of erasure
           asInstanceOf[Class[Case]],
+          FuncExp(guard),
           FuncExp(f))
+      override def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
+        apply(_ => asExp(true), f)
     }
   }
 }
