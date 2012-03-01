@@ -115,11 +115,11 @@ case class TypeCase[Case, Res](classS: Class[Case], f: FuncExp[Case, Res])
 //that is Res <: AnyRef; this is valid for all types but Res <: AnyVal, i.e. for primitive types, but since Res is a type
 //parameter, it will be erased to java.lang.Object and even primitive types will be passed boxed.
 //Hence in practice v: Res can be casted to AnyRef and compared against null.
-case class TypeCaseExp[Base, Res](e: Exp[Traversable[Base]], cases: Seq[TypeCase[_ /*Case_i*/, Res]]) extends Exp[Traversable[Res]] {
+case class TypeCaseExp[BaseT, Res](e: Exp[Traversable[BaseT]], cases: Seq[TypeCase[_ /*Case_i*/, Res]]) extends Exp[Traversable[Res]] {
   override def nodeArity = cases.length + 1
   override def children = e +: (cases map (_.f))
-  override def checkedGenericConstructor: Seq[Exp[_]] => Exp[Traversable[Res]] = v => TypeCaseExp(v.head.asInstanceOf[Exp[Traversable[Base]]], (cases, v.tail).zipped map ((tc, f) => TypeCase(tc.classS.asInstanceOf[Class[Any]], f.asInstanceOf[FuncExp[Any, Res]])))
-  private def checkF(v: Base): Res = {
+  override def checkedGenericConstructor: Seq[Exp[_]] => Exp[Traversable[Res]] = v => TypeCaseExp(v.head.asInstanceOf[Exp[Traversable[BaseT]]], (cases, v.tail).zipped map ((tc, f) => TypeCase(tc.classS.asInstanceOf[Class[Any]], f.asInstanceOf[FuncExp[Any, Res]])))
+  private def checkF(v: BaseT): Res = {
     for (TypeCase(classS, f: FuncExp[s, _/*Res*/]) <- cases) {
       if (classS.isInstance(v))
         return f.interpret()(v.asInstanceOf[s]).asInstanceOf[Res]
