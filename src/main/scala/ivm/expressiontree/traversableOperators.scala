@@ -124,9 +124,9 @@ case class TypeCaseExp[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, That <:
       (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS.asInstanceOf[Class[Any]], guard.asInstanceOf[FuncExp[Any, Boolean]], f.asInstanceOf[FuncExp[Any, Res]])})
 
   private def checkF(v: BaseT): Res = {
-    for (TypeCase(classS, guard, f: FuncExp[s, _/*Res*/]) <- cases) {
-      if (classS.isInstance(v) && guard.asInstanceOf[FuncExp[s, Boolean]].interpret()(v.asInstanceOf[s]))
-        return f.interpret()(v.asInstanceOf[s]).asInstanceOf[Res] //Remove all casts please!
+    for (t: TypeCase[Any, Res] <- cases.asInstanceOf[Seq[TypeCase[Any, Res]]]) {
+      if (t.classS.isInstance(v) && t.guard.interpret()(v))
+        return t.f.interpret()(v).asInstanceOf[Res]
     }
     null.asInstanceOf[Res]
   }
