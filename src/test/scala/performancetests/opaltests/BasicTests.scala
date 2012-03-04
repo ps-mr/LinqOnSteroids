@@ -15,7 +15,6 @@ import Java6Framework.ClassFile
 import resolved.Attributes
 import java.util.zip.ZipFile
 import java.io.File
-import performancetests.Benchmarking
 import collections.{TypeMapping, IncHashSet}
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.FunSuite
