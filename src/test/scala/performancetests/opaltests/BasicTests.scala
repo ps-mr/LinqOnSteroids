@@ -1,7 +1,7 @@
-package ivm
+package performancetests
 package opaltests
 
-
+import ivm._
 import expressiontree._
 
 import scala.collection.JavaConversions._

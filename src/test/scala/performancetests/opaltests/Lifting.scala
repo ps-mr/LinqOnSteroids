@@ -40,7 +40,7 @@
  POSSIBILITY OF SUCH DAMAGE.
 */
 
-package ivm.opaltests
+package performancetests.opaltests
 
 import ivm.expressiontree.Exp
 import ivm.expressiontree.Lifting.onExp
@@ -1539,4 +1539,3 @@ object InstructionLifting {
 		def exceptions = onExp(t)('exceptions, _.exceptions)
 	}
 }
-	

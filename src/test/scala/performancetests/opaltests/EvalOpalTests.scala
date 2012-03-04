@@ -1,6 +1,7 @@
-package ivm
+package performancetests
 package opaltests
 
+import ivm._
 import expressiontree.{Lifting, Exp}
 import Lifting._
 
