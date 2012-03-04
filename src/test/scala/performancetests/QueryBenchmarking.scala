@@ -1,7 +1,6 @@
-package ivm
-package opaltests
+package performancetests
 
-import performancetests.Benchmarking
+import ivm._
 import tests.TestUtil
 import expressiontree.{Lifting, Exp}
 import Lifting._

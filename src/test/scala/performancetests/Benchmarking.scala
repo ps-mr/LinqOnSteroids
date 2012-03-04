@@ -1,6 +1,6 @@
-package ivm
 package performancetests
 
+import ivm._
 import expressiontree.Exp
 import optimization._
 import Optimization._

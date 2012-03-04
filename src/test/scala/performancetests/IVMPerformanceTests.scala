@@ -1,5 +1,6 @@
-package ivm
 package performancetests
+
+import ivm._
 
 import org.scalatest.junit.{JUnitSuite, ShouldMatchersForJUnit}
 import org.junit.{Ignore, Test}

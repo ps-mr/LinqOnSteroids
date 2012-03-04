@@ -1,5 +1,6 @@
-package ivm
 package performancetests
+
+import ivm._
 
 /**
  * User: pgiarrusso

@@ -45,6 +45,7 @@ import Util.ExtraImplicits._
 import org.scalatest.{FunSuite, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 import optimization.Optimization
+import performancetests.QueryBenchmarking
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
