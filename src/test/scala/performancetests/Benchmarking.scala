@@ -123,11 +123,13 @@ trait Benchmarking {
     //Format output for Jenkins' Measurement Plot plugin - https://wiki.jenkins-ci.org/display/JENKINS/Measurement+Plots+Plugin
     println(<measurement><name>{name}</name><value>{avgMs}</value></measurement>)
     //Format output for R
-    logWriter.println("%s;%s;%f;%f;%f" format (testDate, name.replace(';', '_'), avgMs, devStdMs, stdErrMs))
+    logWriter.println("%s;%s;%s;%f;%f;%f" format (srcVersion, testDate, name.replace(';', '_'), avgMs, devStdMs, stdErrMs))
     logWriter.flush()
 
     (ret, avgMs)
   }
+
+  val srcVersion = System.getProperty("src.version", "")
 
   /*
   def silentBenchMark[T](name: String, execLoops: Int = 1, warmUpLoops: Int = 3, sampleLoops: Int = 3)
