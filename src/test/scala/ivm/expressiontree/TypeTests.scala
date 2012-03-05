@@ -5,6 +5,8 @@ import org.scalatest.matchers.ShouldMatchers
 import collection.{immutable, TraversableLike, mutable}
 import collection.generic.CanBuildFrom
 import mutable.{ArrayBuffer, Builder}
+import java.io.{Closeable, File}
+import java.nio.channels.{Channel, ByteChannel, FileChannel}
 
 /**
  * User: pgiarrusso
@@ -46,7 +48,7 @@ class TypeTests extends FunSuite with ShouldMatchers {
           val baseResult = map(tmf).asInstanceOf[C[D[Base /*T*/]]]
           val coll = cbf(baseResult)
           for (t <- transitiveQuery(subtypeRel, IfInstanceOf.getErasure(tmf)))
-            //Jumping back and forth from Class[_] to ClassManifest[_] is extremely annoying.
+            //XXX: Jumping back and forth from Class[_] to ClassManifest[_] is extremely annoying, even performance-wise.
             coll ++= map(ClassManifest.fromClass(t)).asInstanceOf[C[D[T]]]
           coll.result()
           //baseResult
@@ -88,8 +90,10 @@ class TypeTests extends FunSuite with ShouldMatchers {
 
   //Class.getSuperclass can return null, filter that out. Now make sure that Object is always included? Add testcases for primitive types?
   /*private*/ def superClass(c: Class[_]): Option[Class[_]] = Option(c.getSuperclass) orElse (if (c == classOf[Any]) None else Some(classOf[Any]))
+  /*private*/ def superInterfaces(c: Class[_]): Seq[Class[_]] = c.getInterfaces
   //getInterfaces returns all implemented interfaces :-), while getSuperclass does not.
-  /*private*/ def superTypes(c: Class[_]): Seq[Class[_]] = c.getInterfaces ++ superClass(c)
+  /*private*/ def superTypes(c: Class[_]): Seq[Class[_]] = superInterfaces(c) ++ superClass(c)
+
 
   //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
   def computeSubTypeRel[T: ClassManifest](seenTypes: mutable.Set[ClassManifest[_]]) = {
@@ -105,14 +109,20 @@ class TypeTests extends FunSuite with ShouldMatchers {
       toScan = s :: toScan
       subtypeRel += (s -> t_) //Map s to its subtypes.
     }
+    //For each supertype found, look up its superclasses. XXX This won't include its superinterfaces though - they will be included only for the original type. Maybe that's OK for looking up concrete types!
     while (toScan.nonEmpty) {
       val t = toScan.head
       toScan = toScan.tail
-      //superClass is special.
-      for (s <- superClass(t)) {
+      //for (s <- superClass(t)) {
+      for (s <- superTypes(t)) {
         toScan = s :: toScan
         subtypeRel += (s -> t)
       }
+      /*
+      //No need to scan superInterfaces recursively
+      for (s <- superInterfaces(t))
+        subtypeRel += (s -> t)
+        */
     }
     groupBySel(subtypeRel)(_._1, _._2)
   }
@@ -141,12 +151,18 @@ class TypeTests extends FunSuite with ShouldMatchers {
     }
     override def copy(base: Exp[C[D[T]]], f: Exp[D[T]=>T]) = GroupByType[T, C, D](base, f)
   }
-  val seenTypesEx: mutable.Set[ClassManifest[_]] = mutable.Set(classManifest[Int], classManifest[Null], classManifest[AnyRef], classManifest[String])
+  val seenTypesEx: mutable.Set[ClassManifest[_]] = mutable.Set(classManifest[Int], classManifest[Null], classManifest[AnyRef], classManifest[String], classManifest[File], classManifest[Long], classManifest[FileChannel])
 
   test("foo") {
     val rel = computeSubTypeRel[Void](seenTypesEx)
     val res = transitiveQuery(rel, classOf[Any])
     assert(res(classOf[Number]))
+    println(res)
+    val res2 = transitiveQuery(rel, classOf[Closeable])
+    println(res2)
+    assert(res2(classOf[Channel]))
+    assert(res2(classOf[ByteChannel]))
+    //XXX: the code below does not work because of weird issues
     //type C = Class[_]
     //val res: Traversable[C] = transitiveQuery(rel, classOf[Any])
     //res should contain (classOf[Number].asInstanceOf[C])
