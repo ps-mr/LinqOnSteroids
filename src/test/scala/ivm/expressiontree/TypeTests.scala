@@ -107,7 +107,7 @@ class TypeTests extends FunSuite with ShouldMatchers {
       val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
       for {
         t <- seenTypes
-        if t != implicitly[ClassManifest[T]] && t != ClassManifest.Null
+        if t != classManifest[T] && t != ClassManifest.Null
         t_ = IfInstanceOf.getErasure(t)
         s <- superTypes(t_)
       }
