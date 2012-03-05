@@ -95,28 +95,34 @@ class TypeTests extends FunSuite with ShouldMatchers {
   /*private*/ def superTypes(c: Class[_]): Seq[Class[_]] = superInterfaces(c) ++ superClass(c)
 
 
+  //TODO: have a per-thread global map, so that the reconstructed type hierarchy can be shared between different indexes.
+  //Problem there: GC of entries.
+  //Contract: Returns a map defined on interfaces and classes, which returns their implementing classes and possibly
+  //their implementing interfaces.
+  //With this contract, given a type, we can find its concrete subtypes, and look them up in a type index.
   //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
   def computeSubTypeRel[T: ClassManifest](seenTypes: mutable.Set[ClassManifest[_]]) = {
     val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
-    var toScan: List[Class[_]] = Nil
+    var classesToScan: List[Class[_]] = Nil
     for {
       t <- seenTypes
-      if t != ClassManifest.Null
+      if t != ClassManifest.Null && t != classManifest[T]
       t_ = IfInstanceOf.getErasure(t)
       s <- superTypes(t_)
-      if t != classManifest[T]
     } {
-      toScan = s :: toScan
-      subtypeRel += (s -> t_) //Map s to its subtypes.
+      val superClassOpt = superClass(t_).toList
+      classesToScan = superClassOpt ::: classesToScan
+      for (s <- superClassOpt ++ superInterfaces(t_))
+        subtypeRel += (s -> t_) //Map s to its subtypes.
     }
     //For each supertype found, look up its superclasses. XXX This won't include its superinterfaces though - they will be included only for the original type. Maybe that's OK for looking up concrete types!
-    while (toScan.nonEmpty) {
-      val t = toScan.head
-      toScan = toScan.tail
+    while (classesToScan.nonEmpty) {
+      val clazz :: rest = classesToScan
+      classesToScan = rest
       //for (s <- superClass(t)) {
-      for (s <- superTypes(t)) {
-        toScan = s :: toScan
-        subtypeRel += (s -> t)
+      for (superType <- superTypes(clazz)) {
+        classesToScan = superType :: classesToScan
+        subtypeRel += (superType -> clazz)
       }
       /*
       //No need to scan superInterfaces recursively
@@ -155,16 +161,21 @@ class TypeTests extends FunSuite with ShouldMatchers {
 
   test("foo") {
     val rel = computeSubTypeRel[Void](seenTypesEx)
+    println("Rel:")
+    rel foreach println
+    println()
     val res = transitiveQuery(rel, classOf[Any])
     assert(res(classOf[Number]))
     println(res)
     val res2 = transitiveQuery(rel, classOf[Closeable])
     println(res2)
-    assert(res2(classOf[Channel]))
-    assert(res2(classOf[ByteChannel]))
+    println(res2(classOf[Channel]))
+    println(res2(classOf[ByteChannel]))
+    assert(res2(classOf[FileChannel]))
     //XXX: the code below does not work because of weird issues
     //type C = Class[_]
     //val res: Traversable[C] = transitiveQuery(rel, classOf[Any])
     //res should contain (classOf[Number].asInstanceOf[C])
   }
+  //XXX test also that YesSub/NoSub works. See /Users/pgiarrusso/tmp/foo.scala
 }
