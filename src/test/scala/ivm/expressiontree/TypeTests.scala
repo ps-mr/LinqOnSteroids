@@ -82,7 +82,8 @@ class TypeTests extends FunSuite with ShouldMatchers {
     b.result
   }
 
-  private def superTypes(c: Class[_]): Seq[Class[_]] = c.getInterfaces :+ c.getSuperclass
+  //Class.getSuperclass can return null, filter that out. Now make sure that Object is always included? Add testcases for primitive types?
+  private def superTypes(c: Class[_]): Seq[Class[_]] = c.getInterfaces ++ Option(c.getSuperclass)
 
   case class GroupByType[T: ClassManifest, C[+X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends Arity2OpExp[C[D[T]], D[T] => T, TypeMapping[C, D, T],
     GroupByType[T, C, D]](base, f) {
