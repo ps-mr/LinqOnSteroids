@@ -1,3 +1,4 @@
+import java.io.FileWriter
 import scalariform.formatter.preferences._
 import de.johoop.findbugs4sbt.FindBugs._
 //import com.typesafe.startscript.StartScriptPlugin
@@ -78,14 +79,26 @@ initialCommands in (Test, console) := """
 
 sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, scalaVersion) map { (dir, baseDir, scalaVer) =>
   val gen = new Generator(scalaVer)
-  for {
+  val verFile = dir / "version.scala"
+  val gitVersion = "git rev-parse HEAD".!!
+  val writer = new FileWriter(verFile)
+  try {
+    writer write ("""package ivm
+object GitVersion {
+  val version = "%s"
+}
+""" format gitVersion.trim)
+  } finally {
+    writer.close
+  }
+  (for {
     base <- Generator.templates
     file = dir / (base + ".scala")
   } yield {
     if (!file.exists() || (baseDir / "src" / "main" / "resources" / (base + ".ssp") newerThan file))
       gen.generate(dir.absolutePath)
     file
-  }
+  }) :+ verFile
 }
 
 //This code is currently not needed.
