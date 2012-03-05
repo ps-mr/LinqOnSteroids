@@ -6,7 +6,7 @@ import collection.generic.CanBuildFrom
 object ClassUtil {
   import java.{lang => jl}
 
-  val primitiveToWrapper = Map[Class[_], Class[_]](
+  val primitiveToBoxed = Map[Class[_], Class[_]](
     classOf[Byte] -> classOf[jl.Byte],
     classOf[Short] -> classOf[jl.Short],
     classOf[Char] -> classOf[jl.Character],
@@ -17,12 +17,12 @@ object ClassUtil {
     classOf[Boolean] -> classOf[jl.Boolean],
     classOf[Unit] -> classOf[jl.Void]
   )
-  def getErasure(cS: ClassManifest[_]) =
+  def boxedErasure(cS: ClassManifest[_]) =
     /*if (cS <:< ClassManifest.AnyVal)
       primitiveToWrapper(cS.erasure)
     else
       cS.erasure*/
-    primitiveToWrapper.getOrElse(cS.erasure, cS.erasure)
+    primitiveToBoxed.getOrElse(cS.erasure, cS.erasure)
 }
 
 object Util {
@@ -38,6 +38,7 @@ object Util {
    */
   def checkSameTypeAndRet[T](typeParam: T)(v: T): T = v
 
+  //Precondition: classS must have been produced through primitiveToBoxed, because v will be boxed.
   def ifInstanceOfBody[T, S](v: T, classS: Class[_]): Option[S] =
     if (v == null || !classS.isInstance(v))
       None
@@ -54,7 +55,7 @@ object Util {
     implicit def pimpInstanceOf[T](t: T) = new IfInstanceOfAble(t)
     class IfInstanceOfAble[T](v: T) {
       def ifInstanceOf[S](implicit cS: ClassManifest[S]): Option[S] =
-        ifInstanceOfBody[T, S](v, ClassUtil.getErasure(cS))
+        ifInstanceOfBody[T, S](v, ClassUtil.boxedErasure(cS))
     }
   }
 }

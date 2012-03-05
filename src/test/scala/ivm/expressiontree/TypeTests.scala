@@ -15,7 +15,7 @@ trait TypeMatchers {
       val expected = classManifest[ExpectedT]
       HavePropertyMatchResult(
         //expected.erasure.isInstance(obj), //Natural and wrong way to write this
-        ClassUtil.getErasure(expected).isInstance(obj),
+        ClassUtil.boxedErasure(expected).isInstance(obj),
         "type",
         expected,
         actual
@@ -62,7 +62,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers {
         case NoSub() =>
           val baseResult = map(tmf).asInstanceOf[C[D[Base /*T*/]]]
           val coll = cbf(baseResult)
-          for (t <- transitiveQuery(subtypeRel, ClassUtil.getErasure(tmf)))
+          for (t <- transitiveQuery(subtypeRel, ClassUtil.boxedErasure(tmf)))
             //XXX: Jumping back and forth from Class[_] to ClassManifest[_] is extremely annoying, even performance-wise.
             coll ++= map(ClassManifest.fromClass(t)).asInstanceOf[C[D[T]]]
           coll.result()
@@ -122,7 +122,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers {
     for {
       t <- seenTypes
       if t != ClassManifest.Null && t != classManifest[T]
-      t_ = ClassUtil.getErasure(t)
+      t_ = ClassUtil.boxedErasure(t)
       s <- superTypes(t_)
     } {
       val superClassOpt = superClass(t_).toList

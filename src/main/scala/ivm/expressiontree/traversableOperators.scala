@@ -80,7 +80,7 @@ case class IsEmpty[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) 
 
 object TypeFilter {
   def apply[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], cS: ClassManifest[S]) =
-    apply[T, C, D, S](base, f, ClassUtil.getErasure(cS))
+    apply[T, C, D, S](base, f, ClassUtil.boxedErasure(cS))
 }
 
 //Just like for IfInstanceOf, equality comparison must consider also classS. Therefore, classS must be a class parameter.
@@ -100,7 +100,7 @@ case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](b
                                                                                                   cb: CanBuildFrom[Repr, S, That])
   extends Arity2Op[Exp[Repr], Exp[D[T] => T], That, TypeFilter2[T, D, Repr, S, That]](base, f)
 {
-  private[this] val classS = ClassUtil.getErasure(cS)
+  private[this] val classS = ClassUtil.boxedErasure(cS)
   def interpret() = {
     val b: Repr = base.interpret()
     b.filter(x => classS.isInstance(f.interpret()(x))).asInstanceOf[That]
