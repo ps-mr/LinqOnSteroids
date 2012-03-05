@@ -1,13 +1,28 @@
 package ivm.expressiontree
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.matchers.{HavePropertyMatchResult, HavePropertyMatcher, ShouldMatchers}
 import collection.{immutable, TraversableLike, mutable}
 import collection.generic.CanBuildFrom
 import mutable.{ArrayBuffer, Builder}
 import java.io.{Closeable, File}
 import java.nio.channels.{Channel, ByteChannel, FileChannel}
 
+trait TypeMatchers {
+  def typ[ExpectedT: ClassManifest] = new HavePropertyMatcher[Any, OptManifest[_]] {
+    def apply(obj: Any): HavePropertyMatchResult[OptManifest[_]] = {
+      val actual = ClassManifest.fromClass(obj.getClass)
+      val expected = classManifest[ExpectedT]
+      HavePropertyMatchResult(
+        //expected.erasure.isInstance(obj), //Natural and wrong way to write this
+        IfInstanceOf.getErasure(expected).isInstance(obj),
+        "type",
+        expected,
+        actual
+      )
+    }
+  }
+}
 /**
  * User: pgiarrusso
  * Date: 5/3/2012
@@ -24,7 +39,7 @@ object NormalPriority extends LowPriority {
 }
 import NormalPriority._
 
-class TypeTests extends FunSuite with ShouldMatchers {
+class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers {
   //returns all b such that a R* b, where R is the relation represented by map.
   //XXX Note that this is inefficient since we use an immutable array as a mutable one.
   /*private*/ def transitiveQuery[T](map: Map[T, mutable.Set[T]], a: T): mutable.Set[T] = {
@@ -178,4 +193,13 @@ class TypeTests extends FunSuite with ShouldMatchers {
     //res should contain (classOf[Number].asInstanceOf[C])
   }
   //XXX test also that YesSub/NoSub works. See /Users/pgiarrusso/tmp/foo.scala
+  test("MaybeSub") {
+    def f[A, B](implicit p: MaybeSub[A, B]) = p
+    f[String, AnyRef] should have (typ[YesSub[String, AnyRef]])
+    f[String, AnyRef] should have (typ[YesSub[_, _]])
+    f[Int, AnyVal] should have (typ[YesSub[Int, AnyVal]])
+    f[AnyVal, Int] should have (typ[NoSub[_, _]])
+    f[FileChannel, String] should have (typ[NoSub[_, _]])
+    1 should have (typ[Int])
+  }
 }
