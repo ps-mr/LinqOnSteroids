@@ -29,6 +29,7 @@ object Benchmarking {
   private val testDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance.getTime)
   private val logPath = "LOSTestLog.csv"
   private val logWriter = new PrintWriter(new BufferedWriter(new FileWriter(logPath, true)))
+  private var usedNames = Set[String]()
 }
 
 trait Benchmarking {
@@ -82,6 +83,11 @@ trait Benchmarking {
     def println(x: Any) = if (!silent) Console.err.println(x)
     //Why not call this println()? Because overloading is not supported in local definitions (SLS §6.11).
     def newLine() = if (!silent) Console.err.println()
+    
+    if (usedNames(name))
+      println("WARNING: benchmark name %s already used" format name)
+    else
+      usedNames += name
 
     var ret: T = null.asInstanceOf[T]
     newLine() //Make space at the beginning
