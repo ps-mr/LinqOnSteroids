@@ -3,6 +3,28 @@ package ivm.expressiontree
 import collection.TraversableLike
 import collection.generic.CanBuildFrom
 
+object ClassUtil {
+  import java.{lang => jl}
+
+  val primitiveToWrapper = Map[Class[_], Class[_]](
+    classOf[Byte] -> classOf[jl.Byte],
+    classOf[Short] -> classOf[jl.Short],
+    classOf[Char] -> classOf[jl.Character],
+    classOf[Int] -> classOf[jl.Integer],
+    classOf[Long] -> classOf[jl.Long],
+    classOf[Float] -> classOf[jl.Float],
+    classOf[Double] -> classOf[jl.Double],
+    classOf[Boolean] -> classOf[jl.Boolean],
+    classOf[Unit] -> classOf[jl.Void]
+  )
+  def getErasure(cS: ClassManifest[_]) =
+    /*if (cS <:< ClassManifest.AnyVal)
+      primitiveToWrapper(cS.erasure)
+    else
+      cS.erasure*/
+    primitiveToWrapper.getOrElse(cS.erasure, cS.erasure)
+}
+
 object Util {
   def assertType[T](t: T) {}
 
@@ -32,7 +54,7 @@ object Util {
     implicit def pimpInstanceOf[T](t: T) = new IfInstanceOfAble(t)
     class IfInstanceOfAble[T](v: T) {
       def ifInstanceOf[S](implicit cS: ClassManifest[S]): Option[S] =
-        ifInstanceOfBody[T, S](v, IfInstanceOf.getErasure(cS))
+        ifInstanceOfBody[T, S](v, ClassUtil.getErasure(cS))
     }
   }
 }

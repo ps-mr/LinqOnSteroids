@@ -416,7 +416,7 @@ trait TypeFilterOps {
   object when {
     def apply[Case] = new WhenResult[Case] {
       override def apply[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
-        TypeCase(IfInstanceOf.getErasure(cS).
+        TypeCase(ClassUtil.getErasure(cS).
           //XXX: This cast is only guaranteed to succeed because of erasure
           asInstanceOf[Class[Case]],
           FuncExp(guard),
