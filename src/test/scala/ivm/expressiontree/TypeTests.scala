@@ -8,7 +8,6 @@ import java.io.{Closeable, File}
 import java.nio.channels.{Channel, ByteChannel, FileChannel}
 import mutable.{Queue, ArrayBuffer, Builder}
 import performancetests.Benchmarking
-import performancetests.opaltests.BATLifting
 
 trait TypeMatchers {
   def typ[ExpectedT: ClassManifest] = new HavePropertyMatcher[Any, OptManifest[_]] {
@@ -43,15 +42,14 @@ import NormalPriority._
 
 class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benchmarking {
   //returns all b such that a R* b, where R is the relation represented by map.
-  //XXX Note that this is inefficient since we use a mutable set as an immutable array one.
-  /*private*/ def transitiveQuery[T](map: Map[T, collection.Set[T]], a: T): collection.Set[T] = {
+  /*private*/ def transitiveQuery[T](map: Map[T, Set[T]], a: T): Set[T] = {
     for {
-      b <- map.get(a).getOrElse(collection.Set())
+      b <- map.get(a).getOrElse(Set())
       c <- transitiveQuery(map, b) + b
     } yield c
   }
 
-  class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[_]]], val subtypeRel: Map[Class[_], collection.Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
+  class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[_]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
     //TODO Problem with this implementation: instances of subtypes of T won't be part of the returned collection.
     //def getOld[T](implicit tmf: ClassManifest[T]): C[D[T]] = map(ClassUtil.boxedErasure(tmf)).asInstanceOf[C[D[T]]]
 
@@ -118,7 +116,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   //their implementing interfaces.
   //With this contract, given a type, we can find its concrete subtypes, and look them up in a type index.
   //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
-  def computeSubTypeRel[T: ClassManifest](seenTypes: collection.Set[Class[_]]): immutable.Map[Class[_], collection.Set[Class[_]]] = {
+  def computeSubTypeRel[T: ClassManifest](seenTypes: Set[Class[_]]): immutable.Map[Class[_], Set[Class[_]]] = {
     //val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
     val subtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
     val classesToScan: Queue[Class[_]] = Queue()
