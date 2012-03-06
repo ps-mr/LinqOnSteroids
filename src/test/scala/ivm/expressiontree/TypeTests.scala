@@ -7,6 +7,7 @@ import collection.generic.CanBuildFrom
 import java.io.{Closeable, File}
 import java.nio.channels.{Channel, ByteChannel, FileChannel}
 import mutable.{Queue, ArrayBuffer, Builder}
+import performancetests.Benchmarking
 
 trait TypeMatchers {
   def typ[ExpectedT: ClassManifest] = new HavePropertyMatcher[Any, OptManifest[_]] {
@@ -39,7 +40,7 @@ object NormalPriority extends LowPriority {
 }
 import NormalPriority._
 
-class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers {
+class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benchmarking {
   //returns all b such that a R* b, where R is the relation represented by map.
   //XXX Note that this is inefficient since we use an immutable array as a mutable one.
   /*private*/ def transitiveQuery[T](map: Map[T, mutable.Set[T]], a: T): mutable.Set[T] = {
@@ -167,7 +168,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers {
   val seenTypesEx: Set[ClassManifest[_]] = Set(classManifest[Int], classManifest[Null], classManifest[AnyRef], classManifest[String], classManifest[File], classManifest[Long], classManifest[FileChannel])
 
   test("foo") {
-    val rel = computeSubTypeRel[Void](seenTypesEx)
+    val rel = benchMark("subtype relationship")(computeSubTypeRel[Void](seenTypesEx))
     println("Rel:")
     rel foreach println
     println()
