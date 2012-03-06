@@ -160,11 +160,11 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
       addRec(superInterface, clazz)
     groupBySel(subtypeRel)(_._1, _._2)(collection.breakOut)
   }
-  case class GroupByType[T: ClassManifest, C[+X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends Arity2OpExp[C[D[T]], D[T] => T, TypeMapping[C, D, T],
-    GroupByType[T, C, D]](base, f) {
+  case class GroupByType[T: ClassManifest, C[+X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: D[T] => T) extends Arity1OpExp[C[D[T]], TypeMapping[C, D, T],
+    GroupByType[T, C, D]](base) {
     override def interpret() = {
       val coll: C[D[T]] = base.interpret()
-      val g: D[T] => T = f.interpret()
+      val g: D[T] => T = f
       val seenTypes = mutable.Set.empty[ClassManifest[_]]
       def getType(x: D[T]): ClassManifest[_] = {
         val gx = g(x)
@@ -183,7 +183,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
       new TypeMapping[C, D, T](map.asInstanceOf[Map[ClassManifest[_], C[D[_]]]], subtypeRel, coll)
     }
-    override def copy(base: Exp[C[D[T]]], f: Exp[D[T]=>T]) = GroupByType[T, C, D](base, f)
+    override def copy(base: Exp[C[D[T]]]) = GroupByType[T, C, D](base, f)
   }
   val seenTypesEx: Set[ClassManifest[_]] = Set(classManifest[Int], classManifest[Null], classManifest[AnyRef], classManifest[String], classManifest[File], classManifest[Long], classManifest[FileChannel])
 
@@ -194,8 +194,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   class GroupByTupleTypeOps[T: ClassManifest, U: ClassManifest, C[+X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
     import Lifting.{GroupByType => _, PartialApply1Of2 => _, _}
-    def groupByTupleType1 /*(f: Exp[(T, U)] => Exp[T]) */ = GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, FuncExp(_._1))
-    def groupByTupleType2 /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, FuncExp(_._2))
+    def groupByTupleType1 /*(f: Exp[(T, U)] => Exp[T]) */ = GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, _._1)
+    def groupByTupleType2 /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, _._2)
   }
   implicit def expToGroupByTupleType[T: ClassManifest, U: ClassManifest, C[+X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps(t)
 
