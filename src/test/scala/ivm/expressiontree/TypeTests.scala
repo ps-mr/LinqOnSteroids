@@ -134,20 +134,10 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
       val classesToScan: Queue[Class[_]] = Queue()
       val interfSubtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
       def add(clazz: Class[_]) {
-        /*
         val superTypesClazz = superTypes(clazz)
         classesToScan enqueue (superTypesClazz: _*)
         for (superType <- superTypesClazz)
           subtypeRel += (superType -> clazz) //Map s to its subtypes.
-        */
-        superClass(clazz) match {
-          case Some(superClazz) =>
-            classesToScan enqueue superClazz
-            subtypeRel += superClazz -> clazz
-          case _ =>
-        }
-        for (superType <- superInterfaces(clazz))
-          interfSubtypeRel += (superType -> clazz) //Map s to its subtypes.
       }
       val erasedT = ClassUtil.boxedErasure(classManifest[T])
       for {
@@ -164,13 +154,6 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
       // Since we look up only concrete types, we needn't represent the subtype relationships between interfaces.
       //However, this optimization is hardly significant since this code takes a quite small amount of time, compared to
       //iterating over the values themselves.
-      def addRec(superInterface: Class[_], clazz: Class[_]) {
-        subtypeRel += superInterface -> clazz
-        for (interf <- superInterfaces(superInterface))
-          addRec(interf, clazz)
-      }
-      for ((superInterface, clazz) <- interfSubtypeRel)
-        addRec(superInterface, clazz)
       groupBySel(subtypeRel)(_._1, _._2)(collection.breakOut)
     }
   }
