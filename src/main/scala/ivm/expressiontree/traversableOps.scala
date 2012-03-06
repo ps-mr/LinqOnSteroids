@@ -492,7 +492,7 @@ trait TypeFilterOps {
 
   class TypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](val t: Exp[C[D[T]]]) {
     def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T, C, D, S](t, FuncExp(f), cS)
-    def groupByType(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t, FuncExp(f))
+    //def groupByType(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t, FuncExp(f))
   }
   implicit def expToTypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T, C, D](t)
 
@@ -502,9 +502,11 @@ trait TypeFilterOps {
   implicit def expToTypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new TypeMappingAppOps[C, D, Base](t)
 
   //Experiments
+  /*
   class GroupByTupleType[U, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](val t: Exp[C[U]]) {
     def groupByTupleType[T, D[_]](typeEqual: U =:= D[T])(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t map (x => onExp(x)('foo, typeEqual)), FuncExp(f))
   }
+  */
   //Copied from Scalaz and altered a bit. Not sure all this generality is useful since we only use it for tuples.
   trait PartialApply1Of2[T[+_, +_], A] {
     type Apply[+B] = T[A, B]
