@@ -442,25 +442,33 @@ object TypeHierarchyUtils {
 
 trait TypeFilterOps {
   this: LiftingConvs with TupleOps with FunctionOps with TraversableOps =>
-  case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends Arity2OpExp[C[D[T]], D[T] => T, TypeMapping[C, D],
-    GroupByType[T, C, D]](base, f) {
-    override def interpret() = {
-      val x: C[D[T]] = base.interpret()
-      val g: D[T] => T = f.interpret()
+  case class GroupByType[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: D[T] => T)(implicit cbf: CanBuildFrom[C[D[T]], D[T], C[D[T]]], cm: ClassManifest[T]) extends Arity1OpExp[C[D[T]], TypeMapping[C, D, T],
+    GroupByType[T, C, D]](base) {
+    import CollectionUtils._
+    import TypeHierarchyUtils._
 
-      //Why the null check? Remember that (null instanceof Foo) = false. Hence, without using the index, "if (a instanceof Foo)" subsumes
-      //a != null. Here we need to do that check otherwise. To avoid a separate filter stage, and since views don't really support groupBy,
-      //aggregate nulls into a separate class.
-      new TypeMapping[C, D](x.groupBy {
-        x =>
-          val gx = g(x)
-          if (gx != null)
-            ClassManifest.fromClass(gx.getClass)
-          else
-            ClassManifest.Null
-      }.asInstanceOf[Map[ClassManifest[_], C[D[_]]]])
+    override def interpret() = {
+      val coll: C[D[T]] = base.interpret()
+      val g: D[T] => T = f
+      val seenTypes = Set.newBuilder[Class[_]]
+      def getType(x: D[T]): Class[_] = {
+        val gx = g(x)
+        //Why the null check? Remember that (null instanceof Foo) = false. Hence, without using the index, "if (a instanceof Foo)" subsumes
+        //a != null. Here we need to do that check otherwise. To avoid a separate filter stage, and since views don't really support groupBy,
+        //aggregate nulls into a separate class.
+        if (gx != null)
+          ClassUtil.primitiveToBoxed(gx.getClass)
+        else
+          null
+      }
+
+      //val map = coll groupBy getType
+      val map: Map[Class[_], C[D[T]]] = groupBySelAndForeach(coll)(getType, identity)(seenTypes += _)(cbf)
+      val subtypeRel = computeSubTypeRel[T](seenTypes.result())
+
+      new TypeMapping[C, D, T](map, subtypeRel, coll)
     }
-    override def copy(base: Exp[C[D[T]]], f: Exp[D[T]=>T]) = GroupByType[T, C, D](base, f)
+    override def copy(base: Exp[C[D[T]]]) = GroupByType[T, C, D](base, f)
   }
 
   /*
@@ -474,39 +482,41 @@ trait TypeFilterOps {
     override def copy(base: Exp[C[T] with Repr]) = GroupByType[T, C, Repr](base)
   }
  */
-  case class TypeMappingApp[C[X] <: TraversableLike[X, C[X]], D[_], S](base: Exp[TypeMapping[C, D]])(implicit cS: ClassManifest[S])
-    extends Arity1OpExp[TypeMapping[C, D], C[D[S]], TypeMappingApp[C, D, S]](base) {
-    override def copy(base: Exp[TypeMapping[C, D]]) = TypeMappingApp[C, D, S](base)
+  case class TypeMappingApp[C[+X] <: TraversableLike[X, C[X]], D[+_], Base, T](base: Exp[TypeMapping[C, D, Base]])
+                                                                              (implicit cS: ClassManifest[T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]])
+    extends Arity1OpExp[TypeMapping[C, D, Base], C[D[T]], TypeMappingApp[C, D, Base, T]](base) {
+    override def copy(base: Exp[TypeMapping[C, D, Base]]) = TypeMappingApp[C, D, Base, T](base)
     override def interpret() =
-      base.interpret().get[S]
+      base.interpret().get[T]
   }
 
   class TypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](val t: Exp[C[D[T]]]) {
     def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T, C, D, S](t, FuncExp(f), cS)
     def groupByType(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t, FuncExp(f))
   }
-
-  class TypeMappingAppOps[C[X] <: TraversableLike[X, C[X]], D[_]](val t: Exp[TypeMapping[C, D]]) {
-    def get[S](implicit cS: ClassManifest[S]) = TypeMappingApp[C, D, S](t)
-  }
   implicit def expToTypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T, C, D](t)
-  implicit def expToTypeMappingAppOps[C[X] <: TraversableLike[X, C[X]], D[+_]](t: Exp[TypeMapping[C, D]]) = new TypeMappingAppOps[C, D](t)
+
+  class TypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val t: Exp[TypeMapping[C, D, Base]]) {
+    def get[T](implicit cS: ClassManifest[T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]) = TypeMappingApp[C, D, Base, T](t)
+  }
+  implicit def expToTypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new TypeMappingAppOps[C, D, Base](t)
+
   //Experiments
   class GroupByTupleType[U, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](val t: Exp[C[U]]) {
     def groupByTupleType[T, D[_]](typeEqual: U =:= D[T])(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t map (x => onExp(x)('foo, typeEqual)), FuncExp(f))
   }
-  //XXX: Copied from Scalaz for testing - this should be _temporary_!
-  trait PartialApply1Of2[T[_, _], A] {
-    type Apply[B] = T[A, B]
-
-    type Flip[B] = T[B, A]
+  //Copied from Scalaz and altered a bit. Not sure all this generality is useful since we only use it for tuples.
+  trait PartialApply1Of2[T[+_, +_], A] {
+    type Apply[+B] = T[A, B]
+    type Flip[+B] = T[B, A]
   }
 
-  class GroupByTupleTypeOps[T, U, C[X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
-    def groupByTupleType1 /*(f: Exp[(T, U)] => Exp[T]) */ = GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, FuncExp(_._1))
-    def groupByTupleType2 /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, FuncExp(_._2))
+  class GroupByTupleTypeOps[T: ClassManifest, U: ClassManifest, C[+X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
+    def groupByTupleType1(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[T]) */ = GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, _._1)
+    def groupByTupleType2(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, _._2)
   }
-  implicit def expToGroupByTupleType[T, U, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps(t)
+  implicit def expToGroupByTupleType[T: ClassManifest, U: ClassManifest, C[+X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps(t)
+
 
   //typeCase method
 

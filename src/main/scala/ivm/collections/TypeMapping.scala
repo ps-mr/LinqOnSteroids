@@ -1,10 +1,36 @@
 package ivm.collections
 
 import collection.TraversableLike
+import collection.generic.CanBuildFrom
+import ivm.expressiontree.{ClassUtil, NoSub, YesSub, TypeHierarchyUtils, MaybeSub}
 
 
 // contract: map must map a ClassManifest[T] to a C[D[T]]
-class TypeMapping[C[X] <: TraversableLike[X, C[X]], D[_]](val map: Map[ClassManifest[_], C[D[_]]]) {
-  def get[T](implicit tmf: ClassManifest[T]): C[D[T]] = map(tmf).asInstanceOf[C[D[T]]]
+class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[Base]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
+  //TODO Problem with this implementation: instances of subtypes of T won't be part of the returned collection.
+  //def getOld[T](implicit tmf: ClassManifest[T]): C[D[T]] = map(ClassUtil.boxedErasure(tmf)).asInstanceOf[C[D[T]]]
+
+  //XXX reintroduce That here, maybe, for coherence. Not necessary for the paper, I believe (it can obviously be done, assuming the trick used for TypeFilterOps.when works here, too).
+  //def get[T, That](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], That]): That = {
+  def get[T](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): C[D[T]] = {
+    import TypeHierarchyUtils._
+
+    m match {
+      case v @ YesSub() =>
+        //origColl map (_ map v.p.apply) //Try to apply the subtype relationship as a cast; to do this, we'd need D to be a Functor, and a witness of that to be passed.
+
+        //For this to make sense, covariance of C and D is required, as in various other places.
+        origColl.asInstanceOf[C[D[T]]]
+      //(cbf() ++= origColl.asInstanceOf[C[D[T]]]) result()
+      case NoSub =>
+        val clazz = ClassUtil.boxedErasure(tmf)
+        val baseResult = map(clazz).asInstanceOf[C[D[Base /*T*/]]]
+        val coll = cbf(baseResult)
+        for (t <- transitiveQuery(subtypeRel, clazz))
+          coll ++= map(t).asInstanceOf[C[D[T]]]
+        coll.result()
+      //baseResult
+    }
+  }
 }
 

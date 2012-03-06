@@ -8,6 +8,7 @@ import java.io.{Closeable, File}
 import java.nio.channels.{Channel, ByteChannel, FileChannel}
 import mutable.{Queue, ArrayBuffer, Builder}
 import performancetests.Benchmarking
+import ivm.collections.TypeMapping
 
 trait TypeMatchers {
   def typ[ExpectedT: ClassManifest] = new HavePropertyMatcher[Any, OptManifest[_]] {
@@ -29,78 +30,8 @@ trait TypeMatchers {
  * Date: 5/3/2012
  */
 class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benchmarking {
-  class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[Base]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
-    //TODO Problem with this implementation: instances of subtypes of T won't be part of the returned collection.
-    //def getOld[T](implicit tmf: ClassManifest[T]): C[D[T]] = map(ClassUtil.boxedErasure(tmf)).asInstanceOf[C[D[T]]]
-
-
-    //XXX reintroduce That here, maybe, for coherence. Not necessary for the paper, I believe (it can obviously be done, assuming the trick used for TypeFilterOps.when works here, too).
-    //def get[T, That](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], That]): That = {
-    def get[T](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): C[D[T]] = {
-      import TypeHierarchyUtils._
-
-      m match {
-        case v @ YesSub() =>
-          //origColl map (_ map v.p.apply) //Try to apply the subtype relationship as a cast; to do this, we'd need D to be a Functor, and a witness of that to be passed.
-
-          //For this to make sense, covariance of C and D is required, as in various other places.
-          origColl.asInstanceOf[C[D[T]]]
-          //(cbf() ++= origColl.asInstanceOf[C[D[T]]]) result()
-        case NoSub =>
-          val clazz = ClassUtil.boxedErasure(tmf)
-          val baseResult = map(clazz).asInstanceOf[C[D[Base /*T*/]]]
-          val coll = cbf(baseResult)
-          for (t <- transitiveQuery(subtypeRel, clazz))
-            coll ++= map(t).asInstanceOf[C[D[T]]]
-          coll.result()
-          //baseResult
-      }
-    }
-  }
-
-  case class GroupByType[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: D[T] => T)(implicit cbf: CanBuildFrom[C[D[T]], D[T], C[D[T]]], cm: ClassManifest[T]) extends Arity1OpExp[C[D[T]], TypeMapping[C, D, T],
-    GroupByType[T, C, D]](base) {
-    import CollectionUtils._
-    import TypeHierarchyUtils._
-
-    override def interpret() = {
-      val coll: C[D[T]] = base.interpret()
-      val g: D[T] => T = f
-      val seenTypes = Set.newBuilder[Class[_]]
-      def getType(x: D[T]): Class[_] = {
-        val gx = g(x)
-        //Why the null check? Remember that (null instanceof Foo) = false. Hence, without using the index, "if (a instanceof Foo)" subsumes
-        //a != null. Here we need to do that check otherwise. To avoid a separate filter stage, and since views don't really support groupBy,
-        //aggregate nulls into a separate class.
-        if (gx != null)
-          ClassUtil.primitiveToBoxed(gx.getClass)
-        else
-          null
-      }
-
-      //val map = coll groupBy getType
-      val map: Map[Class[_], C[D[T]]] = groupBySelAndForeach(coll)(getType, identity)(seenTypes += _)(cbf)
-      val subtypeRel = computeSubTypeRel[T](seenTypes.result())
-
-      new TypeMapping[C, D, T](map, subtypeRel, coll)
-    }
-    override def copy(base: Exp[C[D[T]]]) = GroupByType[T, C, D](base, f)
-  }
-
   import java.{lang => jl}
   val seenTypesEx: Set[Class[_]] = Set(classOf[jl.Integer], classOf[Null], classOf[AnyRef], classOf[String], classOf[File], classOf[jl.Long], classOf[FileChannel])
-
-  trait PartialApply1Of2[T[+_, +_], A] {
-    type Apply[+B] = T[A, B]
-    type Flip[+B] = T[B, A]
-  }
-
-  class GroupByTupleTypeOps[T: ClassManifest, U: ClassManifest, C[+X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
-    import Lifting.{GroupByType => _, PartialApply1Of2 => _, _}
-    def groupByTupleType1(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[T]) */ = GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, _._1)
-    def groupByTupleType2(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, _._2)
-  }
-  implicit def expToGroupByTupleType[T: ClassManifest, U: ClassManifest, C[+X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps(t)
 
   test("check subtype relationship") {
     import TypeHierarchyUtils._
@@ -139,20 +70,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     import de.tud.cs.st.bat.resolved._
     import performancetests.opaltests.{BATLifting, OpalTestData}
     import OpalTestData._
-    import Lifting.{GroupByType => _, PartialApply1Of2 => _, expToGroupByTupleType => _, _}
+    import Lifting._
     import BATLifting._
-
-    class TypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val t: Exp[TypeMapping[C, D, Base]]) {
-      def get[T](implicit cS: ClassManifest[T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]) = TypeMappingApp[C, D, Base, T](t)
-    }
-    implicit def expToTypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new TypeMappingAppOps[C, D, Base](t)
-    case class TypeMappingApp[C[+X] <: TraversableLike[X, C[X]], D[+_], Base, T](base: Exp[TypeMapping[C, D, Base]])
-                                                                                (implicit cS: ClassManifest[T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]])
-      extends Arity1OpExp[TypeMapping[C, D, Base], C[D[T]], TypeMappingApp[C, D, Base, T]](base) {
-      override def copy(base: Exp[TypeMapping[C, D, Base]]) = TypeMappingApp[C, D, Base, T](base)
-      override def interpret() =
-        base.interpret().get[T]
-    }
 
     type QueryAnd[+T] = ((ClassFile, Method), T);
     {
