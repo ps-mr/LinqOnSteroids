@@ -183,16 +183,20 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   test("foo") {
     val rel = benchMark("subtype relationship")(computeSubTypeRel[Void](seenTypesEx))
+    /*
     println("Rel:")
     rel foreach println
     println()
+    */
     val res = transitiveQuery(rel, classOf[Any])
     assert(res(classOf[Number]))
-    println(res)
+    //println(res)
     val res2 = transitiveQuery(rel, classOf[Closeable])
+    /*
     println(res2)
     println(res2(classOf[Channel]))
     println(res2(classOf[ByteChannel]))
+    */
     assert(res2(classOf[FileChannel]))
     //XXX: the code below does not work because of weird issues
     //type C = Class[_]
