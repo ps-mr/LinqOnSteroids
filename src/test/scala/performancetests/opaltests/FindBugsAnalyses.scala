@@ -651,6 +651,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       } yield (classFile, method)).force
     }
 
+    catchesIllegalMonitorStateExceptionLikeLos should be (catchesIllegalMonitorStateException)
+
     import BATLifting._
     val idxBase = for {
       classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration

@@ -41,4 +41,3 @@ class TypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Cl
     }
   }
 }
-
