@@ -118,7 +118,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   //With this contract, given a type, we can find its concrete subtypes, and look them up in a type index.
   //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
   def computeSubTypeRel[T: ClassManifest](seenTypes: collection.Set[ClassManifest[_]]): immutable.Map[Class[_], mutable.Set[Class[_]]] = {
-    val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
+    //val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
+    val subtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
     val classesToScan: Queue[Class[_]] = Queue()
     def add(clazz: Class[_]) {
       val superTypesClazz = superTypes(clazz)
