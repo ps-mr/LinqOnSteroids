@@ -76,98 +76,108 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     }
   }
 
-  //This must be only used inside the implementation. Mutability fun!
-  /*private*/ def groupBySel[A, K, B, Repr <: Traversable[A], That](coll: Repr with Traversable[A])(f: A => K, g: A => B)(implicit cbf: CanBuildFrom[Repr, B, That]): immutable.Map[K, That] = {
-    val m = mutable.Map.empty[K, Builder[B, That]]
-    for (elem <- coll) {
-      val key = f(elem)
-      val bldr = m.getOrElseUpdate(key, cbf(coll))
-      bldr += g(elem)
-    }
-    val b = immutable.Map.newBuilder[K, That]
-    for ((k, v) <- m)
-      b += ((k, v.result()))
-
-    b.result()
-  }
-
-  /*private*/ def groupBySelAndForeach[A, K, B, Repr <: TraversableLike[A, Repr], That](coll: Repr with TraversableLike[A, Repr])(f: A => K, g: A => B)(h: K => Unit)(implicit cbf: CanBuildFrom[Repr, B, That]): immutable.Map[K, That] = {
-    val m = mutable.Map.empty[K, Builder[B, That]]
-    for (elem <- coll) {
-      val key = f(elem)
-      if (key != null) { //Special
+  object CollectionUtils {
+    //This must be only used inside the implementation. Mutability fun!
+    /*private*/ def groupBySel[A, K, B, Repr <: Traversable[A], That](coll: Repr with Traversable[A])(f: A => K, g: A => B)(implicit cbf: CanBuildFrom[Repr, B, That]): immutable.Map[K, That] = {
+      val m = mutable.Map.empty[K, Builder[B, That]]
+      for (elem <- coll) {
+        val key = f(elem)
         val bldr = m.getOrElseUpdate(key, cbf(coll))
         bldr += g(elem)
-        h(key) //Special
       }
-    }
-    val b = immutable.Map.newBuilder[K, That]
-    for ((k, v) <- m)
-      b += ((k, v.result()))
+      val b = immutable.Map.newBuilder[K, That]
+      for ((k, v) <- m)
+        b += ((k, v.result()))
 
-    b.result
+      b.result()
+    }
+
+    /*private*/ def groupBySelAndForeach[A, K, B, Repr <: TraversableLike[A, Repr], That](coll: Repr with TraversableLike[A, Repr])(f: A => K, g: A => B)(h: K => Unit)(implicit cbf: CanBuildFrom[Repr, B, That]): immutable.Map[K, That] = {
+      val m = mutable.Map.empty[K, Builder[B, That]]
+      for (elem <- coll) {
+        val key = f(elem)
+        if (key != null) { //Special
+          val bldr = m.getOrElseUpdate(key, cbf(coll))
+          bldr += g(elem)
+          h(key) //Special
+        }
+      }
+      val b = immutable.Map.newBuilder[K, That]
+      for ((k, v) <- m)
+        b += ((k, v.result()))
+
+      b.result
+    }
   }
 
-  //Class.getSuperclass can return null, filter that out. Now make sure that Object is always included? Add testcases for primitive types?
-  /*private*/ def superClass(c: Class[_]): Option[Class[_]] = Option(c.getSuperclass) orElse (if (c == classOf[Any]) None else Some(classOf[Any]))
-  /*private*/ def superInterfaces(c: Class[_]): Seq[Class[_]] = c.getInterfaces
-  //getInterfaces returns all implemented interfaces :-), while getSuperclass does not.
-  /*private*/ def superTypes(c: Class[_]): Seq[Class[_]] = superInterfaces(c) ++ superClass(c)
+  object TypeHierarchyUtils {
+    import CollectionUtils._
+
+    //Class.getSuperclass can return null, filter that out. Now make sure that Object is always included? Add testcases for primitive types?
+    /*private*/ def superClass(c: Class[_]): Option[Class[_]] = Option(c.getSuperclass) orElse (if (c == classOf[Any]) None else Some(classOf[Any]))
+    /*private*/ def superInterfaces(c: Class[_]): Seq[Class[_]] = c.getInterfaces
+    //getInterfaces returns all implemented interfaces :-), while getSuperclass does not.
+    /*private*/ def superTypes(c: Class[_]): Seq[Class[_]] = superInterfaces(c) ++ superClass(c)
 
 
-  //TODO: have a per-thread global map, so that the reconstructed type hierarchy can be shared between different indexes.
-  //Problem there: GC of entries.
-  //Contract: Returns a map defined on interfaces and classes, which returns their implementing classes and possibly
-  //their implementing interfaces.
-  //With this contract, given a type, we can find its concrete subtypes, and look them up in a type index.
-  //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
-  def computeSubTypeRel[T: ClassManifest](seenTypes: Set[Class[_]]): immutable.Map[Class[_], Set[Class[_]]] = {
-    //val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
-    val subtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
-    val classesToScan: Queue[Class[_]] = Queue()
-    val interfSubtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
-    def add(clazz: Class[_]) {
-      /*
-      val superTypesClazz = superTypes(clazz)
-      classesToScan enqueue (superTypesClazz: _*)
-      for (superType <- superTypesClazz)
-        subtypeRel += (superType -> clazz) //Map s to its subtypes.
-      */
-      superClass(clazz) match {
-        case Some(superClazz) =>
-          classesToScan enqueue superClazz
-          subtypeRel += superClazz -> clazz
-        case _ =>
+    //TODO: have a per-thread global map, so that the reconstructed type hierarchy can be shared between different indexes.
+    //Problem there: GC of entries.
+    //Contract: Returns a map defined on interfaces and classes, which returns their implementing classes and possibly
+    //their implementing interfaces.
+    //With this contract, given a type, we can find its concrete subtypes, and look them up in a type index.
+    //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
+    def computeSubTypeRel[T: ClassManifest](seenTypes: Set[Class[_]]): immutable.Map[Class[_], Set[Class[_]]] = {
+      //val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
+      val subtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
+      val classesToScan: Queue[Class[_]] = Queue()
+      val interfSubtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
+      def add(clazz: Class[_]) {
+        /*
+        val superTypesClazz = superTypes(clazz)
+        classesToScan enqueue (superTypesClazz: _*)
+        for (superType <- superTypesClazz)
+          subtypeRel += (superType -> clazz) //Map s to its subtypes.
+        */
+        superClass(clazz) match {
+          case Some(superClazz) =>
+            classesToScan enqueue superClazz
+            subtypeRel += superClazz -> clazz
+          case _ =>
+        }
+        for (superType <- superInterfaces(clazz))
+          interfSubtypeRel += (superType -> clazz) //Map s to its subtypes.
       }
-      for (superType <- superInterfaces(clazz))
-        interfSubtypeRel += (superType -> clazz) //Map s to its subtypes.
+      val erasedT = ClassUtil.boxedErasure(classManifest[T])
+      for {
+        clazz <- seenTypes
+        if clazz != erasedT
+        s <- superTypes(clazz)
+      } {
+        add(clazz)
+      }
+      //For each supertype found, look up its superclasses.
+      while (classesToScan.nonEmpty) {
+        add(classesToScan.dequeue())
+      }
+      // Since we look up only concrete types, we needn't represent the subtype relationships between interfaces.
+      //However, this optimization is hardly significant since this code takes a quite small amount of time, compared to
+      //iterating over the values themselves.
+      def addRec(superInterface: Class[_], clazz: Class[_]) {
+        subtypeRel += superInterface -> clazz
+        for (interf <- superInterfaces(superInterface))
+          addRec(interf, clazz)
+      }
+      for ((superInterface, clazz) <- interfSubtypeRel)
+        addRec(superInterface, clazz)
+      groupBySel(subtypeRel)(_._1, _._2)(collection.breakOut)
     }
-    val erasedT = ClassUtil.boxedErasure(classManifest[T])
-    for {
-      clazz <- seenTypes
-      if clazz != erasedT
-      s <- superTypes(clazz)
-    } {
-      add(clazz)
-    }
-    //For each supertype found, look up its superclasses.
-    while (classesToScan.nonEmpty) {
-      add(classesToScan.dequeue())
-    }
-    // Since we look up only concrete types, we needn't represent the subtype relationships between interfaces.
-    //However, this optimization is hardly significant since this code takes a quite small amount of time, compared to
-    //iterating over the values themselves.
-    def addRec(superInterface: Class[_], clazz: Class[_]) {
-      subtypeRel += superInterface -> clazz
-      for (interf <- superInterfaces(superInterface))
-        addRec(interf, clazz)
-    }
-    for ((superInterface, clazz) <- interfSubtypeRel)
-      addRec(superInterface, clazz)
-    groupBySel(subtypeRel)(_._1, _._2)(collection.breakOut)
   }
+
   case class GroupByType[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: D[T] => T)(implicit cbf: CanBuildFrom[C[D[T]], D[T], C[D[T]]], cm: ClassManifest[T]) extends Arity1OpExp[C[D[T]], TypeMapping[C, D, T],
     GroupByType[T, C, D]](base) {
+    import CollectionUtils._
+    import TypeHierarchyUtils._
+
     override def interpret() = {
       val coll: C[D[T]] = base.interpret()
       val g: D[T] => T = f
@@ -208,6 +218,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   implicit def expToGroupByTupleType[T: ClassManifest, U: ClassManifest, C[+X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps(t)
 
   test("check subtype relationship") {
+    import TypeHierarchyUtils._
     val rel = benchMark("subtype relationship")(computeSubTypeRel[Void](seenTypesEx))
     /*
     println("Rel:")
