@@ -75,34 +75,32 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   //This must be only used inside the implementation. Mutability fun!
   /*private*/ def groupBySel[A, K, B, Repr <: Traversable[A], That](coll: Repr with Traversable[A])(f: A => K, g: A => B)(implicit cbf: CanBuildFrom[Repr, B, That]): immutable.Map[K, That] = {
-    val m = mutable.Map.empty[K, Builder[A, Traversable[A]]]
+    val m = mutable.Map.empty[K, Builder[B, That]]
     for (elem <- coll) {
       val key = f(elem)
-      val bldr = m.getOrElseUpdate(key, Traversable.newBuilder[A])
-      bldr += elem
+      val bldr = m.getOrElseUpdate(key, cbf(coll))
+      bldr += g(elem)
     }
-    //Remove this part if possible!
     val b = immutable.Map.newBuilder[K, That]
     for ((k, v) <- m)
-      b += ((k, v.mapResult(c => (cbf(coll) ++= (c map g)).result()).result()))
+      b += ((k, v.result()))
 
-    b.result
+    b.result()
   }
 
   /*private*/ def groupBySelAndForeach[A, K, B, Repr <: TraversableLike[A, Repr], That](coll: Repr with TraversableLike[A, Repr])(f: A => K, g: A => B)(h: K => Unit)(implicit cbf: CanBuildFrom[Repr, B, That]): immutable.Map[K, That] = {
-    val m = mutable.Map.empty[K, Builder[A, Traversable[A]]]
+    val m = mutable.Map.empty[K, Builder[B, That]]
     for (elem <- coll) {
       val key = f(elem)
       if (key != null) { //Special
-        val bldr = m.getOrElseUpdate(key, Traversable.newBuilder[A])
-        bldr += elem
+        val bldr = m.getOrElseUpdate(key, cbf(coll))
+        bldr += g(elem)
         h(key) //Special
       }
     }
-    //Remove this part if possible!
     val b = immutable.Map.newBuilder[K, That]
     for ((k, v) <- m)
-      b += ((k, v.mapResult(c => (cbf(coll) ++= (c map g)).result()).result()))
+      b += ((k, v.result()))
 
     b.result
   }
