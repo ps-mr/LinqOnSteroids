@@ -126,12 +126,12 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers {
         subtypeRel += (superType -> clazz) //Map s to its subtypes.
     }
     for {
-      t <- seenTypes
-      if t != ClassManifest.Null && t != classManifest[T]
-      t_ = ClassUtil.boxedErasure(t)
-      s <- superTypes(t_)
+      manif <- seenTypes
+      if manif != ClassManifest.Null && manif != classManifest[T]
+      clazz = ClassUtil.boxedErasure(manif)
+      s <- superTypes(clazz)
     } {
-      add(t_)
+      add(clazz)
     }
     //For each supertype found, look up its superclasses. XXX This won't include its superinterfaces though - they will be included only for the original type. Maybe that's OK for looking up concrete types!
     while (classesToScan.nonEmpty) {
