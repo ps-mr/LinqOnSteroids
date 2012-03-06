@@ -54,11 +54,16 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     //def getOld[T](implicit tmf: ClassManifest[T]): C[D[T]] = map(ClassUtil.boxedErasure(tmf)).asInstanceOf[C[D[T]]]
 
 
-    def get[T, That](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], That]): That = {
+    //XXX reintroduce That here
+    //def get[T, That](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], That]): That = {
+    def get[T](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): C[D[T]] = {
       m match {
         case v @ YesSub() =>
-          //origColl map (_ map v.p.apply)
-          (cbf() ++= origColl.asInstanceOf[C[D[T]]]) result() //For this to make sense, covariance of C and D is required, as in various other places.
+          //origColl map (_ map v.p.apply) //Try to apply the subtype relationship as a cast.
+
+          //For this to make sense, covariance of C and D is required, as in various other places.
+          origColl.asInstanceOf[C[D[T]]]
+          //(cbf() ++= origColl.asInstanceOf[C[D[T]]]) result()
         case NoSub =>
           val clazz = ClassUtil.boxedErasure(tmf)
           val baseResult = map(clazz).asInstanceOf[C[D[Base /*T*/]]]
@@ -241,6 +246,18 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     import Lifting.{GroupByType => _, PartialApply1Of2 => _, expToGroupByTupleType => _, _}
     import BATLifting._
 
+    class TypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val t: Exp[TypeMapping[C, D, Base]]) {
+      def get[T](implicit cS: ClassManifest[T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]) = TypeMappingApp[C, D, Base, T](t)
+    }
+    implicit def expToTypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new TypeMappingAppOps[C, D, Base](t)
+    case class TypeMappingApp[C[+X] <: TraversableLike[X, C[X]], D[+_], Base, T](base: Exp[TypeMapping[C, D, Base]])
+                                                                                (implicit cS: ClassManifest[T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]])
+      extends Arity1OpExp[TypeMapping[C, D, Base], C[D[T]], TypeMappingApp[C, D, Base, T]](base) {
+      override def copy(base: Exp[TypeMapping[C, D, Base]]) = TypeMappingApp[C, D, Base, T](base)
+      override def interpret() =
+        base.interpret().get[T]
+    }
+
     type QueryAnd[+T] = ((ClassFile, Method), T);
     {
       //Same code as above, except that the index returns all free variables, so that the optimizer might find it.
@@ -252,6 +269,12 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
       val typeIdx = typeIdxBase.groupByTupleType2
       val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation, with fixed type indexing"){ asExp(typeIdx.interpret()) }
+
+      val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name).toSet
+
+      val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized, fixed type indexing)") {
+        methodsLos6.interpret()
+      }
     }
   }
 }
