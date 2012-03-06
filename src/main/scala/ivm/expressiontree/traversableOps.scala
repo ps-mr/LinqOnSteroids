@@ -66,20 +66,20 @@ trait TraversableOps {
       val ci: Traversable[S] = colinner.interpret()
       val co: Repr = colouter.interpret()
       val builder = cbf(co)
-      //XXX: this is non-order-preserving, and might be suboptimal.
       // In databases, we build the temporary index on the smaller relation, so that the index fits more easily in
       // memory. This concern seems not directly relevant here; what matters here is only whether insertions or lookups in a
       // hash-map are more expensive. OTOH, it is probably important that the temporary index fits at least in the L2 cache,
       // so we should index again on the smaller relation!
-      if (ci.size > co.size) {
-        val map  = ci.groupBy(innerKeySelector.interpret()) //Cost O(|ci|) hash-map insertions
+      //if (ci.size > co.size) {
+        val map = ci.groupBy(innerKeySelector.interpret()) //Cost O(|ci|) hash-map insertions
         for (c <- co; d <- map(outerKeySelector.interpret()(c))) //Cost O(|co|) hash-map lookups
           builder += resultSelector.interpret()(c, d)
-      } else {
-        val map  = co.groupBy(outerKeySelector.interpret())
+      //XXX: this is non-order-preserving, and might be suboptimal.
+      /*} else {
+        val map = co.groupBy(outerKeySelector.interpret())
         for (c <- ci; d <- map(innerKeySelector.interpret()(c)))
           builder += resultSelector.interpret()(d, c)
-      }
+      }*/
       builder.result()
     }
   }
