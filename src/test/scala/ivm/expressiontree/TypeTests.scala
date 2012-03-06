@@ -59,7 +59,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     def get[T](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): C[D[T]] = {
       m match {
         case v @ YesSub() =>
-          //origColl map (_ map v.p.apply) //Try to apply the subtype relationship as a cast.
+          //origColl map (_ map v.p.apply) //Try to apply the subtype relationship as a cast; to do this, we'd need D to be a Functor, and a witness of that to be passed.
 
           //For this to make sense, covariance of C and D is required, as in various other places.
           origColl.asInstanceOf[C[D[T]]]
@@ -249,7 +249,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     f[FileChannel, String] should have (typ[NoSub.type])
     1 should have (typ[Int])
   }
-  
+
   test("TypeIndexSpeed") {
     import de.tud.cs.st.bat.resolved._
     import performancetests.opaltests.{BATLifting, OpalTestData}

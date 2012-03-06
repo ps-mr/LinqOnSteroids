@@ -58,6 +58,7 @@ object OptimizationTransforms {
    * into:
    *   l.join(j, l, r, (p: Exp[(Int, Int)]) => mcf(p._1, p._2))
    */
+  //XXX: rewrite to expect only flatMap nodes, i.e. after mapToFlatMap, and see what happens.
   val cartProdToJoin: Exp[_] => Exp[_] =
     e => e match {
       case FlatMap(fmColl: Exp[Traversable[_]],
