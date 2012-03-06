@@ -8,6 +8,7 @@ import java.io.{Closeable, File}
 import java.nio.channels.{Channel, ByteChannel, FileChannel}
 import mutable.{Queue, ArrayBuffer, Builder}
 import performancetests.Benchmarking
+import performancetests.opaltests.BATLifting
 
 trait TypeMatchers {
   def typ[ExpectedT: ClassManifest] = new HavePropertyMatcher[Any, OptManifest[_]] {
@@ -168,6 +169,18 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   }
   val seenTypesEx: Set[ClassManifest[_]] = Set(classManifest[Int], classManifest[Null], classManifest[AnyRef], classManifest[String], classManifest[File], classManifest[Long], classManifest[FileChannel])
 
+  trait PartialApply1Of2[T[+_, +_], A] {
+    type Apply[+B] = T[A, B]
+    type Flip[+B] = T[B, A]
+  }
+
+  class GroupByTupleTypeOps[T: ClassManifest, U: ClassManifest, C[+X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
+    import Lifting.{GroupByType => _, PartialApply1Of2 => _, _}
+    def groupByTupleType1 /*(f: Exp[(T, U)] => Exp[T]) */ = GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, FuncExp(_._1))
+    def groupByTupleType2 /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, FuncExp(_._2))
+  }
+  implicit def expToGroupByTupleType[T: ClassManifest, U: ClassManifest, C[+X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps(t)
+
   test("foo") {
     val rel = benchMark("subtype relationship")(computeSubTypeRel[Void](seenTypesEx))
     println("Rel:")
@@ -195,5 +208,27 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     f[AnyVal, Int] should have (typ[NoSub.type])
     f[FileChannel, String] should have (typ[NoSub.type])
     1 should have (typ[Int])
+  }
+  
+  test("TypeIndexSpeed") {
+    import de.tud.cs.st.bat.resolved._
+    import performancetests.opaltests.{BATLifting, OpalTestData}
+    import OpalTestData._
+    import Lifting.{GroupByType => _, PartialApply1Of2 => _, expToGroupByTupleType => _, _}
+    import BATLifting._
+
+    type QueryAnd[+T] = ((ClassFile, Method, Code), T);
+    {
+      //Same code as above, except that the index returns all free variables, so that the optimizer might find it.
+      val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
+        cf <- queryData.toSeq
+        m <- cf.methods
+        ca <- m.attributes.typeFilter[Code]
+        i <- ca.instructions
+      } yield (asExp((cf, m, ca)), i)
+
+      val typeIdx = typeIdxBase.groupByTupleType2
+      val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation"){ asExp(typeIdx.interpret()) }
+    }
   }
 }
