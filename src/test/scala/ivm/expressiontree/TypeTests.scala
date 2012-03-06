@@ -4,9 +4,9 @@ import org.scalatest.FunSuite
 import org.scalatest.matchers.{HavePropertyMatchResult, HavePropertyMatcher, ShouldMatchers}
 import collection.{immutable, TraversableLike, mutable}
 import collection.generic.CanBuildFrom
-import mutable.{ArrayBuffer, Builder}
 import java.io.{Closeable, File}
 import java.nio.channels.{Channel, ByteChannel, FileChannel}
+import mutable.{Queue, ArrayBuffer, Builder}
 
 trait TypeMatchers {
   def typ[ExpectedT: ClassManifest] = new HavePropertyMatcher[Any, OptManifest[_]] {
@@ -116,27 +116,25 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers {
   //their implementing interfaces.
   //With this contract, given a type, we can find its concrete subtypes, and look them up in a type index.
   //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
-  def computeSubTypeRel[T: ClassManifest](seenTypes: mutable.Set[ClassManifest[_]]) = {
+  def computeSubTypeRel[T: ClassManifest](seenTypes: collection.Set[ClassManifest[_]]) = {
     val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
-    var classesToScan: List[Class[_]] = Nil
+    var classesToScan: Queue[Class[_]] = Queue()
     for {
       t <- seenTypes
       if t != ClassManifest.Null && t != classManifest[T]
       t_ = ClassUtil.boxedErasure(t)
       s <- superTypes(t_)
     } {
-      val superClassOpt = superClass(t_).toList
-      classesToScan = superClassOpt ::: classesToScan
+      val superClassOpt = superClass(t_).toSeq
+      classesToScan enqueue (superClassOpt: _*)
       for (s <- superClassOpt ++ superInterfaces(t_))
         subtypeRel += (s -> t_) //Map s to its subtypes.
     }
     //For each supertype found, look up its superclasses. XXX This won't include its superinterfaces though - they will be included only for the original type. Maybe that's OK for looking up concrete types!
     while (classesToScan.nonEmpty) {
-      val clazz :: rest = classesToScan
-      classesToScan = rest
-      //for (s <- superClass(t)) {
+      val clazz = classesToScan.dequeue()
       for (superType <- superTypes(clazz)) {
-        classesToScan = superType :: classesToScan
+        classesToScan enqueue superType
         subtypeRel += (superType -> clazz)
       }
       /*
@@ -172,7 +170,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers {
     }
     override def copy(base: Exp[C[D[T]]], f: Exp[D[T]=>T]) = GroupByType[T, C, D](base, f)
   }
-  val seenTypesEx: mutable.Set[ClassManifest[_]] = mutable.Set(classManifest[Int], classManifest[Null], classManifest[AnyRef], classManifest[String], classManifest[File], classManifest[Long], classManifest[FileChannel])
+  val seenTypesEx: Set[ClassManifest[_]] = Set(classManifest[Int], classManifest[Null], classManifest[AnyRef], classManifest[String], classManifest[File], classManifest[Long], classManifest[FileChannel])
 
   test("foo") {
     val rel = computeSubTypeRel[Void](seenTypesEx)
