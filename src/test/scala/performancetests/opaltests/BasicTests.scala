@@ -439,7 +439,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     benchMark("los6 Seq-index-base creation")(typeIdxBaseSeq.interpret())
     //Let us accept some limited overhead with explicit type annotations to create the index
     //val typeindex = q.groupByType(_._2)
-    //val typeIdx = typeIdxBase.groupByTupleType2
+    val typeIdx = typeIdxBase.groupByTupleType2
     val typeIdxSeq = typeIdxBaseSeq.groupByTupleType2
     //This is normalization-by-evaluation over terms instead of functions (and who said it is limited to functions?)
     val evaluatedtypeindex: Exp[TypeMapping[Seq, PairMethodAnd, Instruction]] = //benchMark("los6 index creation"){ asExp(typeIdx.interpret()) } //XXX
