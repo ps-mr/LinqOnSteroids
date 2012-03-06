@@ -27,12 +27,12 @@ trait TypeMatchers {
  * User: pgiarrusso
  * Date: 5/3/2012
  */
-sealed trait MaybeSub[A, B]
-case class YesSub[A, B](implicit val p: A <:< B) extends MaybeSub[A, B]
-case class NoSub[A, B]() extends MaybeSub[A, B]
+sealed trait MaybeSub[-A, +B]
+case class YesSub[-A, +B](implicit val p: A <:< B) extends MaybeSub[A, B]
+case object NoSub extends MaybeSub[Any, Nothing]
 
 trait LowPriority {
-    implicit def noSub[A, B] = NoSub[A, B]
+    implicit def noSub = NoSub
 }
 object NormalPriority extends LowPriority {
     implicit def yesSub[A, B](implicit p: A <:< B) = YesSub[A, B]
@@ -59,7 +59,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers {
         case v @ YesSub() =>
           //origColl map (_ map v.p.apply)
           (cbf() ++= origColl.asInstanceOf[C[D[T]]]) result() //For this to make sense, covariance of C and D is required, as in various other places.
-        case NoSub() =>
+        case NoSub =>
           val baseResult = map(tmf).asInstanceOf[C[D[Base /*T*/]]]
           val coll = cbf(baseResult)
           for (t <- transitiveQuery(subtypeRel, ClassUtil.boxedErasure(tmf)))
@@ -196,8 +196,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers {
     f[String, AnyRef] should have (typ[YesSub[String, AnyRef]])
     f[String, AnyRef] should have (typ[YesSub[_, _]])
     f[Int, AnyVal] should have (typ[YesSub[Int, AnyVal]])
-    f[AnyVal, Int] should have (typ[NoSub[_, _]])
-    f[FileChannel, String] should have (typ[NoSub[_, _]])
+    f[AnyVal, Int] should have (typ[NoSub.type])
+    f[FileChannel, String] should have (typ[NoSub.type])
     1 should have (typ[Int])
   }
 }
