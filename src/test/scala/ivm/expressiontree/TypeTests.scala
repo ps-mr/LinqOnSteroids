@@ -51,9 +51,9 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     } yield c
   }
 
-  class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[ClassManifest[_], C[D[_]]], val subtypeRel: Map[Class[_], mutable.Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
+  class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[_]]], val subtypeRel: Map[Class[_], mutable.Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
     //TODO Problem with this implementation: instances of subtypes of T won't be part of the returned collection.
-    def getOld[T](implicit tmf: ClassManifest[T]): C[D[T]] = map(tmf).asInstanceOf[C[D[T]]]
+    //def getOld[T](implicit tmf: ClassManifest[T]): C[D[T]] = map(ClassUtil.boxedErasure(tmf)).asInstanceOf[C[D[T]]]
 
 
     def get[T, That](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], That]): That = {
@@ -62,11 +62,11 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
           //origColl map (_ map v.p.apply)
           (cbf() ++= origColl.asInstanceOf[C[D[T]]]) result() //For this to make sense, covariance of C and D is required, as in various other places.
         case NoSub =>
-          val baseResult = map(tmf).asInstanceOf[C[D[Base /*T*/]]]
+          val clazz = ClassUtil.boxedErasure(tmf)
+          val baseResult = map(clazz).asInstanceOf[C[D[Base /*T*/]]]
           val coll = cbf(baseResult)
-          for (t <- transitiveQuery(subtypeRel, ClassUtil.boxedErasure(tmf)))
-            //XXX: Jumping back and forth from Class[_] to ClassManifest[_] is extremely annoying, even performance-wise.
-            coll ++= map(ClassManifest.fromClass(t)).asInstanceOf[C[D[T]]]
+          for (t <- transitiveQuery(subtypeRel, clazz))
+            coll ++= map(t).asInstanceOf[C[D[T]]]
           coll.result()
           //baseResult
       }
@@ -93,9 +93,11 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     val m = mutable.Map.empty[K, Builder[A, Traversable[A]]]
     for (elem <- coll) {
       val key = f(elem)
-      val bldr = m.getOrElseUpdate(key, Traversable.newBuilder[A])
-      bldr += elem
-      h(key)
+      if (key != null) { //Special
+        val bldr = m.getOrElseUpdate(key, Traversable.newBuilder[A])
+        bldr += elem
+        h(key) //Special
+      }
     }
     //Remove this part if possible!
     val b = immutable.Map.newBuilder[K, That]
@@ -118,7 +120,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   //their implementing interfaces.
   //With this contract, given a type, we can find its concrete subtypes, and look them up in a type index.
   //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
-  def computeSubTypeRel[T: ClassManifest](seenTypes: collection.Set[ClassManifest[_]]): immutable.Map[Class[_], mutable.Set[Class[_]]] = {
+  def computeSubTypeRel[T: ClassManifest](seenTypes: collection.Set[Class[_]]): immutable.Map[Class[_], mutable.Set[Class[_]]] = {
     //val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
     val subtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
     val classesToScan: Queue[Class[_]] = Queue()
@@ -139,18 +141,21 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
       for (superType <- superInterfaces(clazz))
         interfSubtypeRel += (superType -> clazz) //Map s to its subtypes.
     }
+    val erasedT = ClassUtil.boxedErasure(classManifest[T])
     for {
-      manif <- seenTypes
-      if manif != ClassManifest.Null && manif != classManifest[T]
-      clazz = ClassUtil.boxedErasure(manif)
+      clazz <- seenTypes
+      if clazz != erasedT
       s <- superTypes(clazz)
     } {
       add(clazz)
     }
-    //For each supertype found, look up its superclasses. XXX This won't include its superinterfaces though - they will be included only for the original type. Maybe that's OK for looking up concrete types!
+    //For each supertype found, look up its superclasses.
     while (classesToScan.nonEmpty) {
       add(classesToScan.dequeue())
     }
+    // Since we look up only concrete types, we needn't represent the subtype relationships between interfaces.
+    //However, this optimization is hardly significant since this code takes a quite small amount of time, compared to
+    //iterating over the values themselves.
     def addRec(superInterface: Class[_], clazz: Class[_]) {
       subtypeRel += superInterface -> clazz
       for (interf <- superInterfaces(superInterface))
@@ -165,27 +170,29 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     override def interpret() = {
       val coll: C[D[T]] = base.interpret()
       val g: D[T] => T = f
-      val seenTypes = mutable.Set.empty[ClassManifest[_]]
-      def getType(x: D[T]): ClassManifest[_] = {
+      val seenTypes = mutable.Set.empty[Class[_]]
+      def getType(x: D[T]): Class[_] = {
         val gx = g(x)
         //Why the null check? Remember that (null instanceof Foo) = false. Hence, without using the index, "if (a instanceof Foo)" subsumes
         //a != null. Here we need to do that check otherwise. To avoid a separate filter stage, and since views don't really support groupBy,
         //aggregate nulls into a separate class.
         if (gx != null)
-          ClassManifest.fromClass(gx.getClass)
+          ClassUtil.primitiveToBoxed(gx.getClass)
         else
-          ClassManifest.Null
+          null
       }
 
       //val map = coll groupBy getType
       val map = groupBySelAndForeach(coll)(getType, identity)(seenTypes += _)
       val subtypeRel = computeSubTypeRel[T](seenTypes)
 
-      new TypeMapping[C, D, T](map.asInstanceOf[Map[ClassManifest[_], C[D[_]]]], subtypeRel, coll)
+      new TypeMapping[C, D, T](map.asInstanceOf[Map[Class[_], C[D[_]]]], subtypeRel, coll)
     }
     override def copy(base: Exp[C[D[T]]]) = GroupByType[T, C, D](base, f)
   }
-  val seenTypesEx: Set[ClassManifest[_]] = Set(classManifest[Int], classManifest[Null], classManifest[AnyRef], classManifest[String], classManifest[File], classManifest[Long], classManifest[FileChannel])
+
+  import java.{lang => jl}
+  val seenTypesEx: Set[Class[_]] = Set(classOf[jl.Integer], classOf[Null], classOf[AnyRef], classOf[String], classOf[File], classOf[jl.Long], classOf[FileChannel])
 
   trait PartialApply1Of2[T[+_, +_], A] {
     type Apply[+B] = T[A, B]
