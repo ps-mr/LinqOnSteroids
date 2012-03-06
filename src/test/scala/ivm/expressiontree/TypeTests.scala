@@ -49,12 +49,12 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     } yield c
   }
 
-  class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[_]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
+  class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[Base]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
     //TODO Problem with this implementation: instances of subtypes of T won't be part of the returned collection.
     //def getOld[T](implicit tmf: ClassManifest[T]): C[D[T]] = map(ClassUtil.boxedErasure(tmf)).asInstanceOf[C[D[T]]]
 
 
-    //XXX reintroduce That here
+    //XXX reintroduce That here, maybe, for coherence. Not necessary for the paper, I believe (it can obviously be done, assuming the trick used for TypeFilterOps.when works here, too).
     //def get[T, That](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], That]): That = {
     def get[T](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): C[D[T]] = {
       m match {
@@ -166,7 +166,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
       addRec(superInterface, clazz)
     groupBySel(subtypeRel)(_._1, _._2)(collection.breakOut)
   }
-  case class GroupByType[T: ClassManifest, C[+X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: D[T] => T) extends Arity1OpExp[C[D[T]], TypeMapping[C, D, T],
+  case class GroupByType[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: D[T] => T)(implicit cbf: CanBuildFrom[C[D[T]], D[T], C[D[T]]], cm: ClassManifest[T]) extends Arity1OpExp[C[D[T]], TypeMapping[C, D, T],
     GroupByType[T, C, D]](base) {
     override def interpret() = {
       val coll: C[D[T]] = base.interpret()
@@ -184,10 +184,10 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
       }
 
       //val map = coll groupBy getType
-      val map = groupBySelAndForeach(coll)(getType, identity)(seenTypes += _)
+      val map: Map[Class[_], C[D[T]]] = groupBySelAndForeach(coll)(getType, identity)(seenTypes += _)(cbf)
       val subtypeRel = computeSubTypeRel[T](seenTypes.result())
 
-      new TypeMapping[C, D, T](map.asInstanceOf[Map[Class[_], C[D[_]]]], subtypeRel, coll)
+      new TypeMapping[C, D, T](map, subtypeRel, coll)
     }
     override def copy(base: Exp[C[D[T]]]) = GroupByType[T, C, D](base, f)
   }
@@ -202,8 +202,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   class GroupByTupleTypeOps[T: ClassManifest, U: ClassManifest, C[+X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
     import Lifting.{GroupByType => _, PartialApply1Of2 => _, _}
-    def groupByTupleType1 /*(f: Exp[(T, U)] => Exp[T]) */ = GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, _._1)
-    def groupByTupleType2 /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, _._2)
+    def groupByTupleType1(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[T]) */ = GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, _._1)
+    def groupByTupleType2(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, _._2)
   }
   implicit def expToGroupByTupleType[T: ClassManifest, U: ClassManifest, C[+X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps(t)
 
