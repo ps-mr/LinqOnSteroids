@@ -439,10 +439,10 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     benchMark("los6 Seq-index-base creation")(typeIdxBaseSeq.interpret())
     //Let us accept some limited overhead with explicit type annotations to create the index
     //val typeindex = q.groupByType(_._2)
-    val typeIdx = typeIdxBase.groupByTupleType2
+    //val typeIdx = typeIdxBase.groupByTupleType2
     val typeIdxSeq = typeIdxBaseSeq.groupByTupleType2
     //This is normalization-by-evaluation over terms instead of functions (and who said it is limited to functions?)
-    val evaluatedtypeindex: Exp[TypeMapping[Seq, PairMethodAnd]] = //benchMark("los6 index creation"){ asExp(typeIdx.interpret()) } //XXX
+    val evaluatedtypeindex: Exp[TypeMapping[Seq, PairMethodAnd, Instruction]] = //benchMark("los6 index creation"){ asExp(typeIdx.interpret()) } //XXX
       benchMark("los6 Seq-index creation"){ asExp(typeIdxSeq.interpret()) }
     //println(evaluatedtypeindex.map.keys)
 
@@ -483,7 +483,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       // Interpreting used to take a whopping 120 seconds. Why? Since the result is a set, each class file is being hashed once
       // per each instruction. The fix was adding toSeq above. In fact, this transformation could probably be done also on the query to optimize;
       // after that, the optimizer would again find a matching subquery. The new runtime is ~ 0.3-0.4 sec.
-      val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd]] = benchMark("los6 Seq-index (less manually optimized) creation"){ asExp(typeIdx.interpret()) }
+      val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation"){ asExp(typeIdx.interpret()) }
 
       val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name).toSet
 
@@ -501,7 +501,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     } yield (m, ca)
     val typeIdx1 = idx1Base.groupByTupleType2
     //NOTE: it is crucial to mention SND here.
-    val evTypeIdx1: Exp[TypeMapping[Seq, PairMethodAnd]] = benchMark("los7: creation of index typeIdx1"){ asExp(typeIdx1.interpret()) }
+    val evTypeIdx1: Exp[TypeMapping[Seq, PairMethodAnd, Attribute]] = benchMark("los7: creation of index typeIdx1"){ asExp(typeIdx1.interpret()) }
     //Hmm: this index inverts a 1-1 mapping, is that a good idea performance-wise?
     val idx1 = idx1Base.groupBySel(_._2, _._1)
     val idx1BaseWithSeqs = for {
@@ -521,7 +521,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       i <- ca.instructions
     } yield (ca, i)
     val idx2 = idx2Base.groupByTupleType2
-    val evIdx2: Exp[TypeMapping[Set, PairCodeAttribute]] = idx2.interpret()
+    val evIdx2: Exp[TypeMapping[Set, PairCodeAttribute, Instruction]] = idx2.interpret()
     */
     //val idx2BaseOpt = evIdx1.get[Code].flatMap(ca => ca.instructions.map(i => (ca, i)))
     val idx2BaseOpt /*: Exp[Set[PairCodeAttribute[Attribute]]]*/ = for {
@@ -529,7 +529,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       i <- pair._2.instructions
     } yield (pair._2, i)
     val typeIdx2Opt = idx2BaseOpt.groupByTupleType2
-    val evTypeIdx2Opt: Exp[TypeMapping[Seq, PairCodeAttributeAnd]] = benchMark("los7: creation of index typeIdx2Opt"){ asExp(typeIdx2Opt.interpret()) }
+    val evTypeIdx2Opt: Exp[TypeMapping[Seq, PairCodeAttributeAnd, Instruction]] = benchMark("los7: creation of index typeIdx2Opt"){ asExp(typeIdx2Opt.interpret()) }
 
     val methodsLos7 = evTypeIdx2Opt.get[INSTANCEOF].flatMap(x => evIdx1(x._1).map(_.name))
 
