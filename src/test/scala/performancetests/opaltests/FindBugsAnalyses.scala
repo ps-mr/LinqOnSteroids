@@ -691,6 +691,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       } yield (classFile, method)
     }
     println("\tViolations: "+covariantCompareToMethods.size)
+
     import BATLifting._
     val covariantCompareToMethodsLos = benchMark("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF Los Setup") {
       Query(for {
@@ -702,6 +703,28 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       } yield (classFile, method))
     }
     benchQuery("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF Los", covariantCompareToMethodsLos, covariantCompareToMethods)
+  }
+
+  test("AbstractClassesThatDefinesCovariantEquals") {
+    analyzeAbstractClassesThatDefinesCovariantEquals()
+  }
+  def analyzeAbstractClassesThatDefinesCovariantEquals() {
+    val abstractClassesThatDefinesCovariantEquals = benchMark("EQ_ABSTRACT_SELF") {
+      for {
+        classFile ← classFiles if classFile.isAbstract
+        method @ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
+      } yield (classFile, method)
+    }
+    println("\tViolations: "+abstractClassesThatDefinesCovariantEquals.size)
+
+    import BATLifting._
+    val abstractClassesThatDefinesCovariantEqualsLos = benchMark("EQ_ABSTRACT_SELF Los Setup") {
+      Query(for {
+        classFile ← classFiles.asSmartCollection if classFile.isAbstract
+        method /*@ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _)*/ ← classFile.methods //if parameterType != ObjectType("java/lang/Object")
+      } yield (classFile, method))
+    }
+    benchQuery("EQ_ABSTRACT_SELF Los", abstractClassesThatDefinesCovariantEqualsLos, abstractClassesThatDefinesCovariantEquals)
   }
 
   def setupAnalysis(zipFiles: Seq[String]) {

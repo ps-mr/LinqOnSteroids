@@ -30,6 +30,7 @@ object BATLifting {
     def thisClass = onExp(t)('thisClass, _.thisClass)
     def superClass = onExp(t)('superClass, _.superClass)
     def interfaces = onExp(t)('interfaces, _.interfaces)
+    def isAbstract = onExp(t)('isAbstract, _.isAbstract)
     def isFinal = onExp(t)('isFinal, _.isFinal)
     def isClassDeclaration = onExp(t)('isClassDeclaration, _.isClassDeclaration)
     def isInterfaceDeclaration = onExp(t)('isInterfaceDeclaration, _.isInterfaceDeclaration)
