@@ -35,10 +35,9 @@ case object NoSub extends MaybeSub[Any, Nothing]
 trait LowPriority {
     implicit def noSub = NoSub
 }
-object NormalPriority extends LowPriority {
+object MaybeSub extends LowPriority {
     implicit def yesSub[A, B](implicit p: A <:< B) = YesSub[A, B]
 }
-import NormalPriority._
 
 class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benchmarking {
   class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[Base]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
