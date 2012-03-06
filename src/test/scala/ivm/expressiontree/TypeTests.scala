@@ -118,30 +118,24 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers {
   //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
   def computeSubTypeRel[T: ClassManifest](seenTypes: collection.Set[ClassManifest[_]]) = {
     val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
-    var classesToScan: Queue[Class[_]] = Queue()
+    val classesToScan: Queue[Class[_]] = Queue()
+    def add(clazz: Class[_]) {
+      val superTypesClazz = superTypes(clazz)
+      classesToScan enqueue (superTypesClazz: _*)
+      for (superType <- superTypesClazz)
+        subtypeRel += (superType -> clazz) //Map s to its subtypes.
+    }
     for {
       t <- seenTypes
       if t != ClassManifest.Null && t != classManifest[T]
       t_ = ClassUtil.boxedErasure(t)
       s <- superTypes(t_)
     } {
-      val superClassOpt = superClass(t_).toSeq
-      classesToScan enqueue (superClassOpt: _*)
-      for (s <- superClassOpt ++ superInterfaces(t_))
-        subtypeRel += (s -> t_) //Map s to its subtypes.
+      add(t_)
     }
     //For each supertype found, look up its superclasses. XXX This won't include its superinterfaces though - they will be included only for the original type. Maybe that's OK for looking up concrete types!
     while (classesToScan.nonEmpty) {
-      val clazz = classesToScan.dequeue()
-      for (superType <- superTypes(clazz)) {
-        classesToScan enqueue superType
-        subtypeRel += (superType -> clazz)
-      }
-      /*
-      //No need to scan superInterfaces recursively
-      for (s <- superInterfaces(t))
-        subtypeRel += (s -> t)
-        */
+      add(classesToScan.dequeue())
     }
     groupBySel(subtypeRel)(_._1, _._2)
   }
