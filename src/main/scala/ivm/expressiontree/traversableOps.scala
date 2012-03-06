@@ -348,6 +348,98 @@ object MaybeSub extends LowPriority {
     implicit def yesSub[A, B](implicit p: A <:< B) = YesSub[A, B]
 }
 
+import collection.{immutable, TraversableLike, mutable}
+import collection.generic.CanBuildFrom
+import mutable.{Queue, ArrayBuffer, Builder}
+
+object CollectionUtils {
+  //This must be only used inside the implementation. Mutability fun!
+  /*private*/ def groupBySel[A, K, B, Repr <: Traversable[A], That](coll: Repr with Traversable[A])(f: A => K, g: A => B)(implicit cbf: CanBuildFrom[Repr, B, That]): immutable.Map[K, That] = {
+    val m = mutable.Map.empty[K, Builder[B, That]]
+    for (elem <- coll) {
+      val key = f(elem)
+      val bldr = m.getOrElseUpdate(key, cbf(coll))
+      bldr += g(elem)
+    }
+    val b = immutable.Map.newBuilder[K, That]
+    for ((k, v) <- m)
+      b += ((k, v.result()))
+
+    b.result()
+  }
+
+  /*private*/ def groupBySelAndForeach[A, K, B, Repr <: TraversableLike[A, Repr], That](coll: Repr with TraversableLike[A, Repr])(f: A => K, g: A => B)(h: K => Unit)(implicit cbf: CanBuildFrom[Repr, B, That]): immutable.Map[K, That] = {
+    val m = mutable.Map.empty[K, Builder[B, That]]
+    for (elem <- coll) {
+      val key = f(elem)
+      if (key != null) { //Special
+        val bldr = m.getOrElseUpdate(key, cbf(coll))
+        bldr += g(elem)
+        h(key) //Special
+      }
+    }
+    val b = immutable.Map.newBuilder[K, That]
+    for ((k, v) <- m)
+      b += ((k, v.result()))
+
+    b.result
+  }
+}
+
+object TypeHierarchyUtils {
+  import CollectionUtils._
+
+  //returns all b such that a R* b, where R is the relation represented by map.
+  /*private*/ def transitiveQuery[T](map: Map[T, Set[T]], a: T): Set[T] = {
+    for {
+      b <- map.get(a).getOrElse(Set())
+      c <- transitiveQuery(map, b) + b
+    } yield c
+  }
+
+  //Class.getSuperclass can return null, filter that out. Now make sure that Object is always included? Add testcases for primitive types?
+  /*private*/ def superClass(c: Class[_]): Option[Class[_]] = Option(c.getSuperclass) orElse (if (c == classOf[Any]) None else Some(classOf[Any]))
+  /*private*/ def superInterfaces(c: Class[_]): Seq[Class[_]] = c.getInterfaces
+  //getInterfaces returns all implemented interfaces :-), while getSuperclass does not.
+  /*private*/ def superTypes(c: Class[_]): Seq[Class[_]] = superInterfaces(c) ++ superClass(c)
+
+
+  //TODO: have a per-thread global map, so that the reconstructed type hierarchy can be shared between different indexes.
+  //Problem there: GC of entries.
+  //Contract: Returns a map defined on interfaces and classes, which returns their implementing classes and possibly
+  //their implementing interfaces.
+  //With this contract, given a type, we can find its concrete subtypes, and look them up in a type index.
+  //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
+  def computeSubTypeRel[T: ClassManifest](seenTypes: Set[Class[_]]): immutable.Map[Class[_], Set[Class[_]]] = {
+    //val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
+    val subtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
+    val classesToScan: Queue[Class[_]] = Queue()
+    val interfSubtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
+    def add(clazz: Class[_]) {
+      val superTypesClazz = superTypes(clazz)
+      classesToScan enqueue (superTypesClazz: _*)
+      for (superType <- superTypesClazz)
+        subtypeRel += (superType -> clazz) //Map s to its subtypes.
+    }
+    val erasedT = ClassUtil.boxedErasure(classManifest[T])
+    for {
+      clazz <- seenTypes
+      if clazz != erasedT
+      s <- superTypes(clazz)
+    } {
+      add(clazz)
+    }
+    //For each supertype found, look up its superclasses.
+    while (classesToScan.nonEmpty) {
+      add(classesToScan.dequeue())
+    }
+    // Since we look up only concrete types, we needn't represent the subtype relationships between interfaces.
+    //However, this optimization is hardly significant since this code takes a quite small amount of time, compared to
+    //iterating over the values themselves.
+    groupBySel(subtypeRel)(_._1, _._2)(collection.breakOut)
+  }
+}
+
 trait TypeFilterOps {
   this: LiftingConvs with TupleOps with FunctionOps with TraversableOps =>
   case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends Arity2OpExp[C[D[T]], D[T] => T, TypeMapping[C, D],
