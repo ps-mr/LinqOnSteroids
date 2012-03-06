@@ -6,7 +6,7 @@ import collection.generic.CanBuildFrom
 object ClassUtil {
   import java.{lang => jl}
 
-  val primitiveToBoxed = Map[Class[_], Class[_]](
+  private val primitiveToBoxedMap = Map[Class[_], Class[_]](
     classOf[Byte] -> classOf[jl.Byte],
     classOf[Short] -> classOf[jl.Short],
     classOf[Char] -> classOf[jl.Character],
@@ -17,12 +17,18 @@ object ClassUtil {
     classOf[Boolean] -> classOf[jl.Boolean],
     classOf[Unit] -> classOf[jl.Void]
   )
+  def primitiveToBoxed(classS: Class[_]) =
+    /*if (cS <:< ClassManifest.AnyVal)
+      primitiveToWrapper(cS.erasure)
+    else
+      cS.erasure*/
+    primitiveToBoxedMap.getOrElse(classS, classS)
   def boxedErasure(cS: ClassManifest[_]) =
     /*if (cS <:< ClassManifest.AnyVal)
       primitiveToWrapper(cS.erasure)
     else
       cS.erasure*/
-    primitiveToBoxed.getOrElse(cS.erasure, cS.erasure)
+    primitiveToBoxed(cS.erasure)
 }
 
 object Util {
