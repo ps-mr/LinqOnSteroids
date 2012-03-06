@@ -85,7 +85,7 @@ object FindBugsAnalyses {
 }
 
 class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
-  val classHierarchy = new ClassHierarchy {}
+  var classHierarchy = new ClassHierarchy {}
   var classFiles: Seq[ClassFile] = _
   var getClassFile: Map[ObjectType, ClassFile] = _
 
@@ -678,7 +678,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     // This operation is not incrementalizable by itself. If classHierarchy supports removing classes, we might
     // provide a way to setup a listener easily.
     for (classFile ← classFiles)
-      classHierarchy.update(classFile)
+      classHierarchy += classFile
     //As an alternative, classHierarchy might support IVM directly.
     //classHierarchy.update(classFiles)
 
