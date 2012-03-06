@@ -239,15 +239,14 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     import Lifting.{GroupByType => _, PartialApply1Of2 => _, expToGroupByTupleType => _, _}
     import BATLifting._
 
-    type QueryAnd[+T] = ((ClassFile, Method, Code), T);
+    type QueryAnd[+T] = ((ClassFile, Method), T);
     {
       //Same code as above, except that the index returns all free variables, so that the optimizer might find it.
       val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
         cf <- queryData.toSeq
-        m <- cf.methods
-        ca <- m.attributes.typeFilter[Code]
-        i <- ca.instructions
-      } yield (asExp((cf, m, ca)), i)
+        m <- cf.methods if m.body.isDefined
+        i <- m.body.get.instructions
+      } yield (asExp((cf, m)), i)
 
       val typeIdx = typeIdxBase.groupByTupleType2
       val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation, with fixed type indexing"){ asExp(typeIdx.interpret()) }
