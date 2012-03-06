@@ -672,6 +672,37 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
     benchQuery("IMSE_DONT_CATCH_IMSE Los", catchesIllegalMonitorStateExceptionLos, catchesIllegalMonitorStateException)
   }
+  
+  test("CovariantCompareToMethods") {
+    analyzeCovariantCompareToMethods()
+  }
+  def analyzeCovariantCompareToMethods() {
+    val comparableType = ObjectType("java/lang/Comparable")
+    val covariantCompareToMethods = benchMark("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF") {
+      // Weakness: In a project, where we extend a predefined class (of the JDK) that
+      // inherits from Comparable and in which we define covariant comparesTo method,
+      // we will not be able to identify this issue unless we have identified the whole
+      // class hierarchy.
+      for {
+        allComparables ← classHierarchy.subtypes(comparableType).toList
+        comparable ← allComparables
+        classFile ← getClassFile.get(comparable).toList
+        method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
+      } yield (classFile, method)
+    }
+    println("\tViolations: "+covariantCompareToMethods.size)
+    import BATLifting._
+    val covariantCompareToMethodsLos = benchMark("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF Los Setup") {
+      Query(for {
+        allComparables ← classHierarchy.subtypes(comparableType).toList.asSmartCollection
+        comparable ← allComparables
+        classFile ← getClassFile.get(comparable)
+        //XXX port the rest
+        method /*@ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _)*/ ← classFile.methods //if parameterType != ObjectType("java/lang/Object")
+      } yield (classFile, method))
+    }
+    benchQuery("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF Los", covariantCompareToMethodsLos, covariantCompareToMethods)
+  }
 
   def setupAnalysis(zipFiles: Seq[String]) {
     classFiles = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
