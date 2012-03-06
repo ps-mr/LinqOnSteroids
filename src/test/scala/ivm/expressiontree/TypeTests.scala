@@ -41,14 +41,6 @@ object NormalPriority extends LowPriority {
 import NormalPriority._
 
 class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benchmarking {
-  //returns all b such that a R* b, where R is the relation represented by map.
-  /*private*/ def transitiveQuery[T](map: Map[T, Set[T]], a: T): Set[T] = {
-    for {
-      b <- map.get(a).getOrElse(Set())
-      c <- transitiveQuery(map, b) + b
-    } yield c
-  }
-
   class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[Base]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
     //TODO Problem with this implementation: instances of subtypes of T won't be part of the returned collection.
     //def getOld[T](implicit tmf: ClassManifest[T]): C[D[T]] = map(ClassUtil.boxedErasure(tmf)).asInstanceOf[C[D[T]]]
@@ -57,6 +49,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     //XXX reintroduce That here, maybe, for coherence. Not necessary for the paper, I believe (it can obviously be done, assuming the trick used for TypeFilterOps.when works here, too).
     //def get[T, That](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], That]): That = {
     def get[T](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): C[D[T]] = {
+      import TypeHierarchyUtils._
+
       m match {
         case v @ YesSub() =>
           //origColl map (_ map v.p.apply) //Try to apply the subtype relationship as a cast; to do this, we'd need D to be a Functor, and a witness of that to be passed.
@@ -112,6 +106,14 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   object TypeHierarchyUtils {
     import CollectionUtils._
+
+    //returns all b such that a R* b, where R is the relation represented by map.
+    /*private*/ def transitiveQuery[T](map: Map[T, Set[T]], a: T): Set[T] = {
+      for {
+        b <- map.get(a).getOrElse(Set())
+        c <- transitiveQuery(map, b) + b
+      } yield c
+    }
 
     //Class.getSuperclass can return null, filter that out. Now make sure that Object is always included? Add testcases for primitive types?
     /*private*/ def superClass(c: Class[_]): Option[Class[_]] = Option(c.getSuperclass) orElse (if (c == classOf[Any]) None else Some(classOf[Any]))
