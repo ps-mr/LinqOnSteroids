@@ -337,6 +337,17 @@ trait SetOps extends CollectionSetOps {
   implicit def tToSetExp[T](t: Set[T]): SetOps[T] = expToSetExp(t)
 }
 
+sealed trait MaybeSub[-A, +B]
+case class YesSub[-A, +B](implicit val p: A <:< B) extends MaybeSub[A, B]
+case object NoSub extends MaybeSub[Any, Nothing]
+
+trait LowPriority {
+    implicit def noSub = NoSub
+}
+object MaybeSub extends LowPriority {
+    implicit def yesSub[A, B](implicit p: A <:< B) = YesSub[A, B]
+}
+
 trait TypeFilterOps {
   this: LiftingConvs with TupleOps with FunctionOps with TraversableOps =>
   case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends Arity2OpExp[C[D[T]], D[T] => T, TypeMapping[C, D],

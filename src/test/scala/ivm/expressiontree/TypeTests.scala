@@ -28,17 +28,6 @@ trait TypeMatchers {
  * User: pgiarrusso
  * Date: 5/3/2012
  */
-sealed trait MaybeSub[-A, +B]
-case class YesSub[-A, +B](implicit val p: A <:< B) extends MaybeSub[A, B]
-case object NoSub extends MaybeSub[Any, Nothing]
-
-trait LowPriority {
-    implicit def noSub = NoSub
-}
-object MaybeSub extends LowPriority {
-    implicit def yesSub[A, B](implicit p: A <:< B) = YesSub[A, B]
-}
-
 class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benchmarking {
   class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[Base]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
     //TODO Problem with this implementation: instances of subtypes of T won't be part of the returned collection.
