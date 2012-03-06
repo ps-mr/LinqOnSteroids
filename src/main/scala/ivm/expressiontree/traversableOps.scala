@@ -374,11 +374,10 @@ trait TypeFilterOps {
   case class TypeMappingApp[C[X] <: TraversableLike[X, C[X]], D[_], S](base: Exp[TypeMapping[C, D]])(implicit cS: ClassManifest[S])
     extends Arity1OpExp[TypeMapping[C, D], C[D[S]], TypeMappingApp[C, D, S]](base) {
     override def copy(base: Exp[TypeMapping[C, D]]) = TypeMappingApp[C, D, S](base)
-    override def interpret() = {
+    override def interpret() =
       base.interpret().get[S]
-    }
-
   }
+
   class TypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](val t: Exp[C[D[T]]]) {
     def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T, C, D, S](t, FuncExp(f), cS)
     def groupByType(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t, FuncExp(f))

@@ -202,7 +202,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   }
   implicit def expToGroupByTupleType[T: ClassManifest, U: ClassManifest, C[+X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps(t)
 
-  test("foo") {
+  test("check subtype relationship") {
     val rel = benchMark("subtype relationship")(computeSubTypeRel[Void](seenTypesEx))
     /*
     println("Rel:")
@@ -224,7 +224,6 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     //val res: Traversable[C] = transitiveQuery(rel, classOf[Any])
     //res should contain (classOf[Number].asInstanceOf[C])
   }
-  //XXX test also that YesSub/NoSub works. See /Users/pgiarrusso/tmp/foo.scala
   test("MaybeSub") {
     def f[A, B](implicit p: MaybeSub[A, B]) = p
     f[String, AnyRef] should have (typ[YesSub[String, AnyRef]])
