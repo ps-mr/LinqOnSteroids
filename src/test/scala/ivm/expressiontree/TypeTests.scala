@@ -43,15 +43,15 @@ import NormalPriority._
 
 class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benchmarking {
   //returns all b such that a R* b, where R is the relation represented by map.
-  //XXX Note that this is inefficient since we use an immutable array as a mutable one.
-  /*private*/ def transitiveQuery[T](map: Map[T, mutable.Set[T]], a: T): mutable.Set[T] = {
+  //XXX Note that this is inefficient since we use a mutable set as an immutable array one.
+  /*private*/ def transitiveQuery[T](map: Map[T, collection.Set[T]], a: T): collection.Set[T] = {
     for {
-      b <- map.get(a).getOrElse(mutable.Set())
+      b <- map.get(a).getOrElse(collection.Set())
       c <- transitiveQuery(map, b) + b
     } yield c
   }
 
-  class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[_]]], val subtypeRel: Map[Class[_], mutable.Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
+  class TypeMapping[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[_]]], val subtypeRel: Map[Class[_], collection.Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
     //TODO Problem with this implementation: instances of subtypes of T won't be part of the returned collection.
     //def getOld[T](implicit tmf: ClassManifest[T]): C[D[T]] = map(ClassUtil.boxedErasure(tmf)).asInstanceOf[C[D[T]]]
 
@@ -118,7 +118,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   //their implementing interfaces.
   //With this contract, given a type, we can find its concrete subtypes, and look them up in a type index.
   //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
-  def computeSubTypeRel[T: ClassManifest](seenTypes: collection.Set[Class[_]]): immutable.Map[Class[_], mutable.Set[Class[_]]] = {
+  def computeSubTypeRel[T: ClassManifest](seenTypes: collection.Set[Class[_]]): immutable.Map[Class[_], collection.Set[Class[_]]] = {
     //val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
     val subtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
     val classesToScan: Queue[Class[_]] = Queue()
@@ -168,7 +168,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     override def interpret() = {
       val coll: C[D[T]] = base.interpret()
       val g: D[T] => T = f
-      val seenTypes = mutable.Set.empty[Class[_]]
+      val seenTypes = Set.newBuilder[Class[_]]
       def getType(x: D[T]): Class[_] = {
         val gx = g(x)
         //Why the null check? Remember that (null instanceof Foo) = false. Hence, without using the index, "if (a instanceof Foo)" subsumes
@@ -182,7 +182,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
       //val map = coll groupBy getType
       val map = groupBySelAndForeach(coll)(getType, identity)(seenTypes += _)
-      val subtypeRel = computeSubTypeRel[T](seenTypes)
+      val subtypeRel = computeSubTypeRel[T](seenTypes.result())
 
       new TypeMapping[C, D, T](map.asInstanceOf[Map[Class[_], C[D[_]]]], subtypeRel, coll)
     }
