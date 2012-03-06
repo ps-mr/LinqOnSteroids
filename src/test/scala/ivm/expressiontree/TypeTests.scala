@@ -117,7 +117,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   //their implementing interfaces.
   //With this contract, given a type, we can find its concrete subtypes, and look them up in a type index.
   //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
-  def computeSubTypeRel[T: ClassManifest](seenTypes: collection.Set[ClassManifest[_]]) = {
+  def computeSubTypeRel[T: ClassManifest](seenTypes: collection.Set[ClassManifest[_]]): immutable.Map[Class[_], mutable.Set[Class[_]]] = {
     val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
     val classesToScan: Queue[Class[_]] = Queue()
     def add(clazz: Class[_]) {
@@ -138,7 +138,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     while (classesToScan.nonEmpty) {
       add(classesToScan.dequeue())
     }
-    groupBySel(subtypeRel)(_._1, _._2)
+    groupBySel(subtypeRel)(_._1, _._2)(collection.breakOut)
   }
   case class GroupByType[T: ClassManifest, C[+X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: Exp[D[T] => T]) extends Arity2OpExp[C[D[T]], D[T] => T, TypeMapping[C, D, T],
     GroupByType[T, C, D]](base, f) {
