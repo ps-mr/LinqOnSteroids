@@ -232,7 +232,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
       } yield (asExp((cf, m, ca)), i)
 
       val typeIdx = typeIdxBase.groupByTupleType2
-      val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation"){ asExp(typeIdx.interpret()) }
+      val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation, with fixed type indexing"){ asExp(typeIdx.interpret()) }
     }
   }
 }
