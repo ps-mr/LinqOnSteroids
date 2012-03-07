@@ -34,6 +34,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     subqueries.get(toLookup) match {
       //Note: x flatMap identity, on x: Option[Seq[T]], implements monadic join. We could also use x getOrElse Traversable.empty.
       //In both cases, the type of the resulting expression becomes Traversable, which might lead to the result having the wrong dynamic type.
+      //Luckily, the CanBuildFrom instances will be too generic but will delegate their work to the source collection,
+      //hence producing a result of the right dynamic type.
       case Some(t) =>
         println("Found simple index of form " + toLookup)
         Some(asExp(t.asInstanceOf[Map[U, Traversable[T]]]) get constantEqSide flatMap identity)
