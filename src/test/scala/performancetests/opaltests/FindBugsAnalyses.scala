@@ -48,6 +48,7 @@ import Util.ExtraImplicits._
 import org.scalatest.{FunSuite, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 import optimization.Optimization
+import collection.TraversableView
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -566,13 +567,6 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
 
     import BATLifting._
 
-    val idx = (for {
-      classFile ← classFiles.asSmartCollection
-      method ← classFile.methods
-    //if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
-    } yield (classFile, method)).groupBy(_._2.name)
-    benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(idx))
-
     val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection
@@ -581,7 +575,6 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       } yield classFile)
     }
     benchQuery("FI_PUBLIC_SHOULD_BE_PROTECTED-2 Los", classesWithPublicFinalizeMethodsLos, classesWithPublicFinalizeMethods)
-    Optimization.removeSubquery(idx)
   }
 
   test("SerializableNoConstructor") {
@@ -654,15 +647,6 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     catchesIllegalMonitorStateExceptionLikeLos should be (catchesIllegalMonitorStateException)
 
     import BATLifting._
-    val idxBase = for {
-      classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
-      method ← classFile.methods if method.body.isDefined
-      exceptionHandler ← method.body.get.exceptionHandlers
-    } yield (classFile, method, exceptionHandler)
-    val idx = idxBase groupBy (_._3.catchType)
-
-    benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(idx))
-
     val catchesIllegalMonitorStateExceptionLos = benchMark("IMSE_DONT_CATCH_IMSE Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
@@ -749,6 +733,34 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     println("Number of class files: " + classFiles.length)
   }
 
+  var methodNameIdx: Exp[Map[String, Seq[(ClassFile, Method)]]] = _
+  var excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, ExceptionHandler)]]] = _
+
+  def setupIndexes() {
+    import BATLifting._
+
+    methodNameIdx = (for {
+      classFile ← classFiles.asSmartCollection
+      method ← classFile.methods
+    //if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
+    } yield (classFile, method)).groupBy(_._2.name)
+
+    val idxBase = for {
+      classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
+      method ← classFile.methods if method.body.isDefined
+      exceptionHandler ← method.body.get.exceptionHandlers
+    } yield (classFile, method, exceptionHandler)
+    excHandlerTypeIdx = idxBase groupBy (_._3.catchType)
+
+    benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(methodNameIdx))
+    benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(excHandlerTypeIdx))
+  }
+
+  def tearDownIndexes() {
+    Optimization.removeSubquery(methodNameIdx)
+    Optimization.removeSubquery(excHandlerTypeIdx)
+  }
+
   def analyze(zipFiles: Seq[String]) {
     setupAnalysis(zipFiles)
 
@@ -758,9 +770,16 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     analyzePublicFinalizer()
     analyzeSerializableNoConstructor()
     analyzeCatchIllegalMonitorStateException()
+    analyzeCovariantCompareToMethods()
+    analyzeAbstractClassesThatDefinesCovariantEquals()
   }
 
   override def beforeAll() {
     setupAnalysis(Seq("lib/scalatest-1.6.1.jar"))
+    setupIndexes()
+  }
+
+  override def afterAll() {
+    tearDownIndexes()
   }
 }
