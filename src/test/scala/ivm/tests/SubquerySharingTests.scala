@@ -139,7 +139,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l3_k_opt: Exp[Seq[Int]] =
     for {
       i <- Vector.range(1, 10).asSmartCollection
-      j <- Let(i + 1)
+      j <- Let(i + 1) if (j ==# 2)
       k <- Let(i + j + 2)
       if (k ==# 5)
     } yield i + j + k
@@ -153,7 +153,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     } yield (i, j, k)
 
     val l3Idx = l3IdxBase_k_opt groupBy { _._3 }
-    indexingTest(l3_k_opt, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
+    indexingTest(l3_k_opt, l3Idx){ _ get 5 flatMap identity withFilter (_._2 ==# 2) map (p => p._1 + p._2 + p._3) }
   }
 
   @Test def testComplexIndexing3Level_k_opt_workaround() {
@@ -164,7 +164,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     } yield (i, j, k)
 
     val l3Idx = l3IdxBase_k_opt groupBy { _._3 }
-    indexingTest(l3_k_opt, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
+    indexingTest(l3_k_opt, l3Idx){ _ get 5 flatMap identity withFilter (_._2 ==# 2) map (p => p._1 + p._2 + p._3) }
   }
 
   val l3_k_seqlet: Exp[Seq[Int]] =

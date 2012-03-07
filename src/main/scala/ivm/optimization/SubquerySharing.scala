@@ -4,10 +4,13 @@ import ivm.expressiontree._
 import Lifting._
 import Util.assertType
 import scala.collection.Map
+import collection.mutable.ArrayBuffer
 
 // Contract: Each map entry has the form Exp[T] -> T for some T
 /**
  * Note: this code is not allowed to create expression nodes through their constructors, as with {@see Optimization}.
+ * The subqueries map should be called the "precomputed query repository", and is a generalization of a repository of
+ * indexes.
  */
 class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   val directsubqueryShare: Exp[_] => Exp[_] = {
@@ -153,6 +156,31 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       })
   }
 
+  /*
+   * When looking up an index, a filter in the original query will be preserved in the lookup key, and it might make the
+   * lookup fail. If an index exists without a filter, we should try to use it.
+   * Some filters might be required to prevent subsequent operations from failing, hence they might be required also in
+   * the index; stripping the filter will thus create a query which would fail at runtime.
+   * That is not a problem, since we don't execute the queries we build, just look them up; if the lookup is successful,
+   * it means we constructed a query which the user added to the precomputed query repository, hence it better be safe.
+   * An actual concern is that we might need to strip only some indexes but not others from the query in order to find a
+   * matching index.
+   */
+  private def withoutFilters[TupleT, T, U](indexBaseToLookup: Exp[Traversable[TupleT]], tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U], fx: TypedVar[Seq[T]]): (Exp[Traversable[TupleT]], Exp[Boolean]) = {
+    val v = ArrayBuffer[Exp[Boolean]]()
+    //We are removing too many filters, and not keeping track of their bindings :-(.
+    val res = indexBaseToLookup transform { //We only want to recognize filtering in the collection branch of FlatMap nodes. Easy!
+      e => e match {
+        case FlatMap(Filter(base: Exp[Traversable[_]], f: FuncExp[_, _ /*Boolean*/]), fmFun) =>
+          val alphaRenamed = f.body.substSubTerm(f.x, fmFun.x) //tuplingTransform acts on var from flatMap functions, not filter functions.
+          v += tuplingTransform(alphaRenamed.asInstanceOf[Exp[U]], fx).asInstanceOf[Exp[Boolean]] //XXX fix typing here
+          OptimizationTransforms.stripView(base) flatMap fmFun
+        case _ => e
+      }
+    }
+    (res, v.fold(Const(true))(And))
+  }
+
   private def groupByShareBodyNested[TupleT, T, U](indexBaseToLookup: Exp[Traversable[TupleT]],
                                       fx: TypedVar[Seq[T]],
                                       fEqBody: Eq[U],
@@ -161,17 +189,24 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                                       allFVSeq: Seq[Var],
                                       tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U]): Option[Exp[Traversable[TupleT]]] = {
     val varEqSideTransf = tuplingTransform(varEqSide, fx)
-    val groupedBy = indexBaseToLookup.groupBy[U](FuncExp.makefun[TupleT, U](varEqSideTransf, fx))
 
-    assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
-    val toLookup = Optimization.normalize(groupedBy)
-    subqueries.get(toLookup) match {
-      case Some(t) =>
-        println("Found nested index of form " + toLookup)
-        Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) get constantEqSide flatMap identity)
-      case None =>
-        println("Found no nested index of form " + toLookup)
-        None
+    //println("groupByShareBodyNested on " + indexBaseToLookup)
+    val (baseNoFilter, filterCond) = withoutFilters(indexBaseToLookup, tuplingTransform, fx)
+    val tries = Seq((indexBaseToLookup, Const(true)), (baseNoFilter, filterCond))
+    collectFirst(tries) {
+      case (base, cond) =>
+        val groupedBy = base.groupBy[U](FuncExp.makefun[TupleT, U](varEqSideTransf, fx))
+
+        assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
+        val toLookup = Optimization.normalize(groupedBy)
+        subqueries.get(toLookup) match {
+          case Some(t) =>
+            println("Found nested index of form " + toLookup)
+            Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) get constantEqSide flatMap identity withFilter FuncExp.makefun(cond, fx))
+          case None =>
+            println("Found no nested index of form " + toLookup)
+            None
+        }
     }
   }
 
