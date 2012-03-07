@@ -198,13 +198,13 @@ object Lifting
   //def filterByType[S: Manifest]: Exp[PartialFunction[Any, S]] = new PartialFuncExp(x => x.ifInstanceOf[S])
 
   case class Elseable[T](conds: Seq[Exp[Boolean]], bodies: Seq[Exp[T]]) {
-    def else_[U >: T](elseBody: Exp[U]): Exp[U] =
+    def else_#[U >: T](elseBody: Exp[U]): Exp[U] =
       (conds, bodies).zipped.foldRight(elseBody) {
         case ((cond, thenBody), curr) => IfThenElse(cond, thenBody, curr)
       }
     //This overload allows chaining if-else if. The idea comes from:
     //http://blog.razie.com/2011/08/scala-dsl-technique-if-else-constructs.html
-    def else_[U >: T](branch: Elseable[U]) = Elseable(conds ++ branch.conds, bodies ++ branch.bodies)
+    def else_#[U >: T](branch: Elseable[U]) = Elseable(conds ++ branch.conds, bodies ++ branch.bodies)
   }
-  def if_[T](cond: Exp[Boolean])(thenBody: Exp[T]) = Elseable(Seq(cond), Seq(thenBody))
+  def if_#[T](cond: Exp[Boolean])(thenBody: Exp[T]) = Elseable(Seq(cond), Seq(thenBody))
 }

@@ -233,9 +233,9 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
             // because Scala's type system is nominal and for the two branches different (_.name) methods (with the same
             // signature) are invoked.
             (instruction.ifInstanceOf[GETFIELD] map (_.name) orElse (instruction.ifInstanceOf[GETSTATIC] map (_.name))).get
-            /*if_ (asGETFIELD.isDefined)
+            /*if_# (asGETFIELD.isDefined)
               asGETFIELD.name
-            else_ if_ (asGETSTATIC.isDefined)
+            else_# if_# (asGETSTATIC.isDefined)
               asGETSTATIC.name*/
         })
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
@@ -292,11 +292,11 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
           instruction ⇒
             val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
             val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
-            if_ (asGETFIELD.isDefined) {
+            if_# (asGETFIELD.isDefined) {
               asGETFIELD.get.declaringClass ==# declaringClass
-            } else_ if_ (asGETSTATIC.isDefined) {
+            } else_# if_# (asGETSTATIC.isDefined) {
                 asGETSTATIC.get.declaringClass ==# declaringClass
-            } else_ {
+            } else_# {
               false
             }
         } map {
