@@ -742,7 +742,6 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     methodNameIdx = (for {
       classFile ← classFiles.asSmartCollection
       method ← classFile.methods
-    //if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
     } yield (classFile, method)).groupBy(_._2.name)
 
     val idxBase = for {
