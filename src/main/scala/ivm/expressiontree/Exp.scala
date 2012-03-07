@@ -87,8 +87,8 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   final def ===[S >: T](that: Exp[S]): Exp[Boolean] = Eq(this, that)
   final def ===(that: Null): Exp[Boolean] = Eq(this, Const(null))
 
-  final def !==[S >: T](that: Exp[S]): Exp[Boolean] = Not(this === that)
-  final def !==(that: Null): Exp[Boolean] = Not(this === that)
+  final def !=#[S >: T](that: Exp[S]): Exp[Boolean] = Not(this === that)
+  final def !=#(that: Null): Exp[Boolean] = Not(this === that)
 }
 
 /*private[ivm]*/ object Exp {
