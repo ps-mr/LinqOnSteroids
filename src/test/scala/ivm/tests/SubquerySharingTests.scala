@@ -196,7 +196,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     indexingTest(l3_k_seqlet, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
   }
 
-  def shareSubqueriesOpt[T](x: Exp[T]) = Optimization.removeTrivialFilters(Optimization.shareSubqueries(x))
+  def shareSubqueriesOpt[T](x: Exp[T]) = Optimization.simplifyFilters(Optimization.shareSubqueries(x))
 
   @Test def testIndexing {
     val index = l.groupBy(p => p._1 + p._2)

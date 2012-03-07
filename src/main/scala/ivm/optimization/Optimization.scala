@@ -119,6 +119,16 @@ object OptimizationTransforms {
       case _ => e
     }
 
+  //Some cases of constant folding for booleans.
+  val simplifyConditions: Exp[_] => Exp[_] =
+    e => e match {
+      case And(Const(true), x) => x
+      case And(x, Const(true)) => x
+      case Or(Const(false), x) => x
+      case Or(x, Const(false)) => x
+      case _ => e
+    }
+
   val removeIdentityMaps: Exp[_] => Exp[_] =
     e => e match {
       case MapOp(col, FuncExpIdentity()) =>
@@ -537,6 +547,10 @@ object Optimization {
 
   def removeTrivialFilters[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.removeTrivialFilters)
 
+  def simplifyConditions[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.simplifyConditions)
+
+  def simplifyFilters[T](exp: Exp[T]): Exp[T] = removeTrivialFilters(simplifyConditions(exp))
+
   def removeIdentityMaps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.removeIdentityMaps)
 
   def toTypeFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.toTypeFilter)
@@ -555,7 +569,7 @@ object Optimization {
     new SubquerySharing(subqueries).shareSubqueries(query)
 
   private def optimizeBase[T](exp: Exp[T]): Exp[T] =
-    removeTrivialFilters(
+    simplifyFilters(
       shareSubqueries(mapToFlatMap(
         removeTrivialFilters(
           removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
