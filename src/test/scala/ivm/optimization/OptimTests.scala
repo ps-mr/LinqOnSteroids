@@ -118,12 +118,12 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testRemoveRedundantOption() {
-    val query0 = for (i <- baseCol; j <- i.ifInstanceOf[Int] if j % 2 === 1) yield j
-    val query = for (i <- baseCol.typeFilter[Int]; j <- asExp(Some(i)) if j % 2 === 1) yield j
+    val query0 = for (i <- baseCol; j <- i.ifInstanceOf[Int] if j % 2 ==# 1) yield j
+    val query = for (i <- baseCol.typeFilter[Int]; j <- asExp(Some(i)) if j % 2 ==# 1) yield j
     Optimization.toTypeFilter(query0) should be (query)
     val opt = Optimization.removeRedundantOption(query)
     opt.interpret() should be (query.interpret())
-    opt should be (for (i <- baseCol.typeFilter[Int]; if i % 2 === 1) yield i)
+    opt should be (for (i <- baseCol.typeFilter[Int]; if i % 2 ==# 1) yield i)
   }
 
   @Test

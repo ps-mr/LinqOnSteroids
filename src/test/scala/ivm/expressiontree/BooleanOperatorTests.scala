@@ -31,7 +31,7 @@ class BooleanOperatorTests extends JUnitSuite with ShouldMatchersForJUnit {
     val query = for {
       v <- coll
       //This line executes correctly only if And is short-circuiting, as it should be.
-      if v.isDefined && v.get === 1
+      if v.isDefined && v.get ==# 1
     } yield v.get
     query.expResult() should be (Traversable(1))
   }

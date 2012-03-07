@@ -23,12 +23,12 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val ress1 = s1.interpret()
     Optimization.addSubquery(s1)
 
-    val q = l.map(p => (p._1 + 1, p._2 + 2)).withFilter(_._1 === 5)
+    val q = l.map(p => (p._1 + 1, p._2 + 2)).withFilter(_._1 ==# 5)
     val res = Optimization.shareSubqueries(q)
     res should not equal (q)
     res should equal (Const(ress1).withFilter( _._1 is 5))
 
-    val q2 = l.map(p => (p._1 + 2, p._2 + 1)).withFilter(_._1 === 5)
+    val q2 = l.map(p => (p._1 + 2, p._2 + 1)).withFilter(_._1 ==# 5)
     val res2 = Optimization.shareSubqueries(q2)
     res2 should equal (q2)
 
@@ -51,7 +51,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     for {
       i <- Vector.range(1, 10).asSmartCollection
       j <- onExp(i)('Vector$range_1, Vector.range(1, _))
-      if (j === 5)
+      if (j ==# 5)
     } yield i + j
 
   val l2IdxBase = for {
@@ -69,7 +69,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       i <- Vector.range(1, 10).asSmartCollection
       j <- onExp(i)('Vector$range_1, Vector.range(1, _))
       k <- onExp(j)('Vector$range_1, Vector.range(1, _))
-      if (k === 5)
+      if (k ==# 5)
     } yield i + j + k
 
   //The if will get lifted by optimizations - that's why l3IdxBase_j needs to be used during indexing.
@@ -78,7 +78,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       i <- Vector.range(1, 10).asSmartCollection
       j <- onExp(i)('Vector$range_1, Vector.range(1, _))
       k <- onExp(j)('Vector$range_1, Vector.range(1, _))
-      if (j === 5)
+      if (j ==# 5)
     } yield i + j + k
 
   val l3IdxBase_k = for {
@@ -111,7 +111,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     for {
       i <- Vector.range(1, 10).asSmartCollection
       j <- onExp(i)('Vector$range_1, Vector.range(1, _))
-      if (j === 5)
+      if (j ==# 5)
       k <- onExp(j)('Vector$range_1, Vector.range(1, _))
     } yield i + j + k
 
@@ -120,7 +120,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       i <- Vector.range(1, 10).asSmartCollection
       j <- Let(i + 1)
       k <- onExp(j)('Vector$range_1, Vector.range(1, _))
-      if (k === 5)
+      if (k ==# 5)
     } yield i + j + k
 
   val l3IdxBase_k1_opt = for {
@@ -140,7 +140,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       i <- Vector.range(1, 10).asSmartCollection
       j <- Let(i + 1)
       k <- Let(i + j + 2)
-      if (k === 5)
+      if (k ==# 5)
     } yield i + j + k
 
 
@@ -171,7 +171,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       i <- Vector.range(1, 10).asSmartCollection
       j <- asExp(Seq(i + 1))
       k <- asExp(Seq(i + j + 2))
-      if (k === 5)
+      if (k ==# 5)
     } yield i + j + k
 
   @Test def testComplexIndexing3Level_k_seqlet() {
@@ -201,7 +201,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val indexres = index.interpret()
     Optimization.addSubquery(index)
 
-    val testquery = l.withFilter(p => p._1 + p._2 === 5)
+    val testquery = l.withFilter(p => p._1 + p._2 ==# 5)
     val optimized = Optimization.shareSubqueries(testquery)
     optimized should equal (asExp(indexres) get 5 flatMap identity)
 
@@ -213,7 +213,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val indexres = index.interpret()
     Optimization.addSubquery(index)
 
-    val testquery = l.withFilter(p => p._2 + p._1 === 5)
+    val testquery = l.withFilter(p => p._2 + p._1 ==# 5)
     val optimized = Optimization.shareSubqueries(testquery)
     optimized should equal (asExp(indexres) get 5 flatMap identity)
 
@@ -225,7 +225,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val indexres = index.interpret()
     Optimization.addSubquery(index)
 
-    val testquery = l.withFilter(p => p._1 + p._2 === 5)
+    val testquery = l.withFilter(p => p._1 + p._2 ==# 5)
     val optimized = Optimization.shareSubqueries(testquery)
     optimized should equal (asExp(indexres) get 5 flatMap identity)
 
@@ -237,7 +237,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val indexres = index.interpret()
     Optimization.addSubquery(index)
 
-    val testquery = l.withFilter(p => p._1 <= 7 && p._1 + p._2 === 5)
+    val testquery = l.withFilter(p => p._1 <= 7 && p._1 + p._2 ==# 5)
     val optimized = Optimization.shareSubqueries(testquery)
     optimized should equal (asExp(indexres) get 5 flatMap identity withFilter (p => p._1 <= 7))
 

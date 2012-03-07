@@ -211,8 +211,8 @@ object FoldOperatorsMain {
       val res = coll.forall(_ % 2 == 0)
       val res2 = coll.exists(_ % 2 == 0)
       println("%s %s" format (res, res2))
-      val query = collQ forall (_ % 2 === 0)
-      val query2 = collQ exists (_ % 2 === 0)
+      val query = collQ forall (_ % 2 ==# 0)
+      val query2 = collQ exists (_ % 2 ==# 0)
       println(query)
       println(query2)
       assert(query.interpret() == res)
@@ -269,8 +269,8 @@ object FoldOperatorsMain {
       //val res = incBuf.forall(_ % 2 == 0)
       //println(res)
       val incBufQ = incBuf.asQueryable
-      val query = incBufQ forall (_ % 2 === 0)
-      val query2 = incBufQ exists (_ % 2 === 0)
+      val query = incBufQ forall (_ % 2 ==# 0)
+      val query2 = incBufQ exists (_ % 2 ==# 0)
       incBuf.addSubscriber(query)
       val query2Content = query2.t1.asInstanceOf[Forall[Int]]
       incBuf.addSubscriber(query2Content)

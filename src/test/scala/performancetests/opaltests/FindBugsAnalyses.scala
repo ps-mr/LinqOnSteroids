@@ -224,8 +224,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
           instruction ⇒
             val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
             val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
-            asGETFIELD.isDefined && asGETFIELD.get.declaringClass === declaringClass ||
-              asGETSTATIC.isDefined && asGETSTATIC.get.declaringClass === declaringClass
+            asGETFIELD.isDefined && asGETFIELD.get.declaringClass ==# declaringClass ||
+              asGETSTATIC.isDefined && asGETSTATIC.get.declaringClass ==# declaringClass
         } map {
           instruction ⇒
             // Note that we might not factor map (_.name) by writing:
@@ -257,10 +257,10 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
           instruction ⇒
             ((for {
               getFIELD <- instruction.ifInstanceOf[GETFIELD]
-            } yield getFIELD.declaringClass === declaringClass) orElse
+            } yield getFIELD.declaringClass ==# declaringClass) orElse
               (for {
                 getSTATIC <- instruction.ifInstanceOf[GETSTATIC]
-              } yield getSTATIC.declaringClass === declaringClass)) getOrElse false
+              } yield getSTATIC.declaringClass ==# declaringClass)) getOrElse false
         } map {
           instruction ⇒
             // Note that we might not factor map (_.name) by writing:
@@ -293,9 +293,9 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
             val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
             val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
             if_ (asGETFIELD.isDefined) {
-              asGETFIELD.get.declaringClass === declaringClass
+              asGETFIELD.get.declaringClass ==# declaringClass
             } else_ if_ (asGETSTATIC.isDefined) {
-                asGETSTATIC.get.declaringClass === declaringClass
+                asGETSTATIC.get.declaringClass ==# declaringClass
             } else_ {
               false
             }
@@ -328,8 +328,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
           declaringClass ← Let(classFile.thisClass)
           privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
           usedPrivateFields ← Let(instructions.typeCase(
-            when[GETFIELD](asGETFIELD => asGETFIELD.declaringClass === declaringClass, _.name),
-            when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass === declaringClass, _.name)))
+            when[GETFIELD](asGETFIELD => asGETFIELD.declaringClass ==# declaringClass, _.name),
+            when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass ==# declaringClass, _.name)))
           unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
           if unusedPrivateFields.size > 0
         } yield (classFile, privateFields))
@@ -346,13 +346,13 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
           instruction ← method.body.get.instructions
           usedPrivateField ← (for {
             asGETFIELD <- instruction.ifInstanceOf[GETFIELD]
-            if asGETFIELD.declaringClass === declaringClass
+            if asGETFIELD.declaringClass ==# declaringClass
           } yield asGETFIELD.name) orElse
             (for {
               asGETSTATIC <- instruction.ifInstanceOf[GETSTATIC]
-              if asGETSTATIC.declaringClass === declaringClass
+              if asGETSTATIC.declaringClass ==# declaringClass
             } yield asGETSTATIC.name)
-            //(instruction.ifInstanceOf[GETFIELD].filter(_.declaringClass === declaringClass).map(_.name)) orElse (instruction.ifInstanceOf[GETSTATIC].filter(_.declaringClass === declaringClass).map(_.name))
+            //(instruction.ifInstanceOf[GETFIELD].filter(_.declaringClass ==# declaringClass).map(_.name)) orElse (instruction.ifInstanceOf[GETSTATIC].filter(_.declaringClass ==# declaringClass).map(_.name))
         } yield usedPrivateField)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
@@ -371,8 +371,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
         usedPrivateFields ← Let(//This is much slower, also with Los
-        (for (instruction ← instructions; asGETFIELD ← instruction.ifInstanceOf[GETFIELD] if asGETFIELD.declaringClass === declaringClass) yield asGETFIELD.name) union
-          (for (instruction ← instructions; asGETSTATIC ← instruction.ifInstanceOf[GETSTATIC] if asGETSTATIC.declaringClass === declaringClass) yield asGETSTATIC.name))
+        (for (instruction ← instructions; asGETFIELD ← instruction.ifInstanceOf[GETFIELD] if asGETFIELD.declaringClass ==# declaringClass) yield asGETFIELD.name) union
+          (for (instruction ← instructions; asGETSTATIC ← instruction.ifInstanceOf[GETSTATIC] if asGETSTATIC.declaringClass ==# declaringClass) yield asGETSTATIC.name))
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields))
@@ -389,8 +389,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
         usedPrivateFields ← Let(//This is much slower, but typeFilter is faster. We need a typeFilter node which accepts a function to run.
-          (for (instruction ← instructions.typeFilter[GETFIELD] if instruction.declaringClass === declaringClass) yield instruction.name) union
-            (for (instruction ← instructions.typeFilter[GETSTATIC] if instruction.declaringClass === declaringClass) yield instruction.name))
+          (for (instruction ← instructions.typeFilter[GETFIELD] if instruction.declaringClass ==# declaringClass) yield instruction.name) union
+            (for (instruction ← instructions.typeFilter[GETSTATIC] if instruction.declaringClass ==# declaringClass) yield instruction.name))
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields))
@@ -478,10 +478,10 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
           val desc = MethodDescriptor(Seq(), VoidType)
 
-          asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass === ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
-            asINVOKESTATIC.get.methodDescriptor === desc ||
-            asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass === ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
-              asINVOKEVIRTUAL.get.methodDescriptor === desc
+          asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass ==# ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
+            asINVOKESTATIC.get.methodDescriptor ==# desc ||
+            asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass ==# ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
+              asINVOKEVIRTUAL.get.methodDescriptor ==# desc
         }
       } yield (classFile, method, instruction))
     }
@@ -497,10 +497,10 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
           val desc = MethodDescriptor(Seq(), VoidType)
 
-          (asINVOKESTATIC.map(i => i.declaringClass === ObjectType("java/lang/System") && i.name == "gc" &&
-            i.methodDescriptor === desc) orElse
-            asINVOKEVIRTUAL.map(i => i.declaringClass === ObjectType("java/lang/Runtime") && i.name == "gc" &&
-              i.methodDescriptor === desc)) getOrElse false
+          (asINVOKESTATIC.map(i => i.declaringClass ==# ObjectType("java/lang/System") && i.name == "gc" &&
+            i.methodDescriptor ==# desc) orElse
+            asINVOKEVIRTUAL.map(i => i.declaringClass ==# ObjectType("java/lang/Runtime") && i.name == "gc" &&
+              i.methodDescriptor ==# desc)) getOrElse false
         }
       } yield (classFile, method, instruction))
     }
@@ -533,7 +533,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Los Setup", silent = true) {
       Query(for (
         classFile ← classFiles.asSmartCollection
-        if classFile.methods.exists(method ⇒ method.name === "finalize" && method.isPublic && method.descriptor.returnType === VoidType && method.descriptor.parameterTypes.size === 0)
+        if classFile.methods.exists(method ⇒ method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0)
       ) yield classFile)
     }
     benchQuery("FI_PUBLIC_SHOULD_BE_PROTECTED Los", classesWithPublicFinalizeMethodsLos, classesWithPublicFinalizeMethods)
@@ -577,7 +577,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       Query(for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods
-        if method.name === "finalize" && method.isPublic && method.descriptor.returnType === VoidType && method.descriptor.parameterTypes.size === 0
+        if method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0
       } yield classFile)
     }
     benchQuery("FI_PUBLIC_SHOULD_BE_PROTECTED-2 Los", classesWithPublicFinalizeMethodsLos, classesWithPublicFinalizeMethods)
@@ -667,7 +667,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
         method ← classFile.methods if method.body.isDefined
-        exceptionHandler ← method.body.get.exceptionHandlers if exceptionHandler.catchType === IllegalMonitorStateExceptionType
+        exceptionHandler ← method.body.get.exceptionHandlers if exceptionHandler.catchType ==# IllegalMonitorStateExceptionType
       } yield (classFile, method))
     }
     benchQuery("IMSE_DONT_CATCH_IMSE Los", catchesIllegalMonitorStateExceptionLos, catchesIllegalMonitorStateException)
@@ -700,9 +700,9 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         classFile ← getClassFile.get(comparable)
         //XXX port the rest
         method /*@ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _)*/ ← classFile.methods //if parameterType != ObjectType("java/lang/Object")
-        if method.name === "compareTo" && method.descriptor.returnType === IntegerType
+        if method.name ==# "compareTo" && method.descriptor.returnType ==# IntegerType
         parameterTypes <- Let(method.descriptor.parameterTypes)
-        if parameterTypes.length === 1 && parameterTypes(0) !=# ObjectType("java/lang/Object")
+        if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType("java/lang/Object")
 
       } yield (classFile, method))
     }
@@ -726,9 +726,9 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isAbstract
         method /*@ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _)*/ ← classFile.methods //if parameterType != ObjectType("java/lang/Object")
-        if method.name === "equals" && method.descriptor.returnType === BooleanType
+        if method.name ==# "equals" && method.descriptor.returnType ==# BooleanType
         parameterTypes <- Let(method.descriptor.parameterTypes)
-        if parameterTypes.length === 1 && parameterTypes(0) !=# ObjectType("java/lang/Object")
+        if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType("java/lang/Object")
       } yield (classFile, method))
     }
     benchQuery("EQ_ABSTRACT_SELF Los", abstractClassesThatDefinesCovariantEqualsLos, abstractClassesThatDefinesCovariantEquals)

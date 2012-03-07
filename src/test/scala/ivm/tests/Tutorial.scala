@@ -113,7 +113,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
       lib <- testLibs.asSmartCollection //change 1
       libDev <- lib.developers
       dev <- testHackers.asSmartCollection //change 2 (really needed here, unlike I thought!)
-      if (libDev === dev.name) //if (libDev == dev.name) //Change 3: use '===' instead of ==
+      if (libDev ==# dev.name) //if (libDev == dev.name) //Change 3: use '==#' instead of ==
     } yield (lib, dev)
     checkResult(LibrariesAndHackersSmart)
     showExp(LibrariesAndHackersSmart, "for comprehension over libraries and developers")
@@ -122,7 +122,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     val LibrariesAndHackersSmartNested = for {
       libDevPair <- for (lib <- testLibs.asSmartCollection; libDev <- lib.developers) yield (lib, libDev)
       dev <- testHackers.asSmartCollection //change 2 (really needed here, unlike I thought!)
-      if (libDevPair._2 === dev.name) //if (libDev == dev.name) //Change 3: use '===' instead of ==
+      if (libDevPair._2 ==# dev.name) //if (libDev == dev.name) //Change 3: use '==#' instead of ==
     } yield (libDevPair._1, dev)
     checkResult(LibrariesAndHackersSmartNested)
 
