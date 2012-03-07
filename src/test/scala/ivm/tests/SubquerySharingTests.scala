@@ -38,7 +38,8 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   def indexingTest[T, U, TupleT](query: Exp[Seq[T]], idx: Exp[Map[U, TupleT]])(expectedOptQueryProducer: Exp[Map[U, TupleT]] => Exp[Traversable[T]]) {
     val idxRes = asExp(idx.interpret())
     val expectedOptQuery = expectedOptQueryProducer(idxRes)
-    query.interpret() should be (expectedOptQuery.interpret())
+    query.interpret() should be (expectedOptQuery.interpret().force) //The call to force makes sure that
+    // the expected value in error messages shows the actual collection contents.
 
     Optimization.addSubquery(idx)
     val optQuery = Optimization.optimize(query)
