@@ -90,6 +90,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
       val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized, fixed type indexing)") {
         methodsLos6.interpret()
       }
+      println(m6Int)
     }
   }
 }
