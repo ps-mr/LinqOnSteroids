@@ -700,6 +700,10 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         classFile ← getClassFile.get(comparable)
         //XXX port the rest
         method /*@ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _)*/ ← classFile.methods //if parameterType != ObjectType("java/lang/Object")
+        if method.name === "compareTo" && method.descriptor.returnType === IntegerType
+        parameterTypes <- Let(method.descriptor.parameterTypes)
+        if parameterTypes.length === 1 && (parameterTypes(0) !== ObjectType("java/lang/Object"))
+
       } yield (classFile, method))
     }
     benchQuery("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF Los", covariantCompareToMethodsLos, covariantCompareToMethods)
@@ -722,6 +726,9 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isAbstract
         method /*@ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _)*/ ← classFile.methods //if parameterType != ObjectType("java/lang/Object")
+        if method.name === "equals" && method.descriptor.returnType === BooleanType
+        parameterTypes <- Let(method.descriptor.parameterTypes)
+        if parameterTypes.length === 1 && (parameterTypes(0) !== ObjectType("java/lang/Object"))
       } yield (classFile, method))
     }
     benchQuery("EQ_ABSTRACT_SELF Los", abstractClassesThatDefinesCovariantEqualsLos, abstractClassesThatDefinesCovariantEquals)
