@@ -555,20 +555,19 @@ object Optimization {
     new SubquerySharing(subqueries).shareSubqueries(query)
 
   private def optimizeBase[T](exp: Exp[T]): Exp[T] =
-  //XXX: add this when needed
-  //removeTrivialFilters(
-    shareSubqueries(mapToFlatMap(
-      removeTrivialFilters(
-        removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
-          reassociateOps(
-            mergeMaps(
-              mergeFilters(
-                hoistFilter( //Do this before merging filters!
-                  cartProdToAntiJoin(
-                    optimizeCartProdToJoin(
-                      removeRedundantOption(toTypeFilter(
-                        sizeToEmpty(
-                          removeIdentityMaps(exp))))))))))))))
+    removeTrivialFilters(
+      shareSubqueries(mapToFlatMap(
+        removeTrivialFilters(
+          removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
+            reassociateOps(
+              mergeMaps(
+                mergeFilters(
+                  hoistFilter( //Do this before merging filters!
+                    cartProdToAntiJoin(
+                      optimizeCartProdToJoin(
+                        removeRedundantOption(toTypeFilter(
+                          sizeToEmpty(
+                            removeIdentityMaps(exp)))))))))))))))
 
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after

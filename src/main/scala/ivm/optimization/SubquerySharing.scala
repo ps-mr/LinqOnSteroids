@@ -18,10 +18,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   }
 
   private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[Traversable[T]] = {
-    //This special case is an optimization which should not be needed. We need other optimizations to remove the extra resulting stuff.
-    if (conds.isEmpty)
-      return e
-    val residualcond: Exp[Boolean] = conds.reduce(And)
+    val residualcond: Exp[Boolean] = conds.fold(Const(true))(And)
     //Note that withFilter will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
     // instance from the HOAS representation produced.
     e withFilter FuncExp.makefun[T, Boolean](residualcond, v)
