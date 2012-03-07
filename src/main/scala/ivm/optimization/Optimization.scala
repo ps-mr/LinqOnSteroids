@@ -112,6 +112,13 @@ object OptimizationTransforms {
       case _ => e
     }
 
+  val removeTrivialFilters: Exp[_] => Exp[_] =
+    e => e match {
+      case Filter(coll, FuncExpBody(Const(true))) =>
+        coll
+      case _ => e
+    }
+
   val removeIdentityMaps: Exp[_] => Exp[_] =
     e => e match {
       case MapOp(col, FuncExpIdentity()) =>
@@ -528,6 +535,8 @@ object Optimization {
 
   def mergeFilters[T](exp: Exp[T]): Exp[T] = mergeViews(exp.transform(OptimizationTransforms.mergeFilters))
 
+  def removeTrivialFilters[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.removeTrivialFilters)
+
   def removeIdentityMaps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.removeIdentityMaps)
 
   def toTypeFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.toTypeFilter)
@@ -546,17 +555,20 @@ object Optimization {
     new SubquerySharing(subqueries).shareSubqueries(query)
 
   private def optimizeBase[T](exp: Exp[T]): Exp[T] =
+  //XXX: add this when needed
+  //removeTrivialFilters(
     shareSubqueries(mapToFlatMap(
-      removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
-        reassociateOps(
-          mergeMaps(
-            mergeFilters(
-              hoistFilter( //Do this before merging filters!
-                cartProdToAntiJoin(
-                  optimizeCartProdToJoin(
-                    removeRedundantOption(toTypeFilter(
-                      sizeToEmpty(
-                        removeIdentityMaps(exp)))))))))))))
+      removeTrivialFilters(
+        removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
+          reassociateOps(
+            mergeMaps(
+              mergeFilters(
+                hoistFilter( //Do this before merging filters!
+                  cartProdToAntiJoin(
+                    optimizeCartProdToJoin(
+                      removeRedundantOption(toTypeFilter(
+                        sizeToEmpty(
+                          removeIdentityMaps(exp))))))))))))))
 
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
