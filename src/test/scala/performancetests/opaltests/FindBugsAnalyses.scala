@@ -702,7 +702,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         method /*@ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _)*/ ← classFile.methods //if parameterType != ObjectType("java/lang/Object")
         if method.name === "compareTo" && method.descriptor.returnType === IntegerType
         parameterTypes <- Let(method.descriptor.parameterTypes)
-        if parameterTypes.length === 1 && (parameterTypes(0) !=# ObjectType("java/lang/Object"))
+        if parameterTypes.length === 1 && parameterTypes(0) !=# ObjectType("java/lang/Object")
 
       } yield (classFile, method))
     }
@@ -728,7 +728,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         method /*@ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _)*/ ← classFile.methods //if parameterType != ObjectType("java/lang/Object")
         if method.name === "equals" && method.descriptor.returnType === BooleanType
         parameterTypes <- Let(method.descriptor.parameterTypes)
-        if parameterTypes.length === 1 && (parameterTypes(0) !=# ObjectType("java/lang/Object"))
+        if parameterTypes.length === 1 && parameterTypes(0) !=# ObjectType("java/lang/Object")
       } yield (classFile, method))
     }
     benchQuery("EQ_ABSTRACT_SELF Los", abstractClassesThatDefinesCovariantEqualsLos, abstractClassesThatDefinesCovariantEquals)
