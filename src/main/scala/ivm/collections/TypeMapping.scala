@@ -32,8 +32,9 @@ class TypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Cl
       //(cbf() ++= origColl.asInstanceOf[C[D[T]]]) result()
       case NoSub =>
         val clazz = ClassUtil.boxedErasure(tmf)
-        val baseResult = map(clazz).asInstanceOf[C[D[Base /*T*/]]]
+        val baseResult = map(clazz)
         val coll = cbf(baseResult)
+        coll ++= baseResult.asInstanceOf[C[D[T]]]
         for (t <- transitiveQuery(subtypeRel, clazz))
           coll ++= map(t).asInstanceOf[C[D[T]]]
         coll.result()
