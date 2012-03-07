@@ -115,7 +115,7 @@ object OptimizationTransforms {
   val removeTrivialFilters: Exp[_] => Exp[_] =
     e => e match {
       case Filter(coll, FuncExpBody(Const(true))) =>
-        coll
+        stripViewUntyped(coll)
       case _ => e
     }
 

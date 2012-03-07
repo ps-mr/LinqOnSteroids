@@ -196,13 +196,15 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     indexingTest(l3_k_seqlet, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
   }
 
+  def shareSubqueriesOpt[T](x: Exp[T]) = Optimization.removeTrivialFilters(Optimization.shareSubqueries(x))
+
   @Test def testIndexing {
     val index = l.groupBy(p => p._1 + p._2)
     val indexres = index.interpret()
     Optimization.addSubquery(index)
 
     val testquery = l.withFilter(p => p._1 + p._2 ==# 5)
-    val optimized = Optimization.shareSubqueries(testquery)
+    val optimized = shareSubqueriesOpt(testquery)
     optimized should equal (asExp(indexres) get 5 flatMap identity)
 
     Optimization.removeSubquery(index)
@@ -214,7 +216,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     Optimization.addSubquery(index)
 
     val testquery = l.withFilter(p => p._2 + p._1 ==# 5)
-    val optimized = Optimization.shareSubqueries(testquery)
+    val optimized = shareSubqueriesOpt(testquery)
     optimized should equal (asExp(indexres) get 5 flatMap identity)
 
     Optimization.removeSubquery(index)
@@ -226,7 +228,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     Optimization.addSubquery(index)
 
     val testquery = l.withFilter(p => p._1 + p._2 ==# 5)
-    val optimized = Optimization.shareSubqueries(testquery)
+    val optimized = shareSubqueriesOpt(testquery)
     optimized should equal (asExp(indexres) get 5 flatMap identity)
 
     Optimization.removeSubquery(index)
@@ -238,7 +240,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     Optimization.addSubquery(index)
 
     val testquery = l.withFilter(p => p._1 <= 7 && p._1 + p._2 ==# 5)
-    val optimized = Optimization.shareSubqueries(testquery)
+    val optimized = shareSubqueriesOpt(testquery)
     optimized should equal (asExp(indexres) get 5 flatMap identity withFilter (p => p._1 <= 7))
 
     Optimization.removeSubquery(index)
