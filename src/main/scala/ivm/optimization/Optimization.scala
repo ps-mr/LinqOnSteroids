@@ -140,28 +140,6 @@ object OptimizationTransforms {
       case _ => e
     }
 
-  /*
-  //Simplified copy-n-paste of buildProd. We don't use the distributive rule currently.
-  def buildAnd(l: Exp[Boolean], r: Exp[Boolean]): Exp[Boolean] = {
-    r match {
-      case Const(rV) =>
-        r && l
-      /*l match {
-        case Const(a) => //R1
-          a && rV
-        case Plus(Const(a), b) => //R9 - must be before R2!
-          buildAnd(a && rV, b)
-        case _ => //R2 - must be after R1!
-          buildAnd(r, l)
-      }
-      case Times(rl, rr) => //R7
-        buildAnd(buildAnd(l, rl), rr)*/
-      case _ =>
-        l && r
-    }
-  }
-  */
-
   val removeIdentityMaps: Exp[_] => Exp[_] =
     e => e match {
       case MapOp(col, FuncExpIdentity()) =>
