@@ -1,6 +1,7 @@
 package ivm.expressiontree
 
 import collection.mutable.{Set => MSet, LinkedHashSet}
+import ivm.optimization.Optimization
 
 // Warning: it is important that these operators are short-circuiting. Therefore, they cannot be expressed through
 // CommOp like Plus and Times, and they are not commutative.
@@ -50,5 +51,5 @@ object BooleanOperators {
        case _ => LinkedHashSet(in)
      }
   }
-  def cnf(in: Exp[Boolean]): Set[Exp[Boolean]] = cnfInternal(in).toSet
+  def cnf(in: Exp[Boolean]): Set[Exp[Boolean]] = cnfInternal(Optimization.simplifyConditions(in)).toSet
 }
