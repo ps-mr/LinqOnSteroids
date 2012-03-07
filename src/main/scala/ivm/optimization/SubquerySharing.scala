@@ -238,9 +238,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   val groupByShareNested: Exp[_] => Exp[_] = {
     e => {
       (for {
-        (Some((parentNode: Exp[Traversable[t]], parentF)), filterExp, conds, foundEqs, allFVSeq) <- lookupEq(None, e)
-        optim <- filterExp match {
-          case FoundFilter(c, f: FuncExp[t, _ /*Boolean*/], isOption) =>
+        (Some((parentNode: Exp[Traversable[t]], parentF)), FoundFilter(c, f: FuncExp[_/*t*/, _ /*Boolean*/], isOption), conds, foundEqs, allFVSeq) <- lookupEq(None, e)
+        optim <- {
             //Here we produce an open term, because vars in allFVSeq are not bound...
             def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
             val indexQuery = c fold (
@@ -257,7 +256,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
             val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Any]]]
             val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, parentF, isOption)(_))
             optimized
-          //case _ => e //Execution must not get here - hence, throw an exception
         }
       } yield optim).headOption.getOrElse(e)
     }
