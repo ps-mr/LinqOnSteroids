@@ -547,26 +547,26 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       methodsLos7.interpret().toSet
     }
     methodsNative should equal (m7Int)
+  }
 
+  test("testOpalWithIndexing") {
     //Code coming from TypeTests.
-    {
-      type QueryAnd[+T] = ((ClassFile, Method), T);
-      val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
-        cf <- queryData.toSeq
-        m <- cf.methods
-        body <- m.body
-        i <- body.instructions
-      } yield (asExp((cf, m)), i)
+    type QueryAnd[+T] = ((ClassFile, Method), T);
+    val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
+      cf <- queryData.toSeq
+      m <- cf.methods
+      body <- m.body
+      i <- body.instructions
+    } yield (asExp((cf, m)), i)
 
-      val typeIdx = typeIdxBase.groupByTupleType2
-      val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation, with fixed type indexing"){ asExp(typeIdx.interpret()) }
+    val typeIdx = typeIdxBase.groupByTupleType2
+    val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation, with fixed type indexing"){ asExp(typeIdx.interpret()) }
 
-      val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name).toSet
+    val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name).toSet
 
-      val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized, fixed type indexing)") {
-        methodsLos6.interpret()
-      }
-      methodsNative should equal (m6Int)
+    val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized, fixed type indexing)") {
+      methodsLos6.interpret()
     }
+    methodsNative should equal (m6Int)
   }
 }
