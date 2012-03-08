@@ -38,6 +38,7 @@ object BATLifting {
 
   implicit def expToObjectTypeOps(t: Exp[ObjectType]) = new ObjectTypeOps(t)
   class ObjectTypeOps(t: Exp[ObjectType]) {
+    def className = onExp(t)('className, _.className)
     def simpleName = onExp(t)('simpleName, _.simpleName)
     def packageName = onExp(t)('packageName, _.packageName)
   }
