@@ -210,8 +210,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     val methodsNative: Set[String] = benchMark("native-new") {
       for (cf <- testdata;
            m <- cf.methods;
-           body = m.body if body.isDefined;
-           INSTANCEOF(_) <- body.get.instructions) yield m.name
+           body <- m.body.toList;
+           INSTANCEOF(_) <- body.instructions) yield m.name
     }
     //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
     //Not very pretty, but better than nothing
@@ -227,9 +227,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         for {
           cf <- queryData
           m <- cf.methods
-          mBody <- Let(m.body)
-          if mBody.isDefined
-          INSTANCEOF(_) <- mBody.get.instructions
+          mBody <- m.body
+          INSTANCEOF(_) <- mBody.instructions
         } yield m.name
 
       println(methodsLos1) //Fails because the terms are inadequate
@@ -252,9 +251,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     methodsNative should equal (m2Int)
 
     val methodsLos2_1 = queryData.flatMap(cf => cf.methods
-      .flatMap(m => Let(m.body)
-      .withFilter(body => body.isDefined)
-      .flatMap(body => body.get.instructions
+      .flatMap(m => m.body
+      .flatMap(body => body.instructions
       .collect(i => i.ifInstanceOf[INSTANCEOF])
       .map(_ => m.name))))
 
@@ -267,9 +265,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       for {
         cf <- queryData
         m <- cf.methods
-        mBody <- Let(m.body)
-        if mBody.isDefined
-        io <- mBody.get.instructions.typeFilter[INSTANCEOF]
+        mBody <- m.body
+        io <- mBody.instructions.typeFilter[INSTANCEOF]
       } yield m.name
     val m5Int: Traversable[String] = benchMark("los5-new") {
       methodsLos5.interpret()
@@ -280,9 +277,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       (for {
         cf <- queryData.toSeq
         m <- cf.methods
-        mBody <- Let(m.body)
-        if mBody.isDefined
-        io <- mBody.get.instructions.typeFilter[INSTANCEOF]
+        mBody <- m.body
+        io <- mBody.instructions.typeFilter[INSTANCEOF]
       } yield m.name).toSet
     val m5SeqInt: Traversable[String] = benchMark("los5-new-Seq") {
       methodsLos5Seq.interpret()
@@ -558,8 +554,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
         cf <- queryData.toSeq
         m <- cf.methods
-        body <- Let(m.body) if body.isDefined
-        i <- body.get.instructions
+        body <- m.body
+        i <- body.instructions
       } yield (asExp((cf, m)), i)
 
       val typeIdx = typeIdxBase.groupByTupleType2

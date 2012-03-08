@@ -151,8 +151,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         classFile ← classFiles if !classFile.isInterfaceDeclaration
         instructions = for {
           method ← classFile.methods
-          body = method.body if body.isDefined
-          instruction ← body.get.instructions
+          body ← method.body.toList
+          instruction ← body.instructions
         } yield instruction
         declaringClass = classFile.thisClass
         privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
@@ -176,8 +176,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         classFile ← classFiles if !classFile.isInterfaceDeclaration
         instructions = for {
           method ← classFile.methods
-          body = method.body if body.isDefined
-          instruction ← body.get.instructions
+          body ← method.body.toList
+          instruction ← body.instructions
         } yield instruction
         declaringClass = classFile.thisClass
         privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
@@ -198,8 +198,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
         unusedPrivateFields = privateFields -- (for {
           method ← classFile.methods
-          body = method.body if body.isDefined
-          instruction ← body.get.instructions
+          body ← method.body.toList
+          instruction ← body.instructions
           usedPrivateField ← instruction match {
             case GETFIELD(`declaringClass`, name, _) ⇒ Some(name)
             case GETSTATIC(`declaringClass`, name, _) ⇒ Some(name)
@@ -222,8 +222,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
           method ← classFile.methods
-          body <- Let(method.body) if body.isDefined
-          instruction ← body.get.instructions
+          body ← method.body
+          instruction ← body.instructions
         } yield instruction)
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
@@ -256,8 +256,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
           method ← classFile.methods
-          body <- Let(method.body) if body.isDefined
-          instruction ← body.get.instructions
+          body ← method.body
+          instruction ← body.instructions
         } yield instruction)
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
@@ -292,8 +292,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
           method ← classFile.methods
-          body <- Let(method.body) if body.isDefined
-          instruction ← body.get.instructions
+          body ← method.body
+          instruction ← body.instructions
         } yield instruction)
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
@@ -332,8 +332,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
           classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
           instructions ← Let(for {
             method ← classFile.methods
-            body <- Let(method.body) if body.isDefined
-            instruction ← body.get.instructions
+            body ← method.body
+            instruction ← body.instructions
           } yield instruction)
           declaringClass ← Let(classFile.thisClass)
           privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
@@ -353,8 +353,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         declaringClass ← Let(classFile.thisClass)
         usedPrivateFields ← Let(for {
           method ← classFile.methods
-          body <- Let(method.body) if body.isDefined
-          instruction ← body.get.instructions
+          body ← method.body
+          instruction ← body.instructions
           usedPrivateField ← (for {
             asGETFIELD <- instruction.ifInstanceOf[GETFIELD]
             if asGETFIELD.declaringClass ==# declaringClass
@@ -377,8 +377,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
           method ← classFile.methods
-          body <- Let(method.body) if body.isDefined
-          instruction ← body.get.instructions
+          body ← method.body
+          instruction ← body.instructions
         } yield instruction)
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
@@ -396,8 +396,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
           method ← classFile.methods
-          body <- Let(method.body) if body.isDefined
-          instruction ← body.get.instructions
+          body ← method.body
+          instruction ← body.instructions
         } yield instruction)
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
@@ -430,8 +430,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       for {
         classFile ← classFiles
         method ← classFile.methods
-        body = method.body if body.isDefined
-        instruction ← body.get.instructions
+        body ← method.body.toList
+        instruction ← body.instructions
         if (instruction match {
           case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
                INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒ true
@@ -446,8 +446,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       for {
         classFile ← classFiles
         method ← classFile.methods
-        body = method.body if body.isDefined
-        instruction ← body.get.instructions
+        body ← method.body.toList
+        instruction ← body.instructions
         if ({
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
@@ -466,8 +466,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       for {
         classFile ← classFiles
         method ← classFile.methods.view
-        body = method.body if body.isDefined
-        instruction ← body.get.instructions.view
+        body ← method.body.toList
+        instruction ← body.instructions.view
         if ({
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
@@ -488,8 +488,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       Query(for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods
-        body <- Let(method.body) if body.isDefined
-        instruction ← body.get.instructions
+        body ← method.body
+        instruction ← body.instructions
         if {
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
@@ -508,8 +508,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       Query(for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods
-        body <- Let(method.body) if body.isDefined
-        instruction ← body.get.instructions
+        body ← method.body
+        instruction ← body.instructions
         if {
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
@@ -648,19 +648,18 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       for {
         classFile ← classFiles if classFile.isClassDeclaration
         method ← classFile.methods
-        body = method.body if body.isDefined
-        exceptionHandler ← body.get.exceptionHandlers if exceptionHandler.catchType == IllegalMonitorStateExceptionType
+        body ← method.body.toList
+        exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType == IllegalMonitorStateExceptionType
       } yield (classFile, method)
     }
     println("\tViolations: " + catchesIllegalMonitorStateException.size)
 
-    //TODO: Recheck if this corresponds to Los execution - in fact it does not.
     val catchesIllegalMonitorStateExceptionLikeLos = benchMark("IMSE_DONT_CATCH_IMSE Native Like Los") {
       (for {
         classFile ← classFiles.view if classFile.isClassDeclaration
-        method ← classFile.methods.view
-        body = method.body if body.isDefined
-        exceptionHandler ← body.get.exceptionHandlers.view if exceptionHandler.catchType == IllegalMonitorStateExceptionType
+        method ← classFile.methods
+        body ← method.body.toList
+        exceptionHandler ← body.exceptionHandlers.view if exceptionHandler.catchType == IllegalMonitorStateExceptionType
       } yield (classFile, method)).force
     }
 
@@ -671,8 +670,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
         method ← classFile.methods
-        body <- Let(method.body) if body.isDefined
-        exceptionHandler ← body.get.exceptionHandlers if exceptionHandler.catchType ==# IllegalMonitorStateExceptionType
+        body ← method.body
+        exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType ==# IllegalMonitorStateExceptionType
       } yield (classFile, method))
     }
     benchQuery("IMSE_DONT_CATCH_IMSE Los", catchesIllegalMonitorStateExceptionLos, catchesIllegalMonitorStateException)
@@ -754,7 +753,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
   }
 
   var methodNameIdx: Exp[Map[String, Seq[(ClassFile, Method)]]] = _
-  var excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, Option[Code], ExceptionHandler)]]] = _
+  var excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, Code, ExceptionHandler)]]] = _
 
   def setupIndexes() {
     import BATLifting._
@@ -767,8 +766,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     val idxBase = for {
       classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
       method ← classFile.methods
-      body <- Let(method.body) if body.isDefined
-      exceptionHandler ← body.get.exceptionHandlers
+      body ← method.body
+      exceptionHandler ← body.exceptionHandlers
     } yield (classFile, method, body, exceptionHandler)
     excHandlerTypeIdx = idxBase groupBy (_._4.catchType)
 
