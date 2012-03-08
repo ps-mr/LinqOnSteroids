@@ -65,31 +65,4 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     f[FileChannel, String] should have (typ[NoSub.type])
     1 should have (typ[Int])
   }
-
-  test("TypeIndexSpeed") {
-    import de.tud.cs.st.bat.resolved._
-    import performancetests.opaltests.{BATLifting, OpalTestData}
-    import OpalTestData._
-    import Lifting._
-    import BATLifting._
-
-    type QueryAnd[+T] = ((ClassFile, Method), T);
-    {
-      val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
-        cf <- queryData.toSeq
-        m <- cf.methods if m.body.isDefined
-        i <- m.body.get.instructions
-      } yield (asExp((cf, m)), i)
-
-      val typeIdx = typeIdxBase.groupByTupleType2
-      val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation, with fixed type indexing"){ asExp(typeIdx.interpret()) }
-
-      val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name).toSet
-
-      val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized, fixed type indexing)") {
-        methodsLos6.interpret()
-      }
-      println(m6Int)
-    }
-  }
 }
