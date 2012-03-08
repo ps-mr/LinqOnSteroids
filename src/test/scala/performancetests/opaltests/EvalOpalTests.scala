@@ -2,7 +2,7 @@ package performancetests
 package opaltests
 
 import ivm._
-import expressiontree.{Lifting, Exp}
+import expressiontree.{Lifting, Exp, BATLifting}
 import Lifting._
 
 import de.tud.cs.st.bat.resolved

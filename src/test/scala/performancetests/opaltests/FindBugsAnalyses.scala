@@ -42,7 +42,7 @@ import analyses._
 
 import reader.Java6Framework
 
-import expressiontree.{Exp, Lifting, Util}
+import expressiontree.{Exp, Lifting, BATLifting, Util}
 import Lifting._
 import Util.ExtraImplicits._
 import org.scalatest.{FunSuite, BeforeAndAfterAll}
