@@ -1,0 +1,72 @@
+package ivm
+package expressiontree
+
+import ivm._
+
+import de.tud.cs.st.bat.resolved
+import resolved.reader.Java6Framework
+import resolved._
+import Lifting._
+
+/* (Very incomplete) boilerplate code for making use of BAT types convenient in queries.
+ * This code should be generated */
+object BATLifting {
+  implicit def expToClassFileOps(t: Exp[ClassFile]) = new ClassFileOps(t)
+  class ClassFileOps(t: Exp[ClassFile]) {
+    def constructors = onExp(t)('constructors, _.constructors)
+    def methods = onExp(t)('methods, _.methods)
+    def fields = onExp(t)('fields, _.fields)
+    def thisClass = onExp(t)('thisClass, _.thisClass)
+    def superClass = onExp(t)('superClass, _.superClass)
+    def interfaces = onExp(t)('interfaces, _.interfaces)
+    def isAbstract = onExp(t)('isAbstract, _.isAbstract)
+    def isFinal = onExp(t)('isFinal, _.isFinal)
+    def isClassDeclaration = onExp(t)('isClassDeclaration, _.isClassDeclaration)
+    def isInterfaceDeclaration = onExp(t)('isInterfaceDeclaration, _.isInterfaceDeclaration)
+  }
+
+  implicit def expToObjectTypeOps(t: Exp[ObjectType]) = new ObjectTypeOps(t)
+  class ObjectTypeOps(t: Exp[ObjectType]) {
+    def simpleName = onExp(t)('simpleName, _.simpleName)
+    def packageName = onExp(t)('packageName, _.packageName)
+  }
+
+  implicit def expToClassMemberOps(t: Exp[ClassMember]) = new ClassMemberOps(t)
+  class ClassMemberOps(t: Exp[ClassMember]) {
+    def isPublic = onExp(t)('isPublic, _.isPublic)
+    def isProtected = onExp(t)('isProtected, _.isProtected)
+    def isPrivate = onExp(t)('isPrivate, _.isPrivate)
+    def isStatic = onExp(t)('isStatic, _.isStatic)
+  }
+
+  implicit def expToFieldOps(t: Exp[Field]) = new FieldOps(t)
+  class FieldOps(t: Exp[Field]) {
+    def attributes = onExp(t)('attributes, _.attributes)
+    def name = onExp(t)('name, _.name)
+  }
+
+  implicit def expToMethodOps(t: Exp[Method]) = new MethodOps(t)
+  class MethodOps(t: Exp[Method]) {
+    def attributes = onExp(t)('attributes, _.attributes)
+    def descriptor = onExp(t)('descriptor, _.descriptor)
+    def name = onExp(t)('name, _.name)
+    def body = onExp(t)('body, _.body)
+  }
+
+  implicit def expToMethodDescriptorOps(t: Exp[MethodDescriptor]) = new MethodDescriptorOps(t)
+  class MethodDescriptorOps(t: Exp[MethodDescriptor]) {
+    def returnType = onExp(t)('returnType, _.returnType)
+    def parameterTypes = onExp(t)('parameterTypes, _.parameterTypes)
+  }
+
+  implicit def expToCodeOps(t: Exp[Code]) = new CodeOps(t)
+  class CodeOps(t: Exp[Code]) {
+    def instructions: Exp[Seq[Instruction]] = onExp(t)('instructions, _.instructions)
+    def exceptionHandlers = onExp(t)('exceptionHandlers, _.exceptionHandlers)
+  }
+
+  implicit def expToExceptionTableEntryOps(t: Exp[ExceptionHandler]) = new ExceptionTableEntryOps(t)
+  class ExceptionTableEntryOps(t: Exp[ExceptionHandler]) {
+    def catchType = onExp(t)('catchType, _.catchType)
+  }
+}
