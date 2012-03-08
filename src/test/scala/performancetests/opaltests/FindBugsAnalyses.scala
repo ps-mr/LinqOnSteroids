@@ -741,7 +741,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     analyzeMethodsThatCallRunFinalizersOnExit()
   }
   def analyzeMethodsThatCallRunFinalizersOnExit() {
-    val methodsThatCallRunFinalizersOnExit: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_RUN_FINALIZERS_ON_EXIT") {
+    benchQueryComplete("DM_RUN_FINALIZERS_ON_EXIT") {
       for {
         classFile ← classFiles
         method ← classFile.methods
@@ -749,17 +749,13 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         instruction @ INVOKESTATIC(ObjectType(recvClassName), "runFinalizersOnExit", MethodDescriptor(Seq(BooleanType), VoidType)) ← body.instructions
         if recvClassName == "java/lang/System" || recvClassName == "java/lang/Runtime"
       } yield (classFile, method, instruction)
-    }
-    println("\tViolations: "+methodsThatCallRunFinalizersOnExit.size)
+    } {
+      import BATLifting._
+      import InstructionLifting._
 
-    import BATLifting._
-    import InstructionLifting._
-
-    // Type annotation is needed to get the same type as the other query. If we get a more specific type, we can't call benchQuery because Forceable is not
-    // contravariant in Coll (and can't be made contravariant easily).
-    val methodsThatCallRunFinalizersOnExitLos: Exp[Traversable[(ClassFile, Method, Instruction)]] = benchMark("DM_RUN_FINALIZERS_ON_EXIT Los Setup", silent = true) {
-      Query(
-        for {
+      // Type annotation is needed to get the same type as the other query. If we get a more specific type, we can't call benchQuery because Forceable is not
+      // contravariant in Coll (and can't be made contravariant easily).
+      for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods
         body ← method.body
@@ -770,9 +766,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         recv <- instruction.declaringClass.ifInstanceOf[ObjectType]
         if (recv.className ==# "java/lang/System" || recv.className ==# "java/lang/Runtime") &&
           desc.returnType ==# VoidType && desc.parameterTypes ==# Seq(BooleanType)
-      } yield (classFile, method, instruction))
+      } yield (classFile, method, instruction)
     }
-    benchQuery("DM_RUN_FINALIZERS_ON_EXIT Los", methodsThatCallRunFinalizersOnExitLos, methodsThatCallRunFinalizersOnExit)
   }
 
   def setupAnalysis(zipFiles: Seq[String]) {
