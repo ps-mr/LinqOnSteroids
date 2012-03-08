@@ -690,7 +690,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         allComparables ← classHierarchy.subtypes(comparableType).toList
         comparable ← allComparables
         classFile ← getClassFile.get(comparable).toList
-        method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
+        method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods if parameterType != ObjectType.Object
       } yield (classFile, method)
     }
     println("\tViolations: "+covariantCompareToMethods.size)
@@ -701,10 +701,10 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         allComparables ← classHierarchy.subtypes(comparableType).toList.asSmartCollection
         comparable ← allComparables
         classFile ← getClassFile.get(comparable)
-        method /*@ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _)*/ ← classFile.methods //if parameterType != ObjectType("java/lang/Object")
+        method /*@ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _)*/ ← classFile.methods //if parameterType != ObjectType.Object
         if method.name ==# "compareTo" && method.descriptor.returnType ==# IntegerType
         parameterTypes <- Let(method.descriptor.parameterTypes)
-        if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType("java/lang/Object")
+        if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType.Object
 
       } yield (classFile, method))
     }
@@ -718,7 +718,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     val abstractClassesThatDefinesCovariantEquals = benchMark("EQ_ABSTRACT_SELF") {
       for {
         classFile ← classFiles if classFile.isAbstract
-        method @ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _) ← classFile.methods if parameterType != ObjectType("java/lang/Object")
+        method @ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _) ← classFile.methods if parameterType != ObjectType.Object
       } yield (classFile, method)
     }
     println("\tViolations: "+abstractClassesThatDefinesCovariantEquals.size)
@@ -727,10 +727,10 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     val abstractClassesThatDefinesCovariantEqualsLos = benchMark("EQ_ABSTRACT_SELF Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isAbstract
-        method /*@ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _)*/ ← classFile.methods //if parameterType != ObjectType("java/lang/Object")
+        method /*@ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _)*/ ← classFile.methods //if parameterType != ObjectType.Object
         if method.name ==# "equals" && method.descriptor.returnType ==# BooleanType
         parameterTypes <- Let(method.descriptor.parameterTypes)
-        if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType("java/lang/Object")
+        if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType.Object
       } yield (classFile, method))
     }
     benchQuery("EQ_ABSTRACT_SELF Los", abstractClassesThatDefinesCovariantEqualsLos, abstractClassesThatDefinesCovariantEquals)
