@@ -767,11 +767,9 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         instruction ← body.instructions.typeFilter[INVOKESTATIC]
         if instruction.name ==# "runFinalizersOnExit"
         desc <- Let(instruction.methodDescriptor)
-        recv <- instruction.declaringClass.ifInstanceOf[ObjectType]//(recv => recv.className ==# "java/lang/System" || recv.className ==# "java/lang/Runtime")
-        if (recv.className ==# "java/lang/System" || recv.className ==# "java/lang/Runtime") && desc.returnType ==# VoidType && desc.parameterTypes ==# Seq(BooleanType)
-        //if Let(instruction.declaringClass).typeCase(when[ObjectType](recv => recv.className ==# "java/lang/System" || recv.className ==# "java/lang/Runtime")
-        //instruction /*@ INVOKESTATIC(ObjectType(recvClassName), "runFinalizersOnExit", MethodDescriptor(Seq(BooleanType), VoidType))*/ ← body.instructions
-        //if recvClassName == "java/lang/System" || recvClassName == "java/lang/Runtime"
+        recv <- instruction.declaringClass.ifInstanceOf[ObjectType]
+        if (recv.className ==# "java/lang/System" || recv.className ==# "java/lang/Runtime") &&
+          desc.returnType ==# VoidType && desc.parameterTypes ==# Seq(BooleanType)
       } yield (classFile, method, instruction))
     }
     benchQuery("DM_RUN_FINALIZERS_ON_EXIT Los", methodsThatCallRunFinalizersOnExitLos, methodsThatCallRunFinalizersOnExit)
@@ -831,6 +829,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     analyzeCatchIllegalMonitorStateException()
     analyzeCovariantCompareToMethods()
     analyzeAbstractClassesThatDefinesCovariantEquals()
+    analyzeMethodsThatCallRunFinalizersOnExit()
   }
 
   override def beforeAll() {
