@@ -209,8 +209,9 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
   def testOpalNewStyle() {
     val methodsNative: Set[String] = benchMark("native-new") {
       for (cf <- testdata;
-           m <- cf.methods if m.body.isDefined;
-           INSTANCEOF(_) <- m.body.get.instructions) yield m.name
+           m <- cf.methods;
+           body = m.body if body.isDefined;
+           INSTANCEOF(_) <- body.get.instructions) yield m.name
     }
     //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
     //Not very pretty, but better than nothing
@@ -249,6 +250,18 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       methodsLos2.interpret()
     }
     methodsNative should equal (m2Int)
+
+    val methodsLos2_1 = queryData.flatMap(cf => cf.methods
+      .flatMap(m => Let(m.body)
+      .withFilter(body => body.isDefined)
+      .flatMap(body => body.get.instructions
+      .collect(i => i.ifInstanceOf[INSTANCEOF])
+      .map(_ => m.name))))
+
+    benchMark("los2-new") {
+      methodsLos2.interpret()
+    } should equal (methodsNative)
+
 
     val methodsLos5 =
       for {
@@ -539,12 +552,14 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     }
     methodsNative should equal (m7Int)
 
+    //Code coming from TypeTests.
     {
       type QueryAnd[+T] = ((ClassFile, Method), T);
       val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
         cf <- queryData.toSeq
-        m <- cf.methods if m.body.isDefined
-        i <- m.body.get.instructions
+        m <- cf.methods
+        body <- Let(m.body) if body.isDefined
+        i <- body.get.instructions
       } yield (asExp((cf, m)), i)
 
       val typeIdx = typeIdxBase.groupByTupleType2
