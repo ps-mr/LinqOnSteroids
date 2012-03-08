@@ -682,7 +682,6 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         allComparables ← classHierarchy.subtypes(comparableType).toList.asSmartCollection
         comparable ← allComparables
         classFile ← getClassFile.get(comparable)
-        //XXX port the rest
         method /*@ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _)*/ ← classFile.methods //if parameterType != ObjectType("java/lang/Object")
         if method.name ==# "compareTo" && method.descriptor.returnType ==# IntegerType
         parameterTypes <- Let(method.descriptor.parameterTypes)

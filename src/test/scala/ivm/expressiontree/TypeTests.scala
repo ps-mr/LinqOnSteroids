@@ -75,7 +75,6 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
     type QueryAnd[+T] = ((ClassFile, Method), T);
     {
-      //Same code as above, except that the index returns all free variables, so that the optimizer might find it.
       val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
         cf <- queryData.toSeq
         m <- cf.methods if m.body.isDefined
