@@ -48,7 +48,6 @@ import Util.ExtraImplicits._
 import org.scalatest.{FunSuite, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 import optimization.Optimization
-import collection.TraversableView
 
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
@@ -725,7 +724,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     println("\tViolations: "+abstractClassesThatDefinesCovariantEquals.size)
 
     import BATLifting._
-    val abstractClassesThatDefinesCovariantEqualsLos = benchMark("EQ_ABSTRACT_SELF Los Setup") {
+    val abstractClassesThatDefinesCovariantEqualsLos = benchMark("EQ_ABSTRACT_SELF Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isAbstract
         method /*@ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _)*/ ← classFile.methods //if parameterType != ObjectType("java/lang/Object")
