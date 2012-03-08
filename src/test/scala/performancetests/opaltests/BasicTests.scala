@@ -259,7 +259,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .map(_ => m.name))))
 
     benchMark("los2-new") {
-      methodsLos2.interpret()
+      methodsLos2_1.interpret()
     } should equal (methodsNative)
 
 
