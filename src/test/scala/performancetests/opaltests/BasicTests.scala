@@ -549,7 +549,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     methodsNative should equal (m7Int)
   }
 
-  test("testOpalWithIndexing") {
+  test("testOpalWithIndexing-2") {
     //Code coming from TypeTests.
     type QueryAnd[+T] = ((ClassFile, Method), T);
     val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
