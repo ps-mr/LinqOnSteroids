@@ -769,6 +769,114 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
   }
 
+  test("CloneableNoClone") {
+    analyzeCloneableNoClone()
+  }
+  def analyzeCloneableNoClone() {
+    // FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)
+    benchQueryComplete("CN_IDIOM") {
+      // Weakness: We will not identify cloneable classes in projects, where we extend a predefined
+      // class (of the JDK) that indirectly inherits from Cloneable. ME
+      // Why? PG
+      for {
+        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList
+        cloneable ← allCloneable
+        classFile ← getClassFile.get(cloneable).toList
+        if !(classFile.methods exists {
+          case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true
+          case _ ⇒ false
+        })
+      } yield classFile.thisClass.className
+    } {
+      import BATLifting._
+
+      for {
+        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSmartCollection
+        cloneable ← allCloneable
+        classFile ← getClassFile.get(cloneable)
+        if !(classFile.methods exists (method => method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"))
+      } yield classFile.thisClass.className
+    }
+  }
+
+  test("CloneDoesNotCallSuperClone") {
+    analyzeCloneDoesNotCallSuperClone()
+  }
+  def analyzeCloneDoesNotCallSuperClone() {
+    benchQueryComplete("CN_IDIOM_NO_SUPER_CALL") {
+      // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
+      for {
+        classFile ← classFiles
+        if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
+        if classFile.superClass.isDefined
+        method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+        body ← method.body
+        //if !method.isAbstract //Redundant; we just check if there is a body.
+        if !(body.instructions exists {
+          case INVOKESPECIAL(superClass, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true //XXX: do you want to bind superClass or to compare it?
+          case _ ⇒ false
+        })
+      } yield (classFile, method)
+    } {
+      import BATLifting._
+      import InstructionLifting._
+      for {
+        classFile ← classFiles.asSmartCollection
+        if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
+        if classFile.superClass.isDefined
+        method /*@ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _)*/ ← classFile.methods
+        if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
+        body ← method.body
+        if !(body.instructions.typeFilter[INVOKESPECIAL] exists {
+          instr =>
+            instr.name ==# "clone" && instr.methodDescriptor ==# MethodDescriptor(Seq(), ObjectType.Object)
+        })
+      } yield (classFile, method)
+    }
+  }
+
+  test("CloneButNotCloneable") {
+    analyzeCloneButNotCloneable()
+  }
+  def analyzeCloneButNotCloneable() {
+    benchQueryComplete("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE") {
+        // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
+      for {
+        classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
+        method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+        if !classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
+      } yield (classFile.thisClass.className, method.name)
+        //println("\tViolations: " /*+cloneButNotCloneable.mkString(", ")*/ +cloneButNotCloneable.size)
+    } {
+      import BATLifting._
+      import InstructionLifting._
+      for {
+        classFile ← classFiles.asSmartCollection
+        if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
+        method /*@ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _)*/ ← classFile.methods
+        if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
+        //Shouldn't we have a lifter for this? Yep.
+        if !onExp(classFile.thisClass)('foo, classHierarchy.isSubtypeOf(_, ObjectType("java/lang/Cloneable")).getOrElse(false))
+      } yield (classFile.thisClass.className, method.name)
+    }
+  }
+
+  //Template for new tests:
+  /*
+  test("") {
+    analyze()
+  }
+  def analyze() {
+    benchQueryComplete("") {
+      
+    } {
+      import BATLifting._
+      import InstructionLifting._
+
+    }
+  }
+   */
+
   def setupAnalysis(zipFiles: Seq[String]) {
     classFiles = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
       for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
@@ -824,6 +932,9 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     analyzeCovariantCompareToMethods()
     analyzeAbstractClassesThatDefinesCovariantEquals()
     analyzeMethodsThatCallRunFinalizersOnExit()
+    analyzeCloneableNoClone()
+    analyzeCloneDoesNotCallSuperClone()
+    analyzeCloneButNotCloneable()
   }
 
   override def beforeAll() {

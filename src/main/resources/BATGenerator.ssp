@@ -25,6 +25,7 @@ object BATLifting {
     def isFinal = onExp(t)('isFinal, _.isFinal)
     def isClassDeclaration = onExp(t)('isClassDeclaration, _.isClassDeclaration)
     def isInterfaceDeclaration = onExp(t)('isInterfaceDeclaration, _.isInterfaceDeclaration)
+    def isAnnotationDeclaration = onExp(t)('isAnnotationDeclaration, _.isAnnotationDeclaration)
   }
 
   implicit def expToObjectTypeOps(t: Exp[ObjectType]) = new ObjectTypeOps(t)
