@@ -94,6 +94,9 @@ trait TraversableOps {
   //This is just an interface for documentation purposes.
   trait WithFilterable[T, Repr] {
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Repr]]
+    def exists(f: Exp[T] => Exp[Boolean]) = !IsEmpty(this withFilter f)//(withFilter f).isEmpty
+    //The awkward use of andThen below is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
+    def forall(f: Exp[T] => Exp[Boolean]) = IsEmpty(this withFilter (f andThen (!(_)))) //Forall(this.t, FuncExp(f))
   }
 
   trait WithFilterImpl[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends WithFilterable[T, Repr] {
@@ -148,9 +151,9 @@ trait TraversableOps {
                                     (implicit cbf: CanBuildFrom[Repr, TResult, That]): Exp[That]
     = Join(this.t, innerColl, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
 
-    def forall(f: Exp[T] => Exp[Boolean]) = Forall(this.t, FuncExp(f))
+    //def forall(f: Exp[T] => Exp[Boolean]) = Forall(this.t, FuncExp(f))
     //This awkward form is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
-    def exists(f: Exp[T] => Exp[Boolean]) = !(Forall(this.t, FuncExp(f andThen (!(_)))))
+    //def exists(f: Exp[T] => Exp[Boolean]) = !(Forall(this.t, FuncExp(f andThen (!(_)))))
 
     def typeFilter[S](implicit cS: ClassManifest[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
