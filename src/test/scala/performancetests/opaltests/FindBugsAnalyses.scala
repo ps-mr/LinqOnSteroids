@@ -764,7 +764,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         desc <- Let(instruction.methodDescriptor)
         recv <- instruction.declaringClass.ifInstanceOf[ObjectType]
         if (recv.className ==# "java/lang/System" || recv.className ==# "java/lang/Runtime") &&
-          desc.returnType ==# VoidType && desc.parameterTypes ==# Seq(BooleanType)
+          desc ==# MethodDescriptor(Seq(BooleanType), VoidType)
       } yield (classFile, method, instruction)
     }
   }
