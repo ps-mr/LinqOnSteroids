@@ -35,8 +35,9 @@ class JoinCreationTest extends JUnitSuite with ShouldMatchersForJUnit with Bench
     // Eq.compare with == instead of equals. Klaus
     // RE: In my tests, I seldom get a difference, it is not significant, and seems to disappear
     // by enabling the Scala optimizer.
+    val optimized = optimize(notoptimized)
     assert(
       benchMarkTime("Non optimized")(notoptimized.interpret().size)
-      > (2 * benchMarkTime("Optimized")(optimize(notoptimized).interpret().size)))
+      > (2 * benchMarkTime("Optimized")(optimized.interpret().size)))
   }
 }
