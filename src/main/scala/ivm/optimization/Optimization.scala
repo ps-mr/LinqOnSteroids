@@ -6,6 +6,7 @@ import Lifting._
 import collection.GenTraversableOnce
 import Numeric.Implicits._
 import annotation.tailrec
+import collection.mutable.Stack
 
 //Pattern-matchers for simplifying writing patterns
 object FuncExpBody {
@@ -601,4 +602,15 @@ object Optimization {
 
   def optimize[T](exp: Exp[T]): Exp[T] =
     flatMapToMap(letTransformer(optimizeBase(exp)))
+
+  private val enableDebugLogStack = Stack(true)
+
+  def pushEnableDebugLog(newVal: Boolean) {
+    enableDebugLogStack push newVal
+  }
+
+  def popEnableDebugLog() {
+    enableDebugLogStack.pop()
+  }
+  def isDebugLogEnabled = enableDebugLogStack.head
 }

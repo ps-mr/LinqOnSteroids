@@ -911,8 +911,10 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     } yield (classFile, method, body, exceptionHandler)
     excHandlerTypeIdx = idxBase groupBy (_._4.catchType)
 
+    Optimization.pushEnableDebugLog(false)
     benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(methodNameIdx))
     benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(excHandlerTypeIdx))
+    Optimization.popEnableDebugLog()
   }
 
   def tearDownIndexes() {

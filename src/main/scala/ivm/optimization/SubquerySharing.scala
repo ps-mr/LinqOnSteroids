@@ -13,6 +13,11 @@ import collection.mutable.ArrayBuffer
  * indexes.
  */
 class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
+  private def println(msg: Any) {
+    if (Optimization.isDebugLogEnabled)
+      Predef.println(msg)
+  }
+
   val directsubqueryShare: Exp[_] => Exp[_] = {
     e => subqueries.get(Optimization.normalize(e)) match {
       case Some(t) => asExp(t)
