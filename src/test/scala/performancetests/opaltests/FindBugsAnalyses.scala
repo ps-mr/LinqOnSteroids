@@ -80,14 +80,27 @@ object FindBugsAnalyses {
       }
     }
 
-    (new FindBugsAnalyses).analyze(args)
+    (new FindBugsAnalyses(args)).analyze()
   }
 }
 
-class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
-  var classHierarchy = new ClassHierarchy {}
-  var classFiles: Seq[ClassFile] = _
-  var getClassFile: Map[ObjectType, ClassFile] = _
+class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
+  def this() = this(Seq("lib/scalatest-1.6.1.jar"))
+
+  val classFiles: Seq[ClassFile] = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
+    for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
+  }
+  val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
+
+  // Now the classHierarchy is built functionally - hence, the result could be incrementally maintained (at least for the
+  // addition of classes).
+  val classHierarchy = (new ClassHierarchy {} /: classFiles)(_ + _)
+
+  println("Number of class files: " + classFiles.length)
+  println("Numer of methods: " + (for {
+      classFile ← classFiles
+      method ← classFile.methods
+    } yield (classFile, method)).size)
 
   private def analyzeConfusedInheritanceNative() = {
     val protectedFields = benchMark("CI_CONFUSED_INHERITANCE") {
@@ -877,6 +890,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
   }
    */
 
+  /*
   def setupAnalysis(zipFiles: Seq[String]) {
     classFiles = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
       for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
@@ -891,15 +905,48 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
     println("Number of class files: " + classFiles.length)
   }
+  */
 
-  var methodNameIdx: Exp[Map[String, Seq[(ClassFile, Method)]]] = _
-  var excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, Code, ExceptionHandler)]]] = _
+  import BATLifting._
 
-  def setupIndexes() {
+  val methodNameIdx: Exp[Map[String, Seq[(ClassFile, Method)]]] = (for {
+    classFile ← classFiles.asSmartCollection
+    method ← classFile.methods
+  } yield (classFile, method)).groupBy(_._2.name)
+
+  val excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, Code, ExceptionHandler)]]] = (for {
+    classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
+    method ← classFile.methods
+    body ← method.body
+    exceptionHandler ← body.exceptionHandlers
+  } yield (classFile, method, body, exceptionHandler)) groupBy (_._4.catchType)
+
+  Optimization.pushEnableDebugLog(false)
+  benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(methodNameIdx, Some((for {
+      classFile ← classFiles
+      method ← classFile.methods
+    } yield (classFile, method)).groupBy(_._2.name))))
+  benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(excHandlerTypeIdx))
+  Optimization.popEnableDebugLog()
+
+  //def setupIndexes() {
+    /*
     import BATLifting._
+    /*
+    (for {
+      classFile ← classFiles.asSmartCollection
+      method ← classFile.methods
+    } yield (classFile, method)).size
+    */
 
+    /*
     methodNameIdx = (for {
       classFile ← classFiles.asSmartCollection
+      method ← classFile.methods
+    } yield (classFile, method)).groupBy(_._2.name)
+
+    val methodNameIdxVal = (for {
+      classFile ← classFiles
       method ← classFile.methods
     } yield (classFile, method)).groupBy(_._2.name)
 
@@ -910,22 +957,17 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       exceptionHandler ← body.exceptionHandlers
     } yield (classFile, method, body, exceptionHandler)
     excHandlerTypeIdx = idxBase groupBy (_._4.catchType)
+    */
 
-    Optimization.pushEnableDebugLog(false)
-    benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(methodNameIdx))
-    benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(excHandlerTypeIdx))
-    Optimization.popEnableDebugLog()
-  }
+    */
+  //}
 
   def tearDownIndexes() {
     Optimization.removeSubquery(methodNameIdx)
     Optimization.removeSubquery(excHandlerTypeIdx)
   }
 
-  def analyze(zipFiles: Seq[String]) {
-    setupAnalysis(zipFiles)
-    setupIndexes()
-
+  def analyze() {
     analyzeConfusedInheritance()
     analyzeUnusedFields()
     analyzeExplicitGC()
@@ -938,11 +980,6 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     analyzeCloneableNoClone()
     analyzeCloneDoesNotCallSuperClone()
     analyzeCloneButNotCloneable()
-  }
-
-  override def beforeAll() {
-    setupAnalysis(Seq("lib/scalatest-1.6.1.jar"))
-    setupIndexes()
   }
 
   override def afterAll() {

@@ -524,10 +524,14 @@ object Optimization {
   val subqueries: Map[Exp[_], Any] = Map.empty
 
   def resetSubqueries() = subqueries.clear()
-  def addSubquery[T](_query: Dummy[Exp[T]]) {
+  def addSubquery[T](_query: Dummy[Exp[T]], res: Option[T] = None) {
     val query = OptimizationTransforms.stripViewUntyped(_query.v)
     val optquery = optimizeIdx(query)
-    val intQuery = optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret() again!
+    val intQuery = res match {
+      case Some(v) => v
+      case None => optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret() again!
+    }
+
 
     //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the
     // optimizer. TODO: Reconsider again whether this is a good idea.
