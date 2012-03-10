@@ -108,12 +108,15 @@ case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](b
   def copy(base: Exp[Repr], f: Exp[D[T] => T]) = TypeFilter2[T, D, Repr, S, That](base, f)
 }
 
-case class TypeCase[Case, Res](classS: Class[Case], guard: FuncExp[Case, Boolean], f: FuncExp[Case, Res]) {
-  private[expressiontree] var guardInt: Case => Boolean = null
-  private[expressiontree] var fInt: Case => Res = null
+case class TypeCase[Case, +Res](classS: Class[Case], guard: FuncExp[Case, Boolean], f: FuncExp[Case, Res]) {
+  //The setters for this field use Res in contravariant position, hence it is important to make them private.
+  private[this] var _guardInt: Case => Boolean = _
+  private[this] var _fInt: Case => Res = _
+  private[expressiontree] def guardInt: Case => Boolean = _guardInt
+  private[expressiontree] def fInt: Case => Res = _fInt
   private[expressiontree] def preInterpret() {
-    guardInt = guard.interpret()
-    fInt = f.interpret()
+    _guardInt = guard.interpret()
+    _fInt = f.interpret()
   }
 }
 
