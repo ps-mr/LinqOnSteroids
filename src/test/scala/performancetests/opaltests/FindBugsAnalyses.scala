@@ -924,6 +924,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
 
   def analyze(zipFiles: Seq[String]) {
     setupAnalysis(zipFiles)
+    setupIndexes()
 
     analyzeConfusedInheritance()
     analyzeUnusedFields()
