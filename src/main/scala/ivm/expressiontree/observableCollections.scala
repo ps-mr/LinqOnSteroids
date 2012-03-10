@@ -107,7 +107,7 @@ trait ObservableSet[T] extends Set[T] with TravMsgSeqPublisher[T, ObservableSet[
     silenceNotifications = false
     res
   }
-  
+
   abstract override def -= (el: T) = {
     if (!silenceNotifications && this(el))
       publish(Remove(el))

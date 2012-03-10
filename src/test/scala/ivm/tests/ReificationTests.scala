@@ -21,7 +21,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
   val r1 = for (k <- l; k2 <- j if k + k2 is k2 + k) yield k + k2
   val r2 = for (k <- l; k2 <- j if liftCall('test$Int$Int, test, k, k2)) yield k + k2
   val r3 = for (k <- l; k2 <- j if liftCall('foo$Int, foo, k) is liftCall('bar$Int, bar, k2)) yield (k, k2)
-  
+
   @Test
   def testq() {
     optimize(q) should equal (q)
@@ -35,18 +35,18 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
   def testr1() {
     optimize(r1) should equal (r1)
   }
-  
+
   @Test
   def testr2() {
     optimize(r2) should equal (r2)
   }
-  
+
   @Test
   def testr3() {
     optimize(r3) should equal (l.join(j)(x => liftCall('foo$Int,foo,x), y => liftCall('bar$Int, bar, y), p => (p._1, p._2)))
   }
-  
-  @Test 
+
+  @Test
   def testfreeVars() {
     q.freeVars should be (Set.empty)
     newMapOp(l,FuncExp( (x: Exp[Int]) => x + Var(58))).freeVars should be (Set(Var(58)))
@@ -73,7 +73,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
     println(r3.exec())
     println(optimize(r3).interpret().exec())*/
   }
-  
+
   @Test
   def testAntiJoin() {
     val r = for (k <- l if j forall (k2 => k !=# k2)) yield k

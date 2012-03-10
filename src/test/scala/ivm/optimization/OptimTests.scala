@@ -19,7 +19,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
     opt should be (Optimization.reassociateOps(opt))
     opt
   }
-  
+
   @Test
   def reassociateOpsF() {
     def f(e: Exp[Int]) = e + 1

@@ -125,7 +125,7 @@ object OptimizationTransforms {
   val simplifyConditions: Exp[_] => Exp[_] =
     e => reassociateBoolOps(e) match {
       case And(Const(true), x) => x
-      case And(c @ Const(false), x) => c 
+      case And(c @ Const(false), x) => c
       case Or(Const(false), x) => x
       case Or(c @ Const(true), x) => c
       case _ => e
@@ -370,7 +370,7 @@ object OptimizationTransforms {
     // 1. The variable of fmFun must appear always wrapped in the same
     //    Some node
     // 2. Only supported Option operations must appear.
-    
+
     //Check safety condition, part 2.
     @tailrec
     def isSupported(insideConv: Exp[_], LetNode: Exp[_]): Boolean =

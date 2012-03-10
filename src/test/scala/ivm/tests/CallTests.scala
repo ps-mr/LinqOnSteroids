@@ -40,12 +40,12 @@ class CallTests extends JUnitSuite with ShouldMatchersForJUnit {
     val b = withExp(1)(1 +)
 
     //a and b are semantically equal, but unfortunately they are not recognized as such, thus we cannot use such a simple
-    //definition 
+    //definition
     a should not equal (b)
 
     val c = onExp(1)('plusOne, 1 +)
     val d = onExp(1)('plusOne, 1 +)
-    
+
     c should equal (d)
   }
 }

@@ -571,7 +571,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       } yield classFile
     }
     println("\tViolations: " + classesWithPublicFinalizeMethods.length)
-    
+
     val classesWithPublicFinalizeMethodsLikeLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED-2 Native Like Los") {
       for {
         classFile ← classFiles
@@ -675,7 +675,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
     benchQuery("IMSE_DONT_CATCH_IMSE Los", catchesIllegalMonitorStateExceptionLos, catchesIllegalMonitorStateException)
   }
-  
+
   test("CovariantCompareToMethods") {
     analyzeCovariantCompareToMethods()
   }
@@ -735,7 +735,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
     benchQuery("EQ_ABSTRACT_SELF Los", abstractClassesThatDefinesCovariantEqualsLos, abstractClassesThatDefinesCovariantEquals)
   }
-  
+
   test("MethodsThatCallRunFinalizersOnExit") {
     analyzeMethodsThatCallRunFinalizersOnExit()
   }
@@ -868,7 +868,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
   }
   def analyze() {
     benchQueryComplete("") {
-      
+
     } {
       import BATLifting._
       import InstructionLifting._
