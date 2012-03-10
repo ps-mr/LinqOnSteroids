@@ -446,7 +446,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         classFile ← classFiles
         method ← classFile.methods
         body ← method.body.toList
-        instruction ← body.instructions
+        instruction ← body.instructions.view
         if ({
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
@@ -574,8 +574,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     
     val classesWithPublicFinalizeMethodsLikeLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED-2 Native Like Los") {
       for {
-        classFile ← classFiles.view
-        method ← classFile.methods
+        classFile ← classFiles
+        method ← classFile.methods.view
         if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
       } yield classFile
     }
