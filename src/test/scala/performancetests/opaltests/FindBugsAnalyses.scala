@@ -533,6 +533,19 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield (classFile, method, instruction))
     }
     benchQuery("DM_GC Los-2", garbageCollectingMethodsLos2, garbageCollectingMethods)
+
+    benchQueryComplete("DM_GC-3")(garbageCollectingMethods, false) {
+      for {
+        classFile ← classFiles.asSmartCollection
+        method ← classFile.methods
+        body ← method.body
+        instruction ← body.instructions.typeCase(
+          when[INVOKESTATIC](instr =>
+            instr.declaringClass ==# ObjectType("java/lang/System") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity),
+          when[INVOKEVIRTUAL](instr =>
+            instr.declaringClass ==# ObjectType("java/lang/Runtime") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity))
+      } yield (classFile, method, instruction)
+    }
   }
 
   test("PublicFinalizer") {

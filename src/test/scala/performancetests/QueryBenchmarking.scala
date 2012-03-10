@@ -47,14 +47,19 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
   // just always have them, i.e. always check dynamically whether forcing is needed, for all LoS queries, slowing them
   // down a tiny insignificant bit.
   def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
-                                                   (expected: => Traversable[T])
+                                                   (expected: => Traversable[T], doBench: Boolean = true)
                                                    (query: => Exp[Coll],
                                                     extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
-    val expectedRes = benchMark(msg)(expected)
+    val expectedRes =
+      if (doBench)
+        benchMark(msg)(expected)
+      else
+        expected
     val builtQuery = benchMark("%s Los Setup" format msg, silent = true)(Query(query))
     benchQuery("%s Los" format msg, builtQuery, expectedRes, extraOptims)
-    println("\tViolations: " + expectedRes.size)
+    if (doBench)
+      println("\tViolations: " + expectedRes.size)
     expectedRes
   }
 }
