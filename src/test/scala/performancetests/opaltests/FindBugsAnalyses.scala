@@ -437,6 +437,8 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     analyzeExplicitGC()
   }
   def analyzeExplicitGC() {
+    val NoArgNoRetMethodDesc = MethodDescriptor(Seq(), VoidType)
+
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
     val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
       for {
@@ -445,8 +447,8 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         body ← method.body.toList
         instruction ← body.instructions
         if (instruction match {
-          case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
-               INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒ true
+          case INVOKESTATIC(ObjectType("java/lang/System"), "gc", NoArgNoRetMethodDesc) |
+               INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", NoArgNoRetMethodDesc) ⇒ true
           case _ ⇒ false
         })
       } yield (classFile, method, instruction)
@@ -463,12 +465,11 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         if ({
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
-          val desc = MethodDescriptor(Seq(), VoidType)
 
           asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass == ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
-            asINVOKESTATIC.get.methodDescriptor == desc ||
+            asINVOKESTATIC.get.methodDescriptor == NoArgNoRetMethodDesc ||
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass == ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
-              asINVOKEVIRTUAL.get.methodDescriptor == desc
+              asINVOKEVIRTUAL.get.methodDescriptor == NoArgNoRetMethodDesc
         })
       } yield (classFile, method, instruction)
     }
@@ -483,12 +484,11 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         if ({
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
-          val desc = MethodDescriptor(Seq(), VoidType)
 
           asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass == ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
-            asINVOKESTATIC.get.methodDescriptor == desc ||
+            asINVOKESTATIC.get.methodDescriptor == NoArgNoRetMethodDesc ||
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass == ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
-              asINVOKEVIRTUAL.get.methodDescriptor == desc
+              asINVOKEVIRTUAL.get.methodDescriptor == NoArgNoRetMethodDesc
         })
       } yield (classFile, method, instruction)
     }
@@ -505,12 +505,11 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         if {
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
-          val desc = MethodDescriptor(Seq(), VoidType)
 
           asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass ==# ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
-            asINVOKESTATIC.get.methodDescriptor ==# desc ||
+            asINVOKESTATIC.get.methodDescriptor ==# NoArgNoRetMethodDesc ||
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass ==# ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
-              asINVOKEVIRTUAL.get.methodDescriptor ==# desc
+              asINVOKEVIRTUAL.get.methodDescriptor ==# NoArgNoRetMethodDesc
         }
       } yield (classFile, method, instruction))
     }
@@ -525,12 +524,11 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         if {
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
-          val desc = MethodDescriptor(Seq(), VoidType)
 
           (asINVOKESTATIC.map(i => i.declaringClass ==# ObjectType("java/lang/System") && i.name == "gc" &&
-            i.methodDescriptor ==# desc) orElse
+            i.methodDescriptor ==# NoArgNoRetMethodDesc) orElse
             asINVOKEVIRTUAL.map(i => i.declaringClass ==# ObjectType("java/lang/Runtime") && i.name == "gc" &&
-              i.methodDescriptor ==# desc)) getOrElse false
+              i.methodDescriptor ==# NoArgNoRetMethodDesc)) getOrElse false
         }
       } yield (classFile, method, instruction))
     }
