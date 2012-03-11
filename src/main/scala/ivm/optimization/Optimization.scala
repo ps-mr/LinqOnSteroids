@@ -337,11 +337,9 @@ object OptimizationTransforms {
    */
 
   val toTypeFilter: Exp[_] => Exp[_] = {
-    e => e match {
-      case FlatMap(coll: Exp[Traversable[_]], fmFun: FuncExp[t, u]) =>
-        tryBuildTypeFilter(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
-      case e => e
-    }
+    case FlatMap(coll: Exp[Traversable[_]], fmFun: FuncExp[t, u]) =>
+      tryBuildTypeFilter(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
+    case e => e
   }
 
   //removeRedundantOption is supposed to eliminate redundant lets from code like:
@@ -400,7 +398,7 @@ object OptimizationTransforms {
 
   val removeRedundantOption: Exp[_] => Exp[_] = {
     import OptionOps._
-    e => e match {
+    {
       case FlatMap(coll: Exp[Traversable[t]], (fmFun: FuncExp[_, Traversable[u]]) & FuncExpBody(Call1(OptionToIterableId, _, insideConv: Exp[Option[_]]))) =>
         tryRemoveRedundantOption(coll, fmFun, insideConv.asInstanceOf[Exp[Option[u]]], e.asInstanceOf[Exp[Traversable[u]]])
       /*case FlatMap(coll, fmFun @ FuncExpBody(Call1(OptionToIterableId, _, Call2(OptionMapId, _, subColl, f: FuncExp[Any, _])))) =>
@@ -463,7 +461,7 @@ object OptimizationTransforms {
 
   val mapToFlatMap: Exp[_] => Exp[_] = {
     import OptionOps._
-    e => e match {
+    {
       case MapOp(c: Exp[Traversable[t]], f) =>
         c flatMap FuncExp.makefun(Seq(f.body), f.x)
       case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
@@ -474,7 +472,7 @@ object OptimizationTransforms {
 
   val flatMapToMap: Exp[_] => Exp[_] = {
     import OptionOps._
-    e => e match {
+    {
       case Call2(OptionFlatMapId, _, c: Exp[Option[_ /*t*/]], f @ FuncExpBodyUntyped(ExpOption(Some(body: Exp[TraversableOnce[u]])))) =>
         c map FuncExp.makefun(body, f.x)
       case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(body))) =>
@@ -484,10 +482,8 @@ object OptimizationTransforms {
   }
 
   val letTransformer: Exp[_] => Exp[_] = {
-    e => e match {
-      case FlatMap(ExpSeq(v), f) => letExp(v)(f)
-      case e => e
-    }
+    case FlatMap(ExpSeq(v), f) => letExp(v)(f)
+    case e => e
   }
 
   val normalizer: Exp[_] => Exp[_] = {
