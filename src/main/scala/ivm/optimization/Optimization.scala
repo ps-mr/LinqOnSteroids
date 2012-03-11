@@ -60,9 +60,8 @@ object OptimizationTransforms {
    *   l.join(j, l, r, (p: Exp[(Int, Int)]) => mcf(p._1, p._2))
    */
   //XXX: rewrite to expect only flatMap nodes, i.e. after mapToFlatMap, and see what happens.
-  val cartProdToJoin: Exp[_] => Exp[_] =
-    e => e match {
-      case FlatMap(fmColl: Exp[Traversable[_]],
+  val cartProdToJoin: Exp[_] => Exp[_] = {
+      case e @ FlatMap(fmColl: Exp[Traversable[_]],
         fmFun @ FuncExpBody(MapOp(Filter(filterColl: Exp[Traversable[_]], filterFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
         if !filterColl.isOrContains(fmFun.x)
       =>
@@ -96,9 +95,8 @@ object OptimizationTransforms {
         }}
   }
 
-  val cartProdToAntiJoin: Exp[_] => Exp[_] =
-    e => e match {
-      case Filter(filteredColl: Exp[Traversable[_]],
+  val cartProdToAntiJoin: Exp[_] => Exp[_] = {
+      case e @ Filter(filteredColl: Exp[Traversable[_]],
         filterFun @ FuncExpBody(Forall(forallColl, forallFun @ FuncExpBody(Not(Eq(lhs, rhs))))))
       //case FlatMap(fmColl: Exp[Traversable[_]],
         //fmFun @ FuncExpBody(MapOp(Filter(filterColl: Exp[Traversable[_]], filterFun @ FuncExpBody(Not(Eq(lhs, rhs)))), moFun)))
@@ -113,8 +111,7 @@ object OptimizationTransforms {
       case e => e
     }
 
-  val removeTrivialFilters: Exp[_] => Exp[_] =
-    e => e match {
+  val removeTrivialFilters: Exp[_] => Exp[_] = {
       case Filter(coll, FuncExpBody(Const(true))) =>
         stripViewUntyped(coll)
       case e => e
@@ -141,8 +138,7 @@ object OptimizationTransforms {
       case e => e
     }
 
-  val removeIdentityMaps: Exp[_] => Exp[_] =
-    e => e match {
+  val removeIdentityMaps: Exp[_] => Exp[_] = {
       case MapOp(col, FuncExpIdentity()) =>
         col
       case e => e
@@ -165,8 +161,7 @@ object OptimizationTransforms {
 
   //Now we'd like a non-work-duplicating inliner. We'd need a linear type system as in GHC's inliner.
 
-  val mergeMaps: Exp[_] => Exp[_] =
-    e => e match {
+  val mergeMaps: Exp[_] => Exp[_] = {
       case MapOp(MapOp(coll: Exp[Traversable[_]], f1), f2) =>
         //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
         //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
@@ -256,8 +251,7 @@ object OptimizationTransforms {
     }
   }
 
-  val reassociateOps: Exp[_] => Exp[_] =
-    e => e match {
+  val reassociateOps: Exp[_] => Exp[_] = {
       case p@Plus(l, r) =>
         buildSum(l, r)(p.isNum)
       case t@Times(l, r) =>
@@ -265,8 +259,7 @@ object OptimizationTransforms {
       case e => e
     }
 
-  val mergeFilters: Exp[_] => Exp[_] =
-    e => e match {
+  val mergeFilters: Exp[_] => Exp[_] = {
       case Filter(Filter(col2: Exp[Traversable[_]], f2), f) =>
         mergeFilters(
           col2.withFilter{
@@ -277,9 +270,8 @@ object OptimizationTransforms {
 
   //Recognize relational-algebra set operations; they can be executed more efficiently if one of the two members is indexed.
   //However, sets are already always indexed, so these optimizations will not have a huge impact by themselves.
-  val setIntersection: Exp[_] => Exp[_] =
-    e => e match {
-      case Filter(col: Exp[Traversable[t]], predFun @ FuncExpBody(Contains(col2, x))) if (x == predFun.x) =>
+  val setIntersection: Exp[_] => Exp[_] = {
+      case e @ Filter(col: Exp[Traversable[t]], predFun @ FuncExpBody(Contains(col2, x))) if (x == predFun.x) =>
         //XXX transformation not implemented
         e //col.join(col2)(identity, identity, _._1) //Somewhat expensive implementation of intersection.
         //e //Intersect(col, col2)
@@ -287,24 +279,21 @@ object OptimizationTransforms {
     }
 
   //We want to support anti-joins. Is this one? This is an anti-join where a set is involved and with identity selectors.
-  val setDifference: Exp[_] => Exp[_] =
-    e => e match {
-      case Filter(col, predFun @ FuncExpBody(Not(Contains(col2, x)))) if (x == predFun.x) =>
+  val setDifference: Exp[_] => Exp[_] = {
+      case e @ Filter(col, predFun @ FuncExpBody(Not(Contains(col2, x)))) if (x == predFun.x) =>
         //XXX transformation not implemented
         e //Diff(col, col2) //We cannot use Diff because col is not a Set - but we can build a more complex operator for this case.
       case e => e
     }
 
   //Fuse multiple views
-  val mergeViews: Exp[_] => Exp[_] =
-    e => e match {
+  val mergeViews: Exp[_] => Exp[_] = {
       case View(coll @ View(_)) =>
         coll
       case e => e
     }
 
-  val sizeToEmpty: Exp[_] => Exp[_] =
-    e => e match {
+  val sizeToEmpty: Exp[_] => Exp[_] = {
       case Less(Const(0), Size(coll)) =>
         coll.nonEmpty
       case LEq(Const(1), Size(coll)) =>
@@ -501,8 +490,7 @@ object OptimizationTransforms {
     }
   }
 
-  val normalizer: Exp[_] => Exp[_] =
-    e => e match {
+  val normalizer: Exp[_] => Exp[_] = {
       case p@Plus(x, y) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum)
       case e@Eq(x, y) => Eq(Exp.min(x, y), Exp.max(x, y))
       case e => e
