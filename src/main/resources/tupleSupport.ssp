@@ -18,11 +18,15 @@ import annotation.switch
 
   //These refer to mutable variables, hence must be definitions!
   def tparams = paramsLoopComma(tpPfx + "%d")
-  val paramTempl = argPfx + "%d: Exp[" + tpPfx + "%<d]"
-  def paramsDecl = paramsLoopComma(paramTempl)
-  def paramsDeclOverride = paramsLoopComma("override val " + paramTempl)
+  val paramTempl = "%d: Exp[" + tpPfx + "%<d]"
+  def paramsDecl = paramsLoopComma(argPfx + paramTempl)
+  def paramsDeclOverride = paramsLoopComma("override val " + argPfx + paramTempl)
   def params = paramsLoopComma(argPfx + "%d")
   def interpretParams = paramsLoopComma(argPfx + "%d.interpret()")
+
+  def callParamsDecl = paramsLoopComma(argPfx + "_" + paramTempl) //Use different name!
+  def callParams = paramsLoopComma(argPfx + "_%d") //Use different name!
+  def interpretCallParams = paramsLoopComma(argPfx + "_%d.interpret()")
 %>
 #for (arity <- 1 to maxArity)
 <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2 %>
@@ -60,10 +64,10 @@ abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDeclOv
 // SUPPORT FOR CALLs OF ARITY ${arity} //
 /////////////////////////////////////////
 
-case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparams}) => Res, ${paramsDeclOverride})
-    extends Arity${arity}OpExp[${tparams}, Res, Call${arity}[${tparams}, Res]](${params}) with Call[Res] {
+case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparams}) => Res, ${callParamsDecl})
+    extends Arity${arity}OpExp[${tparams}, Res, Call${arity}[${tparams}, Res]](${callParams}) with Call[Res] {
   def copy(${paramsDecl}) = new Call${arity}(id, callfunc, ${params})
-  def interpret() = callfunc(${interpretParams})
+  def interpret() = callfunc(${interpretCallParams})
 }
 
 #end <%-- //We close and reopen the loop because there are no unary tuples. --%>
