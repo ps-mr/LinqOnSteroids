@@ -151,7 +151,7 @@ trait TraversableOps {
   //XXX
   implicit def tToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
 
-  implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e.toSeq: _*) //null//onExp(e)('Traversable, Traversable(_))
+  implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e.toSeq: _*) //onExp(e)('Traversable, Traversable(_))
 }
 
 trait ForceOps {
@@ -276,10 +276,6 @@ trait SetOps extends CollectionSetOps {
   // This class differs from CollectionSetOps because it extends TraversableLikeOps[T, collection.immutable.Set, collection.immutable.Set[T]]
   // instead of TraversableLikeOps[T, collection.Set, collection.Set[T]].
   class SetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set]
-  /*class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set, Set[T]] with WithFilterImpl[T, Set[T]] {
-    def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
-    def contains(el: Exp[T]) = apply(el)
-  }*/
   implicit def expToSetExp[T](t: Exp[Set[T]]): SetOps[T] = new SetOps(t)
   implicit def tToSetExp[T](t: Set[T]): SetOps[T] = expToSetExp(t)
 }
