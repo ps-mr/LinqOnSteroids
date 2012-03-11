@@ -260,11 +260,15 @@ object OptimizationTransforms {
   }
 
   val mergeFilters: Exp[_] => Exp[_] = {
-    case Filter(Filter(col2: Exp[Traversable[_]], f2), f) =>
-      mergeFilters(
-        col2.withFilter{
-          (x: Exp[_]) => And(f2(x), f(x))
-        })
+    case e @ Filter(col, f) =>
+      stripViewUntyped(col) match {
+        case Filter(col2: Exp[Traversable[_]], f2) =>
+          mergeFilters(
+            col2 withFilter {
+              (x: Exp[_]) => And(f2(x), f(x))
+            })
+        case _ => e
+      }
     case e => e
   }
 
