@@ -13,24 +13,27 @@ import CollectionUtils.collectFirst
  * The subqueries map should be called the "precomputed query repository", and is a generalization of a repository of
  * indexes.
  */
-class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
+object SubquerySharing {
   private def println(msg: Any) {
     if (Optimization.isDebugLogEnabled)
       Predef.println(msg)
   }
 
-  val directsubqueryShare: Exp[_] => Exp[_] =
-    e => subqueries.get(Optimization.normalize(e)) match {
-      case Some(t) => asExp(t)
-      case None => e
-    }
-
-  private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[Traversable[T]] = {
+  def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[Traversable[T]] = {
     val residualcond: Exp[Boolean] = conds.fold(Const(true))(And)
     //Note that withFilter will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
     // instance from the HOAS representation produced.
     e withFilter FuncExp.makefun[T, Boolean](residualcond, v)
   }
+}
+
+class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
+  import SubquerySharing._
+  val directsubqueryShare: Exp[_] => Exp[_] =
+    e => subqueries.get(Optimization.normalize(e)) match {
+      case Some(t) => asExp(t)
+      case None => e
+    }
 
   private def groupByShareBody[T, U](c: Exp[Traversable[T]],
                                       fx: Var,
