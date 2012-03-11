@@ -430,11 +430,11 @@ object OptimizationTransforms {
   //exactly what we need!
   //Scalac miscompiles this code if I write it the obvious way - without optimizations enabled!
   val hoistFilter: Exp[_] => Exp[_] = {
-        case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(FlatMap(Filter(coll2: Exp[Traversable[_]], filterFun), fmFun2)))
-          if !filterFun.body.isOrContains(filterFun.x) =>
-          buildHoistedFilterForFlatMap(coll1, fmFun, coll2, filterFun, fmFun2)
-        case e => e
-    }
+    case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(FlatMap(Filter(coll2: Exp[Traversable[_]], filterFun), fmFun2)))
+      if !filterFun.body.isOrContains(filterFun.x) =>
+      buildHoistedFilterForFlatMap(coll1, fmFun, coll2, filterFun, fmFun2)
+    case e => e
+  }
 
   val mapToFlatMap: Exp[_] => Exp[_] = {
     import OptionOps._
@@ -552,14 +552,14 @@ object Optimization {
           mapToFlatMap(exp))))
 
   private def optimizeBase[T](exp: Exp[T]): Exp[T] =
-  mergeFilters( //Merge filters again after indexing, since it introduces new filters.
-    simplifyFilters(
-      shareSubqueries(mapToFlatMap(
-        removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
-          reassociateOps(
-            mergeMaps(
-              cartProdToAntiJoin(
-                handleFilters(
+    mergeFilters( //Merge filters again after indexing, since it introduces new filters.
+      simplifyFilters(
+        shareSubqueries(mapToFlatMap(
+          removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
+            reassociateOps(
+              mergeMaps(
+                cartProdToAntiJoin(
+                  handleFilters(
                     optimizeCartProdToJoin(
                       removeRedundantOption(toTypeFilter(
                         sizeToEmpty(
