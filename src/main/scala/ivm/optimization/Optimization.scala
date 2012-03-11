@@ -179,7 +179,7 @@ object OptimizationTransforms {
         mergeMaps2(buildMergedMaps(coll, f1, f2)).
           //Note the need for this cast.
           asInstanceOf[Exp[T]]
-      case e => e
+      case _ => e
     }
   }
 

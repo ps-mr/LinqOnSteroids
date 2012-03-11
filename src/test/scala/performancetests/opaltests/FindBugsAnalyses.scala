@@ -725,7 +725,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         allComparables ← classHierarchy.subtypes(comparableType).toList.asSmartCollection
         comparable ← allComparables
         classFile ← getClassFile.get(comparable)
-        method /*@ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _)*/ ← classFile.methods //if parameterType != ObjectType.Object
+        method ← classFile.methods //if parameterType != ObjectType.Object
         if method.name ==# "compareTo" && method.descriptor.returnType ==# IntegerType
         parameterTypes <- Let(method.descriptor.parameterTypes)
         if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType.Object
@@ -751,7 +751,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     val abstractClassesThatDefinesCovariantEqualsLos = benchMark("EQ_ABSTRACT_SELF Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isAbstract
-        method /*@ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _)*/ ← classFile.methods //if parameterType != ObjectType.Object
+        method ← classFile.methods
         if method.name ==# "equals" && method.descriptor.returnType ==# BooleanType
         parameterTypes <- Let(method.descriptor.parameterTypes)
         if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType.Object
@@ -848,7 +848,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         classFile ← classFiles.asSmartCollection
         if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
         if classFile.superClass.isDefined
-        method /*@ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _)*/ ← classFile.methods
+        method ← classFile.methods
         if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
         body ← method.body
         if !(body.instructions.typeFilter[INVOKESPECIAL] exists {
@@ -877,7 +877,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       for {
         classFile ← classFiles.asSmartCollection
         if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
-        method /*@ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _)*/ ← classFile.methods
+        method ← classFile.methods
         if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
         //Shouldn't we have a lifter for this? Yep.
         if !onExp(classFile.thisClass)('foo, classHierarchy.isSubtypeOf(_, ObjectType("java/lang/Cloneable")).getOrElse(false))
