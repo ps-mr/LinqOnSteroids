@@ -18,12 +18,11 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       Predef.println(msg)
   }
 
-  val directsubqueryShare: Exp[_] => Exp[_] = {
+  val directsubqueryShare: Exp[_] => Exp[_] =
     e => subqueries.get(Optimization.normalize(e)) match {
       case Some(t) => asExp(t)
       case None => e
     }
-  }
 
   private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[Traversable[T]] = {
     val residualcond: Exp[Boolean] = conds.fold(Const(true))(And)
@@ -275,7 +274,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       case _ => None
     }
 
-  val groupByShareNested: Exp[_] => Exp[_] = {
+  val groupByShareNested: Exp[_] => Exp[_] =
     e => {
       (for {
         ((parentNode: Exp[Traversable[t]], parentF), FoundFilter(c, f: FuncExp[_/*t*/, _ /*Boolean*/], isOption), conds, foundEqs, allFVSeq) <- lookupEq(None, e)
@@ -299,7 +298,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         }
       } yield optim).headOption.getOrElse(e)
     }
-  }
 
   //Entry point
   def shareSubqueries[T](query: Exp[T]): Exp[T] = {
