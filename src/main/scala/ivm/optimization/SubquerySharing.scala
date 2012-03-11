@@ -86,11 +86,11 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   //Rewrite (if possible) coll.withFilter(elem => F[elem] ==# k && OtherConds[elem]) to (coll.groupBy(elem => F[elem]))(k).withFilter(x => OtherConds[x]),
   //with F and OtherConds expression contexts and under the condition that coll.groupBy(f) is already available as a precomputed subquery (i.e. an index).
   val groupByShare: Exp[_] => Exp[_] = {
-      case e @ Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
-        val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
-        val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f.x)(_))
-        optimized.getOrElse(e)
-      case e => e
+    case e @ Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
+      val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
+      val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f.x)(_))
+      optimized.getOrElse(e)
+    case e => e
   }
 
   sealed trait FoundNode
