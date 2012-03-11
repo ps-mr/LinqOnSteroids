@@ -573,6 +573,7 @@ object Optimization {
     new SubquerySharing(subqueries).shareSubqueries(query)
 
   private def optimizeBase[T](exp: Exp[T]): Exp[T] =
+  mergeFilters( //Merge filters again after indexing, since it introduces new filters.
     simplifyFilters(
       shareSubqueries(mapToFlatMap(
         removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
@@ -584,7 +585,7 @@ object Optimization {
                     optimizeCartProdToJoin(
                       removeRedundantOption(toTypeFilter(
                         sizeToEmpty(
-                          removeIdentityMaps(exp))))))))))))))
+                          removeIdentityMaps(exp)))))))))))))))
 
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
