@@ -38,59 +38,6 @@ trait TraversableOps {
       newFlatMap(this.t, FuncExp(f))
   }
 
-  case class GroupBy[T, Repr <: TraversableLike[T, Repr], K](base: Exp[Repr], f: Exp[T => K]) extends Arity2OpExp[Repr,
-    T => K, Map[K, Repr], GroupBy[T, Repr, K]](base, f) {
-    override def interpret() = base.interpret() groupBy f.interpret()
-    override def copy(base: Exp[Repr], f: Exp[T => K]) = GroupBy(base, f)
-  }
-
-
-  case class Join[T, Repr <: TraversableLike[T, Repr], S, TKey, TResult, That](colouter: Exp[Repr],
-                                                                               colinner: Exp[Traversable[S]],
-                                                                               outerKeySelector: FuncExp[T, TKey],
-                                                                               innerKeySelector: FuncExp[S, TKey],
-                                                                               resultSelector: FuncExp[(T, S), TResult])
-                                                                              (implicit cbf: CanBuildFrom[Repr, TResult, That]) extends
-  Arity5Op[Exp[Repr],
-    Exp[Traversable[S]],
-    FuncExp[T, TKey], FuncExp[S, TKey], FuncExp[(T, S), TResult],
-    That, Join[T, Repr, S, TKey, TResult, That]](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
-    override def copy(colouter: Exp[Repr],
-                      colinner: Exp[Traversable[S]],
-                      outerKeySelector: FuncExp[T, TKey],
-                      innerKeySelector: FuncExp[S, TKey],
-                      resultSelector: FuncExp[(T, S), TResult]) = Join(colouter, colinner, outerKeySelector, innerKeySelector, resultSelector)
-
-    override def interpret() = {
-      // naive hash join algorithm
-      val ci: Traversable[S] = colinner.interpret()
-      val co: Repr = colouter.interpret()
-      val builder = cbf(co)
-      // In databases, we build the temporary index on the smaller relation, so that the index fits more easily in
-      // memory. This concern seems not directly relevant here; what matters here is only whether insertions or lookups in a
-      // hash-map are more expensive. OTOH, it is probably important that the temporary index fits at least in the L2 cache,
-      // so we should index again on the smaller relation!
-      //if (ci.size > co.size) {
-        val map = ci.groupBy(innerKeySelector.interpret()) //Cost O(|ci|) hash-map insertions
-        for (c <- co; d <- map(outerKeySelector.interpret()(c))) //Cost O(|co|) hash-map lookups
-          builder += resultSelector.interpret()(c, d)
-      //XXX: this is non-order-preserving, and might be suboptimal.
-      /*} else {
-        val map = co.groupBy(outerKeySelector.interpret())
-        for (c <- ci; d <- map(innerKeySelector.interpret()(c)))
-          builder += resultSelector.interpret()(d, c)
-      }*/
-      builder.result()
-    }
-  }
-
-  case class ExpSeq[T](children: Exp[T]*) extends Exp[Seq[T]] {
-    override def nodeArity = children.size
-    override protected def checkedGenericConstructor: Seq[Exp[_]] => Exp[Seq[T]] = v => ExpSeq((v.asInstanceOf[Seq[Exp[T]]]): _*)
-    override def interpret() = children.map(_.interpret())
-  }
-  implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e.toSeq: _*) //null//onExp(e)('Traversable, Traversable(_))
-
   //This is just an interface for documentation purposes.
   trait WithFilterable[T, Repr] {
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Repr]]
@@ -203,6 +150,8 @@ trait TraversableOps {
     t.asInstanceOf[Exp[TraversableView[T, C[T]]]])
   //XXX
   implicit def tToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
+
+  implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e.toSeq: _*) //null//onExp(e)('Traversable, Traversable(_))
 }
 
 trait ForceOps {
@@ -307,11 +256,6 @@ trait CollectionSetOps {
   //We want this lifting to apply to all Sets, not just the immutable ones, so that we can call map also on IncHashSet
   //and get the right type.
   import collection.{SetLike, Set}
-
-  case class Contains[T](set: Exp[Set[T]], v: Exp[T]) extends Arity2OpExp[Set[T], T, Boolean, Contains[T]](set, v) {
-    def interpret() = set.interpret().contains(v.interpret())
-    def copy(set: Exp[Set[T]], v: Exp[T]) = Contains(set: Exp[Set[T]], v: Exp[T])
-  }
 
   trait SetLikeOps[T, Coll[T] <: Set[T] with SetLike[T, Coll[T]]]
     extends TraversableLikeOps[T, Coll, Coll[T]] with WithFilterImpl[T, Coll[T]] {
