@@ -72,7 +72,7 @@ object OptimizationTransforms {
           buildJoin(fmColl, filterColl, rhs, lhs, moFun, fmFun, filterFun)
         else
           e
-      case _ => e
+      case e => e
     }
 
   private def buildAntiJoin[T, S, TKey](filteredColl: Exp[Traversable[T]],
@@ -110,14 +110,14 @@ object OptimizationTransforms {
           buildAntiJoin(filteredColl, forallColl, rhs, lhs, filterFun, forallFun)
         else
           e
-      case _ => e
+      case e => e
     }
 
   val removeTrivialFilters: Exp[_] => Exp[_] =
     e => e match {
       case Filter(coll, FuncExpBody(Const(true))) =>
         stripViewUntyped(coll)
-      case _ => e
+      case e => e
     }
 
   //Some cases of constant folding for booleans.
@@ -128,7 +128,7 @@ object OptimizationTransforms {
       case And(c @ Const(false), x) => c
       case Or(Const(false), x) => x
       case Or(c @ Const(true), x) => c
-      case _ => e
+      case e => e
     }
 
   //Move constants on the left-side of a boolean connective.
@@ -138,14 +138,14 @@ object OptimizationTransforms {
         r && l
       case Or(l, r @ Const(_)) =>
         r || l
-      case _ => e
+      case e => e
     }
 
   val removeIdentityMaps: Exp[_] => Exp[_] =
     e => e match {
       case MapOp(col, FuncExpIdentity()) =>
         col
-      case _ => e
+      case e => e
     }
 
   /*
@@ -153,7 +153,7 @@ object OptimizationTransforms {
     e match {
       case MapOp(col: Exp[_ /*T*/], FuncExpIdentity()) =>
         col.asInstanceOf[Exp[T]]
-      case _ => e
+      case e => e
     }
     */
 
@@ -171,7 +171,7 @@ object OptimizationTransforms {
         //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
         //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
         mergeMaps(buildMergedMaps(coll, f1, f2))
-      case _ => e
+      case e => e
     }
 
   //Express in the type system that transformations need to preserve typing:
@@ -184,7 +184,7 @@ object OptimizationTransforms {
         mergeMaps2(buildMergedMaps(coll, f1, f2)).
           //Note the need for this cast.
           asInstanceOf[Exp[T]]
-      case _ => e
+      case e => e
     }
   }
 
@@ -262,7 +262,7 @@ object OptimizationTransforms {
         buildSum(l, r)(p.isNum)
       case t@Times(l, r) =>
         buildProd(l, r)(t.isNum)
-      case _ => e
+      case e => e
     }
 
   val mergeFilters: Exp[_] => Exp[_] =
@@ -272,7 +272,7 @@ object OptimizationTransforms {
           col2.withFilter{
             (x: Exp[_]) => And(f2(x), f(x))
           })
-      case _ => e
+      case e => e
     }
 
   //Recognize relational-algebra set operations; they can be executed more efficiently if one of the two members is indexed.
@@ -283,7 +283,7 @@ object OptimizationTransforms {
         //XXX transformation not implemented
         e //col.join(col2)(identity, identity, _._1) //Somewhat expensive implementation of intersection.
         //e //Intersect(col, col2)
-      case _ => e
+      case e => e
     }
 
   //We want to support anti-joins. Is this one? This is an anti-join where a set is involved and with identity selectors.
@@ -292,7 +292,7 @@ object OptimizationTransforms {
       case Filter(col, predFun @ FuncExpBody(Not(Contains(col2, x)))) if (x == predFun.x) =>
         //XXX transformation not implemented
         e //Diff(col, col2) //We cannot use Diff because col is not a Set - but we can build a more complex operator for this case.
-      case _ => e
+      case e => e
     }
 
   //Fuse multiple views
@@ -300,7 +300,7 @@ object OptimizationTransforms {
     e => e match {
       case View(coll @ View(_)) =>
         coll
-      case _ => e
+      case e => e
     }
 
   val sizeToEmpty: Exp[_] => Exp[_] =
@@ -313,7 +313,7 @@ object OptimizationTransforms {
         coll.nonEmpty
       case Eq(Size(coll), Const(0)) =>
         coll.isEmpty
-      case _ => e
+      case e => e
     }
 
   private def buildTypeFilter[S, T, U](coll: Exp[Traversable[T]], classS: Class[S], f: FuncExp[S, Traversable[U]], origFmFun: FuncExp[T, TraversableOnce[U]]): Exp[Traversable[U]] = {
@@ -351,7 +351,7 @@ object OptimizationTransforms {
     e => e match {
       case FlatMap(coll: Exp[Traversable[_]], fmFun: FuncExp[t, u]) =>
         tryBuildTypeFilter(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
-      case _ => e
+      case e => e
     }
   }
 
@@ -418,7 +418,7 @@ object OptimizationTransforms {
         e
       case FlatMap(coll, fmFun @ FuncExpBody(Call1(OptionToIterableId, _, Call2(OptionMapId, _, instanceOf@IfInstanceOf(x), f: FuncExp[Any, _])))) =>
         e*/
-      case _ => e
+      case e => e
     }
   }
 
@@ -462,7 +462,7 @@ object OptimizationTransforms {
           if !filterFun.body.isOrContains(filterFun.x) =>
           buildHoistedFilterForFlatMap(coll1, fmFun, coll2, filterFun, fmFun2)
           */
-        case _ => e
+        case e => e
       }
       e1 match {
         case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(FlatMap(Filter(coll2: Exp[Traversable[_]], filterFun), fmFun2)))
@@ -479,7 +479,7 @@ object OptimizationTransforms {
         c flatMap FuncExp.makefun(Seq(f.body), f.x)
       case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
         c flatMap FuncExp.makefun(Some(f.body), f.x)
-      case _ => e
+      case e => e
     }
   }
 
@@ -490,14 +490,14 @@ object OptimizationTransforms {
         c map FuncExp.makefun(body, f.x)
       case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(body))) =>
         c map FuncExp.makefun(body, f.x)
-      case _ => e
+      case e => e
     }
   }
 
   val letTransformer: Exp[_] => Exp[_] = {
     e => e match {
       case FlatMap(ExpSeq(v), f) => letExp(v)(f)
-      case _ => e
+      case e => e
     }
   }
 
@@ -505,7 +505,7 @@ object OptimizationTransforms {
     e => e match {
       case p@Plus(x, y) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum)
       case e@Eq(x, y) => Eq(Exp.min(x, y), Exp.max(x, y))
-      case _ => e
+      case e => e
     }
 
   private[optimization] def stripView[T](coll: Exp[Traversable[T]]) = stripViewUntyped(coll)
