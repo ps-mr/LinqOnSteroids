@@ -69,7 +69,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
         j <- base
         if i < 3
       } yield (i, j)
-    val opt = Optimization.hoistFilter(query)
+    val opt = Optimization.handleFilters(query)
     query.interpret() should be (for (i <- 1 to 2; j <- 1 to 5) yield (i, j))
     opt.interpret() should be (query.interpret())
     opt should be (

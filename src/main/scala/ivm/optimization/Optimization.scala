@@ -413,18 +413,6 @@ object OptimizationTransforms {
     }
   }
 
-  private def buildHoistedFilterForMap[T, U, V](coll1: Exp[Traversable[T]], fmFun: FuncExp[T, TraversableOnce[V]],
-                                coll2: Exp[Traversable[U]],
-                                filterFun: FuncExp[U, Boolean],
-                                mapFun: FuncExp[U, V]): Exp[Traversable[V]] = {
-    //Let's show that the source types are correct, in that we can rebuild the original expression:
-    import Util.assertType
-    assertType[Exp[Traversable[V]]](coll1.flatMap(fmFun.f))
-    assertType[Exp[Traversable[V]]](coll1.flatMap(FuncExp.makefun(coll2.filter(filterFun.f).map(mapFun.f), fmFun.x).f))
-    val ret: Exp[Traversable[V]] = coll1.withFilter(FuncExp.makefun(filterFun.body, fmFun.x).f) flatMap FuncExp.makefun(stripView(coll2) map mapFun.f, fmFun.x).f
-    ret
-  }
-
   private def buildHoistedFilterForFlatMap[T, U, V](coll1: Exp[Traversable[T]], fmFun: FuncExp[T, TraversableOnce[V]],
                                                 coll2: Exp[Traversable[U]],
                                                 filterFun: FuncExp[U, Boolean],
@@ -441,26 +429,11 @@ object OptimizationTransforms {
   //However, we needn't apply this optimization in a fixpoint loop: the optimization is applied bottom up, which is
   //exactly what we need!
   //Scalac miscompiles this code if I write it the obvious way - without optimizations enabled!
-  val hoistFilter: Exp[_] => Exp[_] =
-    e => {
-      val e1 = e match {
-        case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(MapOp(Filter(coll2: Exp[Traversable[_]], filterFun), mapFun)))
-          if !filterFun.body.isOrContains(filterFun.x) =>
-          buildHoistedFilterForMap(coll1, fmFun, coll2, filterFun, mapFun)
-        //coll1.filter(FuncExp.makefun(filterFun.body, fmFun.x).f) flatMap FuncExp.makefun(coll map mapFun.f, fmFun.x).f
-          /*
+  val hoistFilter: Exp[_] => Exp[_] = {
         case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(FlatMap(Filter(coll2: Exp[Traversable[_]], filterFun), fmFun2)))
           if !filterFun.body.isOrContains(filterFun.x) =>
           buildHoistedFilterForFlatMap(coll1, fmFun, coll2, filterFun, fmFun2)
-          */
         case e => e
-      }
-      e1 match {
-        case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(FlatMap(Filter(coll2: Exp[Traversable[_]], filterFun), fmFun2)))
-          if !filterFun.body.isOrContains(filterFun.x) =>
-          buildHoistedFilterForFlatMap(coll1, fmFun, coll2, filterFun, fmFun2)
-        case _ => e1
-      }
     }
 
   val mapToFlatMap: Exp[_] => Exp[_] = {
@@ -572,6 +545,12 @@ object Optimization {
   def shareSubqueries[T](query: Exp[T]): Exp[T] =
     new SubquerySharing(subqueries).shareSubqueries(query)
 
+  def handleFilters[T](exp: Exp[T]): Exp[T] =
+    flatMapToMap(
+      mergeFilters(
+        hoistFilter( //Do this before merging filters!
+          mapToFlatMap(exp))))
+
   private def optimizeBase[T](exp: Exp[T]): Exp[T] =
   mergeFilters( //Merge filters again after indexing, since it introduces new filters.
     simplifyFilters(
@@ -579,13 +558,12 @@ object Optimization {
         removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
           reassociateOps(
             mergeMaps(
-              mergeFilters(
-                hoistFilter( //Do this before merging filters!
-                  cartProdToAntiJoin(
+              cartProdToAntiJoin(
+                handleFilters(
                     optimizeCartProdToJoin(
                       removeRedundantOption(toTypeFilter(
                         sizeToEmpty(
-                          removeIdentityMaps(exp)))))))))))))))
+                          removeIdentityMaps(exp))))))))))))))
 
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
