@@ -110,7 +110,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   def lookupEq(parent: Option[(Exp[Traversable[_]], FuncExp[_, _])],
                e: Exp[_],
                freeVars: Set[Var] = Set.empty,
-               fvSeq: Seq[Var] = Seq.empty): Seq[(Option[(Exp[Traversable[_]], FuncExp[_, _])], FoundFilter[_], Set[Exp[Boolean]], Set[Exp[_]], Seq[Var])] = {
+               fvSeq: Seq[Var] = Seq.empty): Seq[((Exp[Traversable[_]], FuncExp[_, _]), FoundFilter[_], Set[Exp[Boolean]], Set[Exp[_]], Seq[Var])] = {
     require (fvSeq.toSet == freeVars)
     import OptionOps._
 
@@ -152,7 +152,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                 Seq(eq)
               case _ => Seq.empty
             }.fold(Seq.empty)(_ union _).toSet[Exp[_]]
-          Seq((parent, ff, conds, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway - hence fvSeq, not allFVSeq
+          Seq((parent.get, ff, conds, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway - hence fvSeq, not allFVSeq
         //case FlatMap(c, f: FuncExp[t, Traversable[u]]) =>
         //lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
         case FoundFlatMap(c, f: FuncExp[t, Traversable[u]], _) =>
@@ -280,7 +280,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   val groupByShareNested: Exp[_] => Exp[_] = {
     e => {
       (for {
-        (Some((parentNode: Exp[Traversable[t]], parentF)), FoundFilter(c, f: FuncExp[_/*t*/, _ /*Boolean*/], isOption), conds, foundEqs, allFVSeq) <- lookupEq(None, e)
+        ((parentNode: Exp[Traversable[t]], parentF), FoundFilter(c, f: FuncExp[_/*t*/, _ /*Boolean*/], isOption), conds, foundEqs, allFVSeq) <- lookupEq(None, e)
         optim <- {
             //Here we produce an open term, because vars in allFVSeq are not bound...
             def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
