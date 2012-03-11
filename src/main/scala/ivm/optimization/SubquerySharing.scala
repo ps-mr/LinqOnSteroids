@@ -5,6 +5,7 @@ import Lifting._
 import Util.assertType
 import scala.collection.Map
 import collection.mutable.ArrayBuffer
+import CollectionUtils.collectFirst
 
 // Contract: Each map entry has the form Exp[T] -> T for some T
 /**
@@ -67,17 +68,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         oq.map(e => residualQuery(e, allConds - eq, fx))
       case _ => None
     }
-
-  //This is equivalent to coll.collectFirst(Function.unlift(f)), but it saves the expensive Function.unlift.
-  private def collectFirst[T, U](coll: TraversableOnce[T])(f: T => Option[U]): Option[U] = {
-    for (x <- coll) {
-      f(x) match {
-        case v@Some(_) => return v
-        case _ =>
-      }
-    }
-    None
-  }
 
   //We have to strip View if needed on _both_ sides before performing the match, to increase the chance of a match.
   //This is done here on one side, and on Optimization.addSubquery on the other side. Note that only the top-level strip

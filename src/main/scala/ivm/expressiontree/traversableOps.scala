@@ -356,6 +356,17 @@ import collection.generic.CanBuildFrom
 import mutable.{Queue, ArrayBuffer, Builder}
 
 object CollectionUtils {
+  //This is equivalent to coll.collectFirst(Function.unlift(f)), but it saves the expensive Function.unlift.
+  def collectFirst[T, U](coll: TraversableOnce[T])(f: T => Option[U]): Option[U] = {
+    for (x <- coll) {
+      f(x) match {
+        case v@Some(_) => return v
+        case _ =>
+      }
+    }
+    None
+  }
+
   //This must be only used inside the implementation. Mutability fun!
   /*private*/ def groupBySel[A, K, B, Repr <: Traversable[A], That](coll: Repr with Traversable[A])(f: A => K, g: A => B)(implicit cbf: CanBuildFrom[Repr, B, That]): immutable.Map[K, That] = {
     val m = mutable.Map.empty[K, Builder[B, That]]
