@@ -18,8 +18,9 @@ import annotation.switch
 
   //These refer to mutable variables, hence must be definitions!
   def tparams = paramsLoopComma(tpPfx + "%d")
-  def paramsDecl = paramsLoopComma(argPfx + "%d: Exp[" + tpPfx + "%<d]")
-  def paramsDeclOverride = paramsLoopComma("override val " + argPfx + "%d: Exp[" + tpPfx + "%<d]")
+  val paramTempl = argPfx + "%d: Exp[" + tpPfx + "%<d]"
+  def paramsDecl = paramsLoopComma(paramTempl)
+  def paramsDeclOverride = paramsLoopComma("override val " + paramTempl)
   def params = paramsLoopComma(argPfx + "%d")
   def interpretParams = paramsLoopComma(argPfx + "%d.interpret()")
 %>
