@@ -36,9 +36,9 @@ case class WithFilter[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr],
   override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = WithFilter[T, Repr](base, f)
 }
 
-case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr with TraversableLike[T, Repr]]) extends Arity1OpExp[Repr, TraversableView[T, Repr], View[T, Repr]](base) {
-  override def interpret() = base.interpret().view
-  override def copy(base: Exp[Repr]) = View(base)
+case class View[T, Repr <: TraversableLike[T, Repr]](override val t1: Exp[Repr with TraversableLike[T, Repr]]) extends Arity1OpExp[Repr, TraversableView[T, Repr], View[T, Repr]](t1) {
+  override def interpret() = t1.interpret().view
+  override def copy(t1: Exp[Repr]) = View(t1)
 }
 
 case class Force[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
