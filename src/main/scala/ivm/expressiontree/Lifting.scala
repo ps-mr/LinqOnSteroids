@@ -64,8 +64,8 @@ trait OptionLifting extends BaseExps {
     //Tillmann's suggestion was to use Haskell-style overloading by emulating type classes with implicits:
     def flatMap[U, That](f: Exp[T] => Exp[U])(implicit v: FlatMappableTo[U, That]): Exp[That] = v.flatMap(t, f)
     */
-    //TODO apparently, the implicit conversions from Scala are not that powerful; for instance, Some(1) flatMap (Seq(_))
-    // is not accepted. I guess I should revert this.
+    // TODO apparently, the implicit conversions from Scala are not that powerful; for instance, Some(1) flatMap (Seq(_))
+    // is not accepted. I guess I should revert this, or argue why it's better.
 
     def filter(p: Exp[T] => Exp[Boolean]): Exp[Iterable[T]] = (t: Exp[Iterable[T]]) filter p
     def withFilter(p: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] = (t: Exp[Iterable[T]]) withFilter p
