@@ -98,20 +98,23 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   import optimization.SubquerySharing._
   val subqueries: MutMap[Exp[_], Any] = Optimization.subqueries
 
-  sealed trait FoundNode
-  case class FoundFilter[T, Repr <: TraversableLike[T, Repr]](c: Exp[Repr],
+  sealed class FoundNode[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val c: Exp[Repr with Traversable[T]])
+  case class FoundFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](override val c: Exp[Repr],
                                                               f: FuncExp[T, Boolean],
                                                               conds: Set[Exp[Boolean]],
-                                                              foundEqs: Set[Exp[Boolean]]) extends FoundNode
-  case class FoundTypeCase[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, That <: TraversableLike[Res, That]](t: TypeCaseExp[BaseT, Repr, Res, That]) extends FoundNode
+                                                              foundEqs: Set[Exp[Boolean]]) extends FoundNode[T, Repr](c)
+  case class FoundTypeCase[BaseT,
+  Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr],
+  Res,
+  That <: TraversableLike[Res, That]](t: TypeCaseExp[BaseT, Repr, Res, That]) extends FoundNode[BaseT, Repr](t.e)
   //case object FoundNothing extends FoundNode
   //case class FoundFlatMap[T, U](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, Traversable[U]], isOption: Boolean = false) extends FoundNode
 
   def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = e.findTotFun { case v: Var => fvContains(v); case _ => false }.nonEmpty
 
-  def localLookupIndexableExps[T, Repr <: TraversableLike[T, Repr], U, That <: Traversable[U]](e: FlatMap[T, Repr, U, That],
+  def localLookupIndexableExps[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]](e: FlatMap[T, Repr, U, That],
                           freeVars: Set[Var] = Set.empty,
-                          fvSeq: Seq[Var] = Seq.empty): Seq[(FlatMap[T, Repr, U, That], FoundNode, Seq[Var])] = {
+                          fvSeq: Seq[Var] = Seq.empty): Seq[(FlatMap[T, Repr, U, That], FoundNode[T, Repr], Seq[Var])] = {
     e.base match {
       //case Filter(c: Exp[Traversable[T /*t*/]], f: FuncExp[_, _ /*Boolean*/]) =>
       case Filter(c, f) =>
@@ -130,7 +133,10 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
           }.fold(Seq.empty)(_ union _).toSet[Exp[Boolean]]
         //Seq((e, (ff, conds, foundEqs), fvSeq /*allFVSeq*/))
         Seq((e, FoundFilter[T, Repr](c, f, conds, foundEqs), fvSeq /*allFVSeq*/))
-      case t: TypeCaseExp[baseT, repr, res, that /*Repr*/] =>
+      case t1: TypeCaseExp[baseT, repr, res, that] =>
+        val t = t1.asInstanceOf[TypeCaseExp[T, Repr, res, that]]
+      //case t: TypeCaseExp[baseT, repr, T /*res*/, Repr /*that*/ /*Repr*/] =>
+      //case t @ TypeCaseExp(_, _) =>
         Seq((e, FoundTypeCase(t), fvSeq))
       /*case t: TypeFilter[t, c, d, s] /*TypeFilter(base, f, classS)*/ =>
         //XXX: we are building expression nodes instead of using concrete syntax.
@@ -143,7 +149,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   def lookupIndexableExps(e: Exp[_],
                freeVars: Set[Var] = Set.empty,
-               fvSeq: Seq[Var] = Seq.empty): Seq[(FlatMap[_, _, _, _], FoundNode, Seq[Var])] = {
+               fvSeq: Seq[Var] = Seq.empty): Seq[(FlatMap[_, _, _, _], FoundNode[_, _], Seq[Var])] = {
     require (fvSeq.toSet == freeVars)
 
     val otherRes = e match {
@@ -277,12 +283,13 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
       (for {
         ((parentNode: FlatMap[_, _, t, that/*T, Repr, U, That*/]), fn, allFVSeq) <- lookupIndexableExps(e)
         optim <- {
+          def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
+          val indexQuery = OptimizationTransforms.stripView(fn.c) map buildTuple
+          val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Any]]]
+
           fn match {
             case FoundFilter(c: Exp[Traversable[Any]], f: FuncExp[_/*t*/, _ /*Boolean*/], conds, foundEqs) =>
             //Here we produce an open term, because vars in allFVSeq are not bound...
-            def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
-            val indexQuery = OptimizationTransforms.stripView(c) map buildTuple
-
             //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
             //now bound. Note: e might well be an open term - we don't check it explicitly anywhere, even if we should.
             //However, index lookup is going to fail when open terms are passed - the query repository contains only
@@ -290,7 +297,6 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
             //
             //Note: this means that we built the index we search by substitution in the original query; an alternative
             //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
-            val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Any]]]
             val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
             optimized
             case _ => None
