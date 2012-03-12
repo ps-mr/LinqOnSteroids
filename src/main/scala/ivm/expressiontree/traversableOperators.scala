@@ -9,7 +9,7 @@ import collection._
 */
 
 // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
-case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
+case class FlatMap[T, Repr <: TraversableLike[T, Repr],
                    U, That](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
                             (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, Traversable[U]], That, FlatMap[T, Repr, U, That]](base, f) {
   override def interpret() = base.interpret() flatMap f.interpret()
