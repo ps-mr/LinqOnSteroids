@@ -229,6 +229,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     import BATLifting._
     import InstructionLifting._
 
+    /*
     val unusedFieldsLos /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
@@ -337,6 +338,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield (classFile, privateFields))
     }
     benchQuery("UUF_UNUSED_FIELD Los-1.2", unusedFieldsLos1_2, unusedFields, optims);
+    */
 
     {
       val unusedFieldsLos1_2 /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1.3 Setup", silent = true) {
@@ -359,6 +361,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       benchQuery("UUF_UNUSED_FIELD Los-1.3", unusedFieldsLos1_2, unusedFields, optims)
     }
 
+    /*
     val unusedFieldsLos1bis /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1bis Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
@@ -383,6 +386,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield (classFile, privateFields))
     }
     benchQuery("UUF_UNUSED_FIELD Los-1bis", unusedFieldsLos1bis, unusedFields, optims)
+    */
 
     val unusedFields2Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-2 Los Setup", silent = true) {
       Query(for {
@@ -515,6 +519,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     }
     benchQuery("DM_GC Los", garbageCollectingMethodsLos, garbageCollectingMethods)
 
+    /*
     val garbageCollectingMethodsLos2 = benchMark("DM_GC Los-2 Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection
@@ -533,6 +538,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield (classFile, method, instruction))
     }
     benchQuery("DM_GC Los-2", garbageCollectingMethodsLos2, garbageCollectingMethods)
+    */
 
     benchQueryComplete("DM_GC-3")(garbageCollectingMethods, false) {
       for {
