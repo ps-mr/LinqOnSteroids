@@ -5,6 +5,7 @@ import Lifting._
 import Util.assertType
 import scala.collection.Map
 import collection.mutable.ArrayBuffer
+import CollectionUtils.collectFirst
 
 // Contract: Each map entry has the form Exp[T] -> T for some T
 /**
@@ -12,20 +13,27 @@ import collection.mutable.ArrayBuffer
  * The subqueries map should be called the "precomputed query repository", and is a generalization of a repository of
  * indexes.
  */
-class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
-  val directsubqueryShare: Exp[_] => Exp[_] = {
-    e => subqueries.get(Optimization.normalize(e)) match {
-      case Some(t) => asExp(t)
-      case None => e
-    }
+object SubquerySharing {
+  private def println(msg: Any) {
+    if (Optimization.isDebugLogEnabled)
+      Predef.println(msg)
   }
 
-  private def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[Traversable[T]] = {
+  def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[Traversable[T]] = {
     val residualcond: Exp[Boolean] = conds.fold(Const(true))(And)
     //Note that withFilter will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
     // instance from the HOAS representation produced.
     e withFilter FuncExp.makefun[T, Boolean](residualcond, v)
   }
+}
+
+class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
+  import SubquerySharing._
+  val directsubqueryShare: Exp[_] => Exp[_] =
+    e => subqueries.get(Optimization.normalize(e)) match {
+      case Some(t) => asExp(t)
+      case None => e
+    }
 
   private def groupByShareBody[T, U](c: Exp[Traversable[T]],
                                       fx: Var,
@@ -64,30 +72,17 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       case _ => None
     }
 
-  //This is equivalent to coll.collectFirst(Function.unlift(f)), but it saves the expensive Function.unlift.
-  private def collectFirst[T, U](coll: TraversableOnce[T])(f: T => Option[U]): Option[U] = {
-    for (x <- coll) {
-      f(x) match {
-        case v@Some(_) => return v
-        case _ =>
-      }
-    }
-    None
-  }
-
   //We have to strip View if needed on _both_ sides before performing the match, to increase the chance of a match.
   //This is done here on one side, and on Optimization.addSubquery on the other side. Note that only the top-level strip
   //is visible.
   //Rewrite (if possible) coll.withFilter(elem => F[elem] ==# k && OtherConds[elem]) to (coll.groupBy(elem => F[elem]))(k).withFilter(x => OtherConds[x]),
   //with F and OtherConds expression contexts and under the condition that coll.groupBy(f) is already available as a precomputed subquery (i.e. an index).
   val groupByShare: Exp[_] => Exp[_] = {
-    e => e match {
-      case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
-        val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
-        val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f.x)(_))
-        optimized.getOrElse(e)
-      case _ => e
-    }
+    case e @ Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) =>
+      val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
+      val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f.x)(_))
+      optimized.getOrElse(e)
+    case e => e
   }
 
   sealed trait FoundNode
@@ -105,7 +100,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   def lookupEq(parent: Option[(Exp[Traversable[_]], FuncExp[_, _])],
                e: Exp[_],
                freeVars: Set[Var] = Set.empty,
-               fvSeq: Seq[Var] = Seq.empty): Seq[(Option[(Exp[Traversable[_]], FuncExp[_, _])], FoundFilter[_], Set[Exp[Boolean]], Set[Exp[_]], Seq[Var])] = {
+               fvSeq: Seq[Var] = Seq.empty): Seq[((Exp[Traversable[_]], FuncExp[_, _]), FoundFilter[_], Set[Exp[Boolean]], Set[Exp[_]], Seq[Var])] = {
     require (fvSeq.toSet == freeVars)
     import OptionOps._
 
@@ -147,7 +142,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                 Seq(eq)
               case _ => Seq.empty
             }.fold(Seq.empty)(_ union _).toSet[Exp[_]]
-          Seq((parent, ff, conds, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway - hence fvSeq, not allFVSeq
+          Seq((parent.get, ff, conds, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway - hence fvSeq, not allFVSeq
         //case FlatMap(c, f: FuncExp[t, Traversable[u]]) =>
         //lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
         case FoundFlatMap(c, f: FuncExp[t, Traversable[u]], _) =>
@@ -272,10 +267,10 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       case _ => None
     }
 
-  val groupByShareNested: Exp[_] => Exp[_] = {
+  val groupByShareNested: Exp[_] => Exp[_] =
     e => {
       (for {
-        (Some((parentNode: Exp[Traversable[t]], parentF)), FoundFilter(c, f: FuncExp[_/*t*/, _ /*Boolean*/], isOption), conds, foundEqs, allFVSeq) <- lookupEq(None, e)
+        ((parentNode: Exp[Traversable[t]], parentF), FoundFilter(c, f: FuncExp[_/*t*/, _ /*Boolean*/], isOption), conds, foundEqs, allFVSeq) <- lookupEq(None, e)
         optim <- {
             //Here we produce an open term, because vars in allFVSeq are not bound...
             def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
@@ -296,7 +291,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         }
       } yield optim).headOption.getOrElse(e)
     }
-  }
 
   //Entry point
   def shareSubqueries[T](query: Exp[T]): Exp[T] = {

@@ -83,7 +83,7 @@ trait Benchmarking {
     def println(x: Any) = if (!silent) Console.err.println(x)
     //Why not call this println()? Because overloading is not supported in local definitions (SLS §6.11).
     def newLine() = if (!silent) Console.err.println()
-    
+
     if (usedNames(name))
       println("WARNING: benchmark name %s already used" format name)
     else

@@ -80,14 +80,27 @@ object FindBugsAnalyses {
       }
     }
 
-    (new FindBugsAnalyses).analyze(args)
+    (new FindBugsAnalyses(args)).analyze()
   }
 }
 
-class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
-  var classHierarchy = new ClassHierarchy {}
-  var classFiles: Seq[ClassFile] = _
-  var getClassFile: Map[ObjectType, ClassFile] = _
+class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
+  def this() = this(Seq("lib/scalatest-1.6.1.jar"))
+
+  val classFiles: Seq[ClassFile] = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
+    for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
+  }
+  val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
+
+  // Now the classHierarchy is built functionally - hence, the result could be incrementally maintained (at least for the
+  // addition of classes).
+  val classHierarchy = (new ClassHierarchy {} /: classFiles)(_ + _)
+
+  println("Number of class files: " + classFiles.length)
+  println("Numer of methods: " + (for {
+      classFile ← classFiles
+      method ← classFile.methods
+    } yield (classFile, method)).size)
 
   private def analyzeConfusedInheritanceNative() = {
     val protectedFields = benchMark("CI_CONFUSED_INHERITANCE") {
@@ -424,6 +437,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     analyzeExplicitGC()
   }
   def analyzeExplicitGC() {
+    val NoArgNoRetMethodDesc = MethodDescriptor(Seq(), VoidType)
+
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
     val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
       for {
@@ -432,8 +447,8 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         body ← method.body.toList
         instruction ← body.instructions
         if (instruction match {
-          case INVOKESTATIC(ObjectType("java/lang/System"), "gc", MethodDescriptor(Seq(), VoidType)) |
-               INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", MethodDescriptor(Seq(), VoidType)) ⇒ true
+          case INVOKESTATIC(ObjectType("java/lang/System"), "gc", NoArgNoRetMethodDesc) |
+               INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", NoArgNoRetMethodDesc) ⇒ true
           case _ ⇒ false
         })
       } yield (classFile, method, instruction)
@@ -446,16 +461,15 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         classFile ← classFiles
         method ← classFile.methods
         body ← method.body.toList
-        instruction ← body.instructions
+        instruction ← body.instructions.view
         if ({
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
-          val desc = MethodDescriptor(Seq(), VoidType)
 
           asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass == ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
-            asINVOKESTATIC.get.methodDescriptor == desc ||
+            asINVOKESTATIC.get.methodDescriptor == NoArgNoRetMethodDesc ||
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass == ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
-              asINVOKEVIRTUAL.get.methodDescriptor == desc
+              asINVOKEVIRTUAL.get.methodDescriptor == NoArgNoRetMethodDesc
         })
       } yield (classFile, method, instruction)
     }
@@ -470,12 +484,11 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         if ({
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
-          val desc = MethodDescriptor(Seq(), VoidType)
 
           asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass == ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
-            asINVOKESTATIC.get.methodDescriptor == desc ||
+            asINVOKESTATIC.get.methodDescriptor == NoArgNoRetMethodDesc ||
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass == ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
-              asINVOKEVIRTUAL.get.methodDescriptor == desc
+              asINVOKEVIRTUAL.get.methodDescriptor == NoArgNoRetMethodDesc
         })
       } yield (classFile, method, instruction)
     }
@@ -492,12 +505,11 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         if {
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
-          val desc = MethodDescriptor(Seq(), VoidType)
 
           asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass ==# ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
-            asINVOKESTATIC.get.methodDescriptor ==# desc ||
+            asINVOKESTATIC.get.methodDescriptor ==# NoArgNoRetMethodDesc ||
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass ==# ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
-              asINVOKEVIRTUAL.get.methodDescriptor ==# desc
+              asINVOKEVIRTUAL.get.methodDescriptor ==# NoArgNoRetMethodDesc
         }
       } yield (classFile, method, instruction))
     }
@@ -512,16 +524,28 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         if {
           val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
           val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
-          val desc = MethodDescriptor(Seq(), VoidType)
 
           (asINVOKESTATIC.map(i => i.declaringClass ==# ObjectType("java/lang/System") && i.name == "gc" &&
-            i.methodDescriptor ==# desc) orElse
+            i.methodDescriptor ==# NoArgNoRetMethodDesc) orElse
             asINVOKEVIRTUAL.map(i => i.declaringClass ==# ObjectType("java/lang/Runtime") && i.name == "gc" &&
-              i.methodDescriptor ==# desc)) getOrElse false
+              i.methodDescriptor ==# NoArgNoRetMethodDesc)) getOrElse false
         }
       } yield (classFile, method, instruction))
     }
     benchQuery("DM_GC Los-2", garbageCollectingMethodsLos2, garbageCollectingMethods)
+
+    benchQueryComplete("DM_GC-3")(garbageCollectingMethods, false) {
+      for {
+        classFile ← classFiles.asSmartCollection
+        method ← classFile.methods
+        body ← method.body
+        instruction ← body.instructions.typeCase(
+          when[INVOKESTATIC](instr =>
+            instr.declaringClass ==# ObjectType("java/lang/System") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity),
+          when[INVOKEVIRTUAL](instr =>
+            instr.declaringClass ==# ObjectType("java/lang/Runtime") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity))
+      } yield (classFile, method, instruction)
+    }
   }
 
   test("PublicFinalizer") {
@@ -571,11 +595,11 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       } yield classFile
     }
     println("\tViolations: " + classesWithPublicFinalizeMethods.length)
-    
+
     val classesWithPublicFinalizeMethodsLikeLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED-2 Native Like Los") {
       for {
-        classFile ← classFiles.view
-        method ← classFile.methods
+        classFile ← classFiles
+        method ← classFile.methods.view
         if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
       } yield classFile
     }
@@ -675,7 +699,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
     benchQuery("IMSE_DONT_CATCH_IMSE Los", catchesIllegalMonitorStateExceptionLos, catchesIllegalMonitorStateException)
   }
-  
+
   test("CovariantCompareToMethods") {
     analyzeCovariantCompareToMethods()
   }
@@ -701,7 +725,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         allComparables ← classHierarchy.subtypes(comparableType).toList.asSmartCollection
         comparable ← allComparables
         classFile ← getClassFile.get(comparable)
-        method /*@ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _)*/ ← classFile.methods //if parameterType != ObjectType.Object
+        method ← classFile.methods //if parameterType != ObjectType.Object
         if method.name ==# "compareTo" && method.descriptor.returnType ==# IntegerType
         parameterTypes <- Let(method.descriptor.parameterTypes)
         if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType.Object
@@ -727,7 +751,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     val abstractClassesThatDefinesCovariantEqualsLos = benchMark("EQ_ABSTRACT_SELF Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isAbstract
-        method /*@ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _)*/ ← classFile.methods //if parameterType != ObjectType.Object
+        method ← classFile.methods
         if method.name ==# "equals" && method.descriptor.returnType ==# BooleanType
         parameterTypes <- Let(method.descriptor.parameterTypes)
         if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType.Object
@@ -735,7 +759,7 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     }
     benchQuery("EQ_ABSTRACT_SELF Los", abstractClassesThatDefinesCovariantEqualsLos, abstractClassesThatDefinesCovariantEquals)
   }
-  
+
   test("MethodsThatCallRunFinalizersOnExit") {
     analyzeMethodsThatCallRunFinalizersOnExit()
   }
@@ -764,11 +788,120 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
         desc <- Let(instruction.methodDescriptor)
         recv <- instruction.declaringClass.ifInstanceOf[ObjectType]
         if (recv.className ==# "java/lang/System" || recv.className ==# "java/lang/Runtime") &&
-          desc.returnType ==# VoidType && desc.parameterTypes ==# Seq(BooleanType)
+          desc ==# MethodDescriptor(Seq(BooleanType), VoidType)
       } yield (classFile, method, instruction)
     }
   }
 
+  test("CloneableNoClone") {
+    analyzeCloneableNoClone()
+  }
+  def analyzeCloneableNoClone() {
+    // FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)
+    benchQueryComplete("CN_IDIOM") {
+      // Weakness: We will not identify cloneable classes in projects, where we extend a predefined
+      // class (of the JDK) that indirectly inherits from Cloneable. ME
+      // Why? PG
+      for {
+        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList
+        cloneable ← allCloneable
+        classFile ← getClassFile.get(cloneable).toList
+        if !(classFile.methods exists {
+          case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true
+          case _ ⇒ false
+        })
+      } yield classFile.thisClass.className
+    } {
+      import BATLifting._
+
+      for {
+        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSmartCollection
+        cloneable ← allCloneable
+        classFile ← getClassFile.get(cloneable)
+        if !(classFile.methods exists (method => method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"))
+      } yield classFile.thisClass.className
+    }
+  }
+
+  test("CloneDoesNotCallSuperClone") {
+    analyzeCloneDoesNotCallSuperClone()
+  }
+  def analyzeCloneDoesNotCallSuperClone() {
+    benchQueryComplete("CN_IDIOM_NO_SUPER_CALL") {
+      // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
+      for {
+        classFile ← classFiles
+        if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
+        if classFile.superClass.isDefined
+        method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+        body ← method.body
+        //if !method.isAbstract //Redundant; we just check if there is a body.
+        if !(body.instructions exists {
+          case INVOKESPECIAL(superClass, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true //XXX: do you want to bind superClass or to compare it?
+          case _ ⇒ false
+        })
+      } yield (classFile, method)
+    } {
+      import BATLifting._
+      import InstructionLifting._
+      for {
+        classFile ← classFiles.asSmartCollection
+        if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
+        if classFile.superClass.isDefined
+        method ← classFile.methods
+        if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
+        body ← method.body
+        if !(body.instructions.typeFilter[INVOKESPECIAL] exists {
+          instr =>
+            instr.name ==# "clone" && instr.methodDescriptor ==# MethodDescriptor(Seq(), ObjectType.Object)
+        })
+      } yield (classFile, method)
+    }
+  }
+
+  test("CloneButNotCloneable") {
+    analyzeCloneButNotCloneable()
+  }
+  def analyzeCloneButNotCloneable() {
+    benchQueryComplete("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE") {
+        // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
+      for {
+        classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
+        method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+        if !classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
+      } yield (classFile.thisClass.className, method.name)
+        //println("\tViolations: " /*+cloneButNotCloneable.mkString(", ")*/ +cloneButNotCloneable.size)
+    } {
+      import BATLifting._
+      import InstructionLifting._
+      for {
+        classFile ← classFiles.asSmartCollection
+        if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
+        method ← classFile.methods
+        if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
+        //Shouldn't we have a lifter for this? Yep.
+        if !onExp(classFile.thisClass)('foo, classHierarchy.isSubtypeOf(_, ObjectType("java/lang/Cloneable")).getOrElse(false))
+      } yield (classFile.thisClass.className, method.name)
+    }
+  }
+
+  //Template for new tests:
+  /*
+  test("") {
+    analyze()
+  }
+  def analyze() {
+    benchQueryComplete("") {
+
+    } {
+      import BATLifting._
+      import InstructionLifting._
+
+    }
+  }
+   */
+
+  /*
   def setupAnalysis(zipFiles: Seq[String]) {
     classFiles = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
       for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
@@ -783,15 +916,48 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
     println("Number of class files: " + classFiles.length)
   }
+  */
 
-  var methodNameIdx: Exp[Map[String, Seq[(ClassFile, Method)]]] = _
-  var excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, Code, ExceptionHandler)]]] = _
+  import BATLifting._
 
-  def setupIndexes() {
+  val methodNameIdx: Exp[Map[String, Seq[(ClassFile, Method)]]] = (for {
+    classFile ← classFiles.asSmartCollection
+    method ← classFile.methods
+  } yield (classFile, method)).groupBy(_._2.name)
+
+  val excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, Code, ExceptionHandler)]]] = (for {
+    classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
+    method ← classFile.methods
+    body ← method.body
+    exceptionHandler ← body.exceptionHandlers
+  } yield (classFile, method, body, exceptionHandler)) groupBy (_._4.catchType)
+
+  Optimization.pushEnableDebugLog(false)
+  benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(methodNameIdx, Some((for {
+      classFile ← classFiles
+      method ← classFile.methods
+    } yield (classFile, method)).groupBy(_._2.name))))
+  benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(excHandlerTypeIdx))
+  Optimization.popEnableDebugLog()
+
+  //def setupIndexes() {
+    /*
     import BATLifting._
+    /*
+    (for {
+      classFile ← classFiles.asSmartCollection
+      method ← classFile.methods
+    } yield (classFile, method)).size
+    */
 
+    /*
     methodNameIdx = (for {
       classFile ← classFiles.asSmartCollection
+      method ← classFile.methods
+    } yield (classFile, method)).groupBy(_._2.name)
+
+    val methodNameIdxVal = (for {
+      classFile ← classFiles
       method ← classFile.methods
     } yield (classFile, method)).groupBy(_._2.name)
 
@@ -802,19 +968,17 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
       exceptionHandler ← body.exceptionHandlers
     } yield (classFile, method, body, exceptionHandler)
     excHandlerTypeIdx = idxBase groupBy (_._4.catchType)
+    */
 
-    benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(methodNameIdx))
-    benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(excHandlerTypeIdx))
-  }
+    */
+  //}
 
   def tearDownIndexes() {
     Optimization.removeSubquery(methodNameIdx)
     Optimization.removeSubquery(excHandlerTypeIdx)
   }
 
-  def analyze(zipFiles: Seq[String]) {
-    setupAnalysis(zipFiles)
-
+  def analyze() {
     analyzeConfusedInheritance()
     analyzeUnusedFields()
     analyzeExplicitGC()
@@ -824,11 +988,9 @@ class FindBugsAnalyses extends FunSuite with BeforeAndAfterAll with ShouldMatche
     analyzeCovariantCompareToMethods()
     analyzeAbstractClassesThatDefinesCovariantEquals()
     analyzeMethodsThatCallRunFinalizersOnExit()
-  }
-
-  override def beforeAll() {
-    setupAnalysis(Seq("lib/scalatest-1.6.1.jar"))
-    setupIndexes()
+    analyzeCloneableNoClone()
+    analyzeCloneDoesNotCallSuperClone()
+    analyzeCloneButNotCloneable()
   }
 
   override def afterAll() {

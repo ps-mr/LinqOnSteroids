@@ -273,7 +273,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     showInterp("b4", b4)
     testTraversableView(a)
   }
-  
+
   @Test
   def testSet() {
     val data = Set(1, 2, 3, 5)

@@ -202,6 +202,7 @@ object FoldOperatorsMain {
   }
   def Div[T: Fractional] = reverse(Times[T])
 
+  /*
   def main(args: Array[String]) {
     import Lifting._
     for (n <- 1 to 5) {
@@ -301,4 +302,5 @@ object FoldOperatorsMain {
       }
     }
   }
+  */
 }

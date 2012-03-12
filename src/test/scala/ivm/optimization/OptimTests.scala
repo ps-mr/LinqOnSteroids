@@ -19,7 +19,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
     opt should be (Optimization.reassociateOps(opt))
     opt
   }
-  
+
   @Test
   def reassociateOpsF() {
     def f(e: Exp[Int]) = e + 1
@@ -69,7 +69,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
         j <- base
         if i < 3
       } yield (i, j)
-    val opt = Optimization.hoistFilter(query)
+    val opt = Optimization.handleFilters(query)
     query.interpret() should be (for (i <- 1 to 2; j <- 1 to 5) yield (i, j))
     opt.interpret() should be (query.interpret())
     opt should be (
@@ -88,7 +88,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
         l <- base
         if i < 3
       } yield (i, j, l)
-    val opt2 = Optimization.hoistFilter(query2)
+    val opt2 = Optimization.handleFilters(query2)
     query2.interpret() should be (for (i <- 1 to 2; j <- 1 to 5; k <- 1 to 5; l <- 1 to 5) yield (i, j, l))
     opt2 should be (
       for {
@@ -101,7 +101,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
     )
     opt2.interpret() should be (query2.interpret())
 
-    val opt21 = Optimization.hoistFilter(opt2)
+    val opt21 = Optimization.handleFilters(opt2)
     opt21 should be (
       for {
         i <- base

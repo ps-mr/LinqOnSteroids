@@ -13,7 +13,7 @@ parallelExecution in Test := false
 
 libraryDependencies += "junit" % "junit" % "4.8.2" % "test->default"
 
-libraryDependencies += "org.scalatest" % "scalatest_2.9.0" % "1.6.1"
+libraryDependencies += "org.scalatest" %% "scalatest" % "1.7.1" % "test"
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 
@@ -75,8 +75,8 @@ initialCommands in (Test, console) := """
     import Lifting._
     import optimization._
     import tests._
-    import opaltests._
     import performancetests._
+    import opaltests._
 """
 
 sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, scalaVersion) map { (dir, baseDir, scalaVer) =>
@@ -97,8 +97,10 @@ object GitVersion {
     base <- Generator.templates
     file = dir / (base + ".scala")
   } yield {
-    if (!file.exists() || (baseDir / "src" / "main" / "resources" / (base + ".ssp") newerThan file))
+    if (!file.exists() || (baseDir / "src" / "main" / "resources" / (base + ".ssp") newerThan file)) {
+      printf("Generating %s\n", file)
       gen.generate(dir.absolutePath)
+    }
     file
   }) :+ verFile
 }

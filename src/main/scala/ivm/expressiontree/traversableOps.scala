@@ -38,62 +38,12 @@ trait TraversableOps {
       newFlatMap(this.t, FuncExp(f))
   }
 
-  case class GroupBy[T, Repr <: TraversableLike[T, Repr], K](base: Exp[Repr], f: Exp[T => K]) extends Arity2OpExp[Repr,
-    T => K, Map[K, Repr], GroupBy[T, Repr, K]](base, f) {
-    override def interpret() = base.interpret() groupBy f.interpret()
-    override def copy(base: Exp[Repr], f: Exp[T => K]) = GroupBy(base, f)
-  }
-
-
-  case class Join[T, Repr <: TraversableLike[T, Repr], S, TKey, TResult, That](colouter: Exp[Repr],
-                                                                               colinner: Exp[Traversable[S]],
-                                                                               outerKeySelector: FuncExp[T, TKey],
-                                                                               innerKeySelector: FuncExp[S, TKey],
-                                                                               resultSelector: FuncExp[(T, S), TResult])
-                                                                              (implicit cbf: CanBuildFrom[Repr, TResult, That]) extends
-  Arity5Op[Exp[Repr],
-    Exp[Traversable[S]],
-    FuncExp[T, TKey], FuncExp[S, TKey], FuncExp[(T, S), TResult],
-    That, Join[T, Repr, S, TKey, TResult, That]](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
-    override def copy(colouter: Exp[Repr],
-                      colinner: Exp[Traversable[S]],
-                      outerKeySelector: FuncExp[T, TKey],
-                      innerKeySelector: FuncExp[S, TKey],
-                      resultSelector: FuncExp[(T, S), TResult]) = Join(colouter, colinner, outerKeySelector, innerKeySelector, resultSelector)
-
-    override def interpret() = {
-      // naive hash join algorithm
-      val ci: Traversable[S] = colinner.interpret()
-      val co: Repr = colouter.interpret()
-      val builder = cbf(co)
-      // In databases, we build the temporary index on the smaller relation, so that the index fits more easily in
-      // memory. This concern seems not directly relevant here; what matters here is only whether insertions or lookups in a
-      // hash-map are more expensive. OTOH, it is probably important that the temporary index fits at least in the L2 cache,
-      // so we should index again on the smaller relation!
-      //if (ci.size > co.size) {
-        val map = ci.groupBy(innerKeySelector.interpret()) //Cost O(|ci|) hash-map insertions
-        for (c <- co; d <- map(outerKeySelector.interpret()(c))) //Cost O(|co|) hash-map lookups
-          builder += resultSelector.interpret()(c, d)
-      //XXX: this is non-order-preserving, and might be suboptimal.
-      /*} else {
-        val map = co.groupBy(outerKeySelector.interpret())
-        for (c <- ci; d <- map(innerKeySelector.interpret()(c)))
-          builder += resultSelector.interpret()(d, c)
-      }*/
-      builder.result()
-    }
-  }
-
-  case class ExpSeq[T](children: Exp[T]*) extends Exp[Seq[T]] {
-    override def nodeArity = children.size
-    override protected def checkedGenericConstructor: Seq[Exp[_]] => Exp[Seq[T]] = v => ExpSeq((v.asInstanceOf[Seq[Exp[T]]]): _*)
-    override def interpret() = children.map(_.interpret())
-  }
-  implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e.toSeq: _*) //null//onExp(e)('Traversable, Traversable(_))
-
   //This is just an interface for documentation purposes.
   trait WithFilterable[T, Repr] {
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[TraversableView[T, Repr]]
+    def exists(f: Exp[T] => Exp[Boolean]) = !IsEmpty(this withFilter f)//(withFilter f).isEmpty
+    //The awkward use of andThen below is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
+    def forall(f: Exp[T] => Exp[Boolean]) = IsEmpty(this withFilter (f andThen (!(_)))) //Forall(this.t, FuncExp(f))
   }
 
   trait WithFilterImpl[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends WithFilterable[T, Repr] {
@@ -148,9 +98,9 @@ trait TraversableOps {
                                     (implicit cbf: CanBuildFrom[Repr, TResult, That]): Exp[That]
     = Join(this.t, innerColl, FuncExp(outerKeySelector), FuncExp(innerKeySelector), FuncExp(resultSelector))
 
-    def forall(f: Exp[T] => Exp[Boolean]) = Forall(this.t, FuncExp(f))
+    //def forall(f: Exp[T] => Exp[Boolean]) = Forall(this.t, FuncExp(f))
     //This awkward form is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
-    def exists(f: Exp[T] => Exp[Boolean]) = !(Forall(this.t, FuncExp(f andThen (!(_)))))
+    //def exists(f: Exp[T] => Exp[Boolean]) = !(Forall(this.t, FuncExp(f andThen (!(_)))))
 
     def typeFilter[S](implicit cS: ClassManifest[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
@@ -200,6 +150,8 @@ trait TraversableOps {
     t.asInstanceOf[Exp[TraversableView[T, C[T]]]])
   //XXX
   implicit def tToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
+
+  implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e.toSeq: _*) //onExp(e)('Traversable, Traversable(_))
 }
 
 trait ForceOps {
@@ -305,11 +257,6 @@ trait CollectionSetOps {
   //and get the right type.
   import collection.{SetLike, Set}
 
-  case class Contains[T](set: Exp[Set[T]], v: Exp[T]) extends Arity2OpExp[Set[T], T, Boolean, Contains[T]](set, v) {
-    def interpret() = set.interpret().contains(v.interpret())
-    def copy(set: Exp[Set[T]], v: Exp[T]) = Contains(set: Exp[Set[T]], v: Exp[T])
-  }
-
   trait SetLikeOps[T, Coll[T] <: Set[T] with SetLike[T, Coll[T]]]
     extends TraversableLikeOps[T, Coll, Coll[T]] with WithFilterImpl[T, Coll[T]] {
     def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
@@ -329,10 +276,6 @@ trait SetOps extends CollectionSetOps {
   // This class differs from CollectionSetOps because it extends TraversableLikeOps[T, collection.immutable.Set, collection.immutable.Set[T]]
   // instead of TraversableLikeOps[T, collection.Set, collection.Set[T]].
   class SetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set]
-  /*class SetOps[T](val t: Exp[Set[T]]) extends TraversableLikeOps[T, Set, Set[T]] with WithFilterImpl[T, Set[T]] {
-    def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
-    def contains(el: Exp[T]) = apply(el)
-  }*/
   implicit def expToSetExp[T](t: Exp[Set[T]]): SetOps[T] = new SetOps(t)
   implicit def tToSetExp[T](t: Set[T]): SetOps[T] = expToSetExp(t)
 }
@@ -353,6 +296,17 @@ import collection.generic.CanBuildFrom
 import mutable.{Queue, ArrayBuffer, Builder}
 
 object CollectionUtils {
+  //This is equivalent to coll.collectFirst(Function.unlift(f)), but it saves the expensive Function.unlift.
+  def collectFirst[T, U](coll: TraversableOnce[T])(f: T => Option[U]): Option[U] = {
+    for (x <- coll) {
+      f(x) match {
+        case v@Some(_) => return v
+        case _ =>
+      }
+    }
+    None
+  }
+
   //This must be only used inside the implementation. Mutability fun!
   /*private*/ def groupBySel[A, K, B, Repr <: Traversable[A], That](coll: Repr with Traversable[A])(f: A => K, g: A => B)(implicit cbf: CanBuildFrom[Repr, B, That]): immutable.Map[K, That] = {
     val m = mutable.Map.empty[K, Builder[B, That]]

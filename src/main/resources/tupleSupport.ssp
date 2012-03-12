@@ -18,8 +18,9 @@ import annotation.switch
 
   //These refer to mutable variables, hence must be definitions!
   def tparams = paramsLoopComma(tpPfx + "%d")
-  def paramsDecl = paramsLoopComma(argPfx + "%d: Exp[" + tpPfx + "%<d]")
-  def paramsDeclOverride = paramsLoopComma("override val " + argPfx + "%d: Exp[" + tpPfx + "%<d]")
+  val paramTempl = argPfx + "%d: Exp[" + tpPfx + "%<d]"
+  def paramsDecl = paramsLoopComma(paramTempl)
+  def paramsDeclOverride = paramsLoopComma("override val " + paramTempl)
   def params = paramsLoopComma(argPfx + "%d")
   def interpretParams = paramsLoopComma(argPfx + "%d.interpret()")
 %>
@@ -50,7 +51,7 @@ abstract class Arity${arity}Op[${paramsLoopComma(tpPfx + "%d <: Exp[_]")}, +R, S
 Should this inherit from Arity2OpExpTrait or from Arity2Op? Does it matter? I hope not - these classes should
 stay an implementation detail.
 --%>
-abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDecl})
+abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDeclOverride})
   extends Arity${arity}Op[${paramsLoopComma("Exp[" + tpPfx + "%d]")}, R, Self](${params}) {
   this: Self =>
 }

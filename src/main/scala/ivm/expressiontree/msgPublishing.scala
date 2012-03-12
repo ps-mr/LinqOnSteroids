@@ -6,7 +6,7 @@ import collection.immutable.HashSet
 
 /**
  * Question: should we send updates before or after modifying the underlying collection? Here we do it before, so that
- * the subscribers can check the original collection value. Scala's interface does it afterwards, so that the update 
+ * the subscribers can check the original collection value. Scala's interface does it afterwards, so that the update
  * User: pgiarrusso
  * Date: 13/8/2011
  */
