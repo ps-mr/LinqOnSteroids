@@ -332,6 +332,8 @@ object OptimizationTransforms {
           val v = FuncExp.gensym()
           val transformed = fmFun.body.substSubTerm(instanceOfNode, Some(v))
           //Note: on the result we would really like to drop all the 'Option'-ness, but that's a separate step.
+          //Also, if we are in this branch, it means the client code is really using the 'Option'-ness of the value, say
+          //via orElse or getOrElse, so we can't drop it.
           buildTypeFilter(coll, instanceOfNode.classS, FuncExp.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)
         }
       case _ =>
@@ -353,9 +355,9 @@ object OptimizationTransforms {
 
   //removeRedundantOption is supposed to eliminate redundant lets from code like:
   //for (i <- base.typeFilter[Int]; j <- Some(i) if j % 2 ==# 0) yield j
-  //which is for instance produced by toTypeFilter.
-  //This optimization does not extend to normal bindings as used in FindBugsAnalyses. There we need to produce the usual
-  //desugaring of Let - i.e. to use letExp.
+  //transforming it to
+  //for (i <- base.typeFilter[Int] if i % 2 ==% 0) yield i.
+  //The transformation can be formalized as opt flatMap (x => f(Some(x))) => f(opt); if f is distributive in the
   private def tryRemoveRedundantOption[T, U](coll: Exp[Traversable[T]],
                                        fmFun: FuncExp[T, Traversable[U]],
                                        insideConv: Exp[Option[U]],
@@ -367,18 +369,18 @@ object OptimizationTransforms {
     //    Some node
     // 2. Only supported Option operations must appear.
 
+    val X = fmFun.x
     //Check safety condition, part 2.
-    @tailrec
+    //@tailrec
     def isSupported(insideConv: Exp[_], LetNode: Exp[_]): Boolean =
       insideConv match {
-        case Call2(OptionMapId, _, subColl, _) => isSupported(subColl, LetNode)
-        case Call2(OptionFilterId, _, subColl, _) => isSupported(subColl, LetNode)
-        case Call2(OptionFlatMapId, _, subColl, _) => isSupported(subColl, LetNode)
+        case Call2(OptionMapId, _, subColl, f) => isSupported(subColl, LetNode) && !f.isOrContains(X)
+        case Call2(OptionFilterId, _, subColl, f) => isSupported(subColl, LetNode) && !f.isOrContains(X)
+        case Call2(OptionFlatMapId, _, subColl, f) => isSupported(subColl, LetNode) && !f.isOrContains(X)
         case LetNode => true
         case _ => false
       }
 
-    val X = fmFun.x
     val containingX = insideConv.findTotFun(_.children.contains(X))
     containingX.head match {
       case letNode@ExpOption(Some(X)) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
@@ -386,7 +388,7 @@ object OptimizationTransforms {
         //val v = FuncExp.gensym()
         //val transformed = insideConv.substSubTerm(letNode, v).asInstanceOf[Exp[U]] //Note that the type, in fact, should change somehow!
         val transformed = insideConv.substSubTerm(letNode, coll).asInstanceOf[Exp[Traversable[U]]] //Note that the type, in fact, should change somehow!
-        val transformed2 = transformed transform (e2 => e2 match {
+        val transformed2 = transformed transform {
           //The type annotations on subColl reflect on purpose types after transformation
           case Call2(OptionMapId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, u]) =>
             subColl map f.asInstanceOf[FuncExp[t, u]].f
@@ -396,8 +398,8 @@ object OptimizationTransforms {
             subColl withFilter f.asInstanceOf[FuncExp[t, Boolean]].f
           case Call2(OptionFlatMapId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, Traversable[u]]) =>
             subColl flatMap f.asInstanceOf[FuncExp[t, Traversable[u]]].f
-          case _ => e2
-        })
+          case e2 => e2
+        }
         //coll.map(FuncExp.makefun(transformed2, v).f)
         transformed2
       case _ =>
@@ -405,6 +407,19 @@ object OptimizationTransforms {
     }
   }
 
+  //removeRedundantLet is supposed to eliminate redundant lets from code like:
+  //for (i <- base.typeFilter[Int]; j <- Let(i) if j % 2 ==# 0) yield j
+  //which is for instance produced by toTypeFilter.
+  //The transformation can be described as FlatMap(coll, x => f(Seq(x))) => f(coll), under the condition that
+  //f is a sequence homomorphism, i.e. if it distributes over list concatenation so that
+  // coll flatMap (x => f(Seq(x))) = {flatMap identity}
+  // coll map (x => f(Seq(x))) flatten = {undo map fusion}
+  // coll map (x => Seq(x)) map f flatten = {distributivity of f}
+  // f(coll map (x => Seq(x)) flatten = {compose map and flatten}
+  // f(coll)
+  // However, we use in practice a much more restrictive condition.
+  //This optimization does not extend to normal Let bindings as used in FindBugsAnalyses. There we need to produce the usual
+  //desugaring of Let - i.e. to use letExp; that's done in letTransformer.
   private def tryRemoveRedundantLet[T, U](coll: Exp[Traversable[T]],
                                        fmFun: FuncExp[T, Traversable[U]],
                                        e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
@@ -414,18 +429,19 @@ object OptimizationTransforms {
     //    Let node
     // 2. Only supported Traversable operations must appear.
 
+    val X = fmFun.x
+
     //Check safety condition, part 2.
-    @tailrec
+    //@tailrec
     def isSupported(insideConv: Exp[_], LetNode: Exp[_]): Boolean =
       insideConv match {
-        case MapOp(subColl, _) => isSupported(subColl, LetNode)
-        case Filter(subColl, _) => isSupported(stripViewUntyped(subColl), LetNode)
-        case FlatMap(subColl, _) => isSupported(subColl, LetNode)
+        case MapOp(subColl, f) => isSupported(subColl, LetNode) && !f.body.isOrContains(X)
+        case Filter(subColl, f) => isSupported(stripViewUntyped(subColl), LetNode) && !f.body.isOrContains(X)
+        case FlatMap(subColl, f) => isSupported(subColl, LetNode) && !f.body.isOrContains(X)
         case LetNode => true
         case _ => false
       }
 
-    val X = fmFun.x
     val containingX = insideConv.findTotFun(_.children.contains(X))
     containingX.head match {
       case letNode@ExpSeq(X) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
