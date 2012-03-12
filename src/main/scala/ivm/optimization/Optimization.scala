@@ -456,10 +456,13 @@ object OptimizationTransforms {
 
   val removeRedundantOption: Exp[_] => Exp[_] = {
     import OptionOps._
-    {
-      //Miscompilation once again! If we enable both branches, the second one is not entered.
-      /*case e @ FlatMap(coll: Exp[Traversable[t]], (fmFun: FuncExp[_, Traversable[u]]) & FuncExpBody(Call1(OptionToIterableId, _, insideConv: Exp[Option[_]]))) =>
-        tryRemoveRedundantOption(coll, fmFun, insideConv.asInstanceOf[Exp[Option[u]]], e.asInstanceOf[Exp[Traversable[u]]])*/
+
+    //Miscompilation once again! If we combine these two pattern matches, the second one (the less specific pattern) is not entered.
+    ({
+      case e @ FlatMap(coll: Exp[Traversable[t]], (fmFun: FuncExp[_, Traversable[u]]) & FuncExpBody(Call1(OptionToIterableId, _, insideConv: Exp[Option[_]]))) =>
+        tryRemoveRedundantOption(coll, fmFun, insideConv.asInstanceOf[Exp[Option[u]]], e.asInstanceOf[Exp[Traversable[u]]])
+      case e => e
+    }: (Exp[_] => Exp[_])) andThen {
       case e @ FlatMap(coll: Exp[Traversable[t]], (fmFun: FuncExp[_, Traversable[u]])) =>
         tryRemoveRedundantLet(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
       /*case FlatMap(coll, fmFun @ FuncExpBody(Call1(OptionToIterableId, _, Call2(OptionMapId, _, subColl, f: FuncExp[Any, _])))) =>
