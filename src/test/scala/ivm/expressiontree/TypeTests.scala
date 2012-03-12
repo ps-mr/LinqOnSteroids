@@ -107,7 +107,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   def localLookupEq[T, Repr <: /*FilterMonadic*/ TraversableLike[T, Repr], U, That <: Traversable[U]](e: FlatMap[T, Repr, U, That],
                           freeVars: Set[Var] = Set.empty,
-                          fvSeq: Seq[Var] = Seq.empty): Seq[(ivm.expressiontree.Exp[That /*Traversable[U]*/], FoundFilter[T, Repr], Set[Exp[Boolean]], Set[Exp[Boolean]], Seq[Var])] = {
+                          fvSeq: Seq[Var] = Seq.empty): Seq[(FlatMap[T, Repr, U, That], FoundFilter[T, Repr], Set[Exp[Boolean]], Set[Exp[Boolean]], Seq[Var])] = {
     (e.base match {
       //case Filter(c: Exp[Traversable[T /*t*/]], f: FuncExp[_, _ /*Boolean*/]) =>
       case Filter(c, f) =>
@@ -134,16 +134,16 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     }
   }
 
-  def lookupEq2(e: Exp[_],
+  def lookupEq(e: Exp[_],
                freeVars: Set[Var] = Set.empty,
-               fvSeq: Seq[Var] = Seq.empty): Seq[(ivm.expressiontree.Exp[Traversable[_]], FoundFilter[_, _], Set[Exp[Boolean]], Set[Exp[Boolean]], Seq[Var])] = {
+               fvSeq: Seq[Var] = Seq.empty): Seq[(FlatMap[_, _, _, _], FoundFilter[_, _], Set[Exp[Boolean]], Set[Exp[Boolean]], Seq[Var])] = {
     require (fvSeq.toSet == freeVars)
 
     val otherRes = e match {
       case f: FuncExp[_, _] =>
-        lookupEq2(f.body, freeVars + f.x, fvSeq :+ f.x)
+        lookupEq(f.body, freeVars + f.x, fvSeq :+ f.x)
       case exp => exp.children flatMap {
-        lookupEq2(_, freeVars, fvSeq)
+        lookupEq(_, freeVars, fvSeq)
       }
     }
     otherRes ++ (e match {
@@ -153,6 +153,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
       case _ => Seq.empty
     })
   }
+
+  /*
   //Preconditions:
   //Postconditions: when extracting Some((parentNode, parentF)), filterExp, conds, foundEqs, allFVSeq, parentNode is a FlatMap node which
   // contains a filter expression as base collection (and not through a FuncExp node); the filter expression is returned, after being transformed
@@ -163,8 +165,6 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
                e: Exp[_],
                freeVars: Set[Var] = Set.empty,
                fvSeq: Seq[Var] = Seq.empty): Seq[((Exp[Traversable[_]], FuncExp[_, _]), FoundFilter[_, _], Set[Exp[Boolean]], Set[Exp[_]], Seq[Var])] = {
-    Seq.empty
-    /*
     val matchResult: Either[Exp[_], FoundNode] = e match {
       case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) if parent.isDefined =>
         Right(FoundFilter(Right(c), f))
@@ -204,8 +204,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
           //Add all free variables bound in the location.
           lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c.fold(identity, identity), freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
       })
-      */
   }
+  */
 
   /*
    * When looking up an index, a filter in the original query will be preserved in the lookup key, and it might make the
@@ -268,8 +268,6 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
    * @param fx
    * @param FVSeq
    * @param parentNode
-   * @param parentF
-   * @param isOption whether parentNode and the contained node have type Exp[ Option[_] ] rather than Exp[ Traversable[_] ]
    * @param cond one of allConds
    * @tparam TupleT
    * @tparam T
@@ -278,9 +276,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   private def tryGroupByNested[TupleT, T /*, U, V*/](indexBaseToLookup: Exp[Traversable[TupleT]],
                             allConds: Set[Exp[Boolean]],
                             fx: Var, FVSeq: Seq[Var],
-                            parentNode: Exp[Traversable[T]],
-                            parentF: FuncExp[_ /*T*/, _/*U*/],
-                            isOption: Boolean)
+                            parentNode: FlatMap[_, _, T, Traversable[T]])
                            (cond: Exp[Boolean]): Option[Exp[Traversable[T]]] =
     cond match {
       case eq: Eq[u] =>
@@ -309,7 +305,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
         //About parentF, note that fx is _not_ in scope in its body, which uses another variable, which
         //iterates over the same collection as fx, so it should be considered equivalent to fx from the point of view of
         //tuplingTransform. Hence let's perform the desired alpha-conversion.
-        val alphaRenamedParentF = parentF.body.substSubTerm(parentF.x, newVar)
+        val alphaRenamedParentF = parentNode.f.body.substSubTerm(parentNode.f.x, newVar)
         val step2Opt = step1Opt.map(e => residualQuery(e, (allConds - eq).map(tuplingTransform(_, newVar)), newVar))
 
         //Note that here, map/flatMap will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
@@ -325,7 +321,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   val groupByShareNested: Exp[_] => Exp[_] =
     e => {
       (for {
-        ((parentNode: Exp[Traversable[t]], parentF), FoundFilter(c: Exp[Traversable[Any]], f: FuncExp[_/*t*/, _ /*Boolean*/]), conds, foundEqs, allFVSeq) <- lookupEq(None, e)
+        ((parentNode: FlatMap[_, _, t, that/*T, Repr, U, That*/]), FoundFilter(c: Exp[Traversable[Any]], f: FuncExp[_/*t*/, _ /*Boolean*/]), conds, foundEqs, allFVSeq) <- lookupEq(e)
         optim <- {
             //Here we produce an open term, because vars in allFVSeq are not bound...
             def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
@@ -339,7 +335,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
             //Note: this means that we built the index we search by substitution in the original query; an alternative
             //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
             val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Any]]]
-            val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, parentF, false)(_))
+            val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
             optimized
         }
       } yield optim).headOption.getOrElse(e)
