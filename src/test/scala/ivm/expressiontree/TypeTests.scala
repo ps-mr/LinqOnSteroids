@@ -238,42 +238,42 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
                             fx: Var, FVSeq: Seq[Var],
                             parentNode: FlatMap[_, _, T, Traversable[T]])
                            (eq: Eq[U]): Option[Exp[Traversable[T]]] = {
-        val allFVSeq = FVSeq :+ fx
-        val allFVMap = allFVSeq.zipWithIndex.toMap
-        val usesFVars = defUseFVars(allFVMap contains _) _
-        def tuplingTransform[T, U](e: Exp[T], tupleVar: TypedVar[Seq[U]]) = e.transform(
-          exp => exp match {
-            case v: Var if allFVMap contains v =>
-              TupleSupport2.projectionTo(tupleVar, allFVSeq.length, allFVMap(v))
-            case _ =>
-              exp
-          })
+    val allFVSeq = FVSeq :+ fx
+    val allFVMap = allFVSeq.zipWithIndex.toMap
+    val usesFVars = defUseFVars(allFVMap contains _) _
+    def tuplingTransform[T, U](e: Exp[T], tupleVar: TypedVar[Seq[U]]) = e.transform(
+      exp => exp match {
+        case v: Var if allFVMap contains v =>
+          TupleSupport2.projectionTo(tupleVar, allFVSeq.length, allFVMap(v))
+        case _ =>
+          exp
+      })
 
-        //We never want to duplicate variables and take care of scoping.
-        //However, we can reuse fx here while still getting a free variable in the end.
-        val newVar = fx.asInstanceOf[TypedVar[Seq[T]]]
-        //XXX probably this should get Exp[Traversable] or Exp[Option], depending on isOption.
-        val step1Opt: Option[Exp[Traversable[TupleT]]] =
-          if (usesFVars(eq.t1) && !usesFVars(eq.t2))
-            groupByShareBodyNested[TupleT, T, U](indexBaseToLookup, newVar, eq, eq.t2, eq.t1, allFVSeq, tuplingTransform)
-          else if (usesFVars(eq.t2) && !usesFVars(eq.t1))
-            groupByShareBodyNested[TupleT, T, U](indexBaseToLookup, newVar, eq, eq.t1, eq.t2, allFVSeq, tuplingTransform)
-          else None
-        //We need to apply tuplingTransform both to allConds and to parentF.
-        //About parentF, note that fx is _not_ in scope in its body, which uses another variable, which
-        //iterates over the same collection as fx, so it should be considered equivalent to fx from the point of view of
-        //tuplingTransform. Hence let's perform the desired alpha-conversion.
-        val alphaRenamedParentF = parentNode.f.body.substSubTerm(parentNode.f.x, newVar)
-        val step2Opt = step1Opt.map(e => residualQuery(e, (allConds - eq).map(tuplingTransform(_, newVar)), newVar))
+    //We never want to duplicate variables and take care of scoping.
+    //However, we can reuse fx here while still getting a free variable in the end.
+    val newVar = fx.asInstanceOf[TypedVar[Seq[T]]]
+    //XXX probably this should get Exp[Traversable] or Exp[Option], depending on isOption.
+    val step1Opt: Option[Exp[Traversable[TupleT]]] =
+      if (usesFVars(eq.t1) && !usesFVars(eq.t2))
+        groupByShareBodyNested[TupleT, T, U](indexBaseToLookup, newVar, eq, eq.t2, eq.t1, allFVSeq, tuplingTransform)
+      else if (usesFVars(eq.t2) && !usesFVars(eq.t1))
+        groupByShareBodyNested[TupleT, T, U](indexBaseToLookup, newVar, eq, eq.t1, eq.t2, allFVSeq, tuplingTransform)
+      else None
+    //We need to apply tuplingTransform both to allConds and to parentF.
+    //About parentF, note that fx is _not_ in scope in its body, which uses another variable, which
+    //iterates over the same collection as fx, so it should be considered equivalent to fx from the point of view of
+    //tuplingTransform. Hence let's perform the desired alpha-conversion.
+    val alphaRenamedParentF = parentNode.f.body.substSubTerm(parentNode.f.x, newVar)
+    val step2Opt = step1Opt.map(e => residualQuery(e, (allConds - eq).map(tuplingTransform(_, newVar)), newVar))
 
-        //Note that here, map/flatMap will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
-        // instance from the HOAS representation produced.
-        parentNode match {
-          case FlatMap(_, _) =>
-            step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, Traversable[T]](
-              tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[Traversable[T]]], newVar), newVar))
-        }
+    //Note that here, map/flatMap will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
+    // instance from the HOAS representation produced.
+    parentNode match {
+      case FlatMap(_, _) =>
+        step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, Traversable[T]](
+          tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[Traversable[T]]], newVar), newVar))
     }
+  }
 
   val groupByShareNested: Exp[_] => Exp[_] =
     e => {
@@ -286,16 +286,16 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
           fn match {
             case FoundFilter(c: Exp[Traversable[Any]], f: FuncExp[_/*t*/, _ /*Boolean*/], conds, foundEqs) =>
-            //Here we produce an open term, because vars in allFVSeq are not bound...
-            //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
-            //now bound. Note: e might well be an open term - we don't check it explicitly anywhere, even if we should.
-            //However, index lookup is going to fail when open terms are passed - the query repository contains only
-            //closed queries.
-            //
-            //Note: this means that we built the index we search by substitution in the original query; an alternative
-            //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
-            val optimized: Option[Exp[_]] = collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
-            optimized
+              //Here we produce an open term, because vars in allFVSeq are not bound...
+              //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
+              //now bound. Note: e might well be an open term - we don't check it explicitly anywhere, even if we should.
+              //However, index lookup is going to fail when open terms are passed - the query repository contains only
+              //closed queries.
+              //
+              //Note: this means that we built the index we search by substitution in the original query; an alternative
+              //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
+              val optimized: Option[Exp[_]] = collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
+              optimized
             case _ => None
           }
         }
