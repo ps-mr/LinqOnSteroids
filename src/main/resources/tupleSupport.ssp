@@ -51,7 +51,7 @@ abstract class Arity${arity}Op[${paramsLoopComma(tpPfx + "%d <: Exp[_]")}, +R, S
 Should this inherit from Arity2OpExpTrait or from Arity2Op? Does it matter? I hope not - these classes should
 stay an implementation detail.
 --%>
-abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDecl})
+abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDeclOverride})
   extends Arity${arity}Op[${paramsLoopComma("Exp[" + tpPfx + "%d]")}, R, Self](${params}) {
   this: Self =>
 }
