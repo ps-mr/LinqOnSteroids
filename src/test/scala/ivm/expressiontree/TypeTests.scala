@@ -130,6 +130,13 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
           }.fold(Seq.empty)(_ union _).toSet[Exp[Boolean]]
         //Seq((e, (ff, conds, foundEqs), fvSeq /*allFVSeq*/))
         Seq((e, FoundFilter[T, Repr](c, f, conds, foundEqs), fvSeq /*allFVSeq*/))
+      case t: TypeCaseExp[baseT, repr, res, that /*Repr*/] =>
+        Seq((e, FoundTypeCase(t), fvSeq))
+      /*case t: TypeFilter[t, c, d, s] /*TypeFilter(base, f, classS)*/ =>
+        //XXX: we are building expression nodes instead of using concrete syntax.
+        Some(FoundTypeCase(TypeCaseExp(t.base.asInstanceOf[Exp[Traversable[d[t]]]],
+          Seq(TypeCase[Any, Any](t.classS.asInstanceOf[Class[Any]], FuncExp((_: Any) => true), FuncExp(identity))))))
+        //when[s](identity))))*/
       case _ => Seq.empty
     }
   }
@@ -268,8 +275,10 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   val groupByShareNested: Exp[_] => Exp[_] =
     e => {
       (for {
-        ((parentNode: FlatMap[_, _, t, that/*T, Repr, U, That*/]), FoundFilter(c: Exp[Traversable[Any]], f: FuncExp[_/*t*/, _ /*Boolean*/], conds, foundEqs), allFVSeq) <- lookupIndexableExps(e)
+        ((parentNode: FlatMap[_, _, t, that/*T, Repr, U, That*/]), fn, allFVSeq) <- lookupIndexableExps(e)
         optim <- {
+          fn match {
+            case FoundFilter(c: Exp[Traversable[Any]], f: FuncExp[_/*t*/, _ /*Boolean*/], conds, foundEqs) =>
             //Here we produce an open term, because vars in allFVSeq are not bound...
             def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
             val indexQuery = OptimizationTransforms.stripView(c) map buildTuple
@@ -284,6 +293,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
             val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Any]]]
             val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
             optimized
+            case _ => None
+          }
         }
       } yield optim).headOption.getOrElse(e)
     }
