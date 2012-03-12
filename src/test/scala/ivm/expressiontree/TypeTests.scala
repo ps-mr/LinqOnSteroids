@@ -106,18 +106,14 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = e.findTotFun { case v: Var => fvContains(v); case _ => false }.nonEmpty
 
-  def localLookupIndexableExps[T, Repr <: /*FilterMonadic*/ TraversableLike[T, Repr], U, That <: Traversable[U]](e: FlatMap[T, Repr, U, That],
+  def localLookupIndexableExps[T, Repr <: TraversableLike[T, Repr], U, That <: Traversable[U]](e: FlatMap[T, Repr, U, That],
                           freeVars: Set[Var] = Set.empty,
                           fvSeq: Seq[Var] = Seq.empty): Seq[(FlatMap[T, Repr, U, That], FoundNode, Set[Exp[Boolean]], Set[Exp[Boolean]], Seq[Var])] = {
-    (e.base match {
+    e.base match {
       //case Filter(c: Exp[Traversable[T /*t*/]], f: FuncExp[_, _ /*Boolean*/]) =>
       case Filter(c, f) =>
-        Some(FoundFilter[T, Repr](c, f))
-      case TypeFilter(base, f, classS) => None
-      case _ => None
-    }).toList flatMap {
-      case ff @ FoundFilter(_ /*: Exp[Traversable[_ /*t*/]]*/, f: FuncExp[t, _ /*Boolean*/]) =>
-        //case ff: FoundFilter[T] => // (_ /*: Exp[Traversable[_ /*t*/]]*/, f: FuncExp[t, _ /*Boolean*/]) =>
+        //case ff @ FoundFilter(_ /*: Exp[Traversable[_ /*t*/]]*/, f: FuncExp[t, _ /*Boolean*/])
+        val ff = FoundFilter[T, Repr](c, f)
         val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(ff.f.body)
         val allFreeVars: Set[Var] = freeVars + ff.f.x
         val usesFVars = defUseFVars(allFreeVars) _
