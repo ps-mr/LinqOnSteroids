@@ -294,8 +294,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
               //
               //Note: this means that we built the index we search by substitution in the original query; an alternative
               //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
-              val optimized: Option[Exp[_]] = collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
-              optimized
+              collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
             case _ => None
           }
         }
