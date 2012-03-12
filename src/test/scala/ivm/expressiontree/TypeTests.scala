@@ -102,7 +102,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   case class FoundFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](override val c: Exp[Repr],
                                                               f: FuncExp[T, Boolean],
                                                               conds: Set[Exp[Boolean]],
-                                                              foundEqs: Set[Exp[Boolean]]) extends FoundNode[T, Repr](c)
+                                                              foundEqs: Set[Eq[_]]) extends FoundNode[T, Repr](c)
   case class FoundTypeCase[BaseT,
   Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr],
   Res,
@@ -130,7 +130,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
             case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty && (usesFVars(l) && !usesFVars(r) || usesFVars(r) && !usesFVars(l)) =>
               Seq(eq)
             case _ => Seq.empty
-          }.fold(Seq.empty)(_ union _).toSet[Exp[Boolean]]
+          }.fold(Seq.empty)(_ union _).toSet[Eq[_]]
         //Seq((e, (ff, conds, foundEqs), fvSeq /*allFVSeq*/))
         Seq((e, FoundFilter[T, Repr](c, f, conds, foundEqs), fvSeq /*allFVSeq*/))
       case t1: TypeCaseExp[baseT, repr, res, that] =>
@@ -237,7 +237,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
                             allConds: Set[Exp[Boolean]],
                             fx: Var, FVSeq: Seq[Var],
                             parentNode: FlatMap[_, _, T, Traversable[T]])
-                           (cond: Exp[Boolean]): Option[Exp[Traversable[T]]] =
+                           (cond: Eq[_]): Option[Exp[Traversable[T]]] =
     cond match {
       case eq: Eq[u] =>
         val allFVSeq = FVSeq :+ fx
@@ -297,7 +297,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
             //
             //Note: this means that we built the index we search by substitution in the original query; an alternative
             //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
-            val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
+            val optimized: Option[Exp[_]] = collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
             optimized
             case _ => None
           }

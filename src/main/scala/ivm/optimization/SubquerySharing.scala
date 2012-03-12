@@ -101,7 +101,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   def lookupEq(parent: Option[(Exp[Traversable[_]], FuncExp[_, _])],
                e: Exp[_],
                freeVars: Set[Var] = Set.empty,
-               fvSeq: Seq[Var] = Seq.empty): Seq[((Exp[Traversable[_]], FuncExp[_, _]), FoundFilter[_], Set[Exp[Boolean]], Set[Exp[_]], Seq[Var])] = {
+               fvSeq: Seq[Var] = Seq.empty): Seq[((Exp[Traversable[_]], FuncExp[_, _]), FoundFilter[_], Set[Exp[Boolean]], Set[Eq[_]], Seq[Var])] = {
     require (fvSeq.toSet == freeVars)
 
     val matchResult: Either[Exp[_], FoundNode] = e match {
@@ -135,7 +135,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
               case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty && (usesFVars(l) && !usesFVars(r) || usesFVars(r) && !usesFVars(l)) =>
                 Seq(eq)
               case _ => Seq.empty
-            }.fold(Seq.empty)(_ union _).toSet[Exp[_]]
+            }.fold(Seq.empty)(_ union _).toSet[Eq[_]]
           Seq((parent.get, ff, conds, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway - hence fvSeq, not allFVSeq
         //case FlatMap(c, f: FuncExp[t, Traversable[u]]) =>
         //lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
@@ -219,7 +219,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                             parentNode: Exp[Traversable[T]],
                             parentF: FuncExp[_ /*T*/, _/*U*/],
                             isOption: Boolean)
-                           (cond: Exp[Boolean]): Option[Exp[Traversable[T]]] =
+                           (cond: Eq[_]): Option[Exp[Traversable[T]]] =
     cond match {
       case eq: Eq[u] =>
         val allFVSeq = FVSeq :+ fx
@@ -279,7 +279,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
             //Note: this means that we built the index we search by substitution in the original query; an alternative
             //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
             val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Any]]]
-            val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, parentF, isOption)(_))
+            val optimized: Option[Exp[_]] = collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, parentF, isOption)(_))
             optimized
         }
       } yield optim).headOption.getOrElse(e)
