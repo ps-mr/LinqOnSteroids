@@ -103,9 +103,9 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = e.findTotFun { case v: Var => fvContains(v); case _ => false }.nonEmpty
 
-  def lookupEq2[T, U](e: Exp[U],
+  def lookupEq2[T, U](e: Exp[Traversable[U]],
                freeVars: Set[Var] = Set.empty,
-               fvSeq: Seq[Var] = Seq.empty): Seq[(ivm.expressiontree.Exp[U], FoundFilter[T], Set[Exp[Boolean]], Set[Exp[_]], Seq[Var])] = {
+               fvSeq: Seq[Var] = Seq.empty): Seq[(ivm.expressiontree.Exp[Traversable[U]], FoundFilter[T], Set[Exp[Boolean]], Set[Exp[_]], Seq[Var])] = {
     require (fvSeq.toSet == freeVars)
     import OptionOps._
 
