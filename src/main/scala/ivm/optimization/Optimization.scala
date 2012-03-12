@@ -407,7 +407,7 @@ object OptimizationTransforms {
   }
 
   private def tryRemoveRedundantLet[T, U](coll: Exp[Traversable[T]],
-                                       fmFun: FuncExp[T, TraversableOnce[U]],
+                                       fmFun: FuncExp[T, Traversable[U]],
                                        e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
     val insideConv = fmFun.body
     // The safety condition for this optimization is two-fold:
@@ -430,24 +430,7 @@ object OptimizationTransforms {
     val containingX = insideConv.findTotFun(_.children.contains(X))
     containingX.head match {
       case letNode@ExpSeq(X) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
-        //Aargh! Do something about this mess, to allow expressing it in a nicer way.
-        //val v = FuncExp.gensym()
-        //val transformed = insideConv.substSubTerm(letNode, v).asInstanceOf[Exp[U]] //Note that the type, in fact, should change somehow!
-        val transformed = insideConv.substSubTerm(letNode, coll).asInstanceOf[Exp[Traversable[U]]] //Note that the type, in fact, should change somehow!
-        val transformed2 = transformed /*transform (e2 => e2 match {
-          //The type annotations on subColl reflect on purpose types after transformation
-          case MapOp(subColl: Exp[Traversable[t]], f: FuncExp[_, u]) =>
-            subColl map f.asInstanceOf[FuncExp[t, u]].f
-          case Filter(subColl: Exp[Traversable[t]], f: FuncExp[_, _]) =>
-            //Let's just guess that the query was written with withFilter instead of filter, and use withFilter in the
-            //transformed query
-            stripView(subColl) withFilter f.asInstanceOf[FuncExp[t, Boolean]].f
-          case FlatMap(subColl: Exp[Traversable[t]], f: FuncExp[_, TraversableOnce[u]]) =>
-            subColl flatMap f.asInstanceOf[FuncExp[t, TraversableOnce[u]]].f
-          case _ => e2
-        })*/
-        //coll.map(FuncExp.makefun(transformed2, v).f)
-        transformed2
+        insideConv.substSubTerm(letNode, coll)
       case _ =>
         e
     }
@@ -465,10 +448,6 @@ object OptimizationTransforms {
     }: (Exp[_] => Exp[_])) andThen {
       case e @ FlatMap(coll: Exp[Traversable[t]], (fmFun: FuncExp[_, Traversable[u]])) =>
         tryRemoveRedundantLet(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
-      /*case FlatMap(coll, fmFun @ FuncExpBody(Call1(OptionToIterableId, _, Call2(OptionMapId, _, subColl, f: FuncExp[Any, _])))) =>
-        e
-      case FlatMap(coll, fmFun @ FuncExpBody(Call1(OptionToIterableId, _, Call2(OptionMapId, _, instanceOf@IfInstanceOf(x), f: FuncExp[Any, _])))) =>
-        e*/
       case e => e
     }
   }
