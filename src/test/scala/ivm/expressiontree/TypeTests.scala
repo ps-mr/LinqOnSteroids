@@ -105,7 +105,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = e.findTotFun { case v: Var => fvContains(v); case _ => false }.nonEmpty
 
-  def localLookupEq[T, Repr <: /*FilterMonadic*/ TraversableLike[T, Repr], U, That <: Traversable[U]](e: FlatMap[T, Repr, U, That],
+  def localLookupIndexableExps[T, Repr <: /*FilterMonadic*/ TraversableLike[T, Repr], U, That <: Traversable[U]](e: FlatMap[T, Repr, U, That],
                           freeVars: Set[Var] = Set.empty,
                           fvSeq: Seq[Var] = Seq.empty): Seq[(FlatMap[T, Repr, U, That], FoundFilter[T, Repr], Set[Exp[Boolean]], Set[Exp[Boolean]], Seq[Var])] = {
     (e.base match {
@@ -134,78 +134,25 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     }
   }
 
-  def lookupEq(e: Exp[_],
+  def lookupIndexableExps(e: Exp[_],
                freeVars: Set[Var] = Set.empty,
                fvSeq: Seq[Var] = Seq.empty): Seq[(FlatMap[_, _, _, _], FoundFilter[_, _], Set[Exp[Boolean]], Set[Exp[Boolean]], Seq[Var])] = {
     require (fvSeq.toSet == freeVars)
 
     val otherRes = e match {
       case f: FuncExp[_, _] =>
-        lookupEq(f.body, freeVars + f.x, fvSeq :+ f.x)
+        lookupIndexableExps(f.body, freeVars + f.x, fvSeq :+ f.x)
       case exp => exp.children flatMap {
-        lookupEq(_, freeVars, fvSeq)
+        lookupIndexableExps(_, freeVars, fvSeq)
       }
     }
     otherRes ++ (e match {
       case f: FlatMap[t, repr, u, that] =>
       //case FlatMap(c: Exp[Traversable[t]], _: FuncExp[_ /*t*/, Traversable[u]]) =>
-        localLookupEq(f.asInstanceOf[FlatMap[t, repr, u, Traversable[u]]], freeVars, fvSeq)
+        localLookupIndexableExps(f.asInstanceOf[FlatMap[t, repr, u, Traversable[u]]], freeVars, fvSeq)
       case _ => Seq.empty
     })
   }
-
-  /*
-  //Preconditions:
-  //Postconditions: when extracting Some((parentNode, parentF)), filterExp, conds, foundEqs, allFVSeq, parentNode is a FlatMap node which
-  // contains a filter expression as base collection (and not through a FuncExp node); the filter expression is returned, after being transformed
-  // to a FoundFilter instance, inside filterExp. filterExp.isOption tells whether both filterExp and parentNode are of type Exp[Option[_]] instead of
-  //Exp[Traversable[_]] - they cannot differ in this regard (currently). If we allow for conversion nodes later, this assumption will not hold
-  //any more - we should normalize away such conversions if possible.
-  def lookupEq(parent: Option[(Exp[Traversable[_]], FuncExp[_, _])],
-               e: Exp[_],
-               freeVars: Set[Var] = Set.empty,
-               fvSeq: Seq[Var] = Seq.empty): Seq[((Exp[Traversable[_]], FuncExp[_, _]), FoundFilter[_, _], Set[Exp[Boolean]], Set[Exp[_]], Seq[Var])] = {
-    val matchResult: Either[Exp[_], FoundNode] = e match {
-      case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) if parent.isDefined =>
-        Right(FoundFilter(Right(c), f))
-      case FlatMap(c: Exp[Traversable[_]], f: FuncExp[t, Traversable[u]]) =>
-        Right(FoundFlatMap(Right(c), f))
-      case _ =>
-        Left(e)
-    }
-
-    matchResult.fold(
-      _ match {
-        case f: FuncExp[_, _] =>
-          lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
-        case exp => exp.children flatMap {
-          lookupEq(None, _, freeVars, fvSeq)
-        }
-      },
-      _ match {
-        case ff @ FoundFilter(_ /*: Exp[Traversable[_ /*t*/]]*/, f: FuncExp[t, _ /*Boolean*/], _) =>
-          assert (parent.isDefined)
-          val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
-          val allFreeVars: Set[Var] = freeVars + f.x
-          val usesFVars = defUseFVars(allFreeVars) _
-
-          //Using Sets here directly is very difficult, due to the number of wildcards and the invariance of Set.
-          //I managed, but it was beyond the abilities of type inference.
-          val foundEqs =
-            conds.map {
-              case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty && (usesFVars(l) && !usesFVars(r) || usesFVars(r) && !usesFVars(l)) =>
-                Seq(eq)
-              case _ => Seq.empty
-            }.fold(Seq.empty)(_ union _).toSet[Exp[_]]
-          Seq((parent.get, ff, conds, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway - hence fvSeq, not allFVSeq
-        //case FlatMap(c, f: FuncExp[t, Traversable[u]]) =>
-        //lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c, freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
-        case FoundFlatMap(c, f: FuncExp[t, Traversable[u]], _) =>
-          //Add all free variables bound in the location.
-          lookupEq(Some((e.asInstanceOf[Exp[Traversable[u]]], f)), c.fold(identity, identity), freeVars, fvSeq) union lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
-      })
-  }
-  */
 
   /*
    * When looking up an index, a filter in the original query will be preserved in the lookup key, and it might make the
@@ -321,7 +268,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   val groupByShareNested: Exp[_] => Exp[_] =
     e => {
       (for {
-        ((parentNode: FlatMap[_, _, t, that/*T, Repr, U, That*/]), FoundFilter(c: Exp[Traversable[Any]], f: FuncExp[_/*t*/, _ /*Boolean*/]), conds, foundEqs, allFVSeq) <- lookupEq(e)
+        ((parentNode: FlatMap[_, _, t, that/*T, Repr, U, That*/]), FoundFilter(c: Exp[Traversable[Any]], f: FuncExp[_/*t*/, _ /*Boolean*/]), conds, foundEqs, allFVSeq) <- lookupIndexableExps(e)
         optim <- {
             //Here we produce an open term, because vars in allFVSeq are not bound...
             def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
@@ -340,39 +287,4 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
         }
       } yield optim).headOption.getOrElse(e)
     }
-  
-  /*val groupByShareNested2: (Exp[_], Seq[EnvEntry]) => Exp[_] =
-    (e, env) => {
-      e match {
-        case fm: FlatMap[t, _, u, _] =>
-          fm.base match {
-            case ff: Filter[t, _] =>
-              val f = ff.f
-              val (fvSeq, _) = env.unzip
-              val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
-              val allFreeVars: Set[Var] = fvSeq.toSet + f.x
-              val usesFVars = defUseFVars(allFreeVars) _
-
-              //Using Sets here directly is very difficult, due to the number of wildcards and the invariance of Set.
-              //I managed, but it was beyond the abilities of type inference.
-              val foundEqs =
-                conds.map {
-                  case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty && (usesFVars(l) && !usesFVars(r) || usesFVars(r) && !usesFVars(l)) =>
-                    Seq(eq)
-                  case _ => Seq.empty
-                }.fold(Seq.empty)(_ union _).toSet[Exp[_]]
-              val ret = Seq((fm, ff, conds, foundEqs, fvSeq /*allFVSeq*/)) //Don't include the variable of the filter, which is going to be dropped anyway - hence fvSeq, not allFVSeq
-              //val (parentNode, FoundFilter(c, f: FuncExp[_/*t*/, _ /*Boolean*/], isOption), _, _, allFVSeq) = ret
-
-              val Seq((parentNode, Filter(c, filterFun: FuncExp[_/*t*/, _ /*Boolean*/]), _, _, allFVSeq)) = ret
-              val parentF = parentNode.f
-              def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
-
-              val indexQuery = OptimizationTransforms.stripView(c) map buildTuple
-
-              e
-          }
-      }
-    }
-    */
 }
