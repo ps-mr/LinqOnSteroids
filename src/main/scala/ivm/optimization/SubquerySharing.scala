@@ -14,7 +14,7 @@ import CollectionUtils.collectFirst
  * indexes.
  */
 object SubquerySharing {
-  private def println(msg: Any) {
+  /*private*/ def println(msg: Any) {
     if (Optimization.isDebugLogEnabled)
       Predef.println(msg)
   }

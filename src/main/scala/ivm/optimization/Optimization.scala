@@ -469,7 +469,7 @@ object OptimizationTransforms {
     case e => e
   }
 
-  private[optimization] def stripView[T](coll: Exp[Traversable[T]]) = stripViewUntyped(coll)
+  /*private[optimization]*/ private[ivm] def stripView[T](coll: Exp[Traversable[T]]) = stripViewUntyped(coll)
 
   //This type is incorrect whenever T is a view type. Be careful!
   private[optimization] def stripViewUntyped[T](coll: Exp[T]): Exp[T] =
