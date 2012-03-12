@@ -1,14 +1,12 @@
-package ivm.expressiontree
+package ivm
+package expressiontree
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.{HavePropertyMatchResult, HavePropertyMatcher, ShouldMatchers}
-import collection.{immutable, TraversableLike, mutable}
-import collection.generic.CanBuildFrom
 import java.io.{Closeable, File}
-import java.nio.channels.{Channel, ByteChannel, FileChannel}
+import java.nio.channels.FileChannel
 import mutable.{Queue, ArrayBuffer, Builder}
 import performancetests.Benchmarking
-import ivm.collections.TypeMapping
 
 trait TypeMatchers {
   def typ[ExpectedT: ClassManifest] = new HavePropertyMatcher[Any, OptManifest[_]] {

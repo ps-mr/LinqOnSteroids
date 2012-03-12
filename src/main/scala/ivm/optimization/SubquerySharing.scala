@@ -86,6 +86,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   }
 
   sealed trait FoundNode
+  //TODO: Add  variants of FoundFilter for typeFilter and typeCase. When optimized, we can transform typeFilter into a stupid typecase and viceversa.
   case class FoundFilter[T](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, Boolean], isOption: Boolean = false) extends FoundNode
   case class FoundFlatMap[T, U](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, TraversableOnce[U]], isOption: Boolean = false) extends FoundNode
 
@@ -120,14 +121,14 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     }
 
     matchResult.fold(
-      _ match {
+      {
         case f: FuncExp[_, _] =>
           lookupEq(None, f.body, freeVars + f.x, fvSeq :+ f.x)
         case exp => exp.children flatMap {
           lookupEq(None, _, freeVars, fvSeq)
         }
       },
-      _ match {
+      {
         case ff @ FoundFilter(_ /*: Exp[Traversable[_ /*t*/]]*/, f: FuncExp[t, _ /*Boolean*/], _) =>
           assert (parent.isDefined)
           val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
