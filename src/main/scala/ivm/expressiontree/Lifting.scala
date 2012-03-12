@@ -70,7 +70,7 @@ trait OptionLifting extends BaseExps {
     def filter(p: Exp[T] => Exp[Boolean]): Exp[Iterable[T]] = (t: Exp[Iterable[T]]) filter p
     def withFilter(p: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] = (t: Exp[Iterable[T]]) withFilter p
     def map[U](f: Exp[T] => Exp[U]): Exp[Iterable[U]] = (t: Exp[Iterable[T]]) map f
-    def flatMap[U, That](f: Exp[T] => Exp[TraversableOnce[U]]) = (t: Exp[Iterable[T]]) flatMap f
+    def flatMap[U, That](f: Exp[T] => Exp[Traversable[U]]) = (t: Exp[Iterable[T]]) flatMap f
 
     //Note: we do not support call-by-name parameters; therefore we currently provide only orElse, and expect the user to
     //provide a default which will never fail evalution through exceptions but only evaluate to None.

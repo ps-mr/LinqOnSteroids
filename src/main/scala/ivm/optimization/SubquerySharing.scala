@@ -88,7 +88,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   sealed trait FoundNode
   //TODO: Add  variants of FoundFilter for typeFilter and typeCase. When optimized, we can transform typeFilter into a stupid typecase and viceversa.
   case class FoundFilter[T](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, Boolean], isOption: Boolean = false) extends FoundNode
-  case class FoundFlatMap[T, U](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, TraversableOnce[U]], isOption: Boolean = false) extends FoundNode
+  case class FoundFlatMap[T, U](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, Traversable[U]], isOption: Boolean = false) extends FoundNode
 
   def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = e.findTotFun { case v: Var => fvContains(v); case _ => false }.nonEmpty
 
@@ -112,9 +112,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         //XXX not so sure we want to optimize such a one-element filter.
         //But it can be a one-element filter on top of various navigation operations, so it can still make sense.
         Right(FoundFilter(Left(subColl), f.asInstanceOf[FuncExp[t, Boolean]], true))
-      case FlatMap(c: Exp[Traversable[_]], f: FuncExp[t, TraversableOnce[u]]) =>
+      case FlatMap(c: Exp[Traversable[_]], f: FuncExp[t, Traversable[u]]) =>
         Right(FoundFlatMap(Right(c), f))
-      case Call2(OptionFlatMapId, _, subColl: Exp[Option[_]], f: FuncExp[t, TraversableOnce[u]]) =>
+      case Call2(OptionFlatMapId, _, subColl: Exp[Option[_]], f: FuncExp[t, Traversable[u]]) =>
         Right(FoundFlatMap(Left(subColl.asInstanceOf[Exp[Option[t]]]), f, true))
       case _ =>
         Left(e)
@@ -262,8 +262,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         import OptionOps._
         parentNode match {
           case Call2(OptionFlatMapId, _, _, _) | FlatMap(_, _) =>
-            step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, TraversableOnce[T]](
-              tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[TraversableOnce[T]]], newVar), newVar))
+            step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, Traversable[T]](
+              tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[Traversable[T]]], newVar), newVar))
         }
       case _ => None
     }

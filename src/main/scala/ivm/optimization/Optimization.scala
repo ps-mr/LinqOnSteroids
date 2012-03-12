@@ -3,7 +3,6 @@ package optimization
 
 import expressiontree._
 import Lifting._
-import collection.GenTraversableOnce
 import Numeric.Implicits._
 import annotation.tailrec
 import collection.mutable.Stack
@@ -39,7 +38,7 @@ object OptimizationTransforms {
   private def buildJoin[T, S, TKey, TResult](fmColl: Exp[Traversable[T]],
                                                   wfColl: Exp[Traversable[S]],
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
-                                                  moFun: FuncExp[S, TResult], fmFun: FuncExp[T, GenTraversableOnce[TResult]],
+                                                  moFun: FuncExp[S, TResult], fmFun: FuncExp[T, Traversable[TResult]],
                                                   wfFun: FuncExp[S, Boolean]): Exp[Traversable[TResult]] /*Join[T, S, TKey, TResult]*/ = {
     stripView(fmColl).join(
       stripView(wfColl))(
@@ -309,14 +308,14 @@ object OptimizationTransforms {
     case e => e
   }
 
-  private def buildTypeFilter[S, T, U](coll: Exp[Traversable[T]], classS: Class[S], f: FuncExp[S, Traversable[U]], origFmFun: FuncExp[T, TraversableOnce[U]]): Exp[Traversable[U]] = {
+  private def buildTypeFilter[S, T, U](coll: Exp[Traversable[T]], classS: Class[S], f: FuncExp[S, Traversable[U]], origFmFun: FuncExp[T, Traversable[U]]): Exp[Traversable[U]] = {
     val res = coll.typeFilterClass(classS).flatMap(f.f)
     //Check that the transformed expression has overall the same type as the original one:
     Util.checkSameTypeAndRet(coll flatMap origFmFun)(res)
   }
 
   private def tryBuildTypeFilter[T, U](coll: Exp[Traversable[T]],
-                                       fmFun: FuncExp[T, TraversableOnce[U]],
+                                       fmFun: FuncExp[T, Traversable[U]],
                                        e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
     val X = fmFun.x
     //Correct safety condition for this optimization: The variable of fmFun must appear always wrapped in the same
@@ -358,7 +357,7 @@ object OptimizationTransforms {
   //This optimization does not extend to normal bindings as used in FindBugsAnalyses. There we need to produce the usual
   //desugaring of Let - i.e. to use letExp.
   private def tryRemoveRedundantOption[T, U](coll: Exp[Traversable[T]],
-                                       fmFun: FuncExp[T, TraversableOnce[U]],
+                                       fmFun: FuncExp[T, Traversable[U]],
                                        insideConv: Exp[Option[U]],
                                        e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
     import OptionOps._
@@ -395,8 +394,8 @@ object OptimizationTransforms {
             //Let's just guess that the query was written with withFilter instead of filter, and use withFilter in the
             //transformed query
             subColl withFilter f.asInstanceOf[FuncExp[t, Boolean]].f
-          case Call2(OptionFlatMapId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, TraversableOnce[u]]) =>
-            subColl flatMap f.asInstanceOf[FuncExp[t, TraversableOnce[u]]].f
+          case Call2(OptionFlatMapId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, Traversable[u]]) =>
+            subColl flatMap f.asInstanceOf[FuncExp[t, Traversable[u]]].f
           case _ => e2
         })
         //coll.map(FuncExp.makefun(transformed2, v).f)
@@ -452,10 +451,10 @@ object OptimizationTransforms {
     }
   }
 
-  private def buildHoistedFilterForFlatMap[T, U, V](coll1: Exp[Traversable[T]], fmFun: FuncExp[T, TraversableOnce[V]],
+  private def buildHoistedFilterForFlatMap[T, U, V](coll1: Exp[Traversable[T]], fmFun: FuncExp[T, Traversable[V]],
                                                 coll2: Exp[Traversable[U]],
                                                 filterFun: FuncExp[U, Boolean],
-                                                fmFun2: FuncExp[U, TraversableOnce[V]]): Exp[Traversable[V]] = {
+                                                fmFun2: FuncExp[U, Traversable[V]]): Exp[Traversable[V]] = {
     //Let's show that the source types are correct, in that we can rebuild the original expression:
     import Util.assertType
     assertType[Exp[Traversable[V]]](coll1.flatMap(fmFun.f))
@@ -489,7 +488,7 @@ object OptimizationTransforms {
   val flatMapToMap: Exp[_] => Exp[_] = {
     import OptionOps._
     {
-      case Call2(OptionFlatMapId, _, c: Exp[Option[_ /*t*/]], f @ FuncExpBodyUntyped(ExpOption(Some(body: Exp[TraversableOnce[u]])))) =>
+      case Call2(OptionFlatMapId, _, c: Exp[Option[_ /*t*/]], f @ FuncExpBodyUntyped(ExpOption(Some(body: Exp[Traversable[u]])))) =>
         c map FuncExp.makefun(body, f.x)
       case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(body))) =>
         c map FuncExp.makefun(body, f.x)

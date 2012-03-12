@@ -10,10 +10,10 @@ import collection._
 
 // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
 case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
-                   U, That](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
-                            (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, TraversableOnce[U]], That, FlatMap[T, Repr, U, That]](base, f) {
+                   U, That](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
+                            (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, Traversable[U]], That, FlatMap[T, Repr, U, That]](base, f) {
   override def interpret() = base.interpret() flatMap f.interpret()
-  override def copy(base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]]) = FlatMap[T, Repr, U, That](base, f)
+  override def copy(base: Exp[Repr], f: FuncExp[T, Traversable[U]]) = FlatMap[T, Repr, U, That](base, f)
 }
 
 case class MapOp[T, Repr <: FilterMonadic[T, Repr],
@@ -63,9 +63,9 @@ case class Union[T, Repr <: TraversableLike[T, Repr], That](base: Exp[Repr], tha
   override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = Union[T, Repr, That](base, that)
 }
 
-case class Diff[T, Repr <: collection.Set[T] with SetLike[T, Repr]](base: Exp[Repr], that: Exp[GenTraversableOnce[T]]) extends Arity2OpExp[Repr, GenTraversableOnce[T], Repr, Diff[T, Repr]](base, that) {
+case class Diff[T, Repr <: collection.Set[T] with SetLike[T, Repr]](base: Exp[Repr], that: Exp[Traversable[T]]) extends Arity2OpExp[Repr, Traversable[T], Repr, Diff[T, Repr]](base, that) {
   override def interpret() = base.interpret() -- that.interpret()
-  override def copy(base: Exp[Repr], that: Exp[GenTraversableOnce[T]]) = Diff[T, Repr](base, that)
+  override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = Diff[T, Repr](base, that)
 }
 
 case class Size[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) extends Arity1OpExp[Repr, Int, Size[T, Repr]](t) {

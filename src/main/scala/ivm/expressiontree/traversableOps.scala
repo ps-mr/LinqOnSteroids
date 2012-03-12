@@ -16,7 +16,7 @@ trait TraversableOps {
                                                                                                    f: FuncExp[T, U])
                                                                                                   (implicit c: CanBuildFrom[Repr, U, That]) =
     MapOp(base, f)
-  def newFlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
+  def newFlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
                                         (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
     FlatMap(base, f)
 
@@ -33,7 +33,7 @@ trait TraversableOps {
       newMapOp(this.t, FuncExp(f))
     def map2[U, That <: Traversable[U]](f: T => U)(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
       newMapOp(this.t, FuncExp(f: Exp[T => U]))
-    def flatMap[U, That <: Traversable[U]](f: Exp[T] => Exp[TraversableOnce[U]])
+    def flatMap[U, That <: Traversable[U]](f: Exp[T] => Exp[Traversable[U]])
                                           (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
       newFlatMap(this.t, FuncExp(f))
   }
@@ -261,7 +261,7 @@ trait CollectionSetOps {
     extends TraversableLikeOps[T, Coll, Coll[T]] with WithFilterImpl[T, Coll[T]] {
     def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
     def contains(el: Exp[T]) = apply(el)
-    def --(that: Exp[TraversableOnce[T]]): Exp[Coll[T]] =
+    def --(that: Exp[Traversable[T]]): Exp[Coll[T]] =
       Diff(t, that)
   }
   class CollectionSetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set]
@@ -297,7 +297,7 @@ import mutable.{Queue, ArrayBuffer, Builder}
 
 object CollectionUtils {
   //This is equivalent to coll.collectFirst(Function.unlift(f)), but it saves the expensive Function.unlift.
-  def collectFirst[T, U](coll: TraversableOnce[T])(f: T => Option[U]): Option[U] = {
+  def collectFirst[T, U](coll: Traversable[T])(f: T => Option[U]): Option[U] = {
     for (x <- coll) {
       f(x) match {
         case v@Some(_) => return v
