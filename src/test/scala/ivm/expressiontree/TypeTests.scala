@@ -107,23 +107,16 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
                freeVars: Set[Var] = Set.empty,
                fvSeq: Seq[Var] = Seq.empty): Seq[(ivm.expressiontree.Exp[Traversable[U]], FoundFilter[T], Set[Exp[Boolean]], Set[Exp[_]], Seq[Var])] = {
     require (fvSeq.toSet == freeVars)
-    import OptionOps._
 
     ((e match {
       case FlatMap(c: Exp[Traversable[T]], f: FuncExp[_ /*t*/, Traversable[U]]) =>
         Some(FoundFlatMap[T /*t*/, U](Right(c), f))
-      case Call2(OptionFlatMapId, _, subColl: Exp[Option[T]], f: FuncExp[_ /*t*/, Traversable[U]]) =>
-        Some(FoundFlatMap[T /*t*/, U](Left(subColl), f.asInstanceOf[FuncExp[T /*t*/, Traversable[U]]], true))
       case _ => None
     }) flatMap {
       case FoundFlatMap(cEither, f, isOption) =>
         (cEither match {
           case Right(Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/])) =>
             Some(FoundFilter(Right(c), f))
-          case Left(Call2(OptionFilterId, _, subColl: Exp[Option[t]], f: FuncExp[_, _])) =>
-            //XXX not so sure we want to optimize such a one-element filter.
-            //But it can be a one-element filter on top of various navigation operations, so it can still make sense.
-            Some(FoundFilter(Left(subColl), f.asInstanceOf[FuncExp[t, Boolean]], true))
           case other => None
         }).asInstanceOf[Option[FoundFilter[T]]]
       case _ => None
@@ -156,19 +149,12 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
                freeVars: Set[Var] = Set.empty,
                fvSeq: Seq[Var] = Seq.empty): Seq[((Exp[Traversable[_]], FuncExp[_, _]), FoundFilter[_], Set[Exp[Boolean]], Set[Exp[_]], Seq[Var])] = {
     require (fvSeq.toSet == freeVars)
-    import OptionOps._
 
     val matchResult: Either[Exp[_], FoundNode] = e match {
       case Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) if parent.isDefined =>
         Right(FoundFilter(Right(c), f))
-      case Call2(OptionFilterId, _, subColl: Exp[Option[t]], f: FuncExp[_, _]) if parent.isDefined =>
-        //XXX not so sure we want to optimize such a one-element filter.
-        //But it can be a one-element filter on top of various navigation operations, so it can still make sense.
-        Right(FoundFilter(Left(subColl), f.asInstanceOf[FuncExp[t, Boolean]], true))
       case FlatMap(c: Exp[Traversable[_]], f: FuncExp[t, Traversable[u]]) =>
         Right(FoundFlatMap(Right(c), f))
-      case Call2(OptionFlatMapId, _, subColl: Exp[Option[_]], f: FuncExp[t, Traversable[u]]) =>
-        Right(FoundFlatMap(Left(subColl.asInstanceOf[Exp[Option[t]]]), f, true))
       case _ =>
         Left(e)
     }
@@ -312,9 +298,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
         //Note that here, map/flatMap will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
         // instance from the HOAS representation produced.
-        import OptionOps._
         parentNode match {
-          case Call2(OptionFlatMapId, _, _, _) | FlatMap(_, _) =>
+          case FlatMap(_, _) =>
             step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, Traversable[T]](
               tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[Traversable[T]]], newVar), newVar))
         }

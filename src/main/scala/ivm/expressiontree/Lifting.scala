@@ -24,20 +24,7 @@ trait OptionLifting extends BaseExps {
      * builtin concept of name resolution for symbols in Scala.
      */
 
-    val OptionMapId = 'Option$map
-    val OptionFilterId = 'Option$filter
-    val OptionFlatMapId = 'Option$flatMap
     val OptionToIterableId = 'Option_option2Iterable
-
-    sealed trait FlatMappableTo[-U, +Res] {
-      def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[U]): Exp[Res]
-    }
-    implicit def option[U] = new FlatMappableTo[Option[U], Option[U]] {
-      override def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[Option[U]]): Exp[Option[U]] = onExp(t, FuncExp(f))(OptionFlatMapId, (a, b) => a flatMap b)
-    }
-    implicit def traversable[U] = new FlatMappableTo[Traversable[U], Iterable[U]] {
-      override def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[Traversable[U]]) = (t: Exp[Iterable[T]]) flatMap f
-    }
   }
 
   implicit def expToOptionOps[T](t: Exp[Option[T]]) = new OptionOps(t)

@@ -353,60 +353,6 @@ object OptimizationTransforms {
     case e => e
   }
 
-  //removeRedundantOption is supposed to eliminate redundant lets from code like:
-  //for (i <- base.typeFilter[Int]; j <- Some(i) if j % 2 ==# 0) yield j
-  //transforming it to
-  //for (i <- base.typeFilter[Int] if i % 2 ==% 0) yield i.
-  //The transformation can be formalized as opt flatMap (x => f(Some(x))) => f(opt); if f is distributive in the
-  private def tryRemoveRedundantOption[T, U](coll: Exp[Traversable[T]],
-                                       fmFun: FuncExp[T, Traversable[U]],
-                                       insideConv: Exp[Option[U]],
-                                       e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
-    import OptionOps._
-
-    // The safety condition for this optimization is two-fold:
-    // 1. The variable of fmFun must appear always wrapped in the same
-    //    Some node
-    // 2. Only supported Option operations must appear.
-
-    val X = fmFun.x
-    //Check safety condition, part 2.
-    //@tailrec
-    def isSupported(insideConv: Exp[_], LetNode: Exp[_]): Boolean =
-      insideConv match {
-        case Call2(OptionMapId, _, subColl, f) => isSupported(subColl, LetNode) && !f.isOrContains(X)
-        case Call2(OptionFilterId, _, subColl, f) => isSupported(subColl, LetNode) && !f.isOrContains(X)
-        case Call2(OptionFlatMapId, _, subColl, f) => isSupported(subColl, LetNode) && !f.isOrContains(X)
-        case LetNode => true
-        case _ => false
-      }
-
-    val containingX = insideConv.findTotFun(_.children.contains(X))
-    containingX.head match {
-      case letNode@ExpOption(Some(X)) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
-        //Aargh! Do something about this mess, to allow expressing it in a nicer way.
-        //val v = FuncExp.gensym()
-        //val transformed = insideConv.substSubTerm(letNode, v).asInstanceOf[Exp[U]] //Note that the type, in fact, should change somehow!
-        val transformed = insideConv.substSubTerm(letNode, coll).asInstanceOf[Exp[Traversable[U]]] //Note that the type, in fact, should change somehow!
-        val transformed2 = transformed transform {
-          //The type annotations on subColl reflect on purpose types after transformation
-          case Call2(OptionMapId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, u]) =>
-            subColl map f.asInstanceOf[FuncExp[t, u]].f
-          case Call2(OptionFilterId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, _]) =>
-            //Let's just guess that the query was written with withFilter instead of filter, and use withFilter in the
-            //transformed query
-            subColl withFilter f.asInstanceOf[FuncExp[t, Boolean]].f
-          case Call2(OptionFlatMapId, _, subColl: Exp[Traversable[t]], f: FuncExp[_, Traversable[u]]) =>
-            subColl flatMap f.asInstanceOf[FuncExp[t, Traversable[u]]].f
-          case e2 => e2
-        }
-        //coll.map(FuncExp.makefun(transformed2, v).f)
-        transformed2
-      case _ =>
-        e
-    }
-  }
-
   //removeRedundantLet is supposed to eliminate redundant lets from code like:
   //for (i <- base.typeFilter[Int]; j <- Let(i) if j % 2 ==# 0) yield j
   //which is for instance produced by toTypeFilter.
@@ -453,18 +399,9 @@ object OptimizationTransforms {
 
 
   val removeRedundantOption: Exp[_] => Exp[_] = {
-    import OptionOps._
-
-    //Miscompilation once again! If we combine these two pattern matches, the second one (the less specific pattern) is not entered.
-    ({
-      case e @ FlatMap(coll: Exp[Traversable[t]], (fmFun: FuncExp[_, Traversable[u]]) & FuncExpBody(Call1(OptionToIterableId, _, insideConv: Exp[Option[_]]))) =>
-        tryRemoveRedundantOption(coll, fmFun, insideConv.asInstanceOf[Exp[Option[u]]], e.asInstanceOf[Exp[Traversable[u]]])
-      case e => e
-    }: (Exp[_] => Exp[_])) andThen {
       case e @ FlatMap(coll: Exp[Traversable[t]], (fmFun: FuncExp[_, Traversable[u]])) =>
         tryRemoveRedundantLet(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
       case e => e
-    }
   }
 
   private def buildHoistedFilterForFlatMap[T, U, V](coll1: Exp[Traversable[T]], fmFun: FuncExp[T, Traversable[V]],
@@ -491,25 +428,17 @@ object OptimizationTransforms {
   }
 
   val mapToFlatMap: Exp[_] => Exp[_] = {
-    import OptionOps._
-    {
       case MapOp(c: Exp[Traversable[t]], f) =>
         c flatMap FuncExp.makefun(Seq(f.body), f.x)
       /*case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
         c flatMap FuncExp.makefun(Some(f.body), f.x)*/
       case e => e
-    }
   }
 
   val flatMapToMap: Exp[_] => Exp[_] = {
-    import OptionOps._
-    {
-      case Call2(OptionFlatMapId, _, c: Exp[Option[_ /*t*/]], f @ FuncExpBodyUntyped(ExpOption(Some(body: Exp[Traversable[u]])))) =>
-        c map FuncExp.makefun(body, f.x)
       case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(body))) =>
         c map FuncExp.makefun(body, f.x)
       case e => e
-    }
   }
 
   val letTransformer: Exp[_] => Exp[_] = {
