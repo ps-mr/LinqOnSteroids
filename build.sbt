@@ -73,8 +73,8 @@ initialCommands in (Test, console) := """
     import Lifting._
     import optimization._
     import tests._
-    import opaltests._
     import performancetests._
+    import opaltests._
 """
 
 sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, scalaVersion) map { (dir, baseDir, scalaVer) =>
@@ -95,8 +95,10 @@ object GitVersion {
     base <- Generator.templates
     file = dir / (base + ".scala")
   } yield {
-    if (!file.exists() || (baseDir / "src" / "main" / "resources" / (base + ".ssp") newerThan file))
+    if (!file.exists() || (baseDir / "src" / "main" / "resources" / (base + ".ssp") newerThan file)) {
+      printf("Generating %s\n", file)
       gen.generate(dir.absolutePath)
+    }
     file
   }) :+ verFile
 }
