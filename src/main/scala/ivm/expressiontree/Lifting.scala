@@ -46,6 +46,7 @@ trait OptionLifting extends BaseExps {
     def isDefined = onExp(t)('isDefined, _.isDefined)
     def get = onExp(t)('get, _.get)
 
+    /*
     def filter(p: Exp[T] => Exp[Boolean]): Exp[Option[T]] = onExp(t, FuncExp(p))(OptionFilterId, _ filter _) //(t: Exp[Iterable[T]]) withFilter p
     //We do not lift Option.withFilter because it returns a different type; we could provide operations
     //for that type as well, but I do not see the point of doing that, especially for a side-effect-free predicate.
@@ -62,8 +63,14 @@ trait OptionLifting extends BaseExps {
 
     //Tillmann's suggestion was to use Haskell-style overloading by emulating type classes with implicits:
     def flatMap[U, That](f: Exp[T] => Exp[U])(implicit v: FlatMappableTo[U, That]): Exp[That] = v.flatMap(t, f)
+    */
     //TODO apparently, the implicit conversions from Scala are not that powerful; for instance, Some(1) flatMap (Seq(_))
     // is not accepted. I guess I should revert this.
+
+    def filter(p: Exp[T] => Exp[Boolean]): Exp[Iterable[T]] = (t: Exp[Iterable[T]]) filter p
+    def withFilter(p: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] = (t: Exp[Iterable[T]]) withFilter p
+    def map[U](f: Exp[T] => Exp[U]): Exp[Iterable[U]] = (t: Exp[Iterable[T]]) map f
+    def flatMap[U, That](f: Exp[T] => Exp[TraversableOnce[U]]) = (t: Exp[Iterable[T]]) flatMap f
 
     //Note: we do not support call-by-name parameters; therefore we currently provide only orElse, and expect the user to
     //provide a default which will never fail evalution through exceptions but only evaluate to None.

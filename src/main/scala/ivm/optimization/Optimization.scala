@@ -441,8 +441,8 @@ object OptimizationTransforms {
     {
       case MapOp(c: Exp[Traversable[t]], f) =>
         c flatMap FuncExp.makefun(Seq(f.body), f.x)
-      case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
-        c flatMap FuncExp.makefun(Some(f.body), f.x)
+      /*case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
+        c flatMap FuncExp.makefun(Some(f.body), f.x)*/
       case e => e
     }
   }
