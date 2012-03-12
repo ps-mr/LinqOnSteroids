@@ -228,18 +228,16 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
    * @param fx
    * @param FVSeq
    * @param parentNode
-   * @param cond one of allConds
+   * @param eq one of allConds
    * @tparam TupleT
    * @tparam T
    * @return
    */
-  private def tryGroupByNested[TupleT, T /*, U, V*/](indexBaseToLookup: Exp[Traversable[TupleT]],
+  private def tryGroupByNested[TupleT, T, U /*, V*/](indexBaseToLookup: Exp[Traversable[TupleT]],
                             allConds: Set[Exp[Boolean]],
                             fx: Var, FVSeq: Seq[Var],
                             parentNode: FlatMap[_, _, T, Traversable[T]])
-                           (cond: Eq[_]): Option[Exp[Traversable[T]]] =
-    cond match {
-      case eq: Eq[u] =>
+                           (eq: Eq[U]): Option[Exp[Traversable[T]]] = {
         val allFVSeq = FVSeq :+ fx
         val allFVMap = allFVSeq.zipWithIndex.toMap
         val usesFVars = defUseFVars(allFVMap contains _) _
@@ -257,9 +255,9 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
         //XXX probably this should get Exp[Traversable] or Exp[Option], depending on isOption.
         val step1Opt: Option[Exp[Traversable[TupleT]]] =
           if (usesFVars(eq.t1) && !usesFVars(eq.t2))
-            groupByShareBodyNested[TupleT, T, u](indexBaseToLookup, newVar, eq, eq.t2, eq.t1, allFVSeq, tuplingTransform)
+            groupByShareBodyNested[TupleT, T, U](indexBaseToLookup, newVar, eq, eq.t2, eq.t1, allFVSeq, tuplingTransform)
           else if (usesFVars(eq.t2) && !usesFVars(eq.t1))
-            groupByShareBodyNested[TupleT, T, u](indexBaseToLookup, newVar, eq, eq.t1, eq.t2, allFVSeq, tuplingTransform)
+            groupByShareBodyNested[TupleT, T, U](indexBaseToLookup, newVar, eq, eq.t1, eq.t2, allFVSeq, tuplingTransform)
           else None
         //We need to apply tuplingTransform both to allConds and to parentF.
         //About parentF, note that fx is _not_ in scope in its body, which uses another variable, which
@@ -275,7 +273,6 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
             step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, Traversable[T]](
               tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[Traversable[T]]], newVar), newVar))
         }
-      case _ => None
     }
 
   val groupByShareNested: Exp[_] => Exp[_] =
