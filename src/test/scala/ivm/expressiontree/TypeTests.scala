@@ -142,11 +142,9 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
         Seq((e, FoundFilter[T, Repr](c, f, conds, foundEqs), fvSeq /*allFVSeq*/))
       case t1: TypeCaseExp[baseT, repr, res, that] =>
         val t = t1.asInstanceOf[TypeCaseExp[T, Repr, res, that]]
-      //case t: TypeCaseExp[baseT, repr, T /*res*/, Repr /*that*/ /*Repr*/] =>
-      //case t @ TypeCaseExp(_, _) =>
         Seq((e, FoundTypeCase(t), fvSeq))
       /*case t: TypeFilter[t, c, d, s] /*TypeFilter(base, f, classS)*/ =>
-        //XXX: we are building expression nodes instead of using concrete syntax.
+        //XXX: this builds expression nodes instead of using concrete syntax.
         Some(FoundTypeCase(TypeCaseExp(t.base.asInstanceOf[Exp[Traversable[d[t]]]],
           Seq(TypeCase[Any, Any](t.classS.asInstanceOf[Class[Any]], FuncExp((_: Any) => true), FuncExp(identity))))))
         //when[s](identity))))*/
@@ -169,7 +167,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     otherRes ++ (e match {
       case f: FlatMap[t, repr, u, that] =>
       //case FlatMap(c: Exp[Traversable[t]], _: FuncExp[_ /*t*/, Traversable[u]]) =>
-        localLookupIndexableExps(f.asInstanceOf[FlatMap[t, repr, u, Traversable[u]]], freeVars, fvSeq)
+        localLookupIndexableExps(f, freeVars, fvSeq)
       case _ => Seq.empty
     })
   }
