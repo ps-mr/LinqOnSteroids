@@ -96,7 +96,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   import Util.assertType
   import optimization.{Optimization, OptimizationTransforms}
   import optimization.SubquerySharing._
-  val subqueries: MutMap[Exp[_], Any] = Optimization.subqueries
+  import Optimization.subqueries
 
   case class Equality[U](varEqSide: Exp[U], constantEqSide: Exp[U], orig: Eq[U])
 
