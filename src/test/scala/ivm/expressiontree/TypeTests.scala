@@ -9,6 +9,7 @@ import performancetests.Benchmarking
 import collection.mutable.{ArrayBuffer, Map => MutMap}
 import optimization.FuncExpBody
 import collection.TraversableLike
+import collections.TypeMapping
 
 trait TypeMatchers {
   def typ[ExpectedT: ClassManifest] = new HavePropertyMatcher[Any, OptManifest[_]] {
@@ -132,7 +133,9 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
             val branch = branch2.asInstanceOf[TypeCase[t, Res]] //This cast should really not be needed, but Scalac can't infer it for some reason.
             val guard = branch.guard
             val conds = BooleanOperators.cnf(guard.body)
-            tryGroupByNested(indexBaseToLookup, conds, guard.x, allFVSeq, parentNode, this)(null).get.asInstanceOf[Exp[Traversable[t]]] filter guard.f map branch.f
+            //branch.f is also an open term which needs to be processed like the rest.
+            //implicit val cm = ClassManifest fromClass branch.classS //XXX hack 1
+            tryTypedGroupByNested(indexBaseToLookup, conds, guard.x, allFVSeq, parentNode, this)(branch.classS).get.asInstanceOf[Exp[Traversable[t]]] map branch.f
           //collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, guard.x, allFVSeq, parentNode, this)(_)).get
         }
       }) reduce (_ ++ _)
@@ -308,6 +311,75 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     }
   }
 
+  private def typedGroupByShareBodyNested[TupleT, T /*: ClassManifest*/, U](indexBaseToLookup: Exp[Traversable[(TupleT, T)]],
+                                      fx: TypedVar[Seq[T]],
+                                      clazz: Class[_],
+                                      allFVSeq: Seq[Var],
+                                      tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U]): Option[Exp[Traversable[TupleT]]] = {
+    //import fEqBody.{varEqSide, constantEqSide}
+    //val varEqSideTransf = tuplingTransform(varEqSide, fx)
+
+    //println("groupByShareBodyNested on " + indexBaseToLookup)
+    val (baseNoFilter, filterCond) = withoutFilters(indexBaseToLookup, tuplingTransform, fx)
+    val tries = Seq((indexBaseToLookup, Const(true)), (baseNoFilter, filterCond))
+    collectFirst(tries) {
+      case (base, cond) =>
+        //val groupedBy = base.groupBy[U](FuncExp.makefun[TupleT, U](varEqSideTransf, fx))
+        val groupedBy = base.asInstanceOf[Exp[Traversable[(TupleT, Any)]]].groupByTupleType2 //XXX hack 2 - use of Any to accept fix manifest
+
+        //assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
+        val toLookup = Optimization.normalize(groupedBy)
+        subqueries.get(toLookup) match {
+          case Some(t) =>
+            println("Found nested index of form " + toLookup)
+            type TupleTAnd[+T] = (TupleT, T)
+            Some(asExp(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]]).get[T](clazz) map(_._1) filter/*withFilter*/ FuncExp.makefun(cond, fx))
+          case None =>
+            println("Found no nested index of form " + toLookup)
+            None
+        }
+    }
+  }
+
+  private def tryTypedGroupByNested[TupleT, U, FmT /*: ClassManifest*/, FmRepr <: Traversable[FmT] with TraversableLike[FmT, FmRepr], FmU, FmThat <: Traversable[FmU]](indexBaseToLookup: Exp[Traversable[(TupleT, FmT)]],
+                            allConds: Set[Exp[Boolean]],
+                            fx: Var, FVSeq: Seq[Var],
+                            parentNode: FlatMap[FmT, FmRepr, FmU, FmThat], fn: FoundNode[FmT, FmRepr])
+                           (clazz: Class[_]): Option[Exp[Traversable[FmT]]] = {
+    val allFVSeq = FVSeq :+ fx
+    val allFVMap = allFVSeq.zipWithIndex.toMap
+    //val usesFVars = defUseFVars(allFVMap contains _) _
+    def tuplingTransform[T, U](e: Exp[T], tupleVar: TypedVar[Seq[U]]) = e.transform(
+      exp => exp match {
+        case v: Var if allFVMap contains v =>
+          TupleSupport2.projectionTo(tupleVar, allFVSeq.length, allFVMap(v))
+        case _ =>
+          exp
+      })
+
+    //We never want to duplicate variables and take care of scoping.
+    //However, we can reuse fx here while still getting a free variable in the end.
+    val newVar = fx.asInstanceOf[TypedVar[Seq[FmT]]]
+    //Filter-specific
+    val step1Opt: Option[Exp[Traversable[TupleT]]] =
+      typedGroupByShareBodyNested[TupleT, FmT, U](indexBaseToLookup, newVar, clazz, allFVSeq, tuplingTransform)
+    //We need to apply tuplingTransform both to allConds and to parentF.
+    //About parentF, note that fx is _not_ in scope in its body, which uses another variable, which
+    //iterates over the same collection as fx, so it should be considered equivalent to fx from the point of view of
+    //tuplingTransform. Hence let's perform the desired alpha-conversion.
+    val alphaRenamedParentF = parentNode.f.body.substSubTerm(parentNode.f.x, newVar)
+    //residualQuery is also filter-specific, in this form. TypeCase however has guards.
+    val step2Opt = step1Opt.map(e => residualQuery(e, (allConds/* - eq.orig*/).map(tuplingTransform(_, newVar)), newVar))
+
+    //Note that here, map/flatMap will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
+    // instance from the HOAS representation produced.
+    parentNode match {
+      case FlatMap(_, _) =>
+        step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, Traversable[FmT]](
+          tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[Traversable[FmT]]], newVar), newVar))
+    }
+  }
+
   val groupByShareNested: Exp[_] => Exp[_] =
     e => {
       (for {
@@ -326,11 +398,6 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
         val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[fn.TupleWith[t]]]]
 
         fn.optimize(indexBaseToLookup, parentNode, allFVSeq)
-        /*fn match {
-          case FoundFilter(c: Exp[Traversable[Any]], f: FuncExp[_/*t*/, _ /*Boolean*/], conds, foundEqs) =>
-            collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
-          case _ => None
-        }*/
       }).headOption getOrElse e
     }
 }
