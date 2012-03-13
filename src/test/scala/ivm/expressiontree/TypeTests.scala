@@ -111,7 +111,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
                                                               foundEqs: Set[Equality[_]]) extends FoundNode[T, Repr](c) {
     override def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleT]],
                                    parentNode: FlatMap[T, Repr, U, That],
-                                   allFVSeq: Seq[Var]) = collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
+                                   allFVSeq: Seq[Var]) = collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, this)(_))
   }
   case class FoundTypeCase[BaseT,
   Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr],
@@ -248,7 +248,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   private def tryGroupByNested[TupleT, U, FmT, FmRepr <: Traversable[FmT] with TraversableLike[FmT, FmRepr], FmU, FmThat <: Traversable[FmU]](indexBaseToLookup: Exp[Traversable[TupleT]],
                             allConds: Set[Exp[Boolean]],
                             fx: Var, FVSeq: Seq[Var],
-                            parentNode: FlatMap[FmT, FmRepr, FmU, FmThat])
+                            parentNode: FlatMap[FmT, FmRepr, FmU, FmThat], fn: FoundNode[FmT, FmRepr])
                            (eq: Equality[U]): Option[Exp[Traversable[FmT]]] = {
     val allFVSeq = FVSeq :+ fx
     val allFVMap = allFVSeq.zipWithIndex.toMap
