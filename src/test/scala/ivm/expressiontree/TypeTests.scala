@@ -306,7 +306,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     e => {
       (for {
         ((parentNode: FlatMap[_, _, t, that/*T, Repr, U, That*/]), fn, allFVSeq) <- lookupIndexableExps(e)
-        optim <- {
+      } yield {
           //Here we produce an open term, because vars in allFVSeq are not bound...
           def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
           val indexQuery = OptimizationTransforms.stripView(fn.c) map buildTuple
@@ -325,7 +325,6 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
               collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
             case _ => None
           }*/
-        }
-      } yield optim).headOption.getOrElse(e)
+      }).headOption getOrElse e
     }
 }
