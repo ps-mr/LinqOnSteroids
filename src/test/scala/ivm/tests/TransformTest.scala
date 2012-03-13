@@ -66,4 +66,11 @@ class TransformTest extends JUnitSuite with ShouldMatchersForJUnit with Transfor
   @Test def testTransformSome {
     testTransforms(l map (Some(_)))
   }
+
+  //substSubTerm: the replacement can contain the replaced term.
+  @Test def testTransformCont {
+    val x = FuncExp.gensym[(Int, Int)]()
+    val transf = asExp(x, x) substSubTerm (x, x._1)
+    transf should be (asExp(x._1, x._1))
+  }
 }

@@ -63,10 +63,10 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
     (this findTotFun (_ == e)).nonEmpty
 
   /*private[ivm]*/ def substSubTerm[S](SubTerm: Exp[_], e: Exp[S]) =
-    transform(exp => exp match {
+    transform {
       case SubTerm => e
-      case _ => exp
-    })
+      case exp => exp
+    }
 
   /*private[ivm]*/ def freeVars: Set[Var] = {
     def mapper(e: Exp[_], c: Seq[Set[Var]]): Set[Var] = e match {
