@@ -333,7 +333,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
           case Some(t) =>
             println("Found nested index of form " + toLookup)
             type TupleTAnd[+T] = (TupleT, T)
-            Some(asExp(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]]).get[T](clazz) map(_._1) filter/*withFilter*/ FuncExp.makefun(cond, fx))
+            Some(asExp(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]]).get[T](clazz) map(_._1) withFilter FuncExp.makefun(cond, fx))
           case None =>
             println("Found no nested index of form " + toLookup)
             None
