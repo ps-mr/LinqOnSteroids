@@ -312,10 +312,10 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   }
 
   private def typedGroupByShareBodyNested[TupleT, T /*: ClassManifest*/, U](indexBaseToLookup: Exp[Traversable[(TupleT, T)]],
-                                      fx: TypedVar[Seq[T]],
+                                      fx: TypedVar[Seq[T]], //TypedVar[(TupleT, T)],
                                       clazz: Class[_],
                                       allFVSeq: Seq[Var],
-                                      tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U]): Option[Exp[Traversable[TupleT]]] = {
+                                      tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U]): Option[Exp[Traversable[(TupleT, T)]]] = {
     //import fEqBody.{varEqSide, constantEqSide}
     //val varEqSideTransf = tuplingTransform(varEqSide, fx)
 
@@ -325,7 +325,9 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     collectFirst(tries) {
       case (base, cond) =>
         //val groupedBy = base.groupBy[U](FuncExp.makefun[TupleT, U](varEqSideTransf, fx))
-        val groupedBy = base.asInstanceOf[Exp[Traversable[(TupleT, Any)]]].groupByTupleType2 //XXX hack 2 - use of Any to accept fix manifest
+        val groupedBy = base.asInstanceOf[Exp[Traversable[(TupleT, Any /*T*/)]]].groupByTupleType2 //XXX hack 2 - use of Any to accept a fixed manifest,
+        // instead of classManifest[T] which is unfortunately not available. The use of the manifest however is just a
+        // small (and premature?) optimization.
 
         //assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
         val toLookup = Optimization.normalize(groupedBy)
@@ -333,7 +335,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
           case Some(t) =>
             println("Found nested index of form " + toLookup)
             type TupleTAnd[+T] = (TupleT, T)
-            Some(asExp(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]]).get[T](clazz) map(_._1) withFilter FuncExp.makefun(cond, fx))
+            //This map step is wrong, we rely on substitution!
+            Some(asExp(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]]).get[T](clazz) /*map(_._1) */withFilter FuncExp.makefun(cond, fx))
           case None =>
             println("Found no nested index of form " + toLookup)
             None
@@ -361,7 +364,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     //However, we can reuse fx here while still getting a free variable in the end.
     val newVar = fx.asInstanceOf[TypedVar[Seq[FmT]]]
     //Filter-specific
-    val step1Opt: Option[Exp[Traversable[TupleT]]] =
+    val step1Opt: Option[Exp[Traversable[(TupleT, FmT)]]] =
       typedGroupByShareBodyNested[TupleT, FmT, U](indexBaseToLookup, newVar, clazz, allFVSeq, tuplingTransform)
     //We need to apply tuplingTransform both to allConds and to parentF.
     //About parentF, note that fx is _not_ in scope in its body, which uses another variable, which
@@ -375,7 +378,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     // instance from the HOAS representation produced.
     parentNode match {
       case FlatMap(_, _) =>
-        step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, Traversable[FmT]](
+        step2Opt.map(e => e flatMap FuncExp.makefun[(TupleT, FmT), Traversable[FmT]](
           tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[Traversable[FmT]]], newVar), newVar))
     }
   }
