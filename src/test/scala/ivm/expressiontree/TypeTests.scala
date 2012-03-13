@@ -101,7 +101,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   case class Equality[U](varEqSide: Exp[U], constantEqSide: Exp[U], orig: Eq[U])
 
   sealed class FoundNode[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val c: Exp[Repr with Traversable[T]]) {
-    def optimize[U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[Any]],
+    def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleT]],
                            parentNode: FlatMap[T, Repr, U, That],
                            allFVSeq: Seq[Var]): Option[Exp[Traversable[T]]] = None
   }
@@ -109,7 +109,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
                                                               f: FuncExp[T, Boolean],
                                                               conds: Set[Exp[Boolean]],
                                                               foundEqs: Set[Equality[_]]) extends FoundNode[T, Repr](c) {
-    override def optimize[U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[Any]],
+    override def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleT]],
                                    parentNode: FlatMap[T, Repr, U, That],
                                    allFVSeq: Seq[Var]) = collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
   }
@@ -291,21 +291,21 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
       (for {
         ((parentNode: FlatMap[_, _, t, that/*T, Repr, U, That*/]), fn, allFVSeq) <- lookupIndexableExps(e)
         optim <- {
+          //Here we produce an open term, because vars in allFVSeq are not bound...
           def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
           val indexQuery = OptimizationTransforms.stripView(fn.c) map buildTuple
+          //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
+          //now bound. Note: e might well be an open term - we don't check it explicitly anywhere, even if we should.
+          //However, index lookup is going to fail when open terms are passed - the query repository contains only
+          //closed queries.
+          //
+          //Note: this means that we built the index we search by substitution in the original query; an alternative
+          //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
           val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Any]]]
 
           fn.optimize(indexBaseToLookup, parentNode, allFVSeq)
           /*fn match {
             case FoundFilter(c: Exp[Traversable[Any]], f: FuncExp[_/*t*/, _ /*Boolean*/], conds, foundEqs) =>
-              //Here we produce an open term, because vars in allFVSeq are not bound...
-              //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
-              //now bound. Note: e might well be an open term - we don't check it explicitly anywhere, even if we should.
-              //However, index lookup is going to fail when open terms are passed - the query repository contains only
-              //closed queries.
-              //
-              //Note: this means that we built the index we search by substitution in the original query; an alternative
-              //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
               collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
             case _ => None
           }*/
