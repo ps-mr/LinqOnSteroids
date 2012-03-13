@@ -100,16 +100,20 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   case class Equality[U](varEqSide: Exp[U], constantEqSide: Exp[U], orig: Eq[U])
 
-  sealed class FoundNode[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val c: Exp[Repr with Traversable[T]]) {
-    def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleT]],
+  sealed abstract class FoundNode[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val c: Exp[Repr with Traversable[T]]) {
+    def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleWith[T]]],
                            parentNode: FlatMap[T, Repr, U, That],
-                           allFVSeq: Seq[Var]): Option[Exp[Traversable[T]]] = None
+                           allFVSeq: Seq[Var]): Option[Exp[Traversable[T]]]
+    type TupleWith[T]
+    def buildTuple[T](allFVSeq: Seq[Var])(x: Exp[T]): Exp[TupleWith[T]]
   }
   case class FoundFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](override val c: Exp[Repr],
                                                               f: FuncExp[T, Boolean],
                                                               conds: Set[Exp[Boolean]],
                                                               foundEqs: Set[Equality[_]]) extends FoundNode[T, Repr](c) {
-    override def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleT]],
+    type TupleWith[T] = Any
+    override def buildTuple[T](allFVSeq: Seq[Var])(x: Exp[T]): Exp[Any] = TupleSupport2.toTuple(allFVSeq :+ x)
+    override def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleWith[T]]],
                                    parentNode: FlatMap[T, Repr, U, That],
                                    allFVSeq: Seq[Var]) = collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, this)(_))
   }
@@ -117,7 +121,9 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr],
   Res,
   That <: TraversableLike[Res, That]](t: TypeCaseExp[BaseT, Repr, Res, That]) extends FoundNode[BaseT, Repr](t.e) {
-    override def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleT]],
+    type TupleWith[T] = (Any, T)
+    override def buildTuple[T](allFVSeq: Seq[Var])(x: Exp[T]): Exp[(_, T)] = (TupleSupport2.toTuple(allFVSeq), x)
+    override def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleWith[BaseT]]],
                                    parentNode: FlatMap[BaseT, Repr, U, That],
                                    allFVSeq: Seq[Var]) = {
       val res: Exp[Traversable[Res]] = (for (branch1 <- t.cases) yield {
@@ -305,11 +311,11 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   val groupByShareNested: Exp[_] => Exp[_] =
     e => {
       (for {
-        ((parentNode: FlatMap[_, _, t, that/*T, Repr, U, That*/]), fn, allFVSeq) <- lookupIndexableExps(e)
+        ((parentNode: FlatMap[t, repr, u, that/*T, Repr, U, That*/]), fn1: FoundNode[_, _], allFVSeq) <- lookupIndexableExps(e)
       } yield {
-        //Here we produce an open term, because vars in allFVSeq are not bound...
-        def buildTuple(x: Exp[_]): Exp[_] = TupleSupport2.toTuple(allFVSeq :+ x)
-        val indexQuery = OptimizationTransforms.stripView(fn.c) map buildTuple
+        //buildTuple produces an open term, because vars in allFVSeq are not bound...
+        val fn = fn1.asInstanceOf[FoundNode[t, repr]]
+        val indexQuery = OptimizationTransforms.stripView(fn.c) map fn.buildTuple(allFVSeq)
         //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
         //now bound. Note: e might well be an open term - we don't check it explicitly anywhere, even if we should.
         //However, index lookup is going to fail when open terms are passed - the query repository contains only
@@ -317,7 +323,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
         //
         //Note: this means that we built the index we search by substitution in the original query; an alternative
         //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
-        val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Any]]]
+        val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[fn.TupleWith[t]]]]
 
         fn.optimize(indexBaseToLookup, parentNode, allFVSeq)
         /*fn match {
