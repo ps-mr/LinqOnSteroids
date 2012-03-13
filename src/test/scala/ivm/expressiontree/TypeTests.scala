@@ -100,11 +100,19 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   case class Equality[U](varEqSide: Exp[U], constantEqSide: Exp[U], orig: Eq[U])
 
-  sealed class FoundNode[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val c: Exp[Repr with Traversable[T]])
+  sealed class FoundNode[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val c: Exp[Repr with Traversable[T]]) {
+    def optimize[U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[Any]],
+                           parentNode: FlatMap[T, Repr, U, That],
+                           allFVSeq: Seq[Var]): Option[Exp[Traversable[T]]] = None
+  }
   case class FoundFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](override val c: Exp[Repr],
                                                               f: FuncExp[T, Boolean],
                                                               conds: Set[Exp[Boolean]],
-                                                              foundEqs: Set[Equality[_]]) extends FoundNode[T, Repr](c)
+                                                              foundEqs: Set[Equality[_]]) extends FoundNode[T, Repr](c) {
+    override def optimize[U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[Any]],
+                                   parentNode: FlatMap[T, Repr, U, That],
+                                   allFVSeq: Seq[Var]) = collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
+  }
   case class FoundTypeCase[BaseT,
   Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr],
   Res,
@@ -237,11 +245,11 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
    * @tparam T
    * @return
    */
-  private def tryGroupByNested[TupleT, T, U /*, V*/](indexBaseToLookup: Exp[Traversable[TupleT]],
+  private def tryGroupByNested[TupleT, U, FmT, FmRepr <: Traversable[FmT] with TraversableLike[FmT, FmRepr], FmU, FmThat <: Traversable[FmU]](indexBaseToLookup: Exp[Traversable[TupleT]],
                             allConds: Set[Exp[Boolean]],
                             fx: Var, FVSeq: Seq[Var],
-                            parentNode: FlatMap[_, _, T, Traversable[T]])
-                           (eq: Equality[U]): Option[Exp[Traversable[T]]] = {
+                            parentNode: FlatMap[FmT, FmRepr, FmU, FmThat])
+                           (eq: Equality[U]): Option[Exp[Traversable[FmT]]] = {
     val allFVSeq = FVSeq :+ fx
     val allFVMap = allFVSeq.zipWithIndex.toMap
     val usesFVars = defUseFVars(allFVMap contains _) _
@@ -257,10 +265,10 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
     //We never want to duplicate variables and take care of scoping.
     //However, we can reuse fx here while still getting a free variable in the end.
-    val newVar = fx.asInstanceOf[TypedVar[Seq[T]]]
+    val newVar = fx.asInstanceOf[TypedVar[Seq[FmT]]]
     //Filter-specific
     val step1Opt: Option[Exp[Traversable[TupleT]]] =
-      groupByShareBodyNested[TupleT, T, U](indexBaseToLookup, newVar, eq, allFVSeq, tuplingTransform)
+      groupByShareBodyNested[TupleT, FmT, U](indexBaseToLookup, newVar, eq, allFVSeq, tuplingTransform)
     //We need to apply tuplingTransform both to allConds and to parentF.
     //About parentF, note that fx is _not_ in scope in its body, which uses another variable, which
     //iterates over the same collection as fx, so it should be considered equivalent to fx from the point of view of
@@ -273,8 +281,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     // instance from the HOAS representation produced.
     parentNode match {
       case FlatMap(_, _) =>
-        step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, Traversable[T]](
-          tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[Traversable[T]]], newVar), newVar))
+        step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, Traversable[FmT]](
+          tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[Traversable[FmT]]], newVar), newVar))
     }
   }
 
@@ -287,7 +295,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
           val indexQuery = OptimizationTransforms.stripView(fn.c) map buildTuple
           val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[Any]]]
 
-          fn match {
+          fn.optimize(indexBaseToLookup, parentNode, allFVSeq)
+          /*fn match {
             case FoundFilter(c: Exp[Traversable[Any]], f: FuncExp[_/*t*/, _ /*Boolean*/], conds, foundEqs) =>
               //Here we produce an open term, because vars in allFVSeq are not bound...
               //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
@@ -299,7 +308,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
               //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
               collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode)(_))
             case _ => None
-          }
+          }*/
         }
       } yield optim).headOption.getOrElse(e)
     }
