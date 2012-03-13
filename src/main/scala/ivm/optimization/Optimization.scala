@@ -129,12 +129,12 @@ object OptimizationTransforms {
 
   //Move constants on the left-side of a boolean connective.
   private val reassociateBoolOps: Exp[_] => Exp[_] = {
-      case And(l, r @ Const(_)) =>
-        r && l
-      case Or(l, r @ Const(_)) =>
-        r || l
-      case e => e
-    }
+    case And(l, r @ Const(_)) =>
+      r && l
+    case Or(l, r @ Const(_)) =>
+      r || l
+    case e => e
+  }
 
   val removeIdentityMaps: Exp[_] => Exp[_] = {
     case MapOp(col, FuncExpIdentity()) =>
