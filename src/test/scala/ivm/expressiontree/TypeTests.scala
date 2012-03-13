@@ -210,7 +210,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
                                       fEqBody: Equality[U],
                                       allFVSeq: Seq[Var],
                                       tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U]): Option[Exp[Traversable[TupleT]]] = {
-    import fEqBody._
+    import fEqBody.{varEqSide, constantEqSide}
     val varEqSideTransf = tuplingTransform(varEqSide, fx)
 
     //println("groupByShareBodyNested on " + indexBaseToLookup)
