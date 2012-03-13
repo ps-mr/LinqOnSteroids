@@ -350,12 +350,16 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
                             parentNode: FlatMap[FmT, FmRepr, FmU, FmThat], fn: FoundNode[FmT, FmRepr])
                            (clazz: Class[_]): Option[Exp[Traversable[FmT]]] = {
     val allFVSeq = FVSeq :+ fx
-    val allFVMap = allFVSeq.zipWithIndex.toMap
+    val FVMap = FVSeq.zipWithIndex.toMap
     //val usesFVars = defUseFVars(allFVMap contains _) _
     def tuplingTransform[T, U, TupleT](e: Exp[T], tupleVar: TypedVar[(TupleT, U)]) = e.transform(
       exp => exp match {
-        case v: Var if allFVMap contains v =>
-          TupleSupport2.projectionTo(tupleVar, allFVSeq.length, allFVMap(v))
+        case v: Var if v == fx || (FVMap contains v) =>
+          if (v == fx)
+            tupleVar._2
+          else
+            //TupleSupport2.projectionTo(tupleVar._1, allFVSeq.length, FVMap(v)) //now this is incorrect!
+            TupleSupport2.projectionTo(tupleVar, allFVSeq.length, FVMap(v)).substSubTerm(tupleVar, tupleVar._1)
         case _ =>
           exp
       })
