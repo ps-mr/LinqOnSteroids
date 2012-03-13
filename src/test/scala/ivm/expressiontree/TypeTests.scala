@@ -116,7 +116,23 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   case class FoundTypeCase[BaseT,
   Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr],
   Res,
-  That <: TraversableLike[Res, That]](t: TypeCaseExp[BaseT, Repr, Res, That]) extends FoundNode[BaseT, Repr](t.e)
+  That <: TraversableLike[Res, That]](t: TypeCaseExp[BaseT, Repr, Res, That]) extends FoundNode[BaseT, Repr](t.e) {
+    override def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleT]],
+                                   parentNode: FlatMap[BaseT, Repr, U, That],
+                                   allFVSeq: Seq[Var]) = {
+      val res: Exp[Traversable[Res]] = (for (branch1 <- t.cases) yield {
+        branch1 match {
+          case branch2: TypeCase[t, _/*Res*/] =>
+            val branch = branch2.asInstanceOf[TypeCase[t, Res]] //This cast should really not be needed, but Scalac can't infer it for some reason.
+            val guard = branch.guard
+            val conds = BooleanOperators.cnf(guard.body)
+            tryGroupByNested(indexBaseToLookup, conds, guard.x, allFVSeq, parentNode, this)(null).get.asInstanceOf[Exp[Traversable[t]]] filter guard.f map branch.f
+          //collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, guard.x, allFVSeq, parentNode, this)(_)).get
+        }
+      }) reduce (_ ++ _)
+      None
+    }
+  }
   //case object FoundNothing extends FoundNode
   //case class FoundFlatMap[T, U](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, Traversable[U]], isOption: Boolean = false) extends FoundNode
 
