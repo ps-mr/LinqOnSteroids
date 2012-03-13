@@ -215,7 +215,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
    * An actual concern is that we might need to strip only some indexes but not others from the query in order to find a
    * matching index.
    */
-  private def withoutFilters[TupleT, T, U](indexBaseToLookup: Exp[Traversable[TupleT]], tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U], fx: TypedVar[Seq[T]]): (Exp[Traversable[TupleT]], Exp[Boolean]) = {
+  private def withoutFilters[TupleT, U](indexBaseToLookup: Exp[Traversable[TupleT]], tuplingTransform: (Exp[U], TypedVar[TupleT]) => Exp[U], fx: TypedVar[TupleT]): (Exp[Traversable[TupleT]], Exp[Boolean]) = {
     val v = ArrayBuffer[Exp[Boolean]]()
     //We are removing too many filters, and not keeping track of their bindings :-(.
     val res = indexBaseToLookup transform { //We only want to recognize filtering in the collection branch of FlatMap nodes. Easy!
@@ -230,11 +230,11 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     (res, v.fold(Const(true))(And))
   }
 
-  private def groupByShareBodyNested[TupleT, T, U](indexBaseToLookup: Exp[Traversable[TupleT]],
-                                      fx: TypedVar[Seq[T]],
+  private def groupByShareBodyNested[TupleT, U](indexBaseToLookup: Exp[Traversable[TupleT]],
+                                      fx: TypedVar[TupleT],
                                       fEqBody: Equality[U],
                                       allFVSeq: Seq[Var],
-                                      tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U]): Option[Exp[Traversable[TupleT]]] = {
+                                      tuplingTransform: (Exp[U], TypedVar[TupleT]) => Exp[U]): Option[Exp[Traversable[TupleT]]] = {
     import fEqBody.{varEqSide, constantEqSide}
     val varEqSideTransf = tuplingTransform(varEqSide, fx)
 
@@ -280,7 +280,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     val usesFVars = defUseFVars(allFVMap contains _) _
     //Filter-specific
     assert(usesFVars(eq.varEqSide) && !usesFVars(eq.constantEqSide))
-    def tuplingTransform[T, U](e: Exp[T], tupleVar: TypedVar[Seq[U]]) = e.transform(
+    def tuplingTransform[T, TupleT](e: Exp[T], tupleVar: TypedVar[TupleT]) = e.transform(
       exp => exp match {
         case v: Var if allFVMap contains v =>
           TupleSupport2.projectionTo(tupleVar, allFVSeq.length, allFVMap(v))
@@ -290,10 +290,10 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
     //We never want to duplicate variables and take care of scoping.
     //However, we can reuse fx here while still getting a free variable in the end.
-    val newVar = fx.asInstanceOf[TypedVar[Seq[FmT]]]
+    val newVar = fx.asInstanceOf[TypedVar[TupleT]]
     //Filter-specific
     val step1Opt: Option[Exp[Traversable[TupleT]]] =
-      groupByShareBodyNested[TupleT, FmT, U](indexBaseToLookup, newVar, eq, allFVSeq, tuplingTransform)
+      groupByShareBodyNested[TupleT, U](indexBaseToLookup, newVar, eq, allFVSeq, tuplingTransform)
     //We need to apply tuplingTransform both to allConds and to parentF.
     //About parentF, note that fx is _not_ in scope in its body, which uses another variable, which
     //iterates over the same collection as fx, so it should be considered equivalent to fx from the point of view of
@@ -312,10 +312,10 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   }
 
   private def typedGroupByShareBodyNested[TupleT, T /*: ClassManifest*/, U](indexBaseToLookup: Exp[Traversable[(TupleT, T)]],
-                                      fx: TypedVar[Seq[T]], //TypedVar[(TupleT, T)],
+                                      fx: TypedVar[(TupleT, T)],
                                       clazz: Class[_],
                                       allFVSeq: Seq[Var],
-                                      tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U]): Option[Exp[Traversable[(TupleT, T)]]] = {
+                                      tuplingTransform: (Exp[U], TypedVar[(TupleT, T)]) => Exp[U]): Option[Exp[Traversable[(TupleT, T)]]] = {
     //import fEqBody.{varEqSide, constantEqSide}
     //val varEqSideTransf = tuplingTransform(varEqSide, fx)
 
@@ -352,7 +352,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     val allFVSeq = FVSeq :+ fx
     val allFVMap = allFVSeq.zipWithIndex.toMap
     //val usesFVars = defUseFVars(allFVMap contains _) _
-    def tuplingTransform[T, U](e: Exp[T], tupleVar: TypedVar[Seq[U]]) = e.transform(
+    def tuplingTransform[T, U, TupleT](e: Exp[T], tupleVar: TypedVar[(TupleT, U)]) = e.transform(
       exp => exp match {
         case v: Var if allFVMap contains v =>
           TupleSupport2.projectionTo(tupleVar, allFVSeq.length, allFVMap(v))
@@ -362,7 +362,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
     //We never want to duplicate variables and take care of scoping.
     //However, we can reuse fx here while still getting a free variable in the end.
-    val newVar = fx.asInstanceOf[TypedVar[Seq[FmT]]]
+    val newVar = fx.asInstanceOf[TypedVar[(TupleT, FmT)]]
     //Filter-specific
     val step1Opt: Option[Exp[Traversable[(TupleT, FmT)]]] =
       typedGroupByShareBodyNested[TupleT, FmT, U](indexBaseToLookup, newVar, clazz, allFVSeq, tuplingTransform)
