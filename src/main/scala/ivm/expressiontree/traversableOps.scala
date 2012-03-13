@@ -468,12 +468,15 @@ trait TypeFilterOps {
     type Flip[+B] = T[B, A]
   }
 
-  class GroupByTupleTypeOps[T: ClassManifest, U: ClassManifest, C[X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
+  class GroupByTupleTypeOps1[T: ClassManifest, U, C[X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
     def groupByTupleType1(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[T]) */ = GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, _._1)
+  }
+  implicit def expToGroupByTupleType1[T: ClassManifest, U, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps1(t)
+
+  class GroupByTupleTypeOps2[T, U: ClassManifest, C[X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
     def groupByTupleType2(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, _._2)
   }
-  implicit def expToGroupByTupleType[T: ClassManifest, U: ClassManifest, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps(t)
-
+  implicit def expToGroupByTupleType2[T, U: ClassManifest, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps2(t)
 
   //typeCase method
 

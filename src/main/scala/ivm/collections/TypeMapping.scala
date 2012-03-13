@@ -6,7 +6,7 @@ import ivm.expressiontree.{ClassUtil, NoSub, YesSub, TypeHierarchyUtils, MaybeSu
 
 
 // contract: map must map a ClassManifest[T] to a C[D[T]]
-class TypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[Base]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
+class TypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[Base]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]]) {
   //TODO Problem with this implementation: instances of subtypes of T won't be part of the returned collection.
   //def getOld[T](implicit tmf: ClassManifest[T]): C[D[T]] = map(ClassUtil.boxedErasure(tmf)).asInstanceOf[C[D[T]]]
 
