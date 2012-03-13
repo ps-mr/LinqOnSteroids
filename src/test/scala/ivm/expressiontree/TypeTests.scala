@@ -127,8 +127,13 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
         //I managed, but it was beyond the abilities of type inference.
         val foundEqs =
           conds.map {
-            case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty && (usesFVars(l) && !usesFVars(r) || usesFVars(r) && !usesFVars(l)) =>
-              Seq(eq)
+            case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty =>
+              if (usesFVars(l) && !usesFVars(r))
+                Seq(eq)
+              else if (usesFVars(r) && !usesFVars(l))
+                Seq(Eq(r, l))
+              else
+                Seq.empty
             case _ => Seq.empty
           }.fold(Seq.empty)(_ union _).toSet[Eq[_]]
         //Seq((e, (ff, conds, foundEqs), fvSeq /*allFVSeq*/))
@@ -252,18 +257,16 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     //We never want to duplicate variables and take care of scoping.
     //However, we can reuse fx here while still getting a free variable in the end.
     val newVar = fx.asInstanceOf[TypedVar[Seq[T]]]
-    //XXX probably this should get Exp[Traversable] or Exp[Option], depending on isOption.
+    //Filter-specific
+    assert(usesFVars(eq.t1) && !usesFVars(eq.t2))
     val step1Opt: Option[Exp[Traversable[TupleT]]] =
-      if (usesFVars(eq.t1) && !usesFVars(eq.t2))
-        groupByShareBodyNested[TupleT, T, U](indexBaseToLookup, newVar, eq, eq.t2, eq.t1, allFVSeq, tuplingTransform)
-      else if (usesFVars(eq.t2) && !usesFVars(eq.t1))
-        groupByShareBodyNested[TupleT, T, U](indexBaseToLookup, newVar, eq, eq.t1, eq.t2, allFVSeq, tuplingTransform)
-      else None
+      groupByShareBodyNested[TupleT, T, U](indexBaseToLookup, newVar, eq, eq.t2, eq.t1, allFVSeq, tuplingTransform)
     //We need to apply tuplingTransform both to allConds and to parentF.
     //About parentF, note that fx is _not_ in scope in its body, which uses another variable, which
     //iterates over the same collection as fx, so it should be considered equivalent to fx from the point of view of
     //tuplingTransform. Hence let's perform the desired alpha-conversion.
     val alphaRenamedParentF = parentNode.f.body.substSubTerm(parentNode.f.x, newVar)
+    //residualQuery is also filter-specific, in this form. TypeCase however has guards.
     val step2Opt = step1Opt.map(e => residualQuery(e, (allConds - eq).map(tuplingTransform(_, newVar)), newVar))
 
     //Note that here, map/flatMap will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
