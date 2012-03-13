@@ -51,7 +51,7 @@ class TransformTest extends JUnitSuite with ShouldMatchersForJUnit with Transfor
     testRebuild(Optimization.optimize(tEval))
   }
 
-  @Test def testTransformIdentity {
+  @Test def testTransformIdentity() {
     testTransforms(for (c <- l) yield c)
     testTransforms(for (c <- l if true) yield c)
     testTransforms(for (c <- l if c is 7) yield c)
@@ -63,12 +63,12 @@ class TransformTest extends JUnitSuite with ShouldMatchersForJUnit with Transfor
     testTransforms(for (c <- l if c * 3 is 7; if c + 8 is 19) yield c)
   }
 
-  @Test def testTransformSome {
+  @Test def testTransformSome() {
     testTransforms(l map (Some(_)))
   }
 
   //substSubTerm: the replacement can contain the replaced term.
-  @Test def testTransformCont {
+  @Test def testTransformCont() {
     val x = FuncExp.gensym[(Int, Int)]()
     val transf = asExp(x, x) substSubTerm (x, x._1)
     transf should be (asExp(x._1, x._1))
