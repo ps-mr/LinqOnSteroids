@@ -36,7 +36,7 @@ class TypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Cl
     }
   }
 
-  def get[T](clazz: Class[_])(implicit cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]) = {
+  def get[T](clazz: Class[_])(implicit m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): C[D[T]] = {
     val baseResult = map(clazz)
     val coll = cbf(baseResult)
     coll ++= baseResult.asInstanceOf[C[D[T]]]

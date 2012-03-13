@@ -437,7 +437,7 @@ trait TypeFilterOps {
   }
  */
   case class TypeMappingApp[C[+X] <: TraversableLike[X, C[X]], D[+_], Base, T](base: Exp[TypeMapping[C, D, Base]], classS: Class[_])
-                                                                              (implicit cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]])
+                                                                              (implicit m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]])
     extends Arity1OpExp[TypeMapping[C, D, Base], C[D[T]], TypeMappingApp[C, D, Base, T]](base) {
     override def copy(base: Exp[TypeMapping[C, D, Base]]) = TypeMappingApp[C, D, Base, T](base, classS)
     override def interpret() =
@@ -451,8 +451,8 @@ trait TypeFilterOps {
   implicit def expToTypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T, C, D](t)
 
   class TypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val t: Exp[TypeMapping[C, D, Base]]) {
-    def get[T](implicit cS: ClassManifest[T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]) = get[T](ClassUtil.boxedErasure(cS))
-    def get[T](classS: Class[_])(implicit cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]) = TypeMappingApp[C, D, Base, T](t, classS)
+    def get[T](implicit cS: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]) = get[T](ClassUtil.boxedErasure(cS))
+    def get[T](classS: Class[_])(implicit m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]) = TypeMappingApp[C, D, Base, T](t, classS)
   }
   implicit def expToTypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new TypeMappingAppOps[C, D, Base](t)
 
