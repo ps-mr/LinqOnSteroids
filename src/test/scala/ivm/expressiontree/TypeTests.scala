@@ -200,8 +200,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   private def groupByShareBodyNested[TupleT, T, U](indexBaseToLookup: Exp[Traversable[TupleT]],
                                       fx: TypedVar[Seq[T]],
                                       fEqBody: Eq[U],
-                                      constantEqSide: Exp[U],
                                       varEqSide: Exp[U],
+                                      constantEqSide: Exp[U],
                                       allFVSeq: Seq[Var],
                                       tuplingTransform: (Exp[U], TypedVar[Seq[T]]) => Exp[U]): Option[Exp[Traversable[TupleT]]] = {
     val varEqSideTransf = tuplingTransform(varEqSide, fx)
@@ -260,7 +260,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     //Filter-specific
     assert(usesFVars(eq.t1) && !usesFVars(eq.t2))
     val step1Opt: Option[Exp[Traversable[TupleT]]] =
-      groupByShareBodyNested[TupleT, T, U](indexBaseToLookup, newVar, eq, eq.t2, eq.t1, allFVSeq, tuplingTransform)
+      groupByShareBodyNested[TupleT, T, U](indexBaseToLookup, newVar, eq, eq.t1, eq.t2, allFVSeq, tuplingTransform)
     //We need to apply tuplingTransform both to allConds and to parentF.
     //About parentF, note that fx is _not_ in scope in its body, which uses another variable, which
     //iterates over the same collection as fx, so it should be considered equivalent to fx from the point of view of
