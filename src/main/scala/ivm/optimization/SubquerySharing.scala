@@ -594,7 +594,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[fn.TupleWith[t]]]]
 
         fn.optimize(indexBaseToLookup, parentNode, allFVSeq)
-      }).headOption getOrElse e
+      }).headOption flatMap identity getOrElse e
     }
 
   //Entry point
