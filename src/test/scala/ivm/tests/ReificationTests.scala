@@ -17,10 +17,10 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l: Exp[Traversable[Int]] = toExp(Vector.range(1,10))
   val j: Exp[Traversable[Int]] = toExp(Vector.range(1,10))
   val q = for (k  <- l if k <= 5) yield 3 + k
-  val r = for (k  <- l; k2  <- j if k is k2) yield k + k2
-  val r1 = for (k <- l; k2 <- j if k + k2 is k2 + k) yield k + k2
+  val r = for (k  <- l; k2  <- j if k ==# k2) yield k + k2
+  val r1 = for (k <- l; k2 <- j if k + k2 ==# k2 + k) yield k + k2
   val r2 = for (k <- l; k2 <- j if liftCall('test$Int$Int, test, k, k2)) yield k + k2
-  val r3 = for (k <- l; k2 <- j if liftCall('foo$Int, foo, k) is liftCall('bar$Int, bar, k2)) yield (k, k2)
+  val r3 = for (k <- l; k2 <- j if liftCall('foo$Int, foo, k) ==# liftCall('bar$Int, bar, k2)) yield (k, k2)
 
   @Test
   def testq() {
@@ -57,7 +57,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
     q should equal (newMapOp[Int, Traversable[Int], Int, Traversable[Int]](newWithFilter(l, FuncExp((v2: Exp[Int]) => LEq(v2, 5))),FuncExp((v3: Exp[Int]) => Plus(3, v3))))
     /*println(q.exec())
     println(optimize(q).interpret().exec())
-    //val r = l.flatMap( (k) => j.withFilter( (k2 ) => k is k2).map( (k2:Exp[Int]) => k+k2))
+    //val r = l.flatMap( (k) => j.withFilter( (k2 ) => k ==# k2).map( (k2:Exp[Int]) => k+k2))
     println(r);
     println(optimize(r))
     println(r.exec())

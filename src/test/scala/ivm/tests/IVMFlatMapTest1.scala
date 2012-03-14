@@ -45,8 +45,8 @@ class IVMFlatMapTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTes
       v ++= Seq(10, 20, 30)
     val v2 = IncHashSet(20, 40)
 
-    val res = new IncrementalResult[Int](for (i <- v.asQueryable; j <- v2.asQueryable; if 2 * i is j) yield i + j)
-    val res2 = new IncrementalResult[Int](Optimization.optimize(for (i <- v.asQueryable; j <- v2.asQueryable; if 2 * i is j) yield i + j))
+    val res = new IncrementalResult[Int](for (i <- v.asQueryable; j <- v2.asQueryable; if 2 * i ==# j) yield i + j)
+    val res2 = new IncrementalResult[Int](Optimization.optimize(for (i <- v.asQueryable; j <- v2.asQueryable; if 2 * i ==# j) yield i + j))
     def out() {
       show("res", res)
       show("res2", res2)
