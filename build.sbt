@@ -79,6 +79,9 @@ initialCommands in (Test, console) := """
 
 sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, scalaVersion) map { (dir, baseDir, scalaVer) =>
   val gen = new Generator(scalaVer)
+  if (!dir.mkdirs()) {
+    scala.Console.err.printf("Failure creating output directory %s\n", dir)
+  }
   val verFile = dir / "version.scala"
   val gitVersion = "git rev-parse HEAD".!!
   val writer = new FileWriter(verFile)
