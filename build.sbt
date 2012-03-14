@@ -79,7 +79,8 @@ initialCommands in (Test, console) := """
 
 sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, scalaVersion) map { (dir, baseDir, scalaVer) =>
   val gen = new Generator(scalaVer)
-  if (!dir.mkdirs()) {
+  dir.mkdirs()
+  if (!(dir.exists() && dir.isDirectory())) {
     scala.Console.err.printf("Failure creating output directory %s\n", dir)
   }
   val verFile = dir / "version.scala"
@@ -92,7 +93,7 @@ object GitVersion {
 }
 """ format gitVersion.trim)
   } finally {
-    writer.close
+    writer.close()
   }
   (for {
     base <- Generator.templates
@@ -100,7 +101,7 @@ object GitVersion {
   } yield {
     if (!file.exists() || (baseDir / "src" / "main" / "resources" / (base + ".ssp") newerThan file)) {
       printf("Generating %s\n", file)
-      gen.generate(dir.absolutePath)
+      gen.render(dir.absolutePath, base)
     }
     file
   }) :+ verFile
