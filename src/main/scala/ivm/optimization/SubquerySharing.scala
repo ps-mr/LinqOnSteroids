@@ -291,9 +291,10 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   case class Equality[U](varEqSide: Exp[U], constantEqSide: Exp[U], orig: Eq[U])
 
   sealed abstract class FoundNode[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val c: Exp[Repr with Traversable[T]]) {
+    type OptRes
     def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleWith[T]]],
                            parentNode: FlatMap[T, Repr, U, That],
-                           allFVSeq: Seq[Var]): Option[Exp[Traversable[T]]]
+                           allFVSeq: Seq[Var]): Option[Exp[Traversable[OptRes]]]
     type TupleWith[T]
     def buildTuple[T](allFVSeq: Seq[Var])(x: Exp[T]): Exp[TupleWith[T]]
   }
@@ -301,6 +302,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                                                               f: FuncExp[T, Boolean],
                                                               conds: Set[Exp[Boolean]],
                                                               foundEqs: Set[Equality[_]]) extends FoundNode[T, Repr](c) {
+    type OptRes = T
     type TupleWith[T] = Any
     override def buildTuple[T](allFVSeq: Seq[Var])(x: Exp[T]): Exp[Any] = TupleSupport2.toTuple(allFVSeq :+ x)
     override def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleWith[T]]],
@@ -311,12 +313,13 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr],
   Res,
   That <: TraversableLike[Res, That]](t: TypeCaseExp[BaseT, Repr, Res, That]) extends FoundNode[BaseT, Repr](t.e) {
+    type OptRes = Res
     type TupleWith[T] = (Any, T)
     override def buildTuple[T](allFVSeq: Seq[Var])(x: Exp[T]): Exp[(_, T)] = (TupleSupport2.toTuple(allFVSeq), x)
     override def optimize[TupleT, U, That <: Traversable[U]](indexBaseToLookup: Exp[Traversable[TupleWith[BaseT]]],
                                    parentNode: FlatMap[BaseT, Repr, U, That],
-                                   allFVSeq: Seq[Var]) = {
-      val res: Exp[Traversable[Res]] = (for (branch1 <- t.cases) yield {
+                                   allFVSeq: Seq[Var]): Option[Exp[Traversable[Res]]] = {
+      (for (branch1 <- t.cases) yield {
         branch1 match {
           case branch2: TypeCase[t, _/*Res*/] =>
             val branch = branch2.asInstanceOf[TypeCase[t, Res]] //This cast should really not be needed, but Scalac can't infer it for some reason.
@@ -324,11 +327,15 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
             val conds = BooleanOperators.cnf(guard.body)
             //branch.f is also an open term which needs to be processed like the rest.
             //implicit val cm = ClassManifest fromClass branch.classS //XXX hack 1
-            tryTypedGroupByNested(indexBaseToLookup, conds, guard.x, allFVSeq, parentNode, this)(branch.classS).get.asInstanceOf[Exp[Traversable[t]]] map branch.f
+            tryTypedGroupByNested(indexBaseToLookup, conds, guard.x, allFVSeq, parentNode, this)(branch.classS).map(_.asInstanceOf[Exp[Traversable[t]]] map branch.f)
           //collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, guard.x, allFVSeq, parentNode, this)(_)).get
         }
-      }) reduce (_ ++ _)
-      None
+      //}) reduce (_ ++ _)
+      }) reduce {
+        (opt1, opt2) =>
+          for (a <- opt1; b <- opt2) yield a ++ b //Return something only if both Option values are defined.
+          //_ ++ _
+      }
     }
   }
   //case object FoundNothing extends FoundNode
@@ -581,8 +588,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       (for {
         ((parentNode: FlatMap[t, repr, u, that/*T, Repr, U, That*/]), fn1: FoundNode[_, _], allFVSeq) <- lookupIndexableExps(e)
       } yield {
-        //buildTuple produces an open term, because vars in allFVSeq are not bound...
         val fn = fn1.asInstanceOf[FoundNode[t, repr]]
+        //buildTuple produces an open term, because vars in allFVSeq are not bound...
         val indexQuery = OptimizationTransforms.stripView(fn.c) map fn.buildTuple(allFVSeq)
         //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
         //now bound. Note: e might well be an open term - we don't check it explicitly anywhere, even if we should.
@@ -593,7 +600,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
         val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[fn.TupleWith[t]]]]
 
-        fn.optimize(indexBaseToLookup, parentNode, allFVSeq)
+        fn.optimize(indexBaseToLookup, parentNode, allFVSeq).asInstanceOf[Option[Exp[Traversable[_]]]]
       }).headOption flatMap identity getOrElse e
     }
 
