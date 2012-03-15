@@ -18,6 +18,7 @@ import java.io.File
 import collections.{TypeMapping, IncHashSet}
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.FunSuite
+import collection.TraversableLike
 
 
 /*
@@ -427,13 +428,21 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         i <- ca.instructions
       } yield (asExp((cf, m, ca)), i)
 
-      val typeIdx = typeIdxBase.groupByTupleType2
+      implicit def toTypeIndexDummy[C[X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new Dummy(t)
+
+      //The type annotation here is needed, because type inference interferes with implicit lookup (apparently).
+      val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
       // Interpreting used to take a whopping 120 seconds. Why? Since the result is a set, each class file is being hashed once
       // per each instruction. The fix was adding toSeq above. In fact, this transformation could probably be done also on the query to optimize;
       // after that, the optimizer would again find a matching subquery. The new runtime is ~ 0.3-0.4 sec.
-      val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation"){ asExp(typeIdx.interpret()) }
+      val evaluatedtypeindex = benchMark("los6 Seq-index (less manually optimized) creation"){ typeIdx.interpret() }
+      Optimization.addSubquery(typeIdx, Some(evaluatedtypeindex))
 
-      val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name).toSet
+      val methodsLos6 = asExp(evaluatedtypeindex).get[INSTANCEOF].map(_._1._2.name).toSet
+
+      Optimization.optimize(methodsLos5Seq) should be (methodsLos6)
+
+      Optimization.removeSubquery(typeIdx)
 
       val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized)") {
         methodsLos6.interpret()
