@@ -48,10 +48,8 @@ trait Benchmarking {
   def effectiveSampleLoops = if (debugBench) 1 else sampleLoops
 
   def benchMarkTime(name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
-                   (toBench: => Unit) = {
-    val (_, time) = benchMarkInternal(name, silent, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)
-    time
-  }
+                   (toBench: => Unit) =
+    benchMarkInternal(name, silent, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)._2
 
   /**
    *
@@ -67,10 +65,8 @@ trait Benchmarking {
    * @return
    */
   def benchMark[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
-               (toBench: => T): T = {
-    val (ret, _) = benchMarkInternal(name, silent, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)
-    ret
-  }
+               (toBench: => T): T =
+    benchMarkInternal(name, silent, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)._1
   /**
    * @param warmUpLoops: Warm up the VM - should be more
    * @param sampleLoops Iterations to measure variance.
