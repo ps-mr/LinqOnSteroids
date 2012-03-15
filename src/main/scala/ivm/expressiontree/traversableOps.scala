@@ -368,7 +368,6 @@ object TypeHierarchyUtils {
     //val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
     val subtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
     val classesToScan: Queue[Class[_]] = Queue()
-    val interfSubtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
     def add(clazz: Class[_]) {
       val superTypesClazz = superTypes(clazz)
       classesToScan enqueue (superTypesClazz: _*)
@@ -498,7 +497,7 @@ trait TypeFilterOps {
           //XXX: This cast is only guaranteed to succeed because of erasure
           asInstanceOf[Class[Case]])
       override def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
-        apply(_ => asExp(true), f)
+        apply(_ => true, f)
     }
   }
 }
