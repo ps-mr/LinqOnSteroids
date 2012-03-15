@@ -584,7 +584,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   }
 
   val groupByShareNested: Exp[_] => Exp[_] =
-    e => {
+    {
+      case e: FuncExp[_, _] => e
+      case e =>
       (for {
         ((parentNode: FlatMap[t, repr, u, that/*T, Repr, U, That*/]), fn1: FoundNode[_, _], allFVSeq) <- lookupIndexableExps(e)
       } yield {
@@ -600,7 +602,12 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
         val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[fn.TupleWith[t]]]]
 
-        fn.optimize(indexBaseToLookup, parentNode, allFVSeq).asInstanceOf[Option[Exp[Traversable[_]]]]
+        if (indexBaseToLookup.freeVars == Set.empty)
+          fn.optimize(indexBaseToLookup, parentNode, allFVSeq).asInstanceOf[Option[Exp[Traversable[_]]]]
+        else {
+          println("Stopping index search because of open term indexBaseToLookup = " + indexBaseToLookup)
+          None
+        }
       }).headOption flatMap identity getOrElse e
     }
 
