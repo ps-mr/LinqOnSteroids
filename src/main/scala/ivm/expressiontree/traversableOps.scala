@@ -5,7 +5,7 @@ import collection.{GenTraversableView, TraversableView, TraversableViewLike, Tra
 import ivm.collections.TypeMapping
 
 trait TraversableOps {
-  this: BaseExps with BaseTypesOps /*with TypeFilterOps*/ =>
+  this: BaseExps with BaseTypesOps =>
   def newFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr],
                                                                              f: FuncExp[T, Boolean]) =
     Filter(base, f)
@@ -102,23 +102,9 @@ trait TraversableOps {
     //This awkward form is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
     //def exists(f: Exp[T] => Exp[Boolean]) = !(Forall(this.t, FuncExp(f andThen (!(_)))))
 
-    /*
-    trait TypeFilterResult[S] {
-      def apply[That <: Traversable[S] with TraversableLike[S, That]](implicit cS: ClassManifest[S], c: CanBuildFrom[Repr, S, That]): Exp[Traversable[S]]
-    }
-
-    def typeFilter[S] = new TypeFilterResult[S] {
-      override def apply[That <: Traversable[S] with TraversableLike[S, That]](implicit cS: ClassManifest[S], c: CanBuildFrom[Repr, S, That]): Exp[Traversable[S]] = {
-        type ID[+T] = T
-        //TypeFilter[T, Traversable, ID, S](t, FuncExp(identity[Exp[T]]), cS)
-        typeCase[S, That](when[S](identity))(c)
-      }
-    }*/
-    
     def typeFilter[S](implicit cS: ClassManifest[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
       TypeFilter[T, Traversable, ID, S](t, FuncExp(identity[Exp[T]]), cS)
-      //this typeCase (when[S](identity))
     }
     private[ivm] def typeFilterClass[S](classS: Class[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
@@ -513,24 +499,5 @@ trait TypeFilterOps {
       override def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
         apply(_ => true, f)
     }
-  }
-
-  //implicit def expToTravTypeOps[T](t: Exp[Traversable[T]]) = new TraversableTypeOps(t)
-  //implicit def toTravTypeOps[T](t: Traversable[T]) = new TraversableTypeOps(t)
-
-  class TraversableTypeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Exp[Repr]) {
-    //def typeCase[Res, That <: TraversableLike[Res, That]](cases: TypeCase[_, Res]*)(implicit c: CanBuildFrom[Repr, Res, That]): Exp[TraversableView[Res, That]] = TypeCaseExp(this.t, cases)
-
-    /*
-    def typeFilter[S, That <: Traversable[S] with TraversableLike[S, That]](implicit cS: ClassManifest[S], c: CanBuildFrom[Repr, S, That]): Exp[Traversable[S]] = {
-      type ID[+T] = T
-      //TypeFilter[T, Traversable, ID, S](t, FuncExp(identity[Exp[T]]), cS)
-      this.t.typeCase[S, That](when[S](identity))(c)
-    }
-    private[ivm] def typeFilterClass[S](classS: Class[S]): Exp[Traversable[S]] = {
-      type ID[+T] = T
-      TypeFilter[T, Traversable, ID, S](t, FuncExp(identity[Exp[T]]), classS)
-    }
-    */
   }
 }
