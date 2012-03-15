@@ -37,7 +37,9 @@ class TypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Cl
   }
 
   def get[T](clazz: Class[_])(implicit m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): C[D[T]] = {
-    val baseResult = map(clazz)
+    //XXX figure out a cleaner way to provide a default empty value. We rely here on
+    //empty collections being castable to arbitrary types.
+    val baseResult = map get clazz getOrElse cbf().result().asInstanceOf[C[D[Base]]]
     val coll = cbf(baseResult)
     coll ++= baseResult.asInstanceOf[C[D[T]]]
     for (t <- transitiveQuery(subtypeRel, clazz))
