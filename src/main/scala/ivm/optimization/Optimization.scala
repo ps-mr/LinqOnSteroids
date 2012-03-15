@@ -524,8 +524,9 @@ object Optimization {
 
   def letTransformer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformer)
 
+  //removeIdentityMaps is appropriate here because typed-indexing can introduce identity maps.
   def shareSubqueries[T](query: Exp[T]): Exp[T] =
-    new SubquerySharing(subqueries).shareSubqueries(query)
+    removeIdentityMaps(new SubquerySharing(subqueries).shareSubqueries(query))
 
   def handleFilters[T](exp: Exp[T]): Exp[T] =
     flatMapToMap(
