@@ -73,7 +73,7 @@ trait Benchmarking {
    * @param toBench code to benchmark, which is supposed to always return the same value.
    * @return the value returned by toBench
    */
-  private def benchMarkInternal[T](name: String, silent: Boolean, execLoops: Int, warmUpLoops: Int, sampleLoops: Int, verbose: Boolean, hasConsoleOutput: Boolean)
+  def benchMarkInternal[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): (T, Double) = {
     def print(x: Any) = if (!silent) Console.err.print(x)
     def println(x: Any) = if (!silent) Console.err.println(x)
