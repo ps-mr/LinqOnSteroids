@@ -43,7 +43,7 @@ class TypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Cl
     val coll = cbf(baseResult)
     coll ++= baseResult.asInstanceOf[C[D[T]]]
     for (t <- transitiveQuery(subtypeRel, clazz))
-      coll ++= map(t).asInstanceOf[C[D[T]]]
+      coll ++= map(t).asInstanceOf[C[D[T]]] //TODO the same fix as above is required here - map(t) could fail!
     coll.result()
   }
 }
