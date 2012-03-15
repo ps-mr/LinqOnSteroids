@@ -529,12 +529,12 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         val toLookup = Optimization.normalize(groupedBy)
         subqueries.get(toLookup) match {
           case Some(t) =>
-            println("Found nested index of form " + toLookup)
+            println("Found nested type-index of form " + toLookup)
             type TupleTAnd[+T] = (TupleT, T)
             //This map step is wrong, we rely on substitution!
             Some(asExp(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]]).get[T](clazz) /*map(_._1) */withFilter FuncExp.makefun(cond, fx))
           case None =>
-            println("Found no nested index of form " + toLookup)
+            println("Found no nested type-index of form " + toLookup)
             None
         }
     }
