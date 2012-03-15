@@ -660,7 +660,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         {
           val superClassFile = (getClassFile.asSmartCollection)(superclass)
           !superClassFile.isInterfaceDeclaration &&
-            !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
+            !superClassFile.constructors.exists(_.descriptor.parameterTypes.length ==# 0)
         }
       } yield superclass) // there can be at most one method
     }
