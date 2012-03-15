@@ -555,7 +555,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
             tupleVar._2
           else
             //TupleSupport2.projectionTo(tupleVar._1, allFVSeq.length, FVMap(v)) //now this is incorrect!
-            TupleSupport2.projectionTo(tupleVar, allFVSeq.length, FVMap(v)).substSubTerm(tupleVar, tupleVar._1)
+            TupleSupport2.projectionTo(tupleVar, FVSeq.length, FVMap(v)).substSubTerm(tupleVar, tupleVar._1)
         case _ =>
           exp
       })
