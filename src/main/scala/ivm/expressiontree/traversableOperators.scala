@@ -108,7 +108,7 @@ case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](b
   def copy(base: Exp[Repr], f: Exp[D[T] => T]) = TypeFilter2[T, D, Repr, S, That](base, f)
 }
 
-case class TypeCase[Case, +Res](classS: Class[Case], guard: FuncExp[Case, Boolean], f: FuncExp[Case, Res]) {
+case class TypeCase[Case, +Res](classS: Class[_], guard: FuncExp[Case, Boolean], f: FuncExp[Case, Res]) {
   //The setters for this field use Res in contravariant position, hence it is important to make them private.
   private[this] var _guardInt: Case => Boolean = _
   private[this] var _fInt: Case => Res = _
@@ -131,7 +131,7 @@ case class TypeCaseExp[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, That <:
   override def checkedGenericConstructor: Seq[Exp[_]] => Exp[TraversableView[Res, That]] =
     v => TypeCaseExp(
       v.head.asInstanceOf[Exp[Repr]],
-      (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS.asInstanceOf[Class[Any]], guard.asInstanceOf[FuncExp[Any, Boolean]], f.asInstanceOf[FuncExp[Any, Res]])})
+      (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS, guard.asInstanceOf[FuncExp[Any, Boolean]], f.asInstanceOf[FuncExp[Any, Res]])})
 
   private def checkF(v: BaseT): Res = {
     for (t: TypeCase[Any, Res] <- cases.asInstanceOf[Seq[TypeCase[Any, Res]]]) {
