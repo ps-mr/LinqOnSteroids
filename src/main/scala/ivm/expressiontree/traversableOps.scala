@@ -482,17 +482,21 @@ trait TypeFilterOps {
 
   //def when[Case, Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) = TypeCase(cS, FuncExp(f))
   trait WhenResult[Case] {
+    private[ivm] def onClass[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res], classS: Class[Case]): TypeCase[Case, Res]
     def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]): TypeCase[Case, Res]
     def apply[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]): TypeCase[Case, Res]
   }
+
   object when {
     def apply[Case] = new WhenResult[Case] {
-      override def apply[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
-        TypeCase(ClassUtil.boxedErasure(cS).
-          //XXX: This cast is only guaranteed to succeed because of erasure
-          asInstanceOf[Class[Case]],
+      private[ivm] override def onClass[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res], classS: Class[Case]) =
+        TypeCase(classS,
           FuncExp(guard),
           FuncExp(f))
+      override def apply[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
+        onClass[Res](guard, f, ClassUtil.boxedErasure(cS).
+          //XXX: This cast is only guaranteed to succeed because of erasure
+          asInstanceOf[Class[Case]])
       override def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
         apply(_ => asExp(true), f)
     }

@@ -309,6 +309,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                                    parentNode: FlatMap[T, Repr, U, That],
                                    allFVSeq: Seq[Var]) = collectFirst(foundEqs)(tryGroupByNested(indexBaseToLookup, conds, f.x, allFVSeq, parentNode, this)(_))
   }
+  //This type is not totally correct - unlike Filter, TypeCase changes the type of the underlying collection, and that's
+  //not modelled by FoundNode
   case class FoundTypeCase[BaseT,
   Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr],
   Res,
@@ -372,11 +374,19 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       case t1: TypeCaseExp[baseT, repr, res, that] =>
         val t = t1.asInstanceOf[TypeCaseExp[T, Repr, res, that]]
         Seq((e, FoundTypeCase(t), fvSeq))
-      /*case t: TypeFilter[t, c, d, s] /*TypeFilter(base, f, classS)*/ =>
-        //XXX: this builds expression nodes instead of using concrete syntax.
-        Some(FoundTypeCase(TypeCaseExp(t.base.asInstanceOf[Exp[Traversable[d[t]]]],
-          Seq(TypeCase[Any, Any](t.classS.asInstanceOf[Class[Any]], FuncExp((_: Any) => true), FuncExp(identity))))))
-        //when[s](identity))))*/
+      case t: TypeFilter[t, c, d, s] /*TypeFilter(base, f, classS)*/ =>
+        t.f match {
+          case f: FuncExp[_, _] if f.body == f.x =>
+            //XXX: this builds expression nodes instead of using concrete syntax.
+            Seq((e, FoundTypeCase(TypeCaseExp(t.base.asInstanceOf[Exp[Repr /*Traversable[d[t]]*/]],//.typeCase(
+              Seq(when[Any].onClass(_ => true, identity, t.classS.asInstanceOf[Class[Any]])))), fvSeq))
+            /*
+            //XXX: this builds expression nodes instead of using concrete syntax.
+            Seq((e, FoundTypeCase(TypeCaseExp(t.base.asInstanceOf[Exp[Repr /*Traversable[d[t]]*/]],
+              Seq(TypeCase[Any, Any](t.classS.asInstanceOf[Class[Any]], FuncExp((_: Any) => true), FuncExp(identity))))), fvSeq))*/
+            //when[s](identity))))
+          case _ => Seq.empty
+        }
       case _ => Seq.empty
     }
   }
