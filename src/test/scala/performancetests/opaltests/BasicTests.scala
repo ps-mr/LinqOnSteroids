@@ -85,6 +85,10 @@ object OpalTestData {
   }
   val testdata  = getTestData.toSet
   val queryData = toExp(testdata)
+
+  //Size of the expected query results. 84 has been simply measured when the results were correct.
+  //Not very pretty, but better than nothing
+  val expectNResults = 84
 }
 
 class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
@@ -152,9 +156,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
            body <- m.body.toList;
            INSTANCEOF(_) <- body.instructions) yield m.name
     }
-    //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
-    //Not very pretty, but better than nothing
-    methodsNative.size should be (84)
+    //Ensure that the results are reasonable.
+    methodsNative.size should be (expectNResults)
 
     // using reified query; INSTANCEOF is here shadowed.
     import BATLifting._
@@ -243,10 +246,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
   def testOpal() {
     // computing all method names that make an instance-of check in their body
-
-    //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
-    //Not very pretty, but better than nothing
-    methodsNative.size should be (84)
+    //Ensure that the results are reasonable.
+    methodsNative.size should be (expectNResults)
 
     intercept[ExoticTermException] {
       //The pattern-matches used here are unsound:
