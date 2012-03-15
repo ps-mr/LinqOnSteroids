@@ -90,11 +90,11 @@ trait UnionMaintainer[T, Repr <: Exp[Traversable[T]]] extends EvtTransformer[T, 
 //Trait implementing incremental view maintenance for FlatMap operations.
 trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransformer[T, U, Repr] {
   self: Exp[Traversable[U]] => //? [T]? That's needed to subscribe.
-  def fInt: T => Exp[TraversableOnce[U]]
-  var subCollCache = new HashMap[T, Exp[TraversableOnce[U]]]
-  val subCollListener: MsgSeqSubscriber[TraversableOnce[U], Exp[TraversableOnce[U]]] =
-    new MsgSeqSubscriber[TraversableOnce[U], Exp[TraversableOnce[U]]] with Serializable {
-      override def notify(pub: Exp[TraversableOnce[U]], evts: Seq[Message[TraversableOnce[U]]]) = {
+  def fInt: T => Exp[Traversable[U]]
+  var subCollCache = new HashMap[T, Exp[Traversable[U]]]
+  val subCollListener: MsgSeqSubscriber[Traversable[U], Exp[Traversable[U]]] =
+    new MsgSeqSubscriber[Traversable[U], Exp[Traversable[U]]] with Serializable {
+      override def notify(pub: Exp[Traversable[U]], evts: Seq[Message[Traversable[U]]]) = {
         for (evt <- evts) {
           evt match {
             case e@Include(_) => publish(e)
@@ -184,16 +184,16 @@ class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]
 }
 
 class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
-                 U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
+                 U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
                          (implicit override protected val c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
     with FlatMapMaintainer[T, U, Exp[Repr], That] with OneRootTraversableMaintainer[T, Repr, That]
     with MsgSeqPublisher[That, FlatMapMaintainerExp[T, Repr, U, That]] {
-  override def fInt: T => Exp[TraversableOnce[U]] = {
+  override def fInt: T => Exp[Traversable[U]] = {
     import Lifting._
     f(_)
   }
 
-  override def copy(base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]]) = new FlatMapMaintainerExp[T, Repr, U, That](base, f)
+  override def copy(base: Exp[Repr], f: FuncExp[T, Traversable[U]]) = new FlatMapMaintainerExp[T, Repr, U, That](base, f)
 }
 
 class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: FuncExp[T, Boolean]) extends Filter[T, Repr](base, p)

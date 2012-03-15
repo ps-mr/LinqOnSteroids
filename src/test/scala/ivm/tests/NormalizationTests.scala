@@ -13,8 +13,8 @@ class NormalizationTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testnormalization() {
-    val q1 = for (c <- l if c + 3 is 7) yield c
-    val q2 = for (c <- l if 7 is 3 + c) yield c
+    val q1 = for (c <- l if c + 3 ==# 7) yield c
+    val q2 = for (c <- l if 7 ==# 3 + c) yield c
     val normalizedq1 = Optimization.normalize(q1)
     normalizedq1  should be (q2)
   }

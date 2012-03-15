@@ -26,7 +26,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val q = l.map(p => (p._1 + 1, p._2 + 2)).withFilter(_._1 ==# 5)
     val res = Optimization.shareSubqueries(q)
     res should not equal (q)
-    res should equal (Const(ress1).withFilter( _._1 is 5))
+    res should equal (Const(ress1).withFilter( _._1 ==# 5))
 
     val q2 = l.map(p => (p._1 + 2, p._2 + 1)).withFilter(_._1 ==# 5)
     val res2 = Optimization.shareSubqueries(q2)

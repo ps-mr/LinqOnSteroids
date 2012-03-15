@@ -18,6 +18,7 @@ import java.io.File
 import collections.{TypeMapping, IncHashSet}
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.FunSuite
+import collection.TraversableLike
 
 
 /*
@@ -82,8 +83,14 @@ object OpalTestData {
        .map(zipfile.getInputStream(_))
        .map(is => Java6Framework.ClassFile(() => is))
   }
-  val testdata  = getTestData.toSet
+  //Use this for debugging - the actual data is too big and slows down debugging too much.
+  //val testdata: Set[ClassFile]  = Set.empty
+  val testdata: Set[ClassFile]  = getTestData.toSet
   val queryData = toExp(testdata)
+
+  //Size of the expected query results. 84 has been simply measured when the results were correct.
+  //Not very pretty, but better than nothing
+  val expectNResults = 84
 }
 
 class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
@@ -151,9 +158,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
            body <- m.body.toList;
            INSTANCEOF(_) <- body.instructions) yield m.name
     }
-    //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
-    //Not very pretty, but better than nothing
-    methodsNative.size should be (84)
+    //Ensure that the results are reasonable.
+    methodsNative.size should be (expectNResults)
 
     // using reified query; INSTANCEOF is here shadowed.
     import BATLifting._
@@ -242,10 +248,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
   def testOpal() {
     // computing all method names that make an instance-of check in their body
-
-    //Ensure that the results are reasonable; 84 has been simply measured when the results were correct.
-    //Not very pretty, but better than nothing
-    methodsNative.size should be (84)
+    //Ensure that the results are reasonable.
+    methodsNative.size should be (expectNResults)
 
     intercept[ExoticTermException] {
       //The pattern-matches used here are unsound:
@@ -322,13 +326,6 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     }
     methodsNative should equal (m5Int)
 
-    val methodsLos5Seq =
-      (for {
-        cf <- queryData.toSeq
-        m <- cf.methods
-        ca <- m.attributes.typeFilter[Code]
-        io <- ca.instructions.typeFilter[INSTANCEOF]
-      } yield m.name).toSet
     val m5SeqInt: Traversable[String] = benchMark("los5-Seq") {
       methodsLos5Seq.interpret()
     }
@@ -344,6 +341,13 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     methodsNative should equal (methodsLos5Desugared.interpret())
   }
 
+  val methodsLos5Seq =
+    (for {
+      cf <- queryData.toSeq
+      m <- cf.methods
+      ca <- m.attributes.typeFilter[Code]
+      io <- ca.instructions.typeCase(when[INSTANCEOF](x => x)) //typeFilter[INSTANCEOF]
+    } yield m.name).toSet
 
   //////////////
   // INDEXING //
@@ -427,13 +431,21 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         i <- ca.instructions
       } yield (asExp((cf, m, ca)), i)
 
-      val typeIdx = typeIdxBase.groupByTupleType2
+      implicit def toTypeIndexDummy[C[X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new Dummy(t)
+
+      //The type annotation here is needed, because type inference interferes with implicit lookup (apparently).
+      val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
       // Interpreting used to take a whopping 120 seconds. Why? Since the result is a set, each class file is being hashed once
       // per each instruction. The fix was adding toSeq above. In fact, this transformation could probably be done also on the query to optimize;
       // after that, the optimizer would again find a matching subquery. The new runtime is ~ 0.3-0.4 sec.
-      val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation"){ asExp(typeIdx.interpret()) }
+      val evaluatedtypeindex = benchMark("los6 Seq-index (less manually optimized) creation"){ typeIdx.interpret() }
+      Optimization.addSubquery(typeIdx, Some(evaluatedtypeindex))
 
-      val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name).toSet
+      val methodsLos6 = asExp(evaluatedtypeindex).get[INSTANCEOF].map(_._1._2.name).toSet
+
+      Optimization.optimize(methodsLos5Seq) should be (methodsLos6)
+
+      Optimization.removeSubquery(typeIdx)
 
       val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized)") {
         methodsLos6.interpret()

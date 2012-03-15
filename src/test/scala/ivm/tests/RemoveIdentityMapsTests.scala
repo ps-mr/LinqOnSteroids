@@ -13,8 +13,8 @@ class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l: Exp[Traversable[Int]] = toExp(Vector.range(1, 10))
   def withFilterQueries = {
     val q1 = for (
-               x <- for (c <- l if c + 3 is 7; if c + 8 is 19) yield c
-               if x is 19)
+               x <- for (c <- l if c + 3 ==# 7; if c + 8 ==# 19) yield c
+               if x ==# 19)
              yield x
     val q2 = Optimization.removeIdentityMaps(q1)
     (q1, q2)
@@ -24,7 +24,7 @@ class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
   def testJoinOnWithFilter() {
     val (_, q2) = withFilterQueries
     //Compose the query, using the optimized version...
-    val r = for (k <- q2; k2  <- l if k is k2) yield k + k2
+    val r = for (k <- q2; k2  <- l if k ==# k2) yield k + k2
     //Perform a further optimization
     val r2 = Optimization.optimizeCartProdToJoin(r)
 
@@ -36,7 +36,7 @@ class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
   def testJoinOnWithFilter2() {
     val (q1, _) = withFilterQueries
     //First compose the query, based on the unoptimized version...
-    val r = for (k <- q1; k2  <- l if k is k2) yield k + k2
+    val r = for (k <- q1; k2  <- l if k ==# k2) yield k + k2
     //Then do both optims
     val r2 = Optimization.optimizeCartProdToJoin(Optimization.removeIdentityMaps(r))
 

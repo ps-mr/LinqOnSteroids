@@ -1,14 +1,15 @@
-package ivm.expressiontree
+package ivm
+package expressiontree
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.{HavePropertyMatchResult, HavePropertyMatcher, ShouldMatchers}
-import collection.{immutable, TraversableLike, mutable}
-import collection.generic.CanBuildFrom
 import java.io.{Closeable, File}
-import java.nio.channels.{Channel, ByteChannel, FileChannel}
-import mutable.{Queue, ArrayBuffer, Builder}
+import java.nio.channels.FileChannel
 import performancetests.Benchmarking
-import ivm.collections.TypeMapping
+import collection.mutable.{ArrayBuffer, Map => MutMap}
+import optimization.FuncExpBody
+import collection.TraversableLike
+import collections.TypeMapping
 
 trait TypeMatchers {
   def typ[ExpectedT: ClassManifest] = new HavePropertyMatcher[Any, OptManifest[_]] {
@@ -64,5 +65,30 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     f[AnyVal, Int] should have (typ[NoSub.type])
     f[FileChannel, String] should have (typ[NoSub.type])
     1 should have (typ[Int])
+  }
+
+  /*
+   * TODO: to close over open terms, build an environment binding them to the FlatMap expression where they're bound (or
+   * the collection in it). It would be complex to also consider bindings in Filter expressions, but those are something
+   * we can ignore for now since they don't nest anwyay (we only need the last expression, but we're gonna match on that).
+   * And maybe it wouldn't even be that complex.
+   *
+   * Once we do that, we can also travel down unexpected nodes - for instance indexing would then work also across IsEmpty
+   * nodes, which are used in the internal representation of exists.
+   * This is simply a different traversal strategy - but we needn't integrate it in Exp (we have enough access).
+   */
+  type EnvEntry = (Var, Exp[Traversable[_]])
+  def transformWithEnv[T](e: Exp[T], env: List[EnvEntry], transformer: (Exp[_], Seq[EnvEntry]) => Exp[_]): Exp[T] = {
+    val transformedChilds = e match {
+      case FlatMap(coll: Exp[Traversable[_]], fmFun) =>
+        val newEnv: List[EnvEntry] = (fmFun.x, coll) :: env
+        Seq(transformWithEnv(coll, env, transformer),
+          // The new binding is only in scope in the _body_ of the function, not in the whole of it,
+          // but it won't matter.
+          transformWithEnv(fmFun, newEnv, transformer))
+      case _ => for (c <- e.children) yield transformWithEnv(c, env, transformer)
+    }
+    val newself = e.genericConstructor(transformedChilds)
+    transformer(newself, env).asInstanceOf[Exp[T]]
   }
 }

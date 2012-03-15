@@ -9,11 +9,11 @@ import collection._
 */
 
 // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
-case class FlatMap[T, Repr <: FilterMonadic[T, Repr],
-                   U, That](base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]])
-                            (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, TraversableOnce[U]], That, FlatMap[T, Repr, U, That]](base, f) {
+case class FlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
+                   U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
+                            (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, Traversable[U]], That, FlatMap[T, Repr, U, That]](base, f) {
   override def interpret() = base.interpret() flatMap f.interpret()
-  override def copy(base: Exp[Repr], f: FuncExp[T, TraversableOnce[U]]) = FlatMap[T, Repr, U, That](base, f)
+  override def copy(base: Exp[Repr], f: FuncExp[T, Traversable[U]]) = FlatMap[T, Repr, U, That](base, f)
 }
 
 case class MapOp[T, Repr <: FilterMonadic[T, Repr],
@@ -63,9 +63,9 @@ case class Union[T, Repr <: TraversableLike[T, Repr], That](base: Exp[Repr], tha
   override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = Union[T, Repr, That](base, that)
 }
 
-case class Diff[T, Repr <: collection.Set[T] with SetLike[T, Repr]](base: Exp[Repr], that: Exp[GenTraversableOnce[T]]) extends Arity2OpExp[Repr, GenTraversableOnce[T], Repr, Diff[T, Repr]](base, that) {
+case class Diff[T, Repr <: collection.Set[T] with SetLike[T, Repr]](base: Exp[Repr], that: Exp[Traversable[T]]) extends Arity2OpExp[Repr, Traversable[T], Repr, Diff[T, Repr]](base, that) {
   override def interpret() = base.interpret() -- that.interpret()
-  override def copy(base: Exp[Repr], that: Exp[GenTraversableOnce[T]]) = Diff[T, Repr](base, that)
+  override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = Diff[T, Repr](base, that)
 }
 
 case class Size[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) extends Arity1OpExp[Repr, Int, Size[T, Repr]](t) {
@@ -108,7 +108,7 @@ case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](b
   def copy(base: Exp[Repr], f: Exp[D[T] => T]) = TypeFilter2[T, D, Repr, S, That](base, f)
 }
 
-case class TypeCase[Case, +Res](classS: Class[Case], guard: FuncExp[Case, Boolean], f: FuncExp[Case, Res]) {
+case class TypeCase[Case, +Res](classS: Class[_], guard: FuncExp[Case, Boolean], f: FuncExp[Case, Res]) {
   //The setters for this field use Res in contravariant position, hence it is important to make them private.
   private[this] var _guardInt: Case => Boolean = _
   private[this] var _fInt: Case => Res = _
@@ -131,7 +131,7 @@ case class TypeCaseExp[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, That <:
   override def checkedGenericConstructor: Seq[Exp[_]] => Exp[TraversableView[Res, That]] =
     v => TypeCaseExp(
       v.head.asInstanceOf[Exp[Repr]],
-      (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS.asInstanceOf[Class[Any]], guard.asInstanceOf[FuncExp[Any, Boolean]], f.asInstanceOf[FuncExp[Any, Res]])})
+      (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS, guard.asInstanceOf[FuncExp[Any, Boolean]], f.asInstanceOf[FuncExp[Any, Res]])})
 
   private def checkF(v: BaseT): Res = {
     for (t: TypeCase[Any, Res] <- cases.asInstanceOf[Seq[TypeCase[Any, Res]]]) {

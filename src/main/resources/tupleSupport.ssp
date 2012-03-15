@@ -154,6 +154,7 @@ object TupleSupport2 {
   def toTuple(exps: Seq[Exp[_]]): Exp[_] = {
     val arity = exps.length
     (arity: @switch) match {
+      case 0 => Const(())
       case 1 => exps(0)
 #for (arity <- minTupleArity to maxArity)
       case ${arity} => LiftTuple${arity}(${baseParLoop(arity)(i => "exps(%d)" format i - 1)})

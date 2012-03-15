@@ -22,13 +22,14 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
   {
     def doRun(msg: String, v: Exp[Coll]) = {
       showExpNoVal(v, msg)
-      benchMark(msg)(v.expResult().force)
+      benchMarkInternal(msg)(v.expResult().force)
     }
 
-    val res = doRun(msg, v)
+    val (res, time) = doRun(msg, v)
     for ((msgExtra, optim) <- optimizerTable[Coll] ++ extraOptims.asInstanceOf[Seq[(String, Exp[Coll] => Exp[Coll])]]) {
-      val resOpt = doRun(msg + msgExtra, optim(Optimization.optimize(v)))
+      val (resOpt, timeOpt) = doRun(msg + msgExtra, optim(Optimization.optimize(v)))
       resOpt should be (res)
+      println("Speedup by this optimization: %f" format (timeOpt.asInstanceOf[Float] / time))
     }
 
     res

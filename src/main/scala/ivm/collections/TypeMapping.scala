@@ -6,15 +6,15 @@ import ivm.expressiontree.{ClassUtil, NoSub, YesSub, TypeHierarchyUtils, MaybeSu
 
 
 // contract: map must map a ClassManifest[T] to a C[D[T]]
-class TypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[Base]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]])(implicit cm: ClassManifest[Base]) {
+class TypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[Base]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]]) {
   //TODO Problem with this implementation: instances of subtypes of T won't be part of the returned collection.
   //def getOld[T](implicit tmf: ClassManifest[T]): C[D[T]] = map(ClassUtil.boxedErasure(tmf)).asInstanceOf[C[D[T]]]
+
+  import TypeHierarchyUtils._
 
   //XXX reintroduce That here, maybe, for coherence. Not necessary for the paper, I believe (it can obviously be done, assuming the trick used for TypeFilterOps.when works here, too).
   //def get[T, That](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], That]): That = {
   def get[T](implicit tmf: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): C[D[T]] = {
-    import TypeHierarchyUtils._
-
     m match {
       case v @ YesSub() =>
         //origColl map (_ map v.p.apply) //Try to apply the subtype relationship as a cast; to do this, we'd need D to be a Functor, and a witness of that to be passed.
@@ -32,13 +32,18 @@ class TypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Cl
       //(cbf() ++= origColl.asInstanceOf[C[D[T]]]) result()
       case NoSub =>
         val clazz = ClassUtil.boxedErasure(tmf)
-        val baseResult = map(clazz)
-        val coll = cbf(baseResult)
-        coll ++= baseResult.asInstanceOf[C[D[T]]]
-        for (t <- transitiveQuery(subtypeRel, clazz))
-          coll ++= map(t).asInstanceOf[C[D[T]]]
-        coll.result()
-      //baseResult
+        get[T](clazz)
     }
+  }
+
+  def get[T](clazz: Class[_])(implicit m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): C[D[T]] = {
+    //XXX figure out a cleaner way to provide a default empty value. We rely here on
+    //empty collections being castable to arbitrary types.
+    val baseResult = map get clazz getOrElse cbf().result().asInstanceOf[C[D[Base]]]
+    val coll = cbf(baseResult)
+    coll ++= baseResult.asInstanceOf[C[D[T]]]
+    for (t <- transitiveQuery(subtypeRel, clazz))
+      coll ++= map(t).asInstanceOf[C[D[T]]] //TODO the same fix as above is required here - map(t) could fail!
+    coll.result()
   }
 }

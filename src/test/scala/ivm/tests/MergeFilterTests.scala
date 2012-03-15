@@ -13,9 +13,9 @@ class MergeFilterTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testMerging() {
-    val q1 = for (c <- l if c + 3 is 7; if c + 8 is 19 ) yield c
+    val q1 = for (c <- l if c + 3 ==# 7; if c + 8 ==# 19 ) yield c
     val mergedq1 = Optimization.mergeFilters(q1)
-    val desiredResult = for (c <- l if (c + 3 is 7) && (c + 8 is 19)) yield c
+    val desiredResult = for (c <- l if (c + 3 ==# 7) && (c + 8 ==# 19)) yield c
     mergedq1 should equal (desiredResult)
   }
 }
