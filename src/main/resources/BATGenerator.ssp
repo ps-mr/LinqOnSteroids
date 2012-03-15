@@ -10,11 +10,17 @@ import resolved.reader.Java6Framework
 import resolved._
 import Lifting._
 
+<% import de.tud.cs.st.bat.resolved._
+   import tools.scalap.scalax.rules.scalasig.ScalaSigParser
+%>
+
+
 /* (Very incomplete) boilerplate code for making use of BAT types convenient in queries.
  * This code should be generated */
 object BATLifting {
   implicit def expToClassFileOps(t: Exp[ClassFile]) = new ClassFileOps(t)
   class ClassFileOps(t: Exp[ClassFile]) {
+    <% val scalaSig = ScalaSigParser.parse(classOf[ClassFile]).get %>
     def constructors = onExp(t)('constructors, _.constructors)
     def methods = onExp(t)('methods, _.methods)
     def fields = onExp(t)('fields, _.fields)
@@ -26,6 +32,7 @@ object BATLifting {
     def isClassDeclaration = onExp(t)('isClassDeclaration, _.isClassDeclaration)
     def isInterfaceDeclaration = onExp(t)('isInterfaceDeclaration, _.isInterfaceDeclaration)
     def isAnnotationDeclaration = onExp(t)('isAnnotationDeclaration, _.isAnnotationDeclaration)
+
   }
 
   implicit def expToObjectTypeOps(t: Exp[ObjectType]) = new ObjectTypeOps(t)
