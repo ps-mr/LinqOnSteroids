@@ -322,13 +322,6 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     }
     methodsNative should equal (m5Int)
 
-    val methodsLos5Seq =
-      (for {
-        cf <- queryData.toSeq
-        m <- cf.methods
-        ca <- m.attributes.typeFilter[Code]
-        io <- ca.instructions.typeFilter[INSTANCEOF]
-      } yield m.name).toSet
     val m5SeqInt: Traversable[String] = benchMark("los5-Seq") {
       methodsLos5Seq.interpret()
     }
@@ -344,6 +337,13 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     methodsNative should equal (methodsLos5Desugared.interpret())
   }
 
+  val methodsLos5Seq =
+    (for {
+      cf <- queryData.toSeq
+      m <- cf.methods
+      ca <- m.attributes.typeFilter[Code]
+      io <- ca.instructions.typeCase(when[INSTANCEOF](x => x)) //typeFilter[INSTANCEOF]
+    } yield m.name).toSet
 
   //////////////
   // INDEXING //
