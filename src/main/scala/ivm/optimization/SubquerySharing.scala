@@ -614,10 +614,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
         if (indexBaseToLookup.freeVars == Set.empty)
           fn.optimize(indexBaseToLookup, parentNode, allFVSeq).asInstanceOf[Option[Exp[Traversable[_]]]]
-        else {
-          println("Stopping index search because of open term indexBaseToLookup = " + indexBaseToLookup)
+        else
           None
-        }
       }).headOption flatMap identity getOrElse e
     }
 
