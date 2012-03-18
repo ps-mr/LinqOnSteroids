@@ -431,8 +431,6 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         i <- ca.instructions
       } yield (asExp((cf, m, ca)), i)
 
-      implicit def toTypeIndexDummy[C[X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new Dummy(t)
-
       //The type annotation here is needed, because type inference interferes with implicit lookup (apparently).
       val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
       // Interpreting used to take a whopping 120 seconds. Why? Since the result is a set, each class file is being hashed once

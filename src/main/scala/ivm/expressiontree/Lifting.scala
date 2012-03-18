@@ -2,6 +2,7 @@ package ivm.expressiontree
 
 import collection.TraversableLike
 import collection.generic.CanBuildFrom
+import ivm.collections.TypeMapping
 
 trait OptionLifting extends BaseExps {
   this: IterableOps =>
@@ -110,6 +111,7 @@ trait ExpSugar extends ConversionDisabler2 {
   //maybe also restrict the result of Query so that only expResult() can be called on it.
   //
   implicit def toQuery[T](t: Exp[Traversable[T]]) = new Dummy(t)
+  implicit def toTypeIndexDummy[C[X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new Dummy(t)
   def Query[T](t: Dummy[Exp[Traversable[T]]]) = t.v
 
   //Note: all the below is probably made unnecessary once Dummy becomes covariant.
