@@ -36,6 +36,7 @@ package opaltests
 
 import ivm._
 
+import collections.TypeMapping
 import de.tud.cs.st.bat
 import bat.resolved._
 import analyses._
@@ -540,6 +541,16 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     benchQuery("DM_GC Los-2", garbageCollectingMethodsLos2, garbageCollectingMethods)
     */
 
+    type QueryAnd[+T] = ((ClassFile, Method, Code), T)
+    val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
+        classFile ← classFiles.asSmartCollection
+        method ← classFile.methods
+        body ← method.body
+        instruction ← body.instructions
+    } yield (asExp((classFile, method, body)), instruction)
+    val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
+    Optimization.addSubquery(typeIdx)
+
     benchQueryComplete("DM_GC-3")(garbageCollectingMethods, false) {
       for {
         classFile ← classFiles.asSmartCollection
@@ -552,6 +563,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
             instr.declaringClass ==# ObjectType("java/lang/Runtime") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity))
       } yield (classFile, method, instruction)
     }
+    Optimization.removeSubquery(typeIdx)
   }
 
   test("PublicFinalizer") {
