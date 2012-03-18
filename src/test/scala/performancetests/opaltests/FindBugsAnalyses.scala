@@ -549,7 +549,8 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         instruction ← body.instructions
     } yield (asExp((classFile, method, body)), instruction)
     val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
-    Optimization.addSubquery(typeIdx)
+    val evaluatedtypeindex = benchMark("DM_GC-3 type-index creation"){ typeIdx.interpret() }
+    Optimization.addSubquery(typeIdx, Some(evaluatedtypeindex))
 
     benchQueryComplete("DM_GC-3")(garbageCollectingMethods, false) {
       for {
