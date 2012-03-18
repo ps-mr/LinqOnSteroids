@@ -541,17 +541,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     benchQuery("DM_GC Los-2", garbageCollectingMethodsLos2, garbageCollectingMethods)
     */
 
-    type QueryAnd[+T] = ((ClassFile, Method, Code), T)
-    val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
-        classFile ← classFiles.asSmartCollection
-        method ← classFile.methods
-        body ← method.body
-        instruction ← body.instructions
-    } yield (asExp((classFile, method, body)), instruction)
-    val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
-    val evaluatedtypeindex = benchMark("DM_GC-3 type-index creation"){ typeIdx.interpret() }
-    Optimization.addSubquery(typeIdx, Some(evaluatedtypeindex))
-
     benchQueryComplete("DM_GC-3")(garbageCollectingMethods, false) {
       for {
         classFile ← classFiles.asSmartCollection
@@ -564,7 +553,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
             instr.declaringClass ==# ObjectType("java/lang/Runtime") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity))
       } yield (classFile, method, instruction)
     }
-    Optimization.removeSubquery(typeIdx)
   }
 
   test("PublicFinalizer") {
@@ -951,12 +939,24 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     exceptionHandler ← body.exceptionHandlers
   } yield (classFile, method, body, exceptionHandler)) groupBy (_._4.catchType)
 
+  type QueryAnd[+T] = ((ClassFile, Method, Code), T)
+  val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
+    classFile ← classFiles.asSmartCollection
+    method ← classFile.methods
+    body ← method.body
+    instruction ← body.instructions
+  } yield (asExp((classFile, method, body)), instruction)
+  val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
+
   Optimization.pushEnableDebugLog(false)
   benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(methodNameIdx, Some((for {
       classFile ← classFiles
       method ← classFile.methods
     } yield (classFile, method)).groupBy(_._2.name))))
   benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(excHandlerTypeIdx))
+  val evaluatedtypeindex = benchMark("Instructions type-index creation"){ typeIdx.interpret() }
+  Optimization.addSubquery(typeIdx, Some(evaluatedtypeindex))
+
   Optimization.popEnableDebugLog()
 
   //def setupIndexes() {
@@ -995,6 +995,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   def tearDownIndexes() {
     Optimization.removeSubquery(methodNameIdx)
     Optimization.removeSubquery(excHandlerTypeIdx)
+    Optimization.removeSubquery(typeIdx)
   }
 
   def analyze() {
