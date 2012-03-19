@@ -397,22 +397,22 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       case e =>
         collectFirst(lookupIndexableExps(e)) {
           case ((parentNode: FlatMap[t, repr, u, that/*T, Repr, U, That*/]), fn1: FoundNode[_, _], allFVSeq) =>
-          val fn = fn1.asInstanceOf[FoundNode[t, repr]]
-          //buildTuple produces an open term, because vars in allFVSeq are not bound...
-          val indexQuery = OptimizationTransforms.stripView(fn.c) map fn.buildTuple(allFVSeq)
-          //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
-          //now bound. Note: e might well be an open term - we don't check it explicitly anywhere, even if we should.
-          //However, index lookup is going to fail when open terms are passed - the query repository contains only
-          //closed queries.
-          //
-          //Note: this means that we built the index we search by substitution in the original query; an alternative
-          //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
-          val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[fn.TupleWith[t]]]]
+            val fn = fn1.asInstanceOf[FoundNode[t, repr]]
+            //buildTuple produces an open term, because vars in allFVSeq are not bound...
+            val indexQuery = OptimizationTransforms.stripView(fn.c) map fn.buildTuple(allFVSeq)
+            //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
+            //now bound. Note: e might well be an open term - we don't check it explicitly anywhere, even if we should.
+            //However, index lookup is going to fail when open terms are passed - the query repository contains only
+            //closed queries.
+            //
+            //Note: this means that we built the index we search by substitution in the original query; an alternative
+            //approach would be to rebuild the index by completing indexQuery with the definitions of the open variables.
+            val indexBaseToLookup = e.substSubTerm(parentNode, indexQuery).asInstanceOf[Exp[Traversable[fn.TupleWith[t]]]]
 
-          if (indexBaseToLookup.freeVars == Set.empty)
-            fn.optimize(indexBaseToLookup, parentNode, allFVSeq).asInstanceOf[Option[Exp[Traversable[_]]]]
-          else
-            None
+            if (indexBaseToLookup.freeVars == Set.empty)
+              fn.optimize(indexBaseToLookup, parentNode, allFVSeq).asInstanceOf[Option[Exp[Traversable[_]]]]
+            else
+              None
         } getOrElse e
     }
 
