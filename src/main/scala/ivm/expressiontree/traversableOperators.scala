@@ -125,10 +125,10 @@ case class TypeCase[Case, +Res](classS: Class[_], guard: FuncExp[Case, Boolean],
 //that is Res <: AnyRef; this is valid for all types but Res <: AnyVal, i.e. for primitive types, but since Res is a type
 //parameter, it will be erased to java.lang.Object and even primitive types will be passed boxed.
 //Hence in practice v: Res can be casted to AnyRef and compared against null.
-case class TypeCaseExp[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, That <: TraversableLike[Res, That]](e: Exp[Repr with TraversableLike[BaseT, Repr]], cases: Seq[TypeCase[_ /*Case_i*/, Res]])(implicit protected[this] val c: CanBuildFrom[Repr, Res, That]) extends Exp[TraversableView[Res, That]] {
+case class TypeCaseExp[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, That <: TraversableLike[Res, That]](e: Exp[Repr with TraversableLike[BaseT, Repr]], cases: Seq[TypeCase[_ /*Case_i*/, Res]])(implicit protected[this] val c: CanBuildFrom[TraversableView[BaseT, Repr], Res, That]) extends Exp[That] {
   override def nodeArity = 2 * cases.length + 1
   override def children = e +: (cases.flatMap /*[Exp[_], Seq[Exp[_]]] */(c => Seq[Exp[_]](c.guard, c.f)))
-  override def checkedGenericConstructor: Seq[Exp[_]] => Exp[TraversableView[Res, That]] =
+  override def checkedGenericConstructor: Seq[Exp[_]] => Exp[That] =
     v => TypeCaseExp(
       v.head.asInstanceOf[Exp[Repr]],
       (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS, guard.asInstanceOf[FuncExp[Any, Boolean]], f.asInstanceOf[FuncExp[Any, Res]])})
@@ -144,7 +144,7 @@ case class TypeCaseExp[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, That <:
     //Since cases can contain open terms, preInterpret() must be called at each call of interpret() - the environment might be different and we might thus get different
     //results. We needn't call them once per element of e, since TypeCaseExp binds no variable iterating over e.
     cases foreach (_ preInterpret())
-    (e.interpret() map checkF).view filter (_.asInstanceOf[AnyRef] ne null)
+    e.interpret().view map checkF filter (_.asInstanceOf[AnyRef] ne null)
   }
   //cases map { case TypeCase(classS, f) => (v: Base) => if (v == null || !classS.isInstance(v)) Util.ifInstanceOfBody(v, classS)}
 }
