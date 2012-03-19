@@ -151,7 +151,9 @@ object Lifting
 
     //val tmp: Exp[Map[K, Repr]] = t.groupBy(f) //can't write this, because we have no lifting for TraversableLike
     //val tmp: Exp[Map[K, Repr]] = GroupBy(t, FuncExp(f))
+    //Report the need to apply this explicitly - it should be easy to reduce.
     val tmp: Exp[Map[K, Repr]] = expToTraversableLikeOps(t).groupBy(f)
+    //val tmp: Exp[Map[K, Repr]] = t.groupBy(f)
     //tmp.map(v => (v._1, MapOp(v._2, FuncExp(g)))) //This uses MapOp directly, but map could return other nodes
     tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(c)))
   }
