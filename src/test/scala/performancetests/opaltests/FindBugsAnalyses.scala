@@ -949,13 +949,13 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
 
   Optimization.pushEnableDebugLog(false)
+
   benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(methodNameIdx, Some((for {
       classFile ← classFiles
       method ← classFile.methods
     } yield (classFile, method)).groupBy(_._2.name))))
   benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(excHandlerTypeIdx))
-  val evaluatedtypeindex = benchMark("Instructions type-index creation"){ typeIdx.interpret() }
-  Optimization.addSubquery(typeIdx, Some(evaluatedtypeindex))
+  benchMark("Instructions type-index creation")(Optimization.addSubquery(typeIdx))
 
   Optimization.popEnableDebugLog()
 
