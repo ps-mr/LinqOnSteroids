@@ -395,9 +395,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     {
       case e: FuncExp[_, _] => e
       case e =>
-        (for {
-          ((parentNode: FlatMap[t, repr, u, that/*T, Repr, U, That*/]), fn1: FoundNode[_, _], allFVSeq) <- lookupIndexableExps(e)
-        } yield {
+        collectFirst(lookupIndexableExps(e)) {
+          case ((parentNode: FlatMap[t, repr, u, that/*T, Repr, U, That*/]), fn1: FoundNode[_, _], allFVSeq) =>
           val fn = fn1.asInstanceOf[FoundNode[t, repr]]
           //buildTuple produces an open term, because vars in allFVSeq are not bound...
           val indexQuery = OptimizationTransforms.stripView(fn.c) map fn.buildTuple(allFVSeq)
@@ -414,7 +413,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
             fn.optimize(indexBaseToLookup, parentNode, allFVSeq).asInstanceOf[Option[Exp[Traversable[_]]]]
           else
             None
-        }).headOption flatMap identity getOrElse e
+        } getOrElse e
     }
 
   //Entry point
