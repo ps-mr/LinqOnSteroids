@@ -6,10 +6,6 @@ import org.scalatest.matchers.{HavePropertyMatchResult, HavePropertyMatcher, Sho
 import java.io.{Closeable, File}
 import java.nio.channels.FileChannel
 import performancetests.Benchmarking
-import collection.mutable.{ArrayBuffer, Map => MutMap}
-import optimization.FuncExpBody
-import collection.TraversableLike
-import collections.TypeMapping
 
 trait TypeMatchers {
   def typ[ExpectedT: ClassManifest] = new HavePropertyMatcher[Any, OptManifest[_]] {
