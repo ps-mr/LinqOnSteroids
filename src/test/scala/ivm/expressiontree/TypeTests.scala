@@ -87,4 +87,29 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     val newself = e.genericConstructor(transformedChilds)
     transformer(newself, env).asInstanceOf[Exp[T]]
   }
+
+  import collection.TraversableLike
+  import collection.generic.CanBuildFrom
+  import Lifting.TraversableLikeOps
+  //import Lifting._
+
+  def groupBySelImpl[T, Repr <: Traversable[T] with
+    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],
+                                             g: Exp[T] => Exp[Rest])(
+    implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, Repr]] =
+  {
+    implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
+      new TraversableLikeOps[T, Traversable, Repr] {val t = v}
+
+    //val tmp: Exp[Map[K, Repr]] = t.groupBy(f) //can't write this, because we have no lifting for TraversableLike
+    //val tmp: Exp[Map[K, Repr]] = GroupBy(t, FuncExp(f))
+    //Report the need to apply this explicitly - it should be easy to reduce.
+    //val tmp: Exp[Map[K, Repr]] = expToTraversableLikeOps(t).groupBy(f)
+    //Here this works? Yes! As long as other ambiguous conversions are not in scope as well!
+    val tmp: Exp[Map[K, Repr]] = t.groupBy(f)
+    //tmp.map(v => (v._1, MapOp(v._2, FuncExp(g)))) //This uses MapOp directly, but map could return other nodes
+    //The line below does not compile and is not needed:
+    //tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(c)))
+    tmp
+  }
 }
