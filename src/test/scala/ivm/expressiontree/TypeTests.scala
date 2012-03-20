@@ -90,26 +90,26 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   import collection.TraversableLike
   import collection.generic.CanBuildFrom
+  //We need to only import this class:
   import Lifting.TraversableLikeOps
+  //If we import everything, we introduce ambiguous conversions in scope.
   //import Lifting._
 
+  //Analogous to Lifting.groupBySelImpl
   def groupBySelImpl[T, Repr <: Traversable[T] with
-    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],
-                                             g: Exp[T] => Exp[Rest])(
+    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K])(
     implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, Repr]] =
   {
+    //Hmmm... is this conversion enough to always produce the correct type?
     implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
       new TraversableLikeOps[T, Traversable, Repr] {val t = v}
 
-    //val tmp: Exp[Map[K, Repr]] = t.groupBy(f) //can't write this, because we have no lifting for TraversableLike
-    //val tmp: Exp[Map[K, Repr]] = GroupBy(t, FuncExp(f))
-    //Report the need to apply this explicitly - it should be easy to reduce.
-    //val tmp: Exp[Map[K, Repr]] = expToTraversableLikeOps(t).groupBy(f)
-    //Here this works? Yes! As long as other ambiguous conversions are not in scope as well!
-    val tmp: Exp[Map[K, Repr]] = t.groupBy(f)
-    //tmp.map(v => (v._1, MapOp(v._2, FuncExp(g)))) //This uses MapOp directly, but map could return other nodes
-    //The line below does not compile and is not needed:
-    //tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(c)))
-    tmp
+    Util.assertTypeAndRet[Exp[Map[K, Repr]]] {
+      //Apply implicit conversion explicitly:
+      //expToTraversableLikeOps(t).groupBy(f)
+      //Rely on implicit conversion.
+      //Here this works, as long as other ambiguous conversions are not in scope as well!
+      t.groupBy(f)
+    }
   }
 }

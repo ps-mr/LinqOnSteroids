@@ -33,6 +33,7 @@ object ClassUtil {
 
 object Util {
   def assertType[T](t: T) {}
+  def assertTypeAndRet[T](t: T) = t
 
   /**
    * Check that `v` and `typeParam` have the same type; if used as the returned expression, it also checks that the return type
