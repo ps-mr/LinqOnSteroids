@@ -8,13 +8,21 @@ import annotation.switch
   val commaSpace = ", "
   def baseParLoop(arity: Int)(formatter: Int => String, sep: String = commaSpace) = (1 to arity) map formatter mkString sep
   def defParamsLoop(arity: Int)(sep: String)(formatStr: String) = baseParLoop(arity)(formatStr format _, sep)
+  var pIdx = -1
+  def defParamsLoopFunc(arity: Int)(sep: String)(body: => Unit) = {
+    pIdx = 1
+    while (pIdx <= arity) {
+      body
+      pIdx += 1
+    }
+  }
   def defParamsLoops(arity: Int) =
-    (defParamsLoop(arity) _, (defParamsLoop(arity)(commaSpace)(_)))
+    (defParamsLoop(arity) _, (defParamsLoop(arity)(commaSpace)(_)), defParamsLoopFunc(arity) _)
 
   val tpPfx = "A"
   val argPfx = "t"
 
-  var (paramsLoop, paramsLoopComma) = defParamsLoops(0)
+  var (paramsLoop, paramsLoopComma, foreachParam) = defParamsLoops(0)
 
   //These refer to mutable variables, hence must be definitions!
   def tparams = paramsLoopComma(tpPfx + "%d")
@@ -106,14 +114,19 @@ trait AutoTupleOps {
   ////////////////////////////////////////////
   // AUTOMATIC CONVERSIONS - ARITY ${arity} //
   ////////////////////////////////////////////
-  <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2 %>
+  <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2; foreachParam = p._3 %>
 
   implicit def tuple${arity}ToTuple${arity}Exp[${tparams}](tuple: (${paramsLoopComma("Exp[" + tpPfx + "%d]")})): LiftTuple${arity}[${tparams}] =
     LiftTuple${arity}[${tparams}](${paramsLoopComma("tuple._%d")})
 
   class Tuple${arity}Ops[${tparams}](p: Exp[(${tparams})]) {
-    ${paramsLoop("\n    ")("def _%d = Tuple" + arity + "Proj%<d(p)")}
+<% foreachParam("\n    ") { %>
+    def _${pIdx}: Exp[${tpPfx}${pIdx}] = p match {
+      case LiftTuple${arity}(${params}) => ${argPfx}${pIdx}
+      case _ => Tuple${arity}Proj${pIdx}(p)
+    }
 
+<% } %>
     def metaProductArity: Int = ${arity}
 
     def metaProductElement(n: Int): Exp[Any] = (n: @switch) match {
