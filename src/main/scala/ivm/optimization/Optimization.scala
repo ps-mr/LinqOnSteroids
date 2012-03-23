@@ -455,6 +455,20 @@ object OptimizationTransforms {
     case FlatMap(ExpSeq(Seq(v)), f) => letExp(v)(f)
     case e => e
   }
+  
+  val existsUnnester: Exp[_] => Exp[_] = {
+    //Rule N9 page 474 in Optimizing Object Queries Using an Effective Calculus, Fegaras and Maier, 2000:
+    //c0 withFilter (x0 => c exists (x => p(x))) flatMap (x1 => B [not free in x]) |=> c0 flatMap (x0 => c withFilter (x => p(x)) flatMap (x => [x1 |-> x0]B))
+    //However, that's only valid if the return value of the expression is an idempotent monoid, as stated there. We can workaround that with toSet.
+    case FlatMap(Filter(c0: Exp[Traversable[t]], f @ FuncExpBody(Not(IsEmpty(Filter(c: Exp[Traversable[u]], p))))), fmFun) =>
+      //println(f.x)
+      //println(FuncExp.makefun(stripView(c), f.x))
+      //Since x0 = f.x, and fmFun = x1 => B, then [x1 |-> x0]B is (x1 => B) x0, that is fmFun(f.x)
+
+      //toSet remove any duplicates to preserve semantics; in the expression c exists p, p might be true for more elements of c. When unnesting,
+      //we produce c withFilter p, and for each element in the result we apply x1 => B. Instead, with toSet we unify the results after applying
+      //the results. That's unsatisfactory though; we could instead use toSet on the result, use breakout as CanBuildFrom instance on the last flatMap
+      stripView(c0) flatMap FuncExp.makefun((stripView(c) withFilter p).toSet flatMap FuncExp.makefun(fmFun(f.x), p.x), f.x)
     case e => e
   }
 
