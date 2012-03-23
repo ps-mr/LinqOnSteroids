@@ -178,26 +178,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     }
     println("\tViolations: " + unusedFields.size)
 
-    /*
-    val unusedFields2: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD-2") {
-      for {
-        classFile ← classFiles if !classFile.isInterfaceDeclaration
-        instructions = for {
-          method ← classFile.methods
-          body ← method.body.toList
-          instruction ← body.instructions
-        } yield instruction
-        declaringClass = classFile.thisClass
-        privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
-        usedPrivateFields = //=======> This is much slower <==========
-        (for (instruction ← instructions; GETFIELD(`declaringClass`, name, _) ← Seq(instruction)) yield name) union
-          (for (instruction ← instructions; GETSTATIC(`declaringClass`, name, _) ← Seq(instruction)) yield name)
-        unusedPrivateFields = privateFields -- usedPrivateFields //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
-        if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields)
-    }
-    unusedFields2 should be (unusedFields)
-    */
 
     val unusedFields3: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD-3") {
       for {
