@@ -50,6 +50,7 @@ import org.scalatest.{FunSuite, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 import optimization.Optimization
 
+import collection.immutable.Seq
 import collection.{Seq => CSeq}
 
 /**
@@ -83,7 +84,8 @@ object FindBugsAnalyses {
       }
     }
 
-    (new FindBugsAnalyses(args)).analyze()
+    //Use toList to convert args to an immutable sequence - arrays can be converted implicitly only to generic sequences (in particular, mutable ones)!
+    (new FindBugsAnalyses(args.toList)).analyze()
   }
 }
 
