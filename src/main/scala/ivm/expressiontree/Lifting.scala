@@ -82,7 +82,7 @@ trait OptionLifting extends BaseExps {
     }
     override def interpret() = e.map(_.interpret())
   }
-  implicit def OptionExp2ExpSome[T](e: Option[Exp[T]]): Exp[Option[T]] = ExpOption(e)
+  implicit def OptionExp2ExpOption[T](e: Option[Exp[T]]): Exp[Option[T]] = ExpOption(e)
 }
 
 trait ExpSugar extends ConversionDisabler2 {
