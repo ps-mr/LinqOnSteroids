@@ -228,8 +228,11 @@ Arity5Op[Exp[Repr],
 }
 
 import collection.immutable.Seq
+object ExpSeq {
+  def apply[T](children: Traversable[Exp[T]]): Exp[Seq[T]] = ExpSeq(children.toList)
+}
+
 case class ExpSeq[T](children: Seq[Exp[T]]) extends Exp[Seq[T]] {
-  def this(children: Exp[T]*) = this(children.toList)
   override def nodeArity = children.size
   override protected def checkedGenericConstructor: collection.Seq[Exp[_]] => Exp[Seq[T]] = v => ExpSeq((v.toList.asInstanceOf[Seq[Exp[T]]]))
   override def interpret() = children.map(_.interpret())
