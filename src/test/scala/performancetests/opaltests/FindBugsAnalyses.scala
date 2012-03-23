@@ -834,17 +834,18 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     analyzeCloneDoesNotCallSuperClone()
   }
   def analyzeCloneDoesNotCallSuperClone() {
+    //XXX This analysis was changed for BAT, and now adapted here; retest.
     benchQueryComplete("CN_IDIOM_NO_SUPER_CALL") {
       // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
       for {
         classFile ← classFiles
         if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
-        if classFile.superClass.isDefined
+        superClass ← classFile.superClass.toList
         method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
         body ← method.body
         //if !method.isAbstract //Redundant; we just check if there is a body.
         if !(body.instructions exists {
-          case INVOKESPECIAL(superClass, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true //XXX: do you want to bind superClass or to compare it?
+          case INVOKESPECIAL(`superClass`, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true
           case _ ⇒ false
         })
       } yield (classFile, method)
@@ -854,13 +855,13 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       for {
         classFile ← classFiles.asSmartCollection
         if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
-        if classFile.superClass.isDefined
+        superClass ← classFile.superClass
         method ← classFile.methods
         if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
         body ← method.body
         if !(body.instructions.typeFilter[INVOKESPECIAL] exists {
           instr =>
-            instr.name ==# "clone" && instr.methodDescriptor ==# MethodDescriptor(Seq(), ObjectType.Object)
+            instr.name ==# "clone" && instr.methodDescriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && instr.declaringClass ==# superClass
         })
       } yield (classFile, method)
     }
