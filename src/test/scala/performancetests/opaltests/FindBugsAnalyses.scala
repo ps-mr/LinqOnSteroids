@@ -159,6 +159,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   }
   def analyzeUnusedFields() {
     // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
+    //XXX This analysis was totally rewritten for BAT, reconsider.
     val unusedFields: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD") {
       for {
         classFile ← classFiles if !classFile.isInterfaceDeclaration
@@ -746,6 +747,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     analyzeAbstractClassesThatDefinesCovariantEquals()
   }
   def analyzeAbstractClassesThatDefinesCovariantEquals() {
+    //XXX This analysis was changed for BAT, reconsider.
     val abstractClassesThatDefinesCovariantEquals = benchMark("EQ_ABSTRACT_SELF") {
       for {
         classFile ← classFiles if classFile.isAbstract
