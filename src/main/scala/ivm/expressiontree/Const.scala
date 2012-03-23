@@ -2,6 +2,11 @@ package ivm.expressiontree
 
 case class Const[T](x: T) extends Arity0Exp[T] {
   override def interpret() = x
+  override def equals(other: Any) = other match {
+    case that: Const[_] => (that canEqual this) && (x.asInstanceOf[AnyRef] eq that.x.asInstanceOf[AnyRef])
+    case _ => false
+  }
+  override def hashCode() = System.identityHashCode(x.asInstanceOf[AnyRef])
   override def toString = {
     val s =
     x match {
