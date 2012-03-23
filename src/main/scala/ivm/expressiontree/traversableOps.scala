@@ -152,6 +152,7 @@ trait TraversableOps {
   implicit def tToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
 
   implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e.toList: _*) //onExp(e)('Traversable, Traversable(_))
+  implicit def SetExp2ExpSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e.toList: _*).toSet
 }
 
 trait ForceOps {
