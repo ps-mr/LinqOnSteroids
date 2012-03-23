@@ -143,13 +143,18 @@ object OptimizationTransforms {
   }
 
   /*
-  def removeIdentityMaps[T](e: Exp[T]): Exp[T] =
+  private def removeIdentityMaps[T](e: Exp[T]): Exp[T] =
     e match {
+      //Alternative 1 - a cast is required:
       case MapOp(col: Exp[_ /*T*/], FuncExpIdentity()) =>
         col.asInstanceOf[Exp[T]]
+      //Alternative 2 - causes a warning, but works and is more elegant:
+      case MapOp(col: Exp[T], FuncExpIdentity()) =>
+        col
+      //Possibility 2 is what is used in the Scala-virtualized tutorial.
       case e => e
     }
-    */
+  */
 
   //Same problem also when fusing map and flatMap (which we don't do yet).
   private def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: FuncExp[T, U], g: FuncExp[U, V]) =
