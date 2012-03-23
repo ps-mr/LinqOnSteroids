@@ -394,7 +394,7 @@ object OptimizationTransforms {
 
     val containingX = insideConv.findTotFun(_.children.contains(X))
     containingX.head match {
-      case letNode@ExpSeq(X) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
+      case letNode@ExpSeq(Seq(X)) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
         insideConv.substSubTerm(letNode, coll)
       case _ =>
         e
@@ -440,13 +440,15 @@ object OptimizationTransforms {
   }
 
   val flatMapToMap: Exp[_] => Exp[_] = {
-      case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(body))) =>
+      case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(Seq(body)))) =>
         c map FuncExp.makefun(body, f.x)
       case e => e
   }
 
   val letTransformer: Exp[_] => Exp[_] = {
-    case FlatMap(ExpSeq(v), f) => letExp(v)(f)
+    case FlatMap(ExpSeq(Seq(v)), f) => letExp(v)(f)
+    case e => e
+  }
     case e => e
   }
 
