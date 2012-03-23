@@ -145,17 +145,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
 
     protectedFieldsLikeLos should be (protectedFields)
 
-
-    /*val protectedFieldsLos2 = benchMark("CI_CONFUSED_INHERITANCE Los Setup (materialize)") {
-      (for {
-        classFile ← classFiles.asSmartCollection if classFile.isFinal
-        field ← classFile.fields if field.isProtected
-      } yield (classFile, field)) materialize
-    }
-    val protectedFieldsLos2Res = benchMark("CI_CONFUSED_INHERITANCE Los interpret noop")(protectedFieldsLos2.interpret())
-    protectedFieldsLos2Res should be (protectedFields.toSet)*/
     analyzeConfusedInheritanceNative() should be (protectedFields)
-    //protectedFieldsLos2Res should be (protectedFields2.toSet)
   }
 
   test("UnusedFields") {
@@ -235,117 +225,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     import BATLifting._
     import InstructionLifting._
 
-    /*
-    val unusedFieldsLos /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los Setup", silent = true) {
-      Query(for {
-        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
-        instructions ← Let(for {
-          method ← classFile.methods
-          body ← method.body
-          instruction ← body.instructions
-        } yield instruction)
-        declaringClass ← Let(classFile.thisClass)
-        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
-        usedPrivateFields ← Let(instructions filter {
-          instruction ⇒
-            val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
-            val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
-            asGETFIELD.isDefined && asGETFIELD.get.declaringClass ==# declaringClass ||
-              asGETSTATIC.isDefined && asGETSTATIC.get.declaringClass ==# declaringClass
-        } map {
-          instruction ⇒
-            // Note that we might not factor map (_.name) by writing:
-            //   ((asGETFIELD orElse asGETSTATIC) map (_.name)).get
-            // because Scala's type system is nominal and for the two branches different (_.name) methods (with the same
-            // signature) are invoked.
-            (instruction.ifInstanceOf[GETFIELD] map (_.name) orElse (instruction.ifInstanceOf[GETSTATIC] map (_.name))).get
-            /*if_# (asGETFIELD.isDefined)
-              asGETFIELD.name
-            else_# if_# (asGETSTATIC.isDefined)
-              asGETSTATIC.name*/
-        })
-        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
-        if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields))
-    }
-    benchQuery("UUF_UNUSED_FIELD Los", unusedFieldsLos, unusedFields, optims)
-
-    val unusedFieldsLos1_1 /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1.1 Setup", silent = true) {
-      Query(for {
-        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
-        instructions ← Let(for {
-          method ← classFile.methods
-          body ← method.body
-          instruction ← body.instructions
-        } yield instruction)
-        declaringClass ← Let(classFile.thisClass)
-        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
-        usedPrivateFields ← Let(instructions filter {
-          instruction ⇒
-            ((for {
-              getFIELD <- instruction.ifInstanceOf[GETFIELD]
-            } yield getFIELD.declaringClass ==# declaringClass) orElse
-              (for {
-                getSTATIC <- instruction.ifInstanceOf[GETSTATIC]
-              } yield getSTATIC.declaringClass ==# declaringClass)) getOrElse false
-        } map {
-          instruction ⇒
-            // Note that we might not factor map (_.name) by writing:
-            //   ((asGETFIELD orElse asGETSTATIC) map (_.name)).get
-            // because Scala's type system is nominal and for the two branches different (_.name) methods (with the same
-            // signature) are invoked.
-            (instruction.ifInstanceOf[GETFIELD] map (_.name) orElse (instruction.ifInstanceOf[GETSTATIC] map (_.name))).get
-          /*if (asGETFIELD.isDefined)
-          asGETFIELD.name
-        else if (asGETSTATIC.isDefined)
-          asGETSTATIC.name*/
-        })
-        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
-        if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields))
-    }
-    benchQuery("UUF_UNUSED_FIELD Los-1.1", unusedFieldsLos1_1, unusedFields, optims)
-
-    val unusedFieldsLos1_2 /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1.2 Setup", silent = true) {
-      Query(for {
-        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
-        instructions ← Let(for {
-          method ← classFile.methods
-          body ← method.body
-          instruction ← body.instructions
-        } yield instruction)
-        declaringClass ← Let(classFile.thisClass)
-        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
-        usedPrivateFields ← Let(instructions filter {
-          instruction ⇒
-            val asGETFIELD = instruction.ifInstanceOf[GETFIELD]
-            val asGETSTATIC = instruction.ifInstanceOf[GETSTATIC]
-            if_# (asGETFIELD.isDefined) {
-              asGETFIELD.get.declaringClass ==# declaringClass
-            } else_# if_# (asGETSTATIC.isDefined) {
-                asGETSTATIC.get.declaringClass ==# declaringClass
-            } else_# {
-              false
-            }
-        } map {
-          instruction ⇒
-          // Note that we might not factor map (_.name) by writing:
-          //   ((asGETFIELD orElse asGETSTATIC) map (_.name)).get
-          // because Scala's type system is nominal and for the two branches different (_.name) methods (with the same
-          // signature) are invoked.
-            (instruction.ifInstanceOf[GETFIELD] map (_.name) orElse (instruction.ifInstanceOf[GETSTATIC] map (_.name))).get
-          /*if (asGETFIELD.isDefined)
-          asGETFIELD.name
-        else if (asGETSTATIC.isDefined)
-          asGETSTATIC.name*/
-        })
-        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
-        if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields))
-    }
-    benchQuery("UUF_UNUSED_FIELD Los-1.2", unusedFieldsLos1_2, unusedFields, optims);
-    */
-
     {
       val unusedFieldsLos1_2 /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1.3 Setup", silent = true) {
         Query(for {
@@ -366,81 +245,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       }
       benchQuery("UUF_UNUSED_FIELD Los-1.3", unusedFieldsLos1_2, unusedFields, optims)
     }
-
-    /*
-    val unusedFieldsLos1bis /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1bis Setup", silent = true) {
-      Query(for {
-        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
-        declaringClass ← Let(classFile.thisClass)
-        usedPrivateFields ← Let(for {
-          method ← classFile.methods
-          body ← method.body
-          instruction ← body.instructions
-          usedPrivateField ← (for {
-            asGETFIELD <- instruction.ifInstanceOf[GETFIELD]
-            if asGETFIELD.declaringClass ==# declaringClass
-          } yield asGETFIELD.name) orElse
-            (for {
-              asGETSTATIC <- instruction.ifInstanceOf[GETSTATIC]
-              if asGETSTATIC.declaringClass ==# declaringClass
-            } yield asGETSTATIC.name)
-            //(instruction.ifInstanceOf[GETFIELD].filter(_.declaringClass ==# declaringClass).map(_.name)) orElse (instruction.ifInstanceOf[GETSTATIC].filter(_.declaringClass ==# declaringClass).map(_.name))
-        } yield usedPrivateField)
-        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
-        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
-        if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields))
-    }
-    benchQuery("UUF_UNUSED_FIELD Los-1bis", unusedFieldsLos1bis, unusedFields, optims)
-    */
-
-    val unusedFields2Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-2 Los Setup", silent = true) {
-      Query(for {
-        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
-        instructions ← Let(for {
-          method ← classFile.methods
-          body ← method.body
-          instruction ← body.instructions
-        } yield instruction)
-        declaringClass ← Let(classFile.thisClass)
-        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
-        usedPrivateFields ← Let(//This is much slower, also with Los
-        (for (instruction ← instructions; asGETFIELD ← instruction.ifInstanceOf[GETFIELD] if asGETFIELD.declaringClass ==# declaringClass) yield asGETFIELD.name) union
-          (for (instruction ← instructions; asGETSTATIC ← instruction.ifInstanceOf[GETSTATIC] if asGETSTATIC.declaringClass ==# declaringClass) yield asGETSTATIC.name))
-        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
-        if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields))
-    }
-    benchQuery("UUF_UNUSED_FIELD-2 Los", unusedFields2Los, unusedFields, optims)
-
-    val unusedFields3Los /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD-3 Los Setup", silent = true) {
-      Query(for {
-        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
-        instructions ← Let(for {
-          method ← classFile.methods
-          body ← method.body
-          instruction ← body.instructions
-        } yield instruction)
-        declaringClass ← Let(classFile.thisClass)
-        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
-        usedPrivateFields ← Let(//This is much slower, but typeFilter is faster. We need a typeFilter node which accepts a function to run.
-          (for (instruction ← instructions.typeFilter[GETFIELD] if instruction.declaringClass ==# declaringClass) yield instruction.name) union
-            (for (instruction ← instructions.typeFilter[GETSTATIC] if instruction.declaringClass ==# declaringClass) yield instruction.name))
-        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
-        if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields))
-    }
-    println(unusedFields3Los)
-    benchQuery("UUF_UNUSED_FIELD-3 Los", unusedFields3Los, unusedFields, optims)
-
-    /*val unusedFields3LosOpt = Optimization optimize unusedFields3Los
-    println(unusedFields3LosOpt)
-    val unusedFields3LosOptRes = benchInterpret("UUF_UNUSED_FIELD-3 Opt Los", unusedFields3LosOpt)
-    unusedFields3LosOptRes should be (unusedFields)
-
-    val unusedFields3LosOptSzToEm = Optimization sizeToEmpty unusedFields3LosOpt
-    val unusedFields3LosOptSzToEmRes = benchInterpret("UUF_UNUSED_FIELD-3 Opt Size To Empty Los", unusedFields3LosOptSzToEm)
-    unusedFields3LosOptSzToEmRes should be (unusedFields)*/
   }
 
   test("ExplicitGC") {
@@ -505,46 +309,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     garbageCollectingMethodsLosLike2 should be (garbageCollectingMethods)
     import BATLifting._
     import InstructionLifting._
-
-    val garbageCollectingMethodsLos = benchMark("DM_GC Los Setup", silent = true) {
-      Query(for {
-        classFile ← classFiles.asSmartCollection
-        method ← classFile.methods
-        body ← method.body
-        instruction ← body.instructions
-        if {
-          val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
-          val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
-
-          asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass ==# ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
-            asINVOKESTATIC.get.methodDescriptor ==# NoArgNoRetMethodDesc ||
-            asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass ==# ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
-              asINVOKEVIRTUAL.get.methodDescriptor ==# NoArgNoRetMethodDesc
-        }
-      } yield (classFile, method, instruction))
-    }
-    benchQuery("DM_GC Los", garbageCollectingMethodsLos, garbageCollectingMethods)
-
-    /*
-    val garbageCollectingMethodsLos2 = benchMark("DM_GC Los-2 Setup", silent = true) {
-      Query(for {
-        classFile ← classFiles.asSmartCollection
-        method ← classFile.methods
-        body ← method.body
-        instruction ← body.instructions
-        if {
-          val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
-          val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
-
-          (asINVOKESTATIC.map(i => i.declaringClass ==# ObjectType("java/lang/System") && i.name == "gc" &&
-            i.methodDescriptor ==# NoArgNoRetMethodDesc) orElse
-            asINVOKEVIRTUAL.map(i => i.declaringClass ==# ObjectType("java/lang/Runtime") && i.name == "gc" &&
-              i.methodDescriptor ==# NoArgNoRetMethodDesc)) getOrElse false
-        }
-      } yield (classFile, method, instruction))
-    }
-    benchQuery("DM_GC Los-2", garbageCollectingMethodsLos2, garbageCollectingMethods)
-    */
 
     benchQueryComplete("DM_GC-3")(garbageCollectingMethods, false) {
       for {
