@@ -431,17 +431,23 @@ object OptimizationTransforms {
     case e => e
   }
 
+  private def buildMapToFlatMap[T, U](c: Exp[Traversable[T]], f: FuncExp[T, U]): Exp[Traversable[U]] =
+    c flatMap FuncExp.makefun(Seq(f.body), f.x)
+
   val mapToFlatMap: Exp[_] => Exp[_] = {
       case MapOp(c: Exp[Traversable[t]], f) =>
-        c flatMap FuncExp.makefun(Seq(f.body), f.x)
+        buildMapToFlatMap(c, f)
       /*case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
         c flatMap FuncExp.makefun(Some(f.body), f.x)*/
       case e => e
   }
 
+  private def buildFlatMapToMap[T, U](c: Exp[Traversable[T]], body: Exp[U], f: FuncExp[T, Traversable[U]]): Exp[Traversable[U]] =
+    c map FuncExp.makefun(body, f.x)
+
   val flatMapToMap: Exp[_] => Exp[_] = {
       case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(Seq(body)))) =>
-        c map FuncExp.makefun(body, f.x)
+        buildFlatMapToMap(c, body, f.x)
       case e => e
   }
 
