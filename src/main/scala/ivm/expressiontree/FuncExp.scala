@@ -56,7 +56,6 @@ abstract class FuncExp[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T
   def interpret(): S => T =
     z => f(Const(z)).interpret()
 
-  def arrowString = "=>"
   def copy[U >: T](t1: Exp[U]): FuncExp[S, U] = FuncExp.makefun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[FuncExp[_,_]]
   //Copied from Arity1OpTrait:
@@ -70,7 +69,7 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
   def interpret(): PartialFunction[S,T] =
     Function.unlift(FuncExp(f).interpret())
 
-  def arrowString = "-(pf)->"
+  def arrowString = "=(pf)=>"
   def copy[U >: T](t1: Exp[Option[U]]): PartialFuncExp[S, U] = FuncExp.makePartialFun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[PartialFuncExp[_,_]]
   //Copied from Arity1OpTrait:
@@ -79,7 +78,7 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
 
 //The higher-order representation is constructed and passed to FuncExp to share code.
 class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, T](FuncExp.closeOver(foasBody, v)) {
-  override def arrowString = "=i=>"
+  override def arrowString = "=>"
 
   //The following two overrides must be either both present or both absent. Without this override, the body would be
   //recomputed using substitution.
