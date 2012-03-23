@@ -57,6 +57,7 @@ trait TraversableOps {
                                                                   g: Exp[T] => Exp[Rest])(
     implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
 
+  //Coll is only needed for TypeFilter.
   trait TraversableLikeOps[T, Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]], Repr <: Traversable[T] with TraversableLike[T, Repr] with Coll[T]] extends FilterMonadicOpsLike[T, Repr] {
     def collect[U, That <: Traversable[U]](f: Exp[T] => Exp[Option[U]])
                                           (implicit c: CanBuildFrom[TraversableView[T, Repr], U, That]): Exp[That] = {
@@ -104,10 +105,12 @@ trait TraversableOps {
 
     def typeFilter[S](implicit cS: ClassManifest[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
+      //TypeFilter[T, Coll, ID, S](t, FuncExp(identity[Exp[T]]), cS) //variance mismatch
       TypeFilter[T, Traversable, ID, S](t, FuncExp(identity[Exp[T]]), cS)
     }
     private[ivm] def typeFilterClass[S](classS: Class[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
+      //TypeFilter[T, Coll, ID, S](t, FuncExp(identity[Exp[T]]), classS) //variance mismatch again
       TypeFilter[T, Traversable, ID, S](t, FuncExp(identity[Exp[T]]), classS)
     }
 
