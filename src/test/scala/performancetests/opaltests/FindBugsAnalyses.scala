@@ -200,8 +200,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
 
     unusedFields3 should be (unusedFields)
 
-    val optims = Seq.empty
-
     import BATLifting._
     import InstructionLifting._
 
@@ -223,7 +221,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
           if unusedPrivateFields.size > 0
         } yield (classFile, privateFields))
       }
-      benchQuery("UUF_UNUSED_FIELD Los-1.3", unusedFieldsLos1_2, unusedFields, optims)
+      benchQuery("UUF_UNUSED_FIELD Los-1.3", unusedFieldsLos1_2, unusedFields)
     }
   }
 
