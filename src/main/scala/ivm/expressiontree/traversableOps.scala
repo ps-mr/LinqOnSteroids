@@ -241,7 +241,7 @@ trait IterableOps {
     expToIterableExp(t)
 }
 
-trait SeqOps {
+trait CollectionSeqOps {
   this: LiftingConvs with TraversableOps =>
   class SeqOps[T](val t: Exp[Seq[T]]) extends TraversableLikeOps[T, Seq, Seq[T]] with WithFilterImpl[T, Seq[T]]
 
