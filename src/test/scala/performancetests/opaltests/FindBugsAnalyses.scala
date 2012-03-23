@@ -50,6 +50,8 @@ import org.scalatest.{FunSuite, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 import optimization.Optimization
 
+import collection.{Seq => CSeq}
+
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
  * and power offered by Scala and BAT when analyzing class files.
@@ -722,7 +724,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         allComparables ← classHierarchy.subtypes(comparableType).toList
         comparable ← allComparables
         classFile ← getClassFile.get(comparable).toList
-        method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType), _) ← classFile.methods if parameterType != ObjectType.Object
+        method @ Method(_, "compareTo", MethodDescriptor(CSeq(parameterType), IntegerType), _) ← classFile.methods if parameterType != ObjectType.Object
       } yield (classFile, method)
     }
     println("\tViolations: "+covariantCompareToMethods.size)
@@ -751,7 +753,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     val abstractClassesThatDefinesCovariantEquals = benchMark("EQ_ABSTRACT_SELF") {
       for {
         classFile ← classFiles if classFile.isAbstract
-        method @ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _) ← classFile.methods if parameterType != ObjectType.Object
+        method @ Method(_, "equals", MethodDescriptor(CSeq(parameterType), BooleanType), _) ← classFile.methods if parameterType != ObjectType.Object
       } yield (classFile, method)
     }
     println("\tViolations: "+abstractClassesThatDefinesCovariantEquals.size)
@@ -778,7 +780,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         classFile ← classFiles
         method ← classFile.methods
         body ← method.body.toList
-        instruction @ INVOKESTATIC(ObjectType(recvClassName), "runFinalizersOnExit", MethodDescriptor(Seq(BooleanType), VoidType)) ← body.instructions
+        instruction @ INVOKESTATIC(ObjectType(recvClassName), "runFinalizersOnExit", MethodDescriptor(CSeq(BooleanType), VoidType)) ← body.instructions
         if recvClassName == "java/lang/System" || recvClassName == "java/lang/Runtime"
       } yield (classFile, method, instruction)
     } {
@@ -816,7 +818,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         cloneable ← allCloneable
         classFile ← getClassFile.get(cloneable).toList
         if !(classFile.methods exists {
-          case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ⇒ true
+          case Method(_, "clone", MethodDescriptor(CSeq(), ObjectType.Object), _) ⇒ true
           case _ ⇒ false
         })
       } yield classFile.thisClass.className
@@ -843,11 +845,11 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         classFile ← classFiles
         if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
         superClass ← classFile.superClass.toList
-        method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+        method @ Method(_, "clone", MethodDescriptor(CSeq(), ObjectType.Object), _) ← classFile.methods
         body ← method.body
         //if !method.isAbstract //Redundant; we just check if there is a body.
         if !(body.instructions exists {
-          case INVOKESPECIAL(`superClass`, "clone", MethodDescriptor(Seq(), ObjectType.Object)) ⇒ true
+          case INVOKESPECIAL(`superClass`, "clone", MethodDescriptor(CSeq(), ObjectType.Object)) ⇒ true
           case _ ⇒ false
         })
       } yield (classFile, method)
@@ -877,7 +879,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
       for {
         classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
-        method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object), _) ← classFile.methods
+        method @ Method(_, "clone", MethodDescriptor(CSeq(), ObjectType.Object), _) ← classFile.methods
         if !classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
       } yield (classFile.thisClass.className, method.name)
         //println("\tViolations: " /*+cloneButNotCloneable.mkString(", ")*/ +cloneButNotCloneable.size)
