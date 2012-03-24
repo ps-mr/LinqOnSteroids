@@ -75,11 +75,11 @@ initialCommands in (Test, console) := """
     import tests._
     import performancetests._
     import opaltests._
-
+//
     import de.tud.cs.st.bat
     import bat.resolved._
     import analyses._
-
+//
     import reader.Java6Framework
 """
 
