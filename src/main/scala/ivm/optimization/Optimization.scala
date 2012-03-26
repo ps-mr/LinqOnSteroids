@@ -446,9 +446,9 @@ object OptimizationTransforms {
     c map FuncExp.makefun(body, f.x)
 
   val flatMapToMap: Exp[_] => Exp[_] = {
-      case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(Seq(body)))) =>
-        buildFlatMapToMap(c, body, f)
-      case e => e
+    case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(Seq(body)))) =>
+      buildFlatMapToMap(c, body, f)
+    case e => e
   }
 
   val letTransformer: Exp[_] => Exp[_] = {
