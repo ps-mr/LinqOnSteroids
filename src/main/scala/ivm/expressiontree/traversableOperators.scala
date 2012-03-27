@@ -11,14 +11,14 @@ import collection._
 // It's amazing that Scala accepts "extends Exp[That]", since it would not accept That; most probably that's thanks to erasure.
 case class FlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                    U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
-                            (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, Traversable[U]], That, FlatMap[T, Repr, U, That]](base, f) {
+                            (implicit /*protected[this]*/ val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, Traversable[U]], That, FlatMap[T, Repr, U, That]](base, f) {
   override def interpret() = base.interpret() flatMap f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, Traversable[U]]) = FlatMap[T, Repr, U, That](base, f)
 }
 
-case class MapOp[T, Repr <: FilterMonadic[T, Repr],
-                 U, That](base: Exp[Repr], f: FuncExp[T, U])
-                          (implicit protected[this] val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, U], That, MapOp[T, Repr, U, That]](base, f) {
+case class MapOp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
+                 U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr], f: FuncExp[T, U])
+                          (implicit /*protected[this] */val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, U], That, MapOp[T, Repr, U, That]](base, f) {
   override def interpret() = base.interpret() map f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, U]) = MapOp[T, Repr, U, That](base, f)
 }

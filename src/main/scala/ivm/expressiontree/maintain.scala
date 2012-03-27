@@ -175,8 +175,8 @@ trait OneRootTraversableMaintainer[SrcMsg, Src <: Traversable[SrcMsg], +Res] ext
 //is entirely optional - it just enables the listener to get a more specific
 //type for the pub param to notify(), if he cares.
 class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
-                 U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, U])
-                         (implicit override protected val c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
+                 U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr], f: FuncExp[T, U])
+                         (implicit override val c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
     with MapOpMaintainer[T, U, Exp[Repr]] with OneRootTraversableMaintainer[T, Repr, That]
     with MsgSeqPublisher[That, MapOpMaintainerExp[T, Repr, U, That]] {
   override def fInt = f.interpret()
@@ -185,7 +185,7 @@ class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]
 
 class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
-                         (implicit override protected val c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
+                         (implicit override val c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
     with FlatMapMaintainer[T, U, Exp[Repr], That] with OneRootTraversableMaintainer[T, Repr, That]
     with MsgSeqPublisher[That, FlatMapMaintainerExp[T, Repr, U, That]] {
   override def fInt: T => Exp[Traversable[U]] = {

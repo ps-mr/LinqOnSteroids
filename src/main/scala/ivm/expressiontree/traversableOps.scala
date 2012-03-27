@@ -12,7 +12,7 @@ trait TraversableOps {
   def newWithFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr],
                                                                              f: FuncExp[T, Boolean]) =
     newFilter(View(base), f)
-  def newMapOp[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]](base: Exp[Repr],
+  def newMapOp[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr],
                                                                                                    f: FuncExp[T, U])
                                                                                                   (implicit c: CanBuildFrom[Repr, U, That]) =
     MapOp(base, f)
@@ -29,7 +29,7 @@ trait TraversableOps {
    */
   trait FilterMonadicOpsLike[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] {
     val t: Exp[Repr]
-    def map[U, That <: Traversable[U]](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
+    def map[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
       newMapOp(this.t, FuncExp(f))
     def map2[U, That <: Traversable[U]](f: T => U)(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
       newMapOp(this.t, FuncExp(f: Exp[T => U]))
@@ -53,13 +53,13 @@ trait TraversableOps {
   }
 
   def groupBySelImpl[T, Repr <: Traversable[T] with
-    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],
-                                                                  g: Exp[T] => Exp[Rest])(
+    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
+                                                                                                   g: Exp[T] => Exp[Rest])(
     implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
 
   //Coll is only needed for TypeFilter.
   trait TraversableLikeOps[T, Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]], Repr <: Traversable[T] with TraversableLike[T, Repr] with Coll[T]] extends FilterMonadicOpsLike[T, Repr] {
-    def collect[U, That <: Traversable[U]](f: Exp[T] => Exp[Option[U]])
+    def collect[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[Option[U]])
                                           (implicit c: CanBuildFrom[TraversableView[T, Repr], U, That]): Exp[That] = {
       newMapOp(newWithFilter(this.t,
         FuncExp((x: Exp[T]) => IsDefinedAt(PartialFuncExp(f), x))),
@@ -89,7 +89,7 @@ trait TraversableOps {
     def groupBy[K](f: Exp[T] => Exp[K]): Exp[Map[K, Repr]] =
       GroupBy(this.t, FuncExp(f))
 
-    def groupBySel[K, Rest, That <: Traversable[Rest]](f: Exp[T] => Exp[K], g: Exp[T] => Exp[Rest])(implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
+    def groupBySel[K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](f: Exp[T] => Exp[K], g: Exp[T] => Exp[Rest])(implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
       groupBySelImpl(this.t, f, g)(c)
 
     def join[S, TKey, TResult, That](innerColl: Exp[Traversable[S]]) //Split argument list to help type inference deduce S and use it after.

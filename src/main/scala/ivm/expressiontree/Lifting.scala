@@ -142,7 +142,7 @@ object Lifting
   //def Let[T](e: Exp[T]): Exp[Option[T]] = Some(e)
 
   override def groupBySelImpl[T, Repr <: Traversable[T] with
-    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K],
+    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
                                              g: Exp[T] => Exp[Rest])(
     implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
   {
