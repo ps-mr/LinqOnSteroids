@@ -169,7 +169,9 @@ object OptimizationTransforms {
     case MapOp(MapOp(coll: Exp[Traversable[_]], f), g) =>
       //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
       //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
-      mergeMaps(buildMergedMaps(coll, f, g))
+      buildMergedMaps(coll, f, g)
+      //Since inner nodes were already optimized, coll will not be a MapOp node, hence we needn't call mergeMaps on the
+      //result.
     case e => e
   }
 
