@@ -70,6 +70,9 @@ trait FunctionOps {
   def onExp[A0, A1, A2, A3, A4, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3], a4: Exp[A4])(id: Symbol, f: (A0, A1, A2, A3, A4) => Res): Exp[Res] =
     liftCall(id, f, a0, a1, a2, a3, a4)
 
+  //Should we add this?
+  implicit def funcExp[S, T](f: Exp[S] => Exp[T]) = FuncExp(f)
+
   implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
     f match {
       case FuncExp(fe) => fe.asInstanceOf[Exp[A] => Exp[B]] //This line should be dropped, but then we'll need to introduce a beta-reducer.

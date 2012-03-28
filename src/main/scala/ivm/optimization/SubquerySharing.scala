@@ -156,6 +156,13 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
         //Using Sets here directly is very difficult, due to the number of wildcards and the invariance of Set.
         //I managed, but it was beyond the abilities of type inference.
+        //TEST CODE for bug report on this.
+        //case class Eq[T](a: Exp[T], b: Exp[T])
+        conds.map {
+          case eq @ Eq(l, r) =>
+            Set[Exp[_]](eq)
+          case _ => Set.empty[Exp[_]] //Omit this type annotation to see a weird message.
+        }.fold(Set.empty)(_ union _)
         val foundEqs =
           conds.map {
             case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty =>

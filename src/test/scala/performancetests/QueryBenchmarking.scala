@@ -52,11 +52,11 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
                                                    (query: => Exp[Coll],
                                                     extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
-    val expectedRes =
+    val (expectedRes, time) =
       if (doBench)
-        benchMark(msg)(expected)
+        benchMarkInternal(msg)(expected)
       else
-        expected
+        (expected, 1)
     val builtQuery = benchMark("%s Los Setup" format msg, silent = true)(Query(query))
     benchQuery("%s Los" format msg, builtQuery, expectedRes, extraOptims)
     if (doBench)
