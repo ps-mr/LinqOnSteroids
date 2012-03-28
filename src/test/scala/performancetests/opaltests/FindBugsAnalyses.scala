@@ -154,7 +154,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   def analyzeUnusedFields() {
     // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
     //XXX This analysis was totally rewritten for BAT, reconsider.
-    val unusedFields: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD") {
+    /*val unusedFields: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD") {
       for {
         classFile ← classFiles if !classFile.isInterfaceDeclaration
         instructions = for {
@@ -175,11 +175,9 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         unusedPrivateFields = privateFields -- usedPrivateFields //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
-    }
-    println("\tViolations: " + unusedFields.size)
+    }*/
 
-
-    val unusedFields3: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD-3") {
+    val unusedFields: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD-3") {
       for {
         classFile ← classFiles if !classFile.isInterfaceDeclaration
         declaringClass = classFile.thisClass
@@ -197,8 +195,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
     }
-
-    unusedFields3 should be (unusedFields)
+    println("\tViolations: " + unusedFields.size)
 
     import BATLifting._
     import InstructionLifting._
@@ -361,7 +358,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
 
     import BATLifting._
 
-    val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Los Setup", silent = true) {
+    val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED-2 Los Setup", silent = true) {
       Query(for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods
