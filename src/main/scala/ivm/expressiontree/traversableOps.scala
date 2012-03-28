@@ -31,8 +31,6 @@ trait TraversableOps {
     val t: Exp[Repr]
     def map[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
       newMapOp(this.t, FuncExp(f))
-    def map2[U, That <: Traversable[U]](f: T => U)(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-      newMapOp(this.t, FuncExp(f: Exp[T => U]))
     def flatMap[U, That <: Traversable[U]](f: Exp[T] => Exp[Traversable[U]])
                                           (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
       newFlatMap(this.t, FuncExp(f))
