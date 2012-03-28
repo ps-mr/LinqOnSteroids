@@ -9,7 +9,7 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   /*private[ivm]*/ def isRoot = roots.isEmpty
 
   //This method recomputes the contained value
-  /*private[ivm]*/ def interpret(): T
+  def interpret(): T
 
   //This method returns the cached value (if any) or invokes interpret().
   def expResult(): T = interpret()
