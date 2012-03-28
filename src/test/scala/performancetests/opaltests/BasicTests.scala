@@ -10,7 +10,7 @@ import optimization.SubquerySharing
 import de.tud.cs.st.bat.resolved
 import resolved.reader.Java6Framework
 import resolved._
-import Lifting.{tuple2ToTuple2Exp => _, _}
+import Lifting._
 import Java6Framework.ClassFile
 import resolved.Attributes
 import java.util.zip.ZipFile
@@ -96,11 +96,14 @@ object OpalTestData {
 class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
   import OpalTestData._
 
+  /*
+  //Does not work, whether we hide or not Lifting.tuple2ToTuple2Exp.
   implicit def tuple2ToTuple2Exp[A1, A2, E1 <% Exp[A1], E2 <% Exp[A2]](tuple: (E1, E2)): LiftTuple2[A1, A2] =
     LiftTuple2[A1, A2](tuple._1, tuple._2)
 
   //Is this not in scope?
   implicit def id[A](x: A) = x
+  */
 
   //A simple query, which does not use pattern matching.
   test("basicQuery") {
@@ -429,6 +432,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
     type QueryAnd[+T] = ((ClassFile, Method, Code), T);
     {
+      implicit def tuple2ToTuple2Exp[A1, A2, E1 <% Exp[A1], E2 <% Exp[A2]](tuple: (E1, E2)): LiftTuple2[A1, A2] =
+        LiftTuple2[A1, A2](tuple._1, tuple._2)
       //Same code as above, except that the index returns all free variables, so that the optimizer might find it.
       val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
         cf <- queryData.toSeq
