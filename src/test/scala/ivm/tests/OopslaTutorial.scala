@@ -11,6 +11,37 @@ import Lifting._
  * Date: 26/03/2012
  */
 
+//New example, discussed with Christian.
+object SampleLibrary {
+  case class Author(firstName: String, lastName: String)
+  case class Book(title: String, publisher: String, authors: Seq[Author]) //price: Decimal ?
+}
+
+object SampleLibraryLifting {
+  //XXX to gen.
+}
+
+object SampleQuery {
+  import SampleLibrary._
+  val books: Set[Book] = Set.empty
+  val query = for {
+    book <- books
+    if book.publisher == "ACM"
+    author <- book.authors
+  } yield (author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1, book.title)
+  val idxByAuthor = query.groupBy(_._1) //Index books by author - the index by title is a bit more boring, but not so much actually!
+  //But the correct index by title should be:
+  val idxByTitle = (for {
+    book <- books
+  } yield (book, book.title)) groupBy (_._2)
+
+  import SampleLibraryLifting._
+  for {
+    book <- books.asSmartCollection
+  } yield book
+}
+
+//Old example
 trait SampleApp {
   case class Developer(name: String, website: String)
   case class LibraryVersion(version: String, depends: Set[Library], developers: Seq[String])
@@ -29,7 +60,8 @@ trait SampleAppLifting extends SampleApp {
 
   implicit def expToLibraryVersionOps(t: Exp[LibraryVersion]) = new LibraryVersionOps(t)
   class LibraryVersionOps(t: Exp[LibraryVersion]) {
-    def version = onExp(t)('SampleApp$Library$version, _.version)
+    def version = onExp(t)('SampleApp$Library$version, _.version) //Remove class names from API! Use Manifests for that, and for arguments - but doesn't work for
+    //parameterized types! Well, who cares when it's generated?
     def depends = onExp(t)('SampleApp$Library$depends, _.depends)
     def developers = onExp(t)('SampleApp$Library$developers, _.developers)
   }
@@ -63,9 +95,19 @@ class Foo extends OopslaTutorial with SampleAppLifting {
     ver <- expToLibraryOps(lib).versions
   } yield (lib, ver)
 
-  val idxSQuOpt = idxBase.groupBy(
+  val idxSQuOpt = idxBase groupBy (
     libver => (libver._1, libver._2.version))
 
   for (lib <- libs.asSmartCollection) yield
     Library(lib.name, lib.versions, lib.users + 1)
+
+  //Query possibly to present
+  /*
+  (for {
+    lib <- libs.asSmartCollection
+    ver <- lib.versions
+    if ver.developers ==# Seq("Foo") /*boring*/ && ver.depends ==# Seq(lib) //We want to construct a sequence with lib, but let's not do it here.
+  } yield (lib, asExp(Set(ver)))) groupBy (_._1) map (x => (x._1, /*x._2._1,*/ x._2.foldr(Set.empty)(_._2 union _._2) flatMap identity /*.flatten*/))
+  */
+  //That's rather cumbersome. Let's ask for help.
 }
