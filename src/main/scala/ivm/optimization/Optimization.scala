@@ -186,6 +186,23 @@ object OptimizationTransforms {
     }
   }
 
+  val mergeMaps3: Transformer = new Transformer {
+    def apply[T](e: Exp[T]) = e match {
+      case m: MapOp[t, repr, u, that] =>
+        Util.assertType[Exp[repr]](m.base)
+        implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
+          new TraversableLikeOps[T, Traversable, Repr] {val t = v}
+
+        //(m.base map m.f)(m.c) //does not work here - the conversion is ambiguous.
+        (expToTraversableLikeOps(m.base) map m.f)(m.c) //works
+        //m.base.map[u, that](m.f)(m.c) //does not work for the same reason - m.base is considered as having type Exp[Traversable[t]]. That's however because of my implicit conversion, which is
+        //rather limited.
+        //MapOp[t, repr, u, that](m.base, m.f)(m.c) //works
+        //MapOp(m.base, m.f)(m.c) //works
+      case _ => e
+    }
+  }
+
   // Reassociation similarly to what is described in "Advanced Compiler Design and Implementation", page 337-...,
   // Sec 12.3.1 and Fig 12.6. We refer to their reduction rules with their original codes, like R1, R2, ..., R9.
   // We don't apply distributivity, nor (yet) rules not involving just Plus (i.e., involving Minus or Times).
