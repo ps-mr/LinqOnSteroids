@@ -6,6 +6,7 @@ import Lifting._
 import Numeric.Implicits._
 import annotation.tailrec
 import collection.mutable.Stack
+import collection.TraversableLike
 
 //Pattern-matchers for simplifying writing patterns
 object FuncExpBody {
