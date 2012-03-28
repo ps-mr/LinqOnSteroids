@@ -128,6 +128,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
         m.base match {
           case m2: MapOp[t2, repr2, u2, that2] =>
+          //case m2: MapOp[t2, repr2, `t` /*u2*/, that2] =>//gives a warning
             //Scalac gets that2 = repr, but not that u2 = t.
             //What type inference could deduce:
             //m.base.type <: Exp[repr]
@@ -150,12 +151,20 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
             //Different experiments:
             //((m2.base map m2.f)(m2.c) map m.f)(m.c) //doesn't work
             //expToTraversableLikeOps[u2, that2](m2.base.map(m2.f)(m2.c)).map(m.f.f)(m.c) //doesn't work.
-            expToTraversableLikeOps[t, repr](m2.base.map(m2.f)(m2.c)).map(m.f)(m.c) //works
+            //expToTraversableLikeOps[t, repr](m2.base.map(m2.f)(m2.c)).map(m.f)(m.c) //works
+            (expToTraversableLikeOps[t /*u2*/, /*that2*/ repr]((m2.base map m2.f)(m2.c)) map m.f)(m.c) //works
             //Util.checkSameTypeAndRet(ret1)(((m2.base map m2.f)(m2.c) map m.f)(m.c)) //doesn't work.
             //(expToTraversableLikeOps[u2, that2]((m2.base map m2.f)(m2.c)) map m.f)(m.c) //doesn't work, the t = u2 equality is not deduced!
             //(expToTraversableLikeOps[t /*u2*/, that2]((m2.base map m2.f)(m2.c)) map m.f)(m.c) //doesn't work, the t = u2 equality is not deduced!
-            (expToTraversableLikeOps[t /*u2*/, /*that2*/ repr]((m2.base map m2.f)(m2.c)) map m.f)(m.c) //works
             //e
+            //(expToTraversableLikeOps[t2 /*u2*/, /*that2*/ repr2](m2.base) map (m2.f andThen m.f.f))(m2.c) //doesn't work
+            //(m2.base map (m2.f andThen m.f.f))(m2.c) //doesn't work, same reason: we need the t = u2 equality. If we enforce that through an
+            //unchecked pattern match, we learn that m2.c has the wrong type...
+            //(m2.base map (m2.f andThen m.f.f))(m.c) //... also m.c has the wrong type
+            //(m2.base map (m2.f andThen m.f.f))(m.c.asInstanceOf[CanBuildFrom[repr2, u, that]]) //... so we ignore the type of CanBuildFrom,
+            //since instances are anyway defined so that it does not matter.
+            //If know we remove the t = u2 equality, we need to use this code (with an extra cast):
+            (m2.base map (m2.f andThen m.f.f.asInstanceOf[Exp[u2] => Exp[u]]))(m.c.asInstanceOf[CanBuildFrom[repr2, u, that]]) //... so we ignore the type of CanBuildFrom,
           case _ => e
         }
       case _ => e
