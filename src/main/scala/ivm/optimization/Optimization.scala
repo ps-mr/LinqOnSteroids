@@ -163,6 +163,9 @@ object OptimizationTransforms {
     //coll.map(f.f andThen g.f) //Old implementation, equivalent to inlining f(x) in the body of g. This might duplicate work!
     //coll.map(g.f andThen f.f) //Here the typechecker can reject this line.
 
+  /*private def buildMergedFlatMap[T, U, V](coll: Exp[Traversable[T]], f: FuncExp[T, U], g: FuncExp[U, Traversable[V]]) =
+    coll flatMap (x => letExp(f(x))(g))*/
+
   //Now we'd like a non-work-duplicating inliner. We'd need a linear type system as in GHC's inliner.
 
   val mergeMaps: Exp[_] => Exp[_] = {
@@ -172,6 +175,18 @@ object OptimizationTransforms {
       buildMergedMaps(coll, f, g)
       //Since inner nodes were already optimized, coll will not be a MapOp node, hence we needn't call mergeMaps on the
       //result.
+    case e => e
+  }
+
+  val mergeFlatMaps: Exp[_] => Exp[_] = {
+    case FlatMap(MapOp(coll: Exp[Traversable[_]], f), g) =>
+      //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
+      //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
+      mergeFlatMaps(coll flatMap (x => letExp(f(x))(g)))
+    case MapOp(FlatMap(coll: Exp[Traversable[_]], f), g) =>
+      //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
+      //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
+      mergeFlatMaps(coll flatMap (x => letExp(f(x))(_ map g)))
     case e => e
   }
 
