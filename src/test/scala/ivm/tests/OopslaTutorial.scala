@@ -21,15 +21,24 @@ object SampleLibraryLifting {
   //XXX to gen.
 }
 
-object SampleQuery {
+class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   import SampleLibrary._
   val books: Set[Book] = Set.empty
-  val query = for {
+  val records = for {
     book <- books
     if book.publisher == "ACM"
     author <- book.authors
-  } yield (author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1, book.title)
-  val idxByAuthor = query.groupBy(_._1) //Index books by author - the index by title is a bit more boring, but not so much actually!
+  } yield (book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
+
+  val recordsDesugared = books.withFilter(book =>
+    book.publisher == "ACM").flatMap(book =>
+    book.authors.map(author =>
+      (book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
+  test("recordsDesugared should be records") {
+    recordsDesugared should be (records)
+  }
+
+  val idxByAuthor = records.groupBy(_._2) //Index books by author - the index by title is a bit more boring, but not so much actually!
   //But the correct index by title should be:
   val idxByTitle = (for {
     book <- books
