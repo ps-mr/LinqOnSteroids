@@ -18,5 +18,15 @@ object BATLifting {
 <% for(c <- List("ClassFile", "ObjectType", "ClassMember", "Field", "Method",
 	         "MethodDescriptor", "Code", "ExceptionHandler")) {
   render("WrappedClass.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))} %>
-
+<%--
+<%
+  val classLoader = Thread.currentThread().getContextClassLoader()
+  val path = "de.tud.cs.st.bat.resolved".replace('.', '/')
+  val resources = classLoader.getResources(path)
+  //val classes = getClassesInPackage("de.tud.cs.st.bat.resolved")
+  //for (c <- classes) {
+  //  render("WrappedClass.ssp", Map("classFile" -> c))
+  %>
+  //${resources.length}
+--%>
 }
