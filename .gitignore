@@ -17,3 +17,4 @@ various
 .cache
 .history
 Session.vim
+*.texshop
