@@ -23,7 +23,7 @@ object SampleLibraryLifting {
 
 class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   import SampleLibrary._
-  val books: Set[Book] = Set.empty
+  val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "ACM" /*"Pearson Education"*/, Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
   val records = for {
     book <- books
     if book.publisher == "ACM"
@@ -34,6 +34,12 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
     record <- records
     if record._1.startsWith("The")
   } yield (record._1, record._2)
+
+  def titleFilter(records: Set[(String, String, Int)], name: String): Set[(String, String)] = for {
+    record <- records
+    if record._1.contains("database")
+  } yield (record._1, record._2)
+  val processedRecords = titleFilter(records, "database")
 
   val recordsDesugared = books.withFilter(book =>
     book.publisher == "ACM").flatMap(book =>
