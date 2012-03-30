@@ -11,9 +11,6 @@ import Lifting._<%--
 
 
 --%>
-<%--#import(de.tud.cs.st.bat.resolved._)--%>
-#import(tools.scalap.scalax.rules.scalasig.ScalaSigParser)
-#import(tools.scalap.scalax.rules.scalasig.Symbol)
 #import(ivm.generation.ScalaSigHelpers._)<%--
 
 --%>
@@ -22,22 +19,4 @@ object BATLifting {
 	         "MethodDescriptor", "Code", "ExceptionHandler")) {
   render("WrappedClass.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))} %>
 
-<%--
-  implicit def expToMethodDescriptorOps(t: Exp[MethodDescriptor]) = new MethodDescriptorOps(t)
-  class MethodDescriptorOps(t: Exp[MethodDescriptor]) {
-    def returnType = onExp(t)('returnType, _.returnType)
-    def parameterTypes = onExp(t)('parameterTypes, _.parameterTypes)
-  }
-
-  implicit def expToCodeOps(t: Exp[Code]) = new CodeOps(t)
-  class CodeOps(t: Exp[Code]) {
-    def instructions: Exp[Seq[Instruction]] = onExp(t)('instructions, _.instructions)
-    def exceptionHandlers = onExp(t)('exceptionHandlers, _.exceptionHandlers)
-  }
-
-  implicit def expToExceptionTableEntryOps(t: Exp[ExceptionHandler]) = new ExceptionTableEntryOps(t)
-  class ExceptionTableEntryOps(t: Exp[ExceptionHandler]) {
-    def catchType = onExp(t)('catchType, _.catchType)
-  }
---%>
 }

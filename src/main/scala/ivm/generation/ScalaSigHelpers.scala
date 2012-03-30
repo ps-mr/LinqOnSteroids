@@ -94,8 +94,8 @@ object ScalaSigHelpers {
   def getResultType(ms: MethodSymbol, wrapped: Boolean = true): String = {
     val t = ms.infoType
     t match {
-      case PolyType(mt, _) => if (wrapped) getWrappedType(mt) else getType(mt)
-      case _               => if (wrapped) getWrappedType(t)  else getType(t)
+      case PolyType(mt, _) => if (wrapped) getWrappedType(mt, Map("scala.Array" -> "scala.Seq")) else getType(mt)
+      case _               => if (wrapped) getWrappedType(t, Map("scala.Array" -> "scala.Seq"))  else getType(t)
     }
   }
 
@@ -121,6 +121,17 @@ object ScalaSigHelpers {
       (p map (x => {
 	val START = if (x._1) "(implicit " else "("
 	(x._2 map (y => y._1 + ": " + y._2)).mkString(START, ",", ")")
+      })).fold("")(_ ++ _)
+    }
+    else ""
+  }
+
+  def getParameterNamesAsString(ms: MethodSymbol, prefix: String = ",", suffix: String = "", wrapped: Boolean = true, placeholders: Boolean = false): String = {
+    val p = getParameters(ms, wrapped)
+    if (!p.isEmpty) {
+      (p map (x => { if (!x._2.isEmpty)
+		    (x._2 map (x => if (placeholders) "_" else x._1)).mkString(prefix, ",", suffix)
+		    else ""
       })).fold("")(_ ++ _)
     }
     else ""
@@ -160,7 +171,7 @@ object ScalaSigHelpers {
     sigp.toString(t)(flags)
   }
 
-  def getWrappedType(t: Type)(implicit flags: sigp.TypeFlags): String = {
+  def getWrappedType(t: Type, m: Map[String,String] = Map.empty)(implicit flags: sigp.TypeFlags): String = {
     t match {
       case ThisType(symbol) => WRAP_BEGIN + sigp.processName(symbol.path) + ".type" + WRAP_END
       case SingleType(typeRef, symbol) => WRAP_BEGIN + sigp.processName(symbol.path) + ".type" + WRAP_END
@@ -168,31 +179,36 @@ object ScalaSigHelpers {
       case c@ConstantType(constant) => WRAP_BEGIN + getType(c)(flags) + WRAP_END
       case TypeRefType(prefix, symbol, typeArgs) => (symbol.path match {
 	case "scala.<repeated>" => flags match {
-	  case sigp.TypeFlags(true) => getWrappedType(typeArgs.head) + "*"
+	  case sigp.TypeFlags(true) => getWrappedType(typeArgs.head, m) + "*"
 	  case _ => WRAP_BEGIN + "scala.Seq" + sigp.typeArgString(typeArgs) + WRAP_END
 	}
-	case "scala.<byname>" => "=> " + getWrappedType(typeArgs.head)
-	case "scala.Array" => WRAP_BEGIN + StringUtil.trimStart("scala.Seq" + sigp.typeArgString(typeArgs), "<empty>.") + WRAP_END
-	case _ => {
-	  val path = StringUtil.cutSubstring(symbol.path)(".package")
-	  if (symbol.path.matches("scala.Function\\d")) {
-	    StringUtil.trimStart(sigp.processName(path) + typeArgStringWrapped(typeArgs), "<empty>.")
-	  } else {
-	    WRAP_BEGIN + StringUtil.trimStart(sigp.processName(path) + sigp.typeArgString(typeArgs), "<empty>.") + WRAP_END
+	case "scala.<byname>" => "=> " + getWrappedType(typeArgs.head, m)
+	//case "scala.Array" => WRAP_BEGIN + StringUtil.trimStart("scala.Seq" + sigp.typeArgString(typeArgs), "<empty>.") + WRAP_END
+	case x => {
+	  if (m.contains(x)) {
+	    WRAP_BEGIN + StringUtil.trimStart(m(x) + sigp.typeArgString(typeArgs), "<empty>.") + WRAP_END
+	  }
+	  else {
+	    val path = StringUtil.cutSubstring(symbol.path)(".package")
+	    if (symbol.path.matches("scala.Function\\d")) {
+	      StringUtil.trimStart(sigp.processName(path) + typeArgStringWrapped(typeArgs), "<empty>.")
+	    } else {
+	      WRAP_BEGIN + StringUtil.trimStart(sigp.processName(path) + sigp.typeArgString(typeArgs), "<empty>.") + WRAP_END
+	    }
 	  }
 	}
       })
 
-      case MethodType(resultType, _) => getWrappedType(resultType)(flags)
-      case NullaryMethodType(resultType) => getWrappedType(resultType)(flags)
-      case PolyType(typeRef, symbols) => sigp.typeParamString(symbols) + getWrappedType(typeRef)(flags)
+      case MethodType(resultType, _) => getWrappedType(resultType, m)(flags)
+      case NullaryMethodType(resultType) => getWrappedType(resultType, m)(flags)
+      case PolyType(typeRef, symbols) => sigp.typeParamString(symbols) + getWrappedType(typeRef, m)(flags)
 
       case _ => getType(t)(flags)
     }
   }
   def typeArgStringWrapped(typeArgs: Seq[Type]): String =
     if (typeArgs.isEmpty) ""
-    else typeArgs.map(getWrappedType).map(StringUtil.trimStart(_, "=> ")).mkString("[", ", ", "]")
+    else typeArgs.map(getWrappedType(_)).map(StringUtil.trimStart(_, "=> ")).mkString("[", ", ", "]")
 
 }
 
