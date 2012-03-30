@@ -15,6 +15,7 @@ import Lifting._
 object SampleLibrary {
   case class Author(firstName: String, lastName: String)
   case class Book(title: String, publisher: String, authors: Seq[Author]) //price: Decimal ?
+  case class Result(title: String, authorName: String, coauthors: Int)
 }
 
 object SampleLibraryLifting {
@@ -24,33 +25,55 @@ object SampleLibraryLifting {
 class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   import SampleLibrary._
   val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "ACM" /*"Pearson Education"*/, Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
-  val records = for {
+  val recordsOld = for {
     book <- books
     if book.publisher == "ACM"
     author <- book.authors
   } yield (book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
+  val records = for {
+    book <- books
+    if book.publisher == "ACM"
+    author <- book.authors
+  } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
-  val processedRecords = for {
-    record <- records
+  val processedRecordsOld = for {
+    record <- recordsOld
     if record._1.startsWith("The")
   } yield (record._1, record._2)
 
-  def titleFilter(records: Set[(String, String, Int)], name: String): Set[(String, String)] = for {
+  def titleFilter(records: Set[Result], keyword: String): Set[(String, String)] = for {
     record <- records
-    if record._1.contains("database")
-  } yield (record._1, record._2)
+    if record.title.contains(keyword)
+  } yield (record.title, record.authorName)
   val processedRecords = titleFilter(records, "database")
+
+  def titleFilterHandOpt1(books: Set[Book], publisher: String, keyword: String) = for {
+    book <- books
+    if book.publisher == publisher
+    author <- book.authors
+    if book.title.contains(keyword)
+  } yield (book.title, author.firstName + " " + author.lastName)
+  val processedRecordsOpt1 = titleFilterHandOpt1(books, "ACM", "database")
+
+  def titleFilterHandOpt2(books: Set[Book], publisher: String, keyword: String) = for {
+    book <- books
+    if book.publisher == publisher
+    if book.title.contains(keyword)
+    author <- book.authors
+  } yield (book.title, author.firstName + " " + author.lastName)
+  val processedRecordsOpt2 = titleFilterHandOpt2(books, "ACM", "database")
 
   val recordsDesugared = books.withFilter(book =>
     book.publisher == "ACM").flatMap(book =>
     book.authors.map(author =>
-      (book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
+      Result(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
 
   test("recordsDesugared should be records") {
     recordsDesugared should be (records)
+    recordsOld should not be (records)
   }
 
-  val idxByAuthor = records.groupBy(_._2) //Index books by author - the index by title is a bit more boring, but not so much actually!
+  val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
   //But the correct index by title should be:
   val idxByTitle = (for {
     book <- books
