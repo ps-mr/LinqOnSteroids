@@ -30,10 +30,16 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
     author <- book.authors
   } yield (book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
+  val processedRecords = for {
+    record <- records
+    if record._1.startsWith("The")
+  } yield (record._1, record._2)
+
   val recordsDesugared = books.withFilter(book =>
     book.publisher == "ACM").flatMap(book =>
     book.authors.map(author =>
       (book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
+
   test("recordsDesugared should be records") {
     recordsDesugared should be (records)
   }
@@ -43,6 +49,10 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   val idxByTitle = (for {
     book <- books
   } yield (book, book.title)) groupBy (_._2)
+
+  val idxByPublisher = (for {
+    book <- books
+  } yield (book, book.publisher)) groupBy (_._2)
 
   import SampleLibraryLifting._
   for {
