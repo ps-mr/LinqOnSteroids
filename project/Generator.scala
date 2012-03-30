@@ -39,7 +39,6 @@ class Generator(scalaVersion: String) {
 
   def render[A](outpath: String, name: String, inFileName: String = "", outFileName: String = "", args: Map[String, A] = Map[String, A]()) {
     val file = outpath + File.separator + (if (outFileName != "") outFileName else name) + ".scala"
-    println(engine.classpath)
     renderHelper(name, inFileName, file, args)
   }
 
