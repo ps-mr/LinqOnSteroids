@@ -1,6 +1,6 @@
 #import(ivm.generation.ScalaSigHelpers._)
-#import(tools.scalap.scalax.rules.scalasig.MethodSymbol)
-<%@ val classFile: String %>
+#import(tools.scalap.scalax.rules.scalasig.MethodSymbol)<%@
+val classFile: String %>
 <% val className = classFile.split("\\.").last %>
   implicit def expTo${className}Ops(t: Exp[${className}]) = new ${className}Ops(t)
   implicit def to${className}Ops(t: ${className}) = new ${className}Ops(t)

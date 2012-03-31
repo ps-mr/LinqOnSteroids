@@ -15,8 +15,8 @@ import ivm.expressiontree._<%--
 #import(ivm.generation.ScalaSigHelpers._)<%--
 
 --%>
-object BATLifting {
-<% for (c <- List("ClassFile", "ObjectType", "Field", "Method", 
+object BATLifting {<%
+  for (c <- List("ClassFile", "ObjectType", "Field", "Method",
 		  "ClassMember", "MethodDescriptor", "Code", "ExceptionHandler")) {
   render("WrappedClassInlined.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))} %>
 <%--

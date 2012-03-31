@@ -6,8 +6,8 @@ import Lifting._
 
 import sampleapp._
 
-object SampleLibraryLifting {
-<% for(c <- List("Author", "Book", "Result")) {
+object SampleLibraryLifting {<%
+  for(c <- List("Author", "Book", "Result")) {
   render("WrappedClass.ssp", Map("classFile" -> ("sampleapp." + c)))} %>
 }
 // vim: set ts=4 sw=4 et:
