@@ -12,7 +12,7 @@ import sbt._
  */
 
 object Generator {
-  val templates = Seq("tupleSupport","BATGenerator")
+  val templates = Seq("tupleSupport", "BATGenerator", "SampleWrapperGenerator")
 }
 
 class Generator(scalaVersion: String) {

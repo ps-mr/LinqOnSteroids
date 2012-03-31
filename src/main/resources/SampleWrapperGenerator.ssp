@@ -1,0 +1,13 @@
+//XXX: ivm.expressiontree is very much not the right place! Not clear which is the right one
+// (something like de.tud.cs.st.bat.resolved.lifted? Something configured?) PG
+package ivm
+package expressiontree
+import Lifting._
+
+import sampleapp._
+
+object SampleLibraryLifting {
+<% for(c <- List("Author", "Book", "Result")) {
+  render("WrappedClass.ssp", Map("classFile" -> ("sampleapp." + c)))} %>
+}
+// vim: set ts=4 sw=4 et:
