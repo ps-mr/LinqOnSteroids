@@ -136,12 +136,22 @@ object ScalaSigHelpers {
     else ""
   }
 
-  def getParameterNamesAsString(ms: MethodSymbol, prefix: String = ",", suffix: String = "", wrapped: Boolean = true, placeholders: Boolean = false, transform: String => String = x => x): String = {
+  def getParameterTypesAsString(ms: MethodSymbol, prefix: String = "[", suffix: String = "]", wrapped: Boolean = true, transform: String => String = x => x): String = {
+    getPartOfParameters(ms, prefix, suffix, wrapped, x => x._2, transform)
+  }
+
+  def getParameterNamesAsString(ms: MethodSymbol, prefix: String = "(", suffix: String = ")", wrapped: Boolean = true, transform: String => String = x => x): String = {
+    getPartOfParameters(ms, prefix, suffix, wrapped, x => x._1, transform)
+  }
+
+  def toUnderscore: String => String = _ => "_"
+
+  def getPartOfParameters(ms: MethodSymbol, prefix: String, suffix: String, wrapped: Boolean, select: Pair[String, String] => String, transform: String => String): String = {
     val p = getParameters(ms, wrapped)
     if (!p.isEmpty) {
       (p map (x => { if (!x._2.isEmpty)
-		    (x._2 map (x => if (placeholders) "_" else transform(x._1))).mkString(prefix, ",", suffix)
-		    else ""
+		    (x._2 map (y => transform(select(y)))).mkString(prefix, ",", suffix)
+		     else ""
       })).fold("")(_ ++ _)
     }
     else ""
@@ -193,7 +203,6 @@ object ScalaSigHelpers {
 	  case _ => WRAP_BEGIN + "scala.Seq" + sigp.typeArgString(typeArgs) + WRAP_END
 	}
 	case "scala.<byname>" => "=> " + getWrappedType(typeArgs.head, m)
-	//case "scala.Array" => WRAP_BEGIN + StringUtil.trimStart("scala.Seq" + sigp.typeArgString(typeArgs), "<empty>.") + WRAP_END
 	case x => {
 	  if (m.contains(x)) {
 	    WRAP_BEGIN + StringUtil.trimStart(m(x) + sigp.typeArgString(typeArgs), "<empty>.") + WRAP_END
@@ -219,131 +228,5 @@ object ScalaSigHelpers {
   def typeArgStringWrapped(typeArgs: Seq[Type]): String =
     if (typeArgs.isEmpty) ""
     else typeArgs.map(getWrappedType(_)).map(StringUtil.trimStart(_, "=> ")).mkString("[", ", ", "]")
-
-}
-
-
-class ScalaSigPrinterWrapped(stream: PrintStream, printPrivates: Boolean) extends ScalaSigPrinter(stream, printPrivates) {
-
-  override def printMethodType(t: Type, printResult: Boolean)(cont: => Unit): Unit = {
-
-    def _pmt(mt: Type {def resultType: Type; def paramSymbols: Seq[Symbol]}) = {
-
-      val paramEntries = mt.paramSymbols.map({
-        case ms: MethodSymbol => ms.name + " : " + toStringWrapped(ms.infoType)(TypeFlags(true))
-        case _ => "^___^"
-      })
-      val implicitWord = mt.paramSymbols.headOption match {
-        case Some(p) if p.isImplicit  => "implicit "
-        case _                        => ""
-      }
-
-      // Print parameter clauses
-      print(paramEntries.mkString("(" + implicitWord, ", ", ")"))
-
-      // Print result type
-      mt.resultType match {
-        case mt: MethodType => printMethodType(mt, printResult)({})
-        case x => if (printResult) {
-          print(" : ");
-          printType(x)
-        }
-      }
-    }
-
-    t match {
-      case NullaryMethodType(resType) => if (printResult) { print(" : "); printType(resType) }
-      case mt@MethodType(resType, paramSymbols) => _pmt(mt)
-      case pt@PolyType(mt, typeParams) => {
-        print(typeParamString(typeParams))
-        printMethodType(mt, printResult)({})
-      }
-      //todo consider another method types
-      case x => print(" : "); printType(x)
-    }
-
-    // Print rest of the symbol output
-    cont
-  }
-/*
-  override def printMethod(level: Int, m: MethodSymbol, indent: () => Unit) {
-    def cont() = print(" = { /* compiled code */ }")
-
-    val n = m.name
-    if (underCaseClass(m) && n == CONSTRUCTOR_NAME) return
-    if (n.matches(".+\\$default\\$\\d+")) return // skip default function parameters
-    if (n.startsWith("super$")) return // do not print auxiliary qualified super accessors
-    if (m.isAccessor && n.endsWith("_$eq")) return
-    indent()
-    printModifiers(m)
-    if (m.isAccessor) {
-      val indexOfSetter = m.parent.get.children.indexWhere(x => x.isInstanceOf[MethodSymbol] &&
-              x.asInstanceOf[MethodSymbol].name == n + "_$eq")
-      print(if (indexOfSetter > 0) "var " else "val ")
-    } else {
-      print("def ")
-    }
-    n match {
-      case CONSTRUCTOR_NAME =>
-        print("this")
-        printMethodType(m.infoType, false)(cont)
-      case name =>
-        val nn = processName(name)
-        print(nn)
-        printMethodType(m.infoType, true)(
-          {if (!m.isDeferred) print(" = { /* compiled code */ }" /* Print body only for non-abstract methods */ )}
-          )
-    }
-    print("\n")
-  }
-*/
-  override def printType(t: Type)(implicit flags: TypeFlags): Unit = print(toStringWrapped(t)(flags))
-
-  override def printType(t: Type, sep: String)(implicit flags: TypeFlags): Unit = print(toStringWrapped(t, sep)(flags))
-
-  def toStringWrapped(t: Type)(implicit flags: TypeFlags): String = toStringWrapped(t, "")(flags)
-  
-  def toStringWrapped(t: Type, sep: String)(implicit flags: TypeFlags): String = {
-    t match {
-      case ThisType(symbol) => sep + "Exp[" + processName(symbol.path) + ".type]"
-      case SingleType(typeRef, symbol) => sep + "Exp[" + processName(symbol.path) + ".type]"
-      
-      case ConstantType(constant) => sep + "Exp[" + (constant match {
-	case null => "scala.Null"
-	case _: Unit => "scala.Unit"
-	case _: Boolean => "scala.Boolean"
-        case _: Byte => "scala.Byte"
-        case _: Char => "scala.Char"
-        case _: Short => "scala.Short"
-        case _: Int => "scala.Int"
-        case _: Long => "scala.Long"
-        case _: Float => "scala.Float"
-        case _: Double => "scala.Double"
-        case _: String => "java.lang.String"
-        case c: Class[_] => "java.lang.Class[" + c.getComponentType.getCanonicalName.replace("$", ".") + "]"
-      })
-
-      case TypeRefType(prefix, symbol, typeArgs) => sep + (symbol.path match {
-	case "scala.<repeated>" => flags match {
-	  case TypeFlags(true) => toStringWrapped(typeArgs.head) + "*"
-	  case _ => "Exp[scala.Seq" + typeArgString(typeArgs) + "]"
-	}
-	case "scala.<byname>" => "=> " + toStringWrapped(typeArgs.head)
-	case _ => {
-	  val path = StringUtil.cutSubstring(symbol.path)(".package")
-	  if (symbol.path.matches("scala.Function\\d")) {
-	    StringUtil.trimStart(processName(path) + typeArgStringWrapped(typeArgs), "<empty>.")
-	  } else {
-	    "Exp[" + StringUtil.trimStart(processName(path) + typeArgString(typeArgs), "<empty>.") + "]"
-	  }
-	}
-      })
-      
-      case _ => toString(t, sep)(flags)
-    }
-  }
-  def typeArgStringWrapped(typeArgs: Seq[Type]): String =
-    if (typeArgs.isEmpty) ""
-    else typeArgs.map(toStringWrapped).map(StringUtil.trimStart(_, "=> ")).mkString("[", ", ", "]")
 
 }

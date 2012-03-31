@@ -9,6 +9,6 @@
    val fil: MethodSymbol => Boolean = s => !(s.name == "<init>" || s.isOverride || s.isPrivate || s.isProtected || s.isSynthetic || s.name.contains("$"))
    val symbols = getMethodSymbols(classSymbol, scalaSig, fil)
    symbols foreach ( n => { %>
-    ${getClassifier(n)} ${n.name}${unescape(getTypeParameters(n))}${getParametersAsString(n)}: ${getResultType(n)} = onExp(t${getParameterNamesAsString(n)})('${n.name},_ ${n.name}${getParameterNamesAsString(n, "(", ")", true, true)})
+    ${getClassifier(n)} ${n.name}${unescape(getTypeParameters(n))}${getParametersAsString(n)}: ${getResultType(n)} = onExp(t${getParameterNamesAsString(n, ",", "")})('${n.name},_ ${n.name}${getParameterNamesAsString(n, transform=toUnderscore)})
 <% }) %>
   }
