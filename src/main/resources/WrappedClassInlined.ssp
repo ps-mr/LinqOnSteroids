@@ -1,0 +1,28 @@
+#import(ivm.generation.ScalaSigHelpers._)
+#import(tools.scalap.scalax.rules.scalasig.MethodSymbol)
+<%@ val classFile: String %>
+<% val className = classFile.split("\\.").last %>
+  implicit def expTo${className}Ops(t: Exp[${className}]) = new ${className}Ops(t)
+  class ${className}Ops(t: Exp[${className}]) {
+<% val scalaSig = getScalaSig(classFile)
+   val classSymbol = scalaSig.topLevelClasses.head
+   val fil: MethodSymbol => Boolean = s => !(s.name == "<init>" || s.isOverride || s.isPrivate || s.isProtected || s.isSynthetic || s.name.contains("$"))
+   val symbols = getMethodSymbols(classSymbol, scalaSig, fil)
+   var i = 0
+   symbols foreach ( n => { %>
+    def ${n.name}${unescape(getTypeParameters(n))}${getParametersAsString(n)}: ${getResultType(n)} = new ${className}_${n.name}${i}(t${getParameterNamesAsString(n, ",", "")})
+<% i = i+1}) %>
+  }
+<% i = 0
+   symbols foreach ( n => { 
+     val wName = className + "_" + n.name + i
+     val paramsDef = getParametersAsString(n, true, ",", "", ",", implicits = false)
+     val paramsToPass = getParameterNamesAsString(n, ",", "")
+     val paramTypes = getParameterNamesAsString(n, ",", "")
+     val arity = getNumberOfParameters(n) + 1
+%>
+  case class ${wName}${unescape(getTypeParameters(n))}(t: Exp[${className}]${paramsDef}) extends Arity${arity}Op[Exp[${className}]${getParameterTypesAsString(n, ",", "")},${getResultType(n, false)},${wName}${getTypeArgs(n)}](t${paramTypes}) {
+    def interpret() = t.interpret().${n.name}${getParameterNamesAsString(n, transform = x => x + ".interpret()")}
+    def copy(t: Exp[${className}]${paramsDef}) = new ${wName}(t${paramsToPass})
+  }
+<% i = i+1}) %>
