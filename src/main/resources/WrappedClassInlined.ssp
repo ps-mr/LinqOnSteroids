@@ -10,7 +10,7 @@
    val symbols = getMethodSymbols(classSymbol, scalaSig, fil)
    var i = 0
    symbols foreach ( n => { %>
-    ${getClassifier(n)} ${n.name}${unescape(getTypeParameters(n))}${getParametersAsString(n)}: ${getResultType(n)} = new ${className}_${n.name}${i}(t${getParameterNamesAsString(n, ",", "")})
+    def ${n.name}${unescape(getTypeParameters(n))}${getParametersAsString(n)}: ${getResultType(n)} = new ${className}_${n.name}${i}(t${getParameterNamesAsString(n, ",", "")})
 <% i = i+1}) %>
   }
 <% i = 0
