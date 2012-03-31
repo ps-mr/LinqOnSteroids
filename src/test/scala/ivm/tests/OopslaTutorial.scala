@@ -3,7 +3,7 @@ package tests
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-import expressiontree.{Exp, Lifting}
+import expressiontree.{SampleLibraryLifting, Exp, Lifting}
 import Lifting._
 
 /**
@@ -12,18 +12,9 @@ import Lifting._
  */
 
 //New example, discussed with Christian.
-object SampleLibrary {
-  case class Author(firstName: String, lastName: String)
-  case class Book(title: String, publisher: String, authors: Seq[Author]) //price: Decimal ?
-  case class Result(title: String, authorName: String, coauthors: Int)
-}
-
-object SampleLibraryLifting {
-  //XXX to gen.
-}
 
 class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
-  import SampleLibrary._
+  import sampleapp._
   val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "ACM" /*"Pearson Education"*/, Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
   val recordsOld = for {
     book <- books
