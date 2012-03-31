@@ -3,7 +3,7 @@ package tests
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-import expressiontree.{SampleLibraryLifting, Exp, Lifting}
+import expressiontree._
 import Lifting._
 
 /**
@@ -21,16 +21,17 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
     if book.publisher == "ACM"
     author <- book.authors
   } yield (book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
-  val records = for {
-    book <- books
-    if book.publisher == "ACM"
-    author <- book.authors
-  } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
   val processedRecordsOld = for {
     record <- recordsOld
     if record._1.startsWith("The")
   } yield (record._1, record._2)
+
+  val records = for {
+    book <- books
+    if book.publisher == "ACM"
+    author <- book.authors
+  } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
   def titleFilter(records: Set[Result], keyword: String): Set[(String, String)] = for {
     record <- records
