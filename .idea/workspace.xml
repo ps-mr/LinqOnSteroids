@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="b17c806b-e12f-4a90-823c-dcf67b529430" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build.sbt" afterPath="$PROJECT_DIR$/build.sbt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/scala/performancetests/Benchmarking.scala" afterPath="$PROJECT_DIR$/src/test/scala/performancetests/Benchmarking.scala" />
     </list>
@@ -179,28 +177,19 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="FuncExp.scala" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="FuncExp.scala" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/FuncExp.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="107" column="80" selection-start="4599" selection-end="4603" vertical-scroll-proportion="0.0">
+            <state line="107" column="76" selection-start="4599" selection-end="4599" vertical-scroll-proportion="0.45378152">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="tupleSupport.ssp" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/resources/tupleSupport.ssp">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="8" column="47" selection-start="193" selection-end="193" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="OopslaTutorial.scala" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="OopslaTutorial.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/tests/OopslaTutorial.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="16" column="20" selection-start="361" selection-end="361" vertical-scroll-proportion="0.6366048">
+            <state line="16" column="20" selection-start="361" selection-end="361" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -219,9 +208,7 @@
         <entry file="file://$PROJECT_DIR$/project/Generator.scala">
           <provider selected="true" editor-type-id="text-editor">
             <state line="33" column="4" selection-start="1297" selection-end="1297" vertical-scroll-proportion="0.0">
-              <folding>
-                <element signature="e#0#52#0" expanded="true" />
-              </folding>
+              <folding />
             </state>
           </provider>
         </entry>
@@ -372,6 +359,8 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scope" />
+      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -380,10 +369,18 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="linqonsteroids" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="linqonsteroids" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
-      <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -823,20 +820,20 @@
       <method />
     </configuration>
     <list size="14">
-      <item index="0" class="java.lang.String" itemvalue="ScalaTest.ivm tests" />
-      <item index="1" class="java.lang.String" itemvalue="ScalaTest.ivm.expressiontree tests" />
-      <item index="2" class="java.lang.String" itemvalue="ScalaTest.BasicTests" />
-      <item index="3" class="java.lang.String" itemvalue="ScalaTest.All Tests" />
-      <item index="4" class="java.lang.String" itemvalue="ScalaTest.Tutorial" />
-      <item index="5" class="java.lang.String" itemvalue="ScalaTest.FindBugsAnalyses" />
-      <item index="6" class="java.lang.String" itemvalue="ScalaTest.ReificationTests" />
-      <item index="7" class="java.lang.String" itemvalue="ScalaTest.performancetests tests" />
-      <item index="8" class="java.lang.String" itemvalue="ScalaTest.SubquerySharingTests" />
-      <item index="9" class="java.lang.String" itemvalue="ScalaTest.ReificationTests.testr" />
-      <item index="10" class="java.lang.String" itemvalue="ScalaTest.BasicTests.testOpalWithIndexing" />
-      <item index="11" class="java.lang.String" itemvalue="ScalaTest.FindBugsAnalyses.ExplicitGC" />
-      <item index="12" class="java.lang.String" itemvalue="ScalaTest.OptimTests.testMapToFlatMapAndBack" />
-      <item index="13" class="java.lang.String" itemvalue="ScalaTest.SampleQuery" />
+      <item index="0" class="java.lang.String" itemvalue="ScalaTest.ReificationTests.testr" />
+      <item index="1" class="java.lang.String" itemvalue="ScalaTest.BasicTests.testOpalWithIndexing" />
+      <item index="2" class="java.lang.String" itemvalue="ScalaTest.FindBugsAnalyses.ExplicitGC" />
+      <item index="3" class="java.lang.String" itemvalue="ScalaTest.OptimTests.testMapToFlatMapAndBack" />
+      <item index="4" class="java.lang.String" itemvalue="ScalaTest.SampleQuery" />
+      <item index="5" class="java.lang.String" itemvalue="ScalaTest.ivm tests" />
+      <item index="6" class="java.lang.String" itemvalue="ScalaTest.ivm.expressiontree tests" />
+      <item index="7" class="java.lang.String" itemvalue="ScalaTest.BasicTests" />
+      <item index="8" class="java.lang.String" itemvalue="ScalaTest.All Tests" />
+      <item index="9" class="java.lang.String" itemvalue="ScalaTest.Tutorial" />
+      <item index="10" class="java.lang.String" itemvalue="ScalaTest.FindBugsAnalyses" />
+      <item index="11" class="java.lang.String" itemvalue="ScalaTest.ReificationTests" />
+      <item index="12" class="java.lang.String" itemvalue="ScalaTest.performancetests tests" />
+      <item index="13" class="java.lang.String" itemvalue="ScalaTest.SubquerySharingTests" />
     </list>
     <configuration name="&lt;template&gt;" type="WebApp" default="true" selected="false">
       <Host>localhost</Host>
@@ -906,11 +903,10 @@
     <frame x="0" y="22" width="1280" height="720" extended-state="6" />
     <editor active="false" />
     <layout>
-      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3002944" sideWeight="0.32061687" order="8" side_tool="false" content_ui="tabs" x="24" y="282" width="1231" height="195" />
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.2992" sideWeight="0.32061687" order="8" side_tool="false" content_ui="tabs" x="24" y="282" width="1231" height="195" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33693972" sideWeight="0.496875" order="1" side_tool="false" content_ui="tabs" x="24" y="281" width="1231" height="197" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24837662" sideWeight="0.656051" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="SBT Console" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2976" sideWeight="0.9131514" order="9" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="723" />
+      <window_info id="SBT Console" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3296" sideWeight="0.0" order="9" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="723" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.44" sideWeight="0.4946581" order="3" side_tool="false" content_ui="combo" x="28" y="203" width="1231" height="354" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33693972" sideWeight="0.49765626" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32905984" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
@@ -919,13 +915,14 @@
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.49427083" sideWeight="0.5690979" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32954547" sideWeight="0.67038214" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39935064" sideWeight="0.6576433" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3249595" sideWeight="0.7024" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3273906" sideWeight="0.6704" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4272" sideWeight="0.47702992" order="2" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="716" />
       <window_info id="Documentation" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="723" />
       <window_info id="Analyze Dataflow from" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24939074" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33693972" sideWeight="0.496875" order="1" side_tool="false" content_ui="tabs" x="24" y="281" width="1231" height="197" />
       <window_info id="Analyze Dataflow to" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32890365" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32615894" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Module Dependencies" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32981315" sideWeight="0.67132866" order="4" side_tool="false" content_ui="tabs" />
@@ -1047,13 +1044,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/expressiontree/TypeTests.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="99" column="0" selection-start="4276" selection-end="4276" vertical-scroll-proportion="0.0">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar://$USER_HOME$/.ivy2/cache/org.scala-lang/scala-library/srcs/scala-library-2.9.1-sources.jar!/scala/collection/immutable/IntMap.scala">
       <provider selected="true" editor-type-id="text-editor">
         <state line="157" column="32" selection-start="5673" selection-end="5673" vertical-scroll-proportion="5.8076925">
@@ -1063,16 +1053,44 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/resources/tupleSupport.ssp">
+    <entry file="file://$PROJECT_DIR$/src/main/resources/WrappedClass.ssp">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="8" column="47" selection-start="193" selection-end="193" vertical-scroll-proportion="0.0">
+        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#1#7#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/resources/BATGenerator.ssp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="19" column="68" selection-start="580" selection-end="580" vertical-scroll-proportion="0.7307692" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/tupleSupport.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="147" column="63" selection-start="5928" selection-end="5928" vertical-scroll-proportion="5.331565">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/FuncExp.scala">
+    <entry file="jar://$USER_HOME$/.ivy2/cache/org.scalatest/scalatest_2.9.0/srcs/scalatest_2.9.0-1.6.1-sources.jar!/org/scalatest/FunSuite.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="107" column="80" selection-start="4599" selection-end="4603" vertical-scroll-proportion="0.0">
+        <state line="1210" column="16" selection-start="46017" selection-end="46017" vertical-scroll-proportion="0.25">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/tests/OopslaTutorial.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="16" column="20" selection-start="361" selection-end="361" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/expressiontree/TypeTests.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="99" column="0" selection-start="4276" selection-end="4276" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
@@ -1091,42 +1109,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/resources/WrappedClass.ssp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
-          <folding>
-            <element signature="e#1#7#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/resources/BATGenerator.ssp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="19" column="68" selection-start="580" selection-end="580" vertical-scroll-proportion="0.7307692">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/tupleSupport.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="147" column="63" selection-start="5928" selection-end="5928" vertical-scroll-proportion="5.331565">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.ivy2/cache/org.scalatest/scalatest_2.9.0/srcs/scalatest_2.9.0-1.6.1-sources.jar!/org/scalatest/FunSuite.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="1210" column="16" selection-start="46017" selection-end="46017" vertical-scroll-proportion="0.25">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/project/Generator.scala">
       <provider selected="true" editor-type-id="text-editor">
         <state line="33" column="4" selection-start="1297" selection-end="1297" vertical-scroll-proportion="0.0">
-          <folding>
-            <element signature="e#0#52#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -1137,9 +1123,16 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/tests/OopslaTutorial.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/resources/tupleSupport.ssp">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="16" column="20" selection-start="361" selection-end="361" vertical-scroll-proportion="0.6366048">
+        <state line="8" column="47" selection-start="193" selection-end="193" vertical-scroll-proportion="0.039893616">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/FuncExp.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="107" column="76" selection-start="4599" selection-end="4599" vertical-scroll-proportion="0.45378152">
           <folding />
         </state>
       </provider>
@@ -1209,11 +1202,11 @@
       </state>
       <state key="ProjectLibrariesConfigurable.UI">
         <settings>
-          <last-edited>bat-1.6.0.RC1.jar</last-edited>
+          <last-edited>org.scala-lang_scala-library_2.9.1</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
-                <option value="0.20000002" />
+                <option value="0.35310733" />
               </list>
             </option>
           </splitter-proportions>
