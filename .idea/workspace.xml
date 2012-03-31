@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b17c806b-e12f-4a90-823c-dcf67b529430" name="Default" comment="Transform messages into">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/IVMResearchDiary.txt" afterPath="$PROJECT_DIR$/IVMResearchDiary.txt" />
+    <list default="true" id="b17c806b-e12f-4a90-823c-dcf67b529430" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build.sbt" afterPath="$PROJECT_DIR$/build.sbt" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/scala/ivm/performancetests/Benchmarking.scala" afterPath="$PROJECT_DIR$/src/test/scala/ivm/performancetests/Benchmarking.scala" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/test/scala/performancetests/Benchmarking.scala" afterPath="$PROJECT_DIR$/src/test/scala/performancetests/Benchmarking.scala" />
     </list>
     <ignored path="linqonsteroids.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -28,20 +29,7 @@
   </component>
   <component name="DebuggerManager">
     <line_breakpoints>
-      <breakpoint url="file://$PROJECT_DIR$/src/test/scala/ivm/opaltests/FindBugsAnalyses.scala" line="557" class="ivm.opaltests.FindBugsAnalyses" package="">
-        <option name="ENABLED" value="true" />
-        <option name="LOG_ENABLED" value="false" />
-        <option name="LOG_EXPRESSION_ENABLED" value="false" />
-        <option name="SUSPEND_POLICY" value="SuspendAll" />
-        <option name="COUNT_FILTER_ENABLED" value="false" />
-        <option name="COUNT_FILTER" value="0" />
-        <option name="CONDITION_ENABLED" value="false" />
-        <option name="CLASS_FILTERS_ENABLED" value="false" />
-        <option name="INSTANCE_FILTERS_ENABLED" value="false" />
-        <option name="CONDITION" value="&#13;&#13;Scala" />
-        <option name="LOG_MESSAGE" value="&#13;&#13;Scala" />
-      </breakpoint>
-      <breakpoint url="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/Optimization.scala" line="455" class="ivm.optimization.Optimization" package="">
+      <breakpoint url="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/SubquerySharing.scala" line="343" class="ivm.optimization.SubquerySharing" package="">
         <option name="ENABLED" value="true" />
         <option name="LOG_ENABLED" value="false" />
         <option name="LOG_EXPRESSION_ENABLED" value="false" />
@@ -54,7 +42,7 @@
         <option name="CONDITION" value="" />
         <option name="LOG_MESSAGE" value="" />
       </breakpoint>
-      <breakpoint url="file://$PROJECT_DIR$/src/test/scala/ivm/opaltests/BasicTests.scala" line="394" class="ivm.opaltests.BasicTests" package="">
+      <breakpoint url="file://$PROJECT_DIR$/src/test/scala/performancetests/opaltests/BasicTests.scala" line="452" class="performancetests.opaltests.BasicTests" package="">
         <option name="ENABLED" value="true" />
         <option name="LOG_ENABLED" value="false" />
         <option name="LOG_EXPRESSION_ENABLED" value="false" />
@@ -64,13 +52,39 @@
         <option name="CONDITION_ENABLED" value="false" />
         <option name="CLASS_FILTERS_ENABLED" value="false" />
         <option name="INSTANCE_FILTERS_ENABLED" value="false" />
-        <option name="CONDITION" value="&#13;&#13;Scala" />
-        <option name="LOG_MESSAGE" value="&#13;&#13;Scala" />
+        <option name="CONDITION" value="" />
+        <option name="LOG_MESSAGE" value="" />
+      </breakpoint>
+      <breakpoint url="file://$PROJECT_DIR$/src/test/scala/ivm/optimization/OptimTests.scala" line="140" class="ivm.optimization.OptimTests" package="">
+        <option name="ENABLED" value="true" />
+        <option name="LOG_ENABLED" value="false" />
+        <option name="LOG_EXPRESSION_ENABLED" value="false" />
+        <option name="SUSPEND_POLICY" value="SuspendAll" />
+        <option name="COUNT_FILTER_ENABLED" value="false" />
+        <option name="COUNT_FILTER" value="0" />
+        <option name="CONDITION_ENABLED" value="false" />
+        <option name="CLASS_FILTERS_ENABLED" value="false" />
+        <option name="INSTANCE_FILTERS_ENABLED" value="false" />
+        <option name="CONDITION" value="" />
+        <option name="LOG_MESSAGE" value="" />
+      </breakpoint>
+      <breakpoint url="jar://$USER_HOME$/.ivy2/cache/org.scalatest/scalatest_2.9.0/srcs/scalatest_2.9.0-1.6.1-sources.jar!/org/scalatest/matchers/Matchers.scala" line="5091" class="org.scalatest.matchers.Matchers.BeWord$&lt;anonymous&gt;" package="">
+        <option name="ENABLED" value="true" />
+        <option name="LOG_ENABLED" value="false" />
+        <option name="LOG_EXPRESSION_ENABLED" value="false" />
+        <option name="SUSPEND_POLICY" value="SuspendAll" />
+        <option name="COUNT_FILTER_ENABLED" value="false" />
+        <option name="COUNT_FILTER" value="0" />
+        <option name="CONDITION_ENABLED" value="false" />
+        <option name="CLASS_FILTERS_ENABLED" value="false" />
+        <option name="INSTANCE_FILTERS_ENABLED" value="false" />
+        <option name="CONDITION" value="" />
+        <option name="LOG_MESSAGE" value="" />
       </breakpoint>
     </line_breakpoints>
     <breakpoint_any>
       <breakpoint>
-        <option name="NOTIFY_CAUGHT" value="true" />
+        <option name="NOTIFY_CAUGHT" value="false" />
         <option name="NOTIFY_UNCAUGHT" value="true" />
         <option name="ENABLED" value="true" />
         <option name="LOG_ENABLED" value="false" />
@@ -101,7 +115,7 @@
         <option name="LOG_MESSAGE" value="&#13;&#13;JAVA" />
       </breakpoint>
       <breakpoint>
-        <option name="NOTIFY_CAUGHT" value="true" />
+        <option name="NOTIFY_CAUGHT" value="false" />
         <option name="NOTIFY_UNCAUGHT" value="true" />
         <option name="ENABLED" value="true" />
         <option name="LOG_ENABLED" value="false" />
@@ -159,62 +173,81 @@
   <component name="FavoritesManager">
     <favorites_list name="linqonsteroids">
       <favorite_root url="file://$PROJECT_DIR$/src/test/scala/ivm/tests/Tutorial.scala" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
-      <favorite_root url="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/SimpleOpenEncoding.scala" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
+      <favorite_root url="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/simpleOpenEncoding.scala" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
       <favorite_root url="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Exp.scala" type="psiFile" klass="com.intellij.ide.projectView.impl.nodes.PsiFileNode" />
     </favorites_list>
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="BasicTests.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/opaltests/BasicTests.scala">
+      <file leaf-file-name="FuncExp.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/FuncExp.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="400" column="0" selection-start="14523" selection-end="14523" vertical-scroll-proportion="0.0">
+            <state line="107" column="80" selection-start="4599" selection-end="4603" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="tupleSupport.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/tupleSupport.scala">
+      <file leaf-file-name="tupleSupport.ssp" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/resources/tupleSupport.ssp">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="1" column="0" selection-start="40" selection-end="40" vertical-scroll-proportion="0.0">
+            <state line="8" column="47" selection-start="193" selection-end="193" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="OopslaTutorial.scala" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/tests/OopslaTutorial.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="16" column="20" selection-start="361" selection-end="361" vertical-scroll-proportion="0.6366048">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="BATGenerator.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/BATGenerator.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="13" column="7" selection-start="339" selection-end="339" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Generator.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/project/Generator.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="33" column="4" selection-start="1297" selection-end="1297" vertical-scroll-proportion="0.0">
               <folding>
-                <marker date="1329691470000" expanded="true" signature="49:15680" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="868:1229" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="2289:2954" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="3852:3888" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="5041:5069" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="5257:5269" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="5551:5605" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="7489:7523" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="8017:15553" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="8500:8651" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="9168:9332" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="9820:10128" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="10802:11010" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="11729:12121" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="12869:13140" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="13558:13801" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="14310:14681" placeholder="{...}" />
-                <marker date="1329691470000" expanded="true" signature="15131:15522" placeholder="{...}" />
+                <element signature="e#0#52#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ExpNodeHelpers.scala" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/ExpNodeHelpers.scala">
+      <file leaf-file-name="expNodeHelpers.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/expNodeHelpers.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="12" column="27" selection-start="400" selection-end="400" vertical-scroll-proportion="0.122340426">
+            <state line="9" column="6" selection-start="290" selection-end="290" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="TraversableOperators.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/TraversableOperators.scala">
+      <file leaf-file-name="Exp.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Exp.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="14" column="0" selection-start="606" selection-end="606" vertical-scroll-proportion="0.0">
+            <state line="18" column="22" selection-start="489" selection-end="489" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="TypeTests.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/expressiontree/TypeTests.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="99" column="0" selection-start="4276" selection-end="4276" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -234,22 +267,22 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Call4.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Call5.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/generation/Generator.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/TraversableOps.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/0_generated/tupleSupport.scala" />
-        <option value="$PROJECT_DIR$/project/project/Generator.scala" />
-        <option value="$PROJECT_DIR$/src/main/resources/tupleSupport.ssp" />
-        <option value="$PROJECT_DIR$/src/test/scala/ivm/tests/Tutorial.scala" />
-        <option value="$PROJECT_DIR$/project/Build.scala" />
-        <option value="$PROJECT_DIR$/build.sbt" />
-        <option value="$PROJECT_DIR$/project/plugins.sbt" />
-        <option value="$PROJECT_DIR$/project/Generator.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/SimpleOpenEncoding.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Call2.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Lifting.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/maintain.scala" />
+        <option value="$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/BATGenerator.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/traversableOps.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/optimization/Optimization.scala" />
+        <option value="$PROJECT_DIR$/src/test/scala/performancetests/opaltests/BasicTests.scala" />
+        <option value="$PROJECT_DIR$/src/test/scala/ivm/expressiontree/TypeTests.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/FuncExp.scala" />
         <option value="$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/tupleSupport.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/ExpNodeHelpers.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Exp.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/expNodeHelpers.scala" />
+        <option value="$PROJECT_DIR$/src/main/resources/BATGenerator.ssp" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/generation/ScalaSigHelpers.scala" />
+        <option value="$PROJECT_DIR$/src/main/resources/WrappedClass.ssp" />
+        <option value="$PROJECT_DIR$/project/Generator.scala" />
+        <option value="$PROJECT_DIR$/src/test/scala/ivm/tests/OopslaTutorial.scala" />
       </list>
     </option>
   </component>
@@ -266,7 +299,7 @@
   <component name="ProjectFrameBounds">
     <option name="y" value="22" />
     <option name="width" value="1280" />
-    <option name="height" value="721" />
+    <option name="height" value="720" />
   </component>
   <component name="ProjectInspectionProfilesVisibleTreeState">
     <entry key="Project Default">
@@ -276,33 +309,30 @@
             <id />
           </State>
           <State>
-            <id>Class structure</id>
+            <id>Internationalization issues</id>
           </State>
           <State>
-            <id>Code style issues</id>
+            <id>Java language level migration aids</id>
           </State>
           <State>
-            <id>Inheritance issues</id>
+            <id>Javadoc issues</id>
           </State>
           <State>
-            <id>JUnit issues</id>
+            <id>Naming conventions</id>
           </State>
           <State>
-            <id>Java language level issues</id>
+            <id>RELAX NG</id>
           </State>
           <State>
-            <id>Probable bugs</id>
+            <id>XPath</id>
           </State>
           <State>
-            <id>Security issues</id>
-          </State>
-          <State>
-            <id>Threading issues</id>
+            <id>XSLT</id>
           </State>
         </expanded-state>
         <selected-state>
           <State>
-            <id>DesignForExtension</id>
+            <id>ParameterNameDiffersFromOverriddenParameter</id>
           </State>
         </selected-state>
       </profile-state>
@@ -319,7 +349,7 @@
     <ConfirmationsSetting value="0" id="Remove" />
   </component>
   <component name="ProjectReloadState">
-    <option name="STATE" value="2" />
+    <option name="STATE" value="0" />
   </component>
   <component name="ProjectStructureProblems">
     <ignored-problems>
@@ -350,140 +380,6 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
             </PATH_ELEMENT>
           </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="target" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="main" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="scala" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ivm" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="main" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="scala" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="ivm" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="expressiontree" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="main" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="resources" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="linqonsteroids" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="main" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
         </subPane>
       </pane>
       <pane id="Scope" />
@@ -491,7 +387,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.last.edited" value="Libraries" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth0" value="90" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth1" value="99" />
     <property name="project.structure.proportion" value="0.15" />
@@ -501,7 +397,7 @@
     <property name="MemberChooser.sorted" value="false" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth0" value="96" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder0" value="0" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../PS-Repo/Teaching/webtec/solutions/Sol3b" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../BAT/src/demo/de/tud/cs/st/bat/resolved/analyses" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth2" value="103" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth3" value="895" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth3" value="897" />
@@ -519,51 +415,34 @@
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder3" value="3" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder1" value="1" />
     <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder2" value="2" />
-    <property name="options.lastSelected" value="net.orfjackal.sbt.plugin.settings.SbtConfigurable" />
-    <property name="project.structure.side.proportion" value="0.2" />
+    <property name="options.lastSelected" value="preferences.editor" />
+    <property name="project.structure.side.proportion" value="0.20000002" />
     <property name="MemberChooser.copyJavadoc" value="false" />
     <property name="dynamic.classpath" value="false" />
     <property name="options.searchVisible" value="true" />
   </component>
   <component name="RecentsManager">
+    <key name="MoveMembersDialog.RECENTS_KEY">
+      <recent name="ivm.expressiontree.ClassUtil" />
+    </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="ivm.tests" />
+      <recent name="" />
+      <recent name="performancetests" />
       <recent name="ivm.expressiontree" />
       <recent name="ivm.optimization" />
-      <recent name="ivm.performancetests" />
-      <recent name="ivm.tests" />
-      <recent name="ivm" />
     </key>
   </component>
-  <component name="RunManager" selected="ScalaTest.All Tests">
-    <configuration default="false" name="BooleanOperatorTests" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
+  <component name="RunManager" selected="ScalaTest.SampleQuery">
+    <configuration default="false" name="ReificationTests.testr" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
       <module name="default-1aacbc" />
-      <setting name="path" value="ivm.expressiontree.BooleanOperatorTests" />
-      <setting name="package" value="" />
-      <setting name="vmparams" value="" />
-      <setting name="params" value="" />
-      <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <setting name="searchForTest" value="Across module dependencies" />
-      <setting name="testName" value="" />
-      <setting name="testKind" value="Class" />
-      <RunnerSettings RunnerId="Debug">
-        <option name="DEBUG_PORT" value="" />
-        <option name="TRANSPORT" value="0" />
-        <option name="LOCAL" value="true" />
-      </RunnerSettings>
-      <RunnerSettings RunnerId="Run" />
-      <ConfigurationWrapper RunnerId="Debug" />
-      <ConfigurationWrapper RunnerId="Run" />
-      <method />
-    </configuration>
-    <configuration default="false" name="FindBugsAnalyses.SerializableNoConstructor" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
-      <module name="default-1aacbc" />
-      <setting name="path" value="ivm.opaltests.FindBugsAnalyses" />
+      <setting name="path" value="ivm.tests.ReificationTests" />
       <setting name="package" value="" />
       <setting name="vmparams" value="" />
       <setting name="params" value="" />
       <setting name="workingDirectory" value="$PROJECT_DIR$" />
       <setting name="searchForTest" value="Across module dependencies" />
-      <setting name="testName" value="SerializableNoConstructor" />
+      <setting name="testName" value="testr" />
       <setting name="testKind" value="Test name" />
       <RunnerSettings RunnerId="Debug">
         <option name="DEBUG_PORT" value="" />
@@ -575,23 +454,9 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="BasicTests.testOpal" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
-      <module name="default-1aacbc" />
-      <setting name="path" value="ivm.opaltests.BasicTests" />
-      <setting name="package" value="" />
-      <setting name="vmparams" value="" />
-      <setting name="params" value="" />
-      <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <setting name="searchForTest" value="Across module dependencies" />
-      <setting name="testName" value="testOpal" />
-      <setting name="testKind" value="Test name" />
-      <RunnerSettings RunnerId="Run" />
-      <ConfigurationWrapper RunnerId="Run" />
-      <method />
-    </configuration>
     <configuration default="false" name="BasicTests.testOpalWithIndexing" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
       <module name="default-1aacbc" />
-      <setting name="path" value="ivm.opaltests.BasicTests" />
+      <setting name="path" value="performancetests.opaltests.BasicTests" />
       <setting name="package" value="" />
       <setting name="vmparams" value="" />
       <setting name="params" value="" />
@@ -609,22 +474,52 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="CallTests.testCalls" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
+    <configuration default="false" name="FindBugsAnalyses.ExplicitGC" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
       <module name="default-1aacbc" />
-      <setting name="path" value="ivm.tests.CallTests" />
+      <setting name="path" value="performancetests.opaltests.FindBugsAnalyses" />
       <setting name="package" value="" />
       <setting name="vmparams" value="" />
       <setting name="params" value="" />
       <setting name="workingDirectory" value="$PROJECT_DIR$" />
       <setting name="searchForTest" value="Across module dependencies" />
-      <setting name="testName" value="testCalls" />
+      <setting name="testName" value="ExplicitGC" />
+      <setting name="testKind" value="Test name" />
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="OptimTests.testMapToFlatMapAndBack" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
+      <module name="default-1aacbc" />
+      <setting name="path" value="ivm.optimization.OptimTests" />
+      <setting name="package" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="params" value="" />
+      <setting name="workingDirectory" value="$PROJECT_DIR$" />
+      <setting name="searchForTest" value="Across module dependencies" />
+      <setting name="testName" value="testMapToFlatMapAndBack" />
       <setting name="testKind" value="Test name" />
       <RunnerSettings RunnerId="Debug">
         <option name="DEBUG_PORT" value="" />
         <option name="TRANSPORT" value="0" />
         <option name="LOCAL" value="true" />
       </RunnerSettings>
+      <RunnerSettings RunnerId="Run" />
       <ConfigurationWrapper RunnerId="Debug" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <configuration default="false" name="SampleQuery" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true">
+      <module name="default-1aacbc" />
+      <setting name="path" value="ivm.tests.SampleQuery" />
+      <setting name="package" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="params" value="" />
+      <setting name="workingDirectory" value="$PROJECT_DIR$" />
+      <setting name="searchForTest" value="Across module dependencies" />
+      <setting name="testName" value="" />
+      <setting name="testKind" value="Class" />
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
     <configuration default="true" type="Remote" factoryName="Remote">
@@ -744,10 +639,25 @@
         <option name="SBT.BeforeRunTask" enabled="true" action="test:compile" runInCurrentModule="false" />
       </method>
     </configuration>
-    <configuration default="false" name="ivm.tests tests" type="ScalaTestRunConfiguration" factoryName="ScalaTest">
+    <configuration default="true" type="ScalaScriptRunConfiguration" factoryName="Scala Script">
+      <module name="" />
+      <setting name="path" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="consoleargs" value="" />
+      <setting name="params" value="" />
+      <setting name="workingDirectory" value="$PROJECT_DIR$" />
+      <method>
+        <option name="AntTarget" enabled="false" />
+        <option name="BuildArtifacts" enabled="false" />
+        <option name="Make" enabled="true" />
+        <option name="Maven.BeforeRunTask" enabled="false" />
+        <option name="SBT.BeforeRunTask" enabled="false" runInCurrentModule="false" />
+      </method>
+    </configuration>
+    <configuration default="false" name="ivm tests" type="ScalaTestRunConfiguration" factoryName="ScalaTest">
       <module name="default-1aacbc" />
       <setting name="path" value="" />
-      <setting name="package" value="ivm.tests" />
+      <setting name="package" value="ivm" />
       <setting name="vmparams" value="" />
       <setting name="params" value="" />
       <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -786,7 +696,7 @@
     </configuration>
     <configuration default="false" name="BasicTests" type="ScalaTestRunConfiguration" factoryName="ScalaTest">
       <module name="default-1aacbc" />
-      <setting name="path" value="ivm.opaltests.BasicTests" />
+      <setting name="path" value="performancetests.opaltests.BasicTests" />
       <setting name="package" value="" />
       <setting name="vmparams" value="" />
       <setting name="params" value="" />
@@ -807,14 +717,20 @@
     <configuration default="false" name="All Tests" type="ScalaTestRunConfiguration" factoryName="ScalaTest">
       <module name="default-1aacbc" />
       <setting name="path" value="" />
-      <setting name="package" value="ivm" />
+      <setting name="package" value="" />
       <setting name="vmparams" value="" />
       <setting name="params" value="" />
       <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
       <setting name="searchForTest" value="Across module dependencies" />
       <setting name="testName" value="" />
       <setting name="testKind" value="All in package" />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="" />
+        <option name="TRANSPORT" value="0" />
+        <option name="LOCAL" value="true" />
+      </RunnerSettings>
       <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Debug" />
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
@@ -834,7 +750,7 @@
     </configuration>
     <configuration default="false" name="FindBugsAnalyses" type="ScalaTestRunConfiguration" factoryName="ScalaTest">
       <module name="default-1aacbc" />
-      <setting name="path" value="ivm.opaltests.FindBugsAnalyses" />
+      <setting name="path" value="performancetests.opaltests.FindBugsAnalyses" />
       <setting name="package" value="" />
       <setting name="vmparams" value="" />
       <setting name="params" value="" />
@@ -852,7 +768,7 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="ReificationTests.testq" type="ScalaTestRunConfiguration" factoryName="ScalaTest">
+    <configuration default="false" name="ReificationTests" type="ScalaTestRunConfiguration" factoryName="ScalaTest">
       <module name="default-1aacbc" />
       <setting name="path" value="ivm.tests.ReificationTests" />
       <setting name="package" value="" />
@@ -861,7 +777,7 @@
       <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
       <setting name="searchForTest" value="Across module dependencies" />
       <setting name="testName" value="testq" />
-      <setting name="testKind" value="Test name" />
+      <setting name="testKind" value="Class" />
       <RunnerSettings RunnerId="Debug">
         <option name="DEBUG_PORT" value="" />
         <option name="TRANSPORT" value="0" />
@@ -872,10 +788,10 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <configuration default="false" name="ivm.performancetests tests" type="ScalaTestRunConfiguration" factoryName="ScalaTest">
+    <configuration default="false" name="performancetests tests" type="ScalaTestRunConfiguration" factoryName="ScalaTest">
       <module name="default-1aacbc" />
       <setting name="path" value="" />
-      <setting name="package" value="ivm.performancetests" />
+      <setting name="package" value="performancetests" />
       <setting name="vmparams" value="" />
       <setting name="params" value="" />
       <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -886,20 +802,41 @@
       <ConfigurationWrapper RunnerId="Run" />
       <method />
     </configuration>
-    <list size="13">
-      <item index="0" class="java.lang.String" itemvalue="ScalaTest.BooleanOperatorTests" />
-      <item index="1" class="java.lang.String" itemvalue="ScalaTest.FindBugsAnalyses.SerializableNoConstructor" />
-      <item index="2" class="java.lang.String" itemvalue="ScalaTest.BasicTests.testOpal" />
-      <item index="3" class="java.lang.String" itemvalue="ScalaTest.BasicTests.testOpalWithIndexing" />
-      <item index="4" class="java.lang.String" itemvalue="ScalaTest.CallTests.testCalls" />
-      <item index="5" class="java.lang.String" itemvalue="ScalaTest.ivm.tests tests" />
-      <item index="6" class="java.lang.String" itemvalue="ScalaTest.ivm.expressiontree tests" />
-      <item index="7" class="java.lang.String" itemvalue="ScalaTest.BasicTests" />
-      <item index="8" class="java.lang.String" itemvalue="ScalaTest.All Tests" />
-      <item index="9" class="java.lang.String" itemvalue="ScalaTest.Tutorial" />
-      <item index="10" class="java.lang.String" itemvalue="ScalaTest.FindBugsAnalyses" />
-      <item index="11" class="java.lang.String" itemvalue="ScalaTest.ReificationTests.testq" />
-      <item index="12" class="java.lang.String" itemvalue="ScalaTest.ivm.performancetests tests" />
+    <configuration default="false" name="SubquerySharingTests" type="ScalaTestRunConfiguration" factoryName="ScalaTest">
+      <module name="default-1aacbc" />
+      <setting name="path" value="ivm.tests.SubquerySharingTests" />
+      <setting name="package" value="" />
+      <setting name="vmparams" value="" />
+      <setting name="params" value="" />
+      <setting name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <setting name="searchForTest" value="Across module dependencies" />
+      <setting name="testName" value="" />
+      <setting name="testKind" value="Class" />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="" />
+        <option name="TRANSPORT" value="0" />
+        <option name="LOCAL" value="true" />
+      </RunnerSettings>
+      <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Debug" />
+      <ConfigurationWrapper RunnerId="Run" />
+      <method />
+    </configuration>
+    <list size="14">
+      <item index="0" class="java.lang.String" itemvalue="ScalaTest.ivm tests" />
+      <item index="1" class="java.lang.String" itemvalue="ScalaTest.ivm.expressiontree tests" />
+      <item index="2" class="java.lang.String" itemvalue="ScalaTest.BasicTests" />
+      <item index="3" class="java.lang.String" itemvalue="ScalaTest.All Tests" />
+      <item index="4" class="java.lang.String" itemvalue="ScalaTest.Tutorial" />
+      <item index="5" class="java.lang.String" itemvalue="ScalaTest.FindBugsAnalyses" />
+      <item index="6" class="java.lang.String" itemvalue="ScalaTest.ReificationTests" />
+      <item index="7" class="java.lang.String" itemvalue="ScalaTest.performancetests tests" />
+      <item index="8" class="java.lang.String" itemvalue="ScalaTest.SubquerySharingTests" />
+      <item index="9" class="java.lang.String" itemvalue="ScalaTest.ReificationTests.testr" />
+      <item index="10" class="java.lang.String" itemvalue="ScalaTest.BasicTests.testOpalWithIndexing" />
+      <item index="11" class="java.lang.String" itemvalue="ScalaTest.FindBugsAnalyses.ExplicitGC" />
+      <item index="12" class="java.lang.String" itemvalue="ScalaTest.OptimTests.testMapToFlatMapAndBack" />
+      <item index="13" class="java.lang.String" itemvalue="ScalaTest.SampleQuery" />
     </list>
     <configuration name="&lt;template&gt;" type="WebApp" default="true" selected="false">
       <Host>localhost</Host>
@@ -913,6 +850,7 @@
     </option>
   </component>
   <component name="StructureViewFactory">
+    <option name="AUTOSCROLL_FROM_SOURCE" value="true" />
     <option name="ACTIVE_ACTIONS" value="SHOW_INHERITED" />
   </component>
   <component name="SvnConfiguration" maxAnnotateRevisions="500">
@@ -940,6 +878,7 @@
       <created>1310599212074</created>
       <updated>1310599212074</updated>
     </task>
+    <option name="trackContextForNewChangelist" value="false" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
@@ -964,32 +903,33 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="22" width="1280" height="721" extended-state="6" />
-    <editor active="true" />
+    <frame x="0" y="22" width="1280" height="720" extended-state="6" />
+    <editor active="false" />
     <layout>
-      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3089701" sideWeight="0.32305196" order="8" side_tool="false" content_ui="tabs" x="24" y="282" width="1231" height="195" />
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3002944" sideWeight="0.32061687" order="8" side_tool="false" content_ui="tabs" x="24" y="282" width="1231" height="195" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24939074" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="SBT Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32890365" sideWeight="0.0" order="9" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="723" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.56478405" sideWeight="0.49675325" order="3" side_tool="false" content_ui="combo" x="28" y="203" width="1231" height="354" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32890365" sideWeight="0.66883117" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32954547" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32343236" sideWeight="0.5" order="14" side_tool="false" content_ui="tabs" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39933443" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32954547" sideWeight="0.21096346" order="1" side_tool="true" content_ui="tabs" />
-      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32981315" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39935064" sideWeight="0.641196" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32954547" sideWeight="0.6910299" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3456" sideWeight="0.48701298" order="2" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="716" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33693972" sideWeight="0.496875" order="1" side_tool="false" content_ui="tabs" x="24" y="281" width="1231" height="197" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24837662" sideWeight="0.656051" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="SBT Console" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.2976" sideWeight="0.9131514" order="9" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="723" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.44" sideWeight="0.4946581" order="3" side_tool="false" content_ui="combo" x="28" y="203" width="1231" height="354" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33693972" sideWeight="0.49765626" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32905984" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.31894013" sideWeight="0.5" order="14" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39548576" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.49427083" sideWeight="0.5690979" order="1" side_tool="true" content_ui="tabs" />
+      <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32954547" sideWeight="0.67038214" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39935064" sideWeight="0.6576433" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3249595" sideWeight="0.7024" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4272" sideWeight="0.47702992" order="2" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="716" />
+      <window_info id="Documentation" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="723" />
+      <window_info id="Analyze Dataflow from" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24939074" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.5631229" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" x="24" y="281" width="1231" height="197" />
       <window_info id="Analyze Dataflow to" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32890365" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Analyze Dataflow from" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32615894" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Module Dependencies" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32981315" sideWeight="0.67132866" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Dependency Viewer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32867134" sideWeight="0.5" order="13" side_tool="false" content_ui="tabs" />
-      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24939074" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39933443" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -1086,83 +1026,120 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="jar://$USER_HOME$/.sbt/boot/scala-2.9.1/lib/scala-library.jar!/scala/collection/GenSeqLike.class">
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Lifting.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.sbt/boot/scala-2.9.1/lib/scala-library.jar!/scala/runtime/ScalaRunTime.class">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="jar://$PROJECT_DIR$/lib/bat-1.6.ALPHA.jar!/de/tud/cs/st/bat/resolved/LineNumberTableAttribute.class">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.sbt/boot/scala-2.9.1/lib/scala-library.jar!/scala/collection/IndexedSeqOptimized.class">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="33" column="0" selection-start="3104" selection-end="3104" vertical-scroll-proportion="-2.04" />
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.sbt/boot/scala-2.9.1/lib/scala-library.jar!/scala/collection/mutable/WrappedArray.class">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="32" column="0" selection-start="2895" selection-end="2895" vertical-scroll-proportion="-2.04" />
-      </provider>
-    </entry>
-    <entry file="jar:///Library/Java/JavaVirtualMachines/JDK 1.7.0 Developer Preview.jdk/Contents/Home/src.zip!/java/lang/Object.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="382" column="29" selection-start="18640" selection-end="18640" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.sbt/boot/scala-2.9.1/lib/scala-library.jar!/scala/util/MurmurHash.class">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.ivy2/cache/org.scalatest/scalatest_2.9.0/jars/scalatest_2.9.0-1.6.1.jar!/org/scalatest/Suite.class">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="-0.0">
+        <state line="136" column="13" selection-start="7619" selection-end="7619" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/performancetests/Benchmarking.scala">
+    <entry file="file://$PROJECT_DIR$/src/test/scala/performancetests/opaltests/BasicTests.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="104" column="0" selection-start="3635" selection-end="3635" vertical-scroll-proportion="0.145" />
+        <state line="63" column="5" selection-start="2551" selection-end="2551" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/Optimization.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="176" column="8" selection-start="7760" selection-end="7760" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/expressiontree/TypeTests.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="99" column="0" selection-start="4276" selection-end="4276" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.ivy2/cache/org.scala-lang/scala-library/srcs/scala-library-2.9.1-sources.jar!/scala/collection/immutable/IntMap.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="157" column="32" selection-start="5673" selection-end="5673" vertical-scroll-proportion="5.8076925">
+          <folding>
+            <element signature="e#5726#17064#0" expanded="false" />
+          </folding>
+        </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/resources/tupleSupport.ssp">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/opaltests/BasicTests.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="400" column="0" selection-start="14523" selection-end="14523" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/tupleSupport.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="1" column="0" selection-start="40" selection-end="40" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/TraversableOperators.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="14" column="0" selection-start="606" selection-end="606" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/IncrementalResult.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="20" column="0" selection-start="516" selection-end="516" vertical-scroll-proportion="0.4661017">
+        <state line="8" column="47" selection-start="193" selection-end="193" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/ExpNodeHelpers.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/FuncExp.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="12" column="27" selection-start="400" selection-end="400" vertical-scroll-proportion="0.122340426">
+        <state line="107" column="80" selection-start="4599" selection-end="4603" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Exp.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="18" column="22" selection-start="489" selection-end="489" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/expNodeHelpers.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="9" column="6" selection-start="290" selection-end="290" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/resources/WrappedClass.ssp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#1#7#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/resources/BATGenerator.ssp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="19" column="68" selection-start="580" selection-end="580" vertical-scroll-proportion="0.7307692">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/tupleSupport.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="147" column="63" selection-start="5928" selection-end="5928" vertical-scroll-proportion="5.331565">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.ivy2/cache/org.scalatest/scalatest_2.9.0/srcs/scalatest_2.9.0-1.6.1-sources.jar!/org/scalatest/FunSuite.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="1210" column="16" selection-start="46017" selection-end="46017" vertical-scroll-proportion="0.25">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/project/Generator.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="33" column="4" selection-start="1297" selection-end="1297" vertical-scroll-proportion="0.0">
+          <folding>
+            <element signature="e#0#52#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/target/scala-2.9.1/src_managed/main/BATGenerator.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="13" column="7" selection-start="339" selection-end="339" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/tests/OopslaTutorial.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="16" column="20" selection-start="361" selection-end="361" vertical-scroll-proportion="0.6366048">
           <folding />
         </state>
       </provider>
@@ -1176,7 +1153,7 @@
           <splitter-proportions>
             <option name="proportions">
               <list>
-                <option value="0.2" />
+                <option value="0.20000002" />
               </list>
             </option>
           </splitter-proportions>
@@ -1184,11 +1161,11 @@
       </state>
       <state key="FacetStructureConfigurable.UI">
         <settings>
-          <last-edited>Detection</last-edited>
+          <last-edited>Scala</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
-                <option value="0.2" />
+                <option value="0.20000002" />
               </list>
             </option>
           </splitter-proportions>
@@ -1200,7 +1177,7 @@
           <splitter-proportions>
             <option name="proportions">
               <list>
-                <option value="0.2" />
+                <option value="0.20000002" />
               </list>
             </option>
           </splitter-proportions>
@@ -1212,7 +1189,7 @@
           <splitter-proportions>
             <option name="proportions">
               <list>
-                <option value="0.2" />
+                <option value="0.20000002" />
               </list>
             </option>
           </splitter-proportions>
@@ -1224,7 +1201,7 @@
           <splitter-proportions>
             <option name="proportions">
               <list>
-                <option value="0.2" />
+                <option value="0.20000002" />
               </list>
             </option>
           </splitter-proportions>
@@ -1232,11 +1209,11 @@
       </state>
       <state key="ProjectLibrariesConfigurable.UI">
         <settings>
-          <last-edited>org.slf4j_slf4j-api_1.6.1</last-edited>
+          <last-edited>bat-1.6.0.RC1.jar</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
-                <option value="0.2" />
+                <option value="0.20000002" />
               </list>
             </option>
           </splitter-proportions>
