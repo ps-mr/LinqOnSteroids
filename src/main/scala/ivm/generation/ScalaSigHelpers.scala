@@ -115,6 +115,16 @@ object ScalaSigHelpers {
     }
   }
 
+  def getNumberOfParameters(ms: MethodSymbol, all: Boolean = false): Int = {
+    if (all) {
+      (getParameters(ms) map (_._2.length)).sum
+    } else 
+      getParameters(ms).headOption match {
+	case Some(x) => x._2.length
+	case _       => 0
+      }
+  }
+
   def getParametersAsString(ms: MethodSymbol, wrapped: Boolean = true): String = {
     val p = getParameters(ms, wrapped)
     if (!p.isEmpty) {
@@ -126,11 +136,11 @@ object ScalaSigHelpers {
     else ""
   }
 
-  def getParameterNamesAsString(ms: MethodSymbol, prefix: String = ",", suffix: String = "", wrapped: Boolean = true, placeholders: Boolean = false): String = {
+  def getParameterNamesAsString(ms: MethodSymbol, prefix: String = ",", suffix: String = "", wrapped: Boolean = true, placeholders: Boolean = false, transform: String => String = x => x): String = {
     val p = getParameters(ms, wrapped)
     if (!p.isEmpty) {
       (p map (x => { if (!x._2.isEmpty)
-		    (x._2 map (x => if (placeholders) "_" else x._1)).mkString(prefix, ",", suffix)
+		    (x._2 map (x => if (placeholders) "_" else transform(x._1))).mkString(prefix, ",", suffix)
 		    else ""
       })).fold("")(_ ++ _)
     }
