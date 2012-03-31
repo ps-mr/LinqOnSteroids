@@ -16,13 +16,14 @@ import ivm.expressiontree._<%--
 
 --%>
 object BATLifting {
-<%--
-<% for (c <- List("ClassFile", "ClassMember")) {
+<% for (c <- List("ClassFile", "ObjectType", "Field", "Method", 
+		  "ClassMember", "MethodDescriptor", "Code", "ExceptionHandler")) {
   render("WrappedClassInlined.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))} %>
---%>
+<%--
 <% for(c <- List("ClassFile", "ObjectType", "Field", "Method",
 	         "MethodDescriptor", "Code", "ExceptionHandler")) {
   render("WrappedClass.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))} %>
+--%>
 <%--
 <%
   val classLoader = Thread.currentThread().getContextClassLoader()
@@ -34,30 +35,4 @@ object BATLifting {
   %>
   //${resources.length}
 --%>
-  implicit def expToClassMemberOps(t: Exp[ClassMember]) = new ClassMemberOps(t)
-  class ClassMemberOps(t: Exp[ClassMember]) {
-    def isPublic: Exp[scala.Boolean] = new isPublic
-    def isProtected: Exp[scala.Boolean] = new IsProtected
-    def isPrivate: Exp[scala.Boolean] = new IsPrivate
-    def isStatic: Exp[scala.Boolean] = new IsStatic
-    def isFinal: Exp[scala.Boolean] = new IsFinal
-
-    class isPublic extends Arity0Exp[scala.Boolean] {
-      def interpret() = t.interpret().isPublic
-    }
-    class IsProtected extends Arity0Exp[scala.Boolean] {
-      def interpret() = t.interpret().isProtected
-    }
-    class IsPrivate extends Arity0Exp[scala.Boolean] {
-      def interpret() = t.interpret().isPrivate
-    }
-    class IsStatic extends Arity0Exp[scala.Boolean] {
-      def interpret() = t.interpret().isStatic
-    }
-    class IsFinal extends Arity0Exp[scala.Boolean] {
-      def interpret() = t.interpret().isFinal
-    }
-
-  }
-
 }

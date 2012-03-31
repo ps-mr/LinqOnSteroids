@@ -93,9 +93,10 @@ object ScalaSigHelpers {
 
   def getResultType(ms: MethodSymbol, wrapped: Boolean = true): String = {
     val t = ms.infoType
+    val m = Map("scala.Array" -> "scala.Seq")
     t match {
-      case PolyType(mt, _) => if (wrapped) getWrappedType(mt, Map("scala.Array" -> "scala.Seq")) else getType(mt)
-      case _               => if (wrapped) getWrappedType(t, Map("scala.Array" -> "scala.Seq"))  else getType(t)
+      case PolyType(mt, _) => if (wrapped) getWrappedType(mt, m) else getType(mt, m)
+      case _               => if (wrapped) getWrappedType(t, m)  else getType(t, m)
     }
   }
 
@@ -115,6 +116,13 @@ object ScalaSigHelpers {
     }
   }
 
+  def getTypeArgs(ms: MethodSymbol, prefix: String = "[", suffix: String = "]", sep: String = ","): String = {
+    ms.infoType match {
+      case PolyType(_, typeParams) => (typeParams map (t => t.name)).mkString(prefix, sep, suffix)
+      case _                       => ""
+    }
+  }
+
   def getNumberOfParameters(ms: MethodSymbol, all: Boolean = false): Int = {
     if (all) {
       (getParameters(ms) map (_._2.length)).sum
@@ -125,32 +133,32 @@ object ScalaSigHelpers {
       }
   }
 
-  def getParametersAsString(ms: MethodSymbol, wrapped: Boolean = true): String = {
+  def getParametersAsString(ms: MethodSymbol, wrapped: Boolean = true, prefix: String = "(", suffix: String = ")", sep1: String = ",", sep2: String = ":", implicits: Boolean = true): String = {
     val p = getParameters(ms, wrapped)
     if (!p.isEmpty) {
       (p map (x => {
-	val START = if (x._1) "(implicit " else "("
-	(x._2 map (y => y._1 + ": " + y._2)).mkString(START, ",", ")")
+	val START = if (x._1 && implicits) prefix + "implicit " else prefix
+	(x._2 map (y => y._1 + ": " + y._2)).mkString(START, sep1, suffix)
       })).fold("")(_ ++ _)
     }
     else ""
   }
 
-  def getParameterTypesAsString(ms: MethodSymbol, prefix: String = "[", suffix: String = "]", wrapped: Boolean = true, transform: String => String = x => x): String = {
-    getPartOfParameters(ms, prefix, suffix, wrapped, x => x._2, transform)
+  def getParameterTypesAsString(ms: MethodSymbol, prefix: String = "[", suffix: String = "]", sep: String = ",", wrapped: Boolean = true, transform: String => String = x => x): String = {
+    getPartOfParameters(ms, prefix, suffix, sep, wrapped, x => x._2, transform)
   }
 
-  def getParameterNamesAsString(ms: MethodSymbol, prefix: String = "(", suffix: String = ")", wrapped: Boolean = true, transform: String => String = x => x): String = {
-    getPartOfParameters(ms, prefix, suffix, wrapped, x => x._1, transform)
+  def getParameterNamesAsString(ms: MethodSymbol, prefix: String = "(", suffix: String = ")", sep: String = ",", wrapped: Boolean = true, transform: String => String = x => x): String = {
+    getPartOfParameters(ms, prefix, suffix, sep, wrapped, x => x._1, transform)
   }
 
   def toUnderscore: String => String = _ => "_"
 
-  def getPartOfParameters(ms: MethodSymbol, prefix: String, suffix: String, wrapped: Boolean, select: Pair[String, String] => String, transform: String => String): String = {
+  def getPartOfParameters(ms: MethodSymbol, prefix: String, suffix: String, sep: String, wrapped: Boolean, select: Pair[String, String] => String, transform: String => String): String = {
     val p = getParameters(ms, wrapped)
     if (!p.isEmpty) {
       (p map (x => { if (!x._2.isEmpty)
-		    (x._2 map (y => transform(select(y)))).mkString(prefix, ",", suffix)
+		    (x._2 map (y => transform(select(y)))).mkString(prefix, sep, suffix)
 		     else ""
       })).fold("")(_ ++ _)
     }
@@ -182,13 +190,76 @@ object ScalaSigHelpers {
     }
   }
 
-  def getType(ms: MethodSymbol, wrapped: Boolean = true)(implicit flags: sigp.TypeFlags): String = {
+  def getType(ms: MethodSymbol, wrapped: Boolean)(implicit flags: sigp.TypeFlags): String = {
     if (wrapped) getWrappedType(ms.infoType)(flags)
     else getType(ms.infoType)(flags)
   }
 
-  def getType(t: Type)(implicit flags: sigp.TypeFlags): String = {
-    sigp.toString(t)(flags)
+  def getType(t: Type, m: Map[String,String] = Map.empty)(implicit flags: sigp.TypeFlags): String = {
+    //sigp.toString(t)(flags)
+    // print type itself
+    t match {
+      case ThisType(symbol) => sigp.processName(symbol.path) + ".type"
+      case SingleType(typeRef, symbol) => sigp.processName(symbol.path) + ".type"
+      case ConstantType(constant) => (constant match {
+        case null => "scala.Null"
+        case _: Unit => "scala.Unit"
+        case _: Boolean => "scala.Boolean"
+        case _: Byte => "scala.Byte"
+        case _: Char => "scala.Char"
+        case _: Short => "scala.Short"
+        case _: Int => "scala.Int"
+        case _: Long => "scala.Long"
+        case _: Float => "scala.Float"
+        case _: Double => "scala.Double"
+        case _: String => "java.lang.String"
+        case c: Class[_] => "java.lang.Class[" + c.getComponentType.getCanonicalName.replace("$", ".") + "]"
+      })
+      case TypeRefType(prefix, symbol, typeArgs) => (symbol.path match {
+        case "scala.<repeated>" => flags match {
+          case sigp.TypeFlags(true) => getType(typeArgs.head, m) + "*"
+          case _ => "scala.Seq" + sigp.typeArgString(typeArgs)
+        }
+        case "scala.<byname>" => "=> " + getType(typeArgs.head, m)
+        case x => {
+	  if (m.contains(x)) {
+	    StringUtil.trimStart(m(x) + sigp.typeArgString(typeArgs), "<empty>.")
+	  }
+	  else {
+            val path = StringUtil.cutSubstring(symbol.path)(".package") //remove package object reference
+            StringUtil.trimStart(sigp.processName(path) + sigp.typeArgString(typeArgs), "<empty>.")
+          }
+	}
+      })
+      case TypeBoundsType(lower, upper) => {
+        val lb = getType(lower,m)
+        val ub = getType(upper,m)
+        val lbs = if (!lb.equals("scala.Nothing")) " >: " + lb else ""
+        val ubs = if (!ub.equals("scala.Any")) " <: " + ub else ""
+        lbs + ubs
+      }
+      case RefinedType(classSym, typeRefs) => typeRefs.map(x => getType(x,m)).mkString("", " with ", "")
+      case ClassInfoType(symbol, typeRefs) => typeRefs.map(x => getType(x,m)).mkString(" extends ", " with ", "")
+      case ClassInfoTypeWithCons(symbol, typeRefs, cons) => typeRefs.map(x => getType(x,m)).
+              mkString(cons + " extends ", " with ", "")
+
+      case MethodType(resultType, _) => getType(resultType, m)
+      case NullaryMethodType(resultType) => getType(resultType, m)
+
+      case PolyType(typeRef, symbols) => sigp.typeParamString(symbols) + getType(typeRef, m)
+      case PolyTypeWithCons(typeRef, symbols, cons) => sigp.typeParamString(symbols) + sigp.processName(cons) + getType(typeRef, m)
+      case AnnotatedType(typeRef, attribTreeRefs) => {
+        getType(typeRef, m)
+      }
+      case AnnotatedWithSelfType(typeRef, symbol, attribTreeRefs) => getType(typeRef, m)
+      //case DeBruijnIndexType(typeLevel, typeIndex) =>
+      /*
+      case ExistentialType(typeRef, symbols) => {
+        val refs = symbols.map(toString _).filter(!_.startsWith("_")).map("type " + _)
+        toString(typeRef, sep) + (if (refs.size > 0) refs.mkString(" forSome {", "; ", "}") else "")
+      }*/
+      case _ => t.toString
+    }
   }
 
   def getWrappedType(t: Type, m: Map[String,String] = Map.empty)(implicit flags: sigp.TypeFlags): String = {
