@@ -3,6 +3,7 @@
 <%@ val classFile: String %>
 <% val className = classFile.split("\\.").last %>
   implicit def expTo${className}Ops(t: Exp[${className}]) = new ${className}Ops(t)
+  implicit def to${className}Ops(t: ${className}) = new ${className}Ops(t)
   class ${className}Ops(t: Exp[${className}]) {
 <% val scalaSig = getScalaSig(classFile)
    val classSymbol = scalaSig.topLevelClasses.head
