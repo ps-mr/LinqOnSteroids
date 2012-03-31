@@ -21,13 +21,17 @@ class Generator(scalaVersion: String) {
   val engine = new TemplateEngine()
   // XXX: workaround to big bug, as discussed here:
   // http://groups.google.com/group/scalate/browse_frm/thread/b17acb9a345badbc/3a9cbc742edf6cda?#3a9cbc742edf6cda
-  //In practice, it is quite robust wrt. non-invasive changes to SBT.
+  //In practice, this is quite robust wrt. non-invasive changes to SBT; as long
+  //as the scala library is managed using Ivy and named according to this
+  //scheme, everything works.
 
   engine.combinedClassPath = true
   val cpBuilder = new ClassPathBuilder
   cpBuilder.addEntry((new File(System.getProperty("user.home")) / ".ivy2" / "cache" / "org.scala-lang" / "scala-library" / "jars" / ("scala-library-" + scalaVersion + ".jar")).absolutePath)
-  cpBuilder.addEntry((new File(System.getProperty("user.home")) /".ivy2" / "cache" / "org.scala-lang" / "scalap" / "jars" / "scalap-2.9.1.jar").absolutePath)
-  cpBuilder.addLibDir("lib")
+  //To add a directory use:
+  //  cpBuilder.addLibDir("lib")
+  //However, "lib" is already available as part of the classpath inherited from
+  //the JVM running the generator.
   engine.classpath = cpBuilder.classPath
 
   //This generates (once and for all) _source_ files.
