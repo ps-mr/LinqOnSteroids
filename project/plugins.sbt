@@ -21,3 +21,5 @@ libraryDependencies += "org.fusesource.scalate" % "scalate-core" % "1.5.3"
 
 //Indeed, this line works!
 //addSbtPlugin("com.mojolly.scalate" %% "xsbt-scalate-generator" % "0.1.1")
+
+libraryDependencies += "org.scala-lang" % "scalap" % "2.9.1"

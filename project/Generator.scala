@@ -1,5 +1,6 @@
 import java.io.{File, PrintStream, FileOutputStream}
 import org.fusesource.scalate._
+import util.ClassPathBuilder
 import sbt._
 
 /**
@@ -21,8 +22,13 @@ class Generator(scalaVersion: String) {
   // XXX: workaround to big bug, as discussed here:
   // http://groups.google.com/group/scalate/browse_frm/thread/b17acb9a345badbc/3a9cbc742edf6cda?#3a9cbc742edf6cda
   //In practice, it is quite robust wrt. non-invasive changes to SBT.
+
   engine.combinedClassPath = true
-  engine.classpath = (new File(System.getProperty("user.home")) / ".ivy2" / "cache" / "org.scala-lang" / "scala-library" / "jars" / ("scala-library-" + scalaVersion + ".jar")).absolutePath
+  val cpBuilder = new ClassPathBuilder
+  cpBuilder.addEntry((new File(System.getProperty("user.home")) / ".ivy2" / "cache" / "org.scala-lang" / "scala-library" / "jars" / ("scala-library-" + scalaVersion + ".jar")).absolutePath)
+  cpBuilder.addEntry((new File(System.getProperty("user.home")) /".ivy2" / "cache" / "org.scala-lang" / "scalap" / "jars" / "scalap-2.9.1.jar").absolutePath)
+  cpBuilder.addLibDir("lib")
+  engine.classpath = cpBuilder.classPath
 
   //This generates (once and for all) _source_ files.
   def renderOnce[A](name: String, inFileName: String = "", outFileName: String = "", args: Map[String, A] = Map[String, A]()) {
