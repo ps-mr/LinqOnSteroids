@@ -511,6 +511,17 @@ object OptimizationTransforms {
     case e => e
   }
 
+  // Add view and force around Filter to imitate withFilter.
+  // Transformation rule:
+  // coll.filter(f).*map(g) -> coll.view.filter(f).*map(g).force
+  // where *map stands for map or flatMap (the same on both sides).
+  //Note: this assumes that maps have been converted to flatMaps.
+  val filterToWithFilter: Exp[_] => Exp[_] = {
+    case FlatMap(Filter(coll: Exp[Traversable[t]], p), f) =>
+      (stripView(coll).view filter p flatMap f).force
+    case e => e
+  }
+
   val normalizer: Exp[_] => Exp[_] = {
     case p@Plus(x, y) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum)
     case e@Eq(x, y) => Eq(Exp.min(x, y), Exp.max(x, y))
@@ -588,6 +599,8 @@ object Optimization {
 
   def flatMapToMap[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.flatMapToMap)
 
+  def filterToWithFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.filterToWithFilter)
+
   def letTransformer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformer)
 
   //removeIdentityMaps is appropriate here because typed-indexing can introduce identity maps.
@@ -601,6 +614,7 @@ object Optimization {
           mapToFlatMap(exp))))
 
   private def optimizeBase[T](exp: Exp[T]): Exp[T] =
+  filterToWithFilter(
     mergeFilters( //Merge filters again after indexing, since it introduces new filters.
       simplifyFilters(
         shareSubqueries(mapToFlatMap(
@@ -612,7 +626,7 @@ object Optimization {
                     optimizeCartProdToJoin(
                       removeRedundantOption(toTypeFilter(
                         sizeToEmpty(
-                          removeIdentityMaps(exp))))))))))))))
+                          removeIdentityMaps(exp)))))))))))))))
 
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
