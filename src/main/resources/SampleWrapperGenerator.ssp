@@ -8,6 +8,11 @@ import sampleapp._
 
 object SampleLibraryLifting {<%
   for(c <- List("Author", "Book", "Result")) {
-    render("WrappedClassInlined.ssp", Map("classFile" -> ("sampleapp." + c)))} %>
+    render("WrappedClassInlined.ssp", Map("classFile" -> ("sampleapp." + c)))
+    //Won't work, since String is a purely Java class, hence has no Scala reflection info. We'd need to duplicate what we
+    //did for Java classes.
+    //render("WrappedClassInlined.ssp", Map("classFile" -> "java.lang.String"))
+  }
+%>
 }
 // vim: set ts=4 sw=4 et:
