@@ -50,7 +50,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       //hence producing a result of the right dynamic type.
       case Some(t) =>
         println("Found simple index of form " + toLookup)
-        Some(asExp(t.asInstanceOf[Map[U, Traversable[T]]]) get constantEqSide flatMap identity)
+        Some(asExp(t.asInstanceOf[Map[U, Traversable[T]]]) get constantEqSide flatMap identity view)
       case None =>
         println("Found no simple index of form " + toLookup)
         None
