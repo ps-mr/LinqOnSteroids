@@ -236,15 +236,19 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     showInterp("d4", d4)
 
     val d5 = c withFilter (ab => (ab._1 + ab._2 <= 4))
-    assertType[Exp[TraversableView[(Int, Int), Map[Int, Int]]]](d5)
+    assertType[Exp[Map[Int, Int]]](d5)
     showInterp("d5", d5)
 
     val d6 = d5 withFilter (ab => (ab._1 + ab._2 <= 4))
-    assertType[Exp[TraversableView[(Int, Int), Map[Int, Int]]]](d6)
+    assertType[Exp[Map[Int, Int]]](d6)
     showInterp("d6", d6)
 
-    val forced = d6.force
+    /*
+    val d6view = d6.view
+    assertType[Exp[TraversableView[(Int, Int), Map[Int, Int]]]](d6view)
+    val forced = d6view.force
     assertType[Exp[Map[Int, Int]]](forced)
+    */
 
     val d7 = c groupBy (ab => ab._2)
     assertType[Exp[Map[Int, Map[Int, Int]]]](d7)

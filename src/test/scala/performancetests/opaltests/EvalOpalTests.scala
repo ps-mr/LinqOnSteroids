@@ -28,7 +28,7 @@ class EvalOpalTests {
     //Listing 3:
     //Working alternatives, to get Exp[Set[ClassFile]] as result type:
     //val Types = queryData filter (classFile => classFile.thisClass.packageName ==# "bat.type")
-    val Types = queryData withFilter (classFile => classFile.thisClass.packageName ==# "bat.type") force
+    val Types = queryData withFilter (classFile => classFile.thisClass.packageName ==# "bat.type")
     //Non-working alternatives:
     /*
     val Types = (for {
