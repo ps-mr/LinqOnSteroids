@@ -17,9 +17,18 @@ case class Const[T](x: T) extends Arity0Exp[T] {
       //takes a lot of time for any reason. Still, better than nothing.
       case coll: Traversable[_] =>
         coll.take(3).toString() + (if (coll.size > 3) "..." else "")
+      case s: String =>
+        """"%s"""" format s
       case _ =>
         x.toString
     }
-    "Const(" + (if (s.length() > 100) s.take(100)+"..." else s) + ")"
+    val shortened =
+      if (s.length() > 100) {
+        val begin = s take 100
+        begin + "..." + ")" * (begin.count('(' == ) - begin.count(')' == ))
+      }
+      else
+        s
+    "Const(" + shortened + ")"
   }
 }
