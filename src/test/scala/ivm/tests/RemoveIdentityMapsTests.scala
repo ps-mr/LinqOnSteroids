@@ -51,7 +51,7 @@ class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
     val desiredResult = Filter(
                          Filter(
                            Filter(
-                             View[Int, Traversable[Int]](l),
+                             l,
                              FuncExp((v24245:Exp[Int]) => Eq(Plus(v24245,3),7))),
                            FuncExp((v24246:Exp[Int]) => Eq(Plus(v24246,8),19))),
                         FuncExp((v24248:Exp[Int]) => Eq(v24248,19)))
