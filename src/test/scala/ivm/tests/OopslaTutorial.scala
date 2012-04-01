@@ -13,8 +13,11 @@ import Lifting._
 
 //New example, discussed with Christian.
 
+import sampleapp._
 class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
-  import sampleapp._
+  //Having the import here does not work; we later import SampleLibraryLiftingManual which shadows the original objects,
+  //
+  //import sampleapp._
   val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "ACM" /*"Pearson Education"*/, Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
   val recordsOld = for {
     book <- books
@@ -75,10 +78,36 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
     book <- books
   } yield (book, book.publisher)) groupBy (_._2)
 
+
   import SampleLibraryLifting._
-  for {
-    book <- books.asSmartCollection
-  } yield book
+  import SampleLibraryLiftingManual._
+
+
+  val recordsQuery = /*Query(*/for {
+   book <- books.asSmartCollection
+   if book.publisher ==# "ACM"
+   author <- book.authors
+ } yield Result(book.title,
+    author.firstName + " " + author.lastName,
+    book.authors.size - 1)//)
+
+  def titleFilterExp(records: Exp[Set[Result]], keyword: String) /*: Exp[Set[(String, String)]]*/ = for {
+    record <- records
+    if record.title.contains(keyword)
+  } yield (record.title, record.authorName)
+  val processedRecordsExp = titleFilterExp(recordsQuery, "database")
+
+
+}
+
+object SampleLibraryLiftingManual {
+  //case class Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int])
+  import sampleapp._
+  case class ResultExp(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) extends Arity3Op[Exp[String], Exp[String], Exp[Int], Result, ResultExp](title, authorName, coauthors) {
+    def copy(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) = ResultExp(title, authorName, coauthors)
+    def interpret() = sampleapp.Result(title.interpret(), authorName.interpret(), coauthors.interpret())
+  } 
+  def Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) = ResultExp(title, authorName, coauthors)
 }
 
 //Old example

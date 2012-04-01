@@ -163,6 +163,7 @@ trait BaseTypesOps {
 
   class StringOps(t: Exp[String]) {
     def +(that: Exp[String]) = StringConcat(t, that)
+    def contains(that: Exp[CharSequence]) = onExp(this.t, that)('StringOps$contains, _ contains _)
   }
 
   class BooleanOps(b: Exp[Boolean]) {
