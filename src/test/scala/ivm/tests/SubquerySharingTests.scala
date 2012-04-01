@@ -46,6 +46,9 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     Optimization.removeSubquery(idx)
 
     optQuery should be (expectedOptQuery)
+    //We assumed that if optQuery == expectedOptQuery, then optQuery.interpret() == expectedOptQuery.interpret() == query.interpret()
+    //but manifests could be different!
+    optQuery.interpret() should be (expectedOptQuery.interpret())
   }
 
   val l2: Exp[Seq[Int]] =
