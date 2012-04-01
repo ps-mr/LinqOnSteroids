@@ -12,7 +12,7 @@ import collection._
 case class FlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                    U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
                             (implicit /*protected[this]*/ val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, Traversable[U]], That, FlatMap[T, Repr, U, That]](base, f) {
-  override def interpret() = base.interpret() flatMap f.interpret()
+  override def interpret() = (base.interpret() flatMap f.interpret())(Traversable.canBuildFrom).asInstanceOf[That]
   override def copy(base: Exp[Repr], f: FuncExp[T, Traversable[U]]) = FlatMap[T, Repr, U, That](base, f)
 }
 
