@@ -65,7 +65,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test def testComplexIndexing() {
     val l2Idx = l2IdxBase groupBy { _._2 }
-    indexingTest(l2, l2Idx){ _ get 5 flatMap identity map (p => p._1 + p._2) }
+    indexingTest(l2, l2Idx){ idx => (((idx get 5): Exp[Iterable[Seq[(Int, Int)]]]) flatten) map (p => p._1 + p._2) }
   }
 
   val l3_k: Exp[Seq[Int]] =
@@ -102,13 +102,13 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     //the seq-based index has type Exp[Seq[Seq[Int]]].
     //Exp[Seq[(Int, String)]] would become Exp[Seq[Seq[Any]]], and p(0) would then have type Any.
     //indexingTest(l3_j, l3Idx){ _ get 5 flatMap identity flatMap (p => for (k <- onExp(p(1))('Vector$range_1, Vector.range(1, _))) yield p(0) + p(1) + k) }
-    indexingTest(l3_j, l3Idx){ _ get 5 flatMap identity flatMap (p => for (k <- onExp(p._2)('Vector$range_1, Vector.range(1, _))) yield p._1 + p._2 + k) }
-    indexingTest(l3_shifted, l3Idx){ _ get 5 flatMap identity flatMap (p => for (k <- onExp(p._2)('Vector$range_1, Vector.range(1, _))) yield p._1 + p._2 + k) }
+    indexingTest(l3_j, l3Idx){ idx => (((idx get 5): Exp[Iterable[Seq[(Int, Int)]]]) flatten) flatMap (p => for (k <- onExp(p._2)('Vector$range_1, Vector.range(1, _))) yield p._1 + p._2 + k) }
+    indexingTest(l3_shifted, l3Idx){ idx => (((idx get 5): Exp[Iterable[Seq[(Int, Int)]]]) flatten) flatMap (p => for (k <- onExp(p._2)('Vector$range_1, Vector.range(1, _))) yield p._1 + p._2 + k) }
   }
 
   @Test def testComplexIndexing3Level_k() {
     val l3Idx = l3IdxBase_k groupBy { _._3 }
-    indexingTest(l3_k, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
+    indexingTest(l3_k, l3Idx){ idx => (((idx get 5): Exp[Iterable[Traversable[(Int, Int, Int)]]]) flatten) map (p => p._1 + p._2 + p._3) }
   }
 
   val l3_shifted: Exp[Seq[Int]] =
@@ -136,7 +136,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test def testComplexIndexing3Level_k1_opt() {
     val l3Idx = l3IdxBase_k1_opt groupBy { _._3 }
-    indexingTest(l3_k1_opt, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
+    indexingTest(l3_k1_opt, l3Idx){ idx => (((idx get 5): Exp[Iterable[Traversable[(Int, Int, Int)]]]) flatten) map (p => p._1 + p._2 + p._3) }
   }
 
   val l3_k_opt: Exp[Seq[Int]] =
@@ -156,7 +156,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     } yield (i, j, k)
 
     val l3Idx = l3IdxBase_k_opt groupBy { _._3 }
-    indexingTest(l3_k_opt, l3Idx){ idx => ((idx get 5 flatMap identity).view filter (_._2 ==# 2) map (p => p._1 + p._2 + p._3)).force }
+    indexingTest(l3_k_opt, l3Idx){ idx => ((((idx get 5): Exp[Iterable[Traversable[(Int, Int, Int)]]]) flatten).view filter (_._2 ==# 2) map (p => p._1 + p._2 + p._3)).force }
   }
 
   @Test def testComplexIndexing3Level_k_opt_workaround() {
@@ -167,7 +167,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     } yield (i, j, k)
 
     val l3Idx = l3IdxBase_k_opt groupBy { _._3 }
-    indexingTest(l3_k_opt, l3Idx){ idx => ((idx get 5 flatMap identity).view filter (_._2 ==# 2) map (p => p._1 + p._2 + p._3)).force }
+    indexingTest(l3_k_opt, l3Idx){ idx => ((((idx get 5): Exp[Iterable[Traversable[(Int, Int, Int)]]]) flatten).view filter (_._2 ==# 2) map (p => p._1 + p._2 + p._3)).force }
   }
 
   val l3_k_seqlet: Exp[Seq[Int]] =
@@ -186,7 +186,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     } yield (i, j, k)
 
     val l3Idx = l3IdxBase_k_seqlet groupBy { _._3 }
-    indexingTest(l3_k_seqlet, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
+    indexingTest(l3_k_seqlet, l3Idx){ idx => (((idx get 5): Exp[Iterable[Traversable[(Int, Int, Int)]]]) flatten) map (p => p._1 + p._2 + p._3) }
   }
 
   @Test def testComplexIndexing3Level_k_seqlet_workaround() {
@@ -197,7 +197,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     } yield (i, j, k)
 
     val l3Idx = l3IdxBase_k_seqlet groupBy { _._3 }
-    indexingTest(l3_k_seqlet, l3Idx){ _ get 5 flatMap identity map (p => p._1 + p._2 + p._3) }
+    indexingTest(l3_k_seqlet, l3Idx){ idx => (((idx get 5): Exp[Iterable[Traversable[(Int, Int, Int)]]]) flatten) map (p => p._1 + p._2 + p._3) }
   }
 
   def shareSubqueriesOpt[T](x: Exp[T]) = Optimization.simplifyFilters(Optimization.shareSubqueries(x))
