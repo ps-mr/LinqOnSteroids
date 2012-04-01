@@ -19,7 +19,7 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   //Having the import here does not work; we later import SampleLibraryLiftingManual which shadows the original objects,
   //
   //import sampleapp._
-  val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools database", "ACM" /*"Pearson Education"*/, Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
+  val books: Seq[Book] = Seq(Book("Compilers: Principles, Techniques, and Tools database", "ACM" /*"Pearson Education"*/, Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
   val recordsOld = for {
     book <- books
     if book.publisher == "ACM"
@@ -37,13 +37,13 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
     author <- book.authors
   } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
-  def titleFilter(records: Set[Result], keyword: String): Set[(String, String)] = for {
+  def titleFilter(records: Seq[Result], keyword: String): Seq[(String, String)] = for {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
   val processedRecords = titleFilter(records, "database")
 
-  def titleFilterHandOpt1(books: Set[Book], publisher: String, keyword: String) = for {
+  def titleFilterHandOpt1(books: Seq[Book], publisher: String, keyword: String) = for {
     book <- books
     if book.publisher == publisher
     author <- book.authors
@@ -51,7 +51,7 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   } yield (book.title, author.firstName + " " + author.lastName)
   val processedRecordsOpt1 = titleFilterHandOpt1(books, "ACM", "database")
 
-  def titleFilterHandOpt2(books: Set[Book], publisher: String, keyword: String) =
+  def titleFilterHandOpt2(books: Seq[Book], publisher: String, keyword: String) =
     for {
       book <- books
       if book.publisher == publisher
@@ -76,24 +76,17 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   import SampleLibraryLiftingManual._
 
   //But the correct index by title should be:
-  /*val idxByTitle = (for {
-    book <- books
-  } yield (book, book.title)) groupBy (_._2)*/
-  //No, see example below.
+  val idxByTitle = books.groupBy(_.title)
 
   val idxByPublisher =
-    /*(for {
-      book <- books.asSmartCollection
-    } yield (book, book.publisher)) groupBy (_._2)*/
     books.asSmartCollection groupBy (_.publisher)
 
   Optimization.addSubquery(idxByPublisher)
 
   val recordsQuery = /*Query(*/for {
    book <- books.asSmartCollection
-   if book.publisher ==# "ACM" //doesn't work here
+   if book.publisher ==# "ACM"
    author <- book.authors
-   //if book.publisher ==# "ACM" //neither here
  } yield Result(book.title,
     author.firstName + " " + author.lastName,
     book.authors.size - 1)//)
@@ -102,32 +95,22 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   test("same results") {
     recordsQuery.interpret() should be (records)
     println(recordsQueryOpt)
-    //After optims, we even get the type wrong...
-    recordsQueryOpt.interpret().asInstanceOf[Traversable[Result]].toSet should be (records) //TODO: try again avoiding calling .toSet
+    recordsQueryOpt.interpret() should be (records)
   }
 
-  def titleFilterQuery(records: Exp[Set[Result]], keyword: String) /*: Exp[Set[(String, String)]]*/ = for {
+  def titleFilterQuery(records: Exp[Seq[Result]], keyword: String): Exp[Seq[(String, String)]] = for {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
 
-  /*
-  def titleFilterQuery2(records: Exp[Traversable[Result]], keyword: String) /*: Exp[Traversable[(String, String)]]*/ = for {
-    record <- records
-    if record.title.contains(keyword)
-  } yield (record.title, record.authorName)
-  */
-
-  val processedRecordsQuery = titleFilterQuery(recordsQuery/*.toSet*/, "database")
-  //val processedRecordsQuery2 = titleFilterQuery2(recordsQuery, "database")
+  val processedRecordsQuery = titleFilterQuery(recordsQuery, "database")
 
   val processedRecordsQueryOpt = Optimization.optimize(processedRecordsQuery)
 
   test("processedRecords should have the results") {
-    processedRecordsQuery.interpret()/*.toSet*/ should be (processedRecords)
+    processedRecordsQuery.interpret() should be (processedRecords)
     println(processedRecordsQueryOpt)
-    //After optims, we even get the type wrong...
-    processedRecordsQueryOpt.interpret().asInstanceOf[Traversable[(String, String)]].toSet should be (processedRecords)
+    processedRecordsQueryOpt.interpret() should be (processedRecords)
   }
 }
 
