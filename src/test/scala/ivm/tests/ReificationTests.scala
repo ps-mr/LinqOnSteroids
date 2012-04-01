@@ -6,7 +6,7 @@ import expressiontree.Lifting._
 import expressiontree._
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
-import org.junit.Test
+import org.junit.{Ignore, Test}
 import optimization.Optimization
 import Optimization.optimize
 
@@ -22,7 +22,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
   val r2 = for (k <- l; k2 <- j if liftCall('test$Int$Int, test, k, k2)) yield k + k2
   val r3 = for (k <- l; k2 <- j if liftCall('foo$Int, foo, k) ==# liftCall('bar$Int, bar, k2)) yield (k, k2)
 
-  @Test
+  @Ignore @Test
   def testq() {
     optimize(q) should equal (q)
   }
@@ -31,12 +31,12 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
     optimize(r) should equal (l.join(j)(x => x, y => y, p => (p._1 + p._2)))
   }
 
-  @Test
+  @Ignore @Test
   def testr1() {
     optimize(r1) should equal (r1)
   }
 
-  @Test
+  @Ignore @Test
   def testr2() {
     optimize(r2) should equal (r2)
   }

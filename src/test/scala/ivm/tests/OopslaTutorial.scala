@@ -100,10 +100,10 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   
   val recordsQueryOpt = Optimization.optimize(recordsQuery)
   test("same results") {
-    recordsQuery.interpret().toSet /*.force*/ should be (records)
+    recordsQuery.interpret() should be (records)
     println(recordsQueryOpt)
     //After optims, we even get the type wrong...
-    recordsQueryOpt.interpret().toSet should be (records) //TODO: try again avoiding calling .toSet
+    recordsQueryOpt.interpret().asInstanceOf[Traversable[Result]].toSet should be (records) //TODO: try again avoiding calling .toSet
   }
 
   def titleFilterQuery(records: Exp[Set[Result]], keyword: String) /*: Exp[Set[(String, String)]]*/ = for {
