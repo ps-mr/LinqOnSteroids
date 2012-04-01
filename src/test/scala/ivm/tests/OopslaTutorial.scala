@@ -4,6 +4,7 @@ package tests
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import expressiontree._
+import optimization.Optimization
 import Lifting._
 
 /**
@@ -69,33 +70,46 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   }
 
   val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
-  //But the correct index by title should be:
-  val idxByTitle = (for {
-    book <- books
-  } yield (book, book.title)) groupBy (_._2)
-
-  val idxByPublisher = (for {
-    book <- books
-  } yield (book, book.publisher)) groupBy (_._2)
-
 
   import SampleLibraryLifting._
   import SampleLibraryLiftingManual._
 
+  //But the correct index by title should be:
+  /*val idxByTitle = (for {
+    book <- books
+  } yield (book, book.title)) groupBy (_._2)*/
+  //No, see example below.
+
+  val idxByPublisher =
+    /*(for {
+      book <- books.asSmartCollection
+    } yield (book, book.publisher)) groupBy (_._2)*/
+    books.asSmartCollection groupBy (_.publisher)
+
+  Optimization.addSubquery(idxByPublisher)
 
   val recordsQuery = /*Query(*/for {
    book <- books.asSmartCollection
-   if book.publisher ==# "ACM"
+   if book.publisher ==# "ACM" //doesn't work here
    author <- book.authors
+   //if book.publisher ==# "ACM" //neither here
  } yield Result(book.title,
     author.firstName + " " + author.lastName,
     book.authors.size - 1)//)
+  
+  val recordsQueryOpt = Optimization.optimize(recordsQuery)
+  test("same results") {
+    recordsQuery.interpret().force should be (records)
+    println(recordsQueryOpt)
+    //After optims, we even get the type wrong...
+    recordsQueryOpt.interpret().toSet should be (records)
+  }
 
   def titleFilterExp(records: Exp[Set[Result]], keyword: String) /*: Exp[Set[(String, String)]]*/ = for {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
-  val processedRecordsExp = titleFilterExp(recordsQuery, "database")
+  //val processedRecordsExp = titleFilterExp(recordsQuery, "database")
 
 
 }
