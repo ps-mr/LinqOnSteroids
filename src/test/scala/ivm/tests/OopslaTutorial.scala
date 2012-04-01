@@ -145,7 +145,7 @@ trait SampleAppLifting extends SampleApp {
   //Code to be generated }}}
 }
 
-class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil with SampleApp {
+class OopslaTutorial extends /*FunSuite with ShouldMatchers with TestUtil with*/ SampleApp {
   val libs: Set[Library] = Set.empty
   val idx = (for {
     lib <- libs //.asSmartCollection
