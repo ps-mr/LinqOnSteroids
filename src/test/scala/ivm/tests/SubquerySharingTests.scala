@@ -209,7 +209,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val testquery = l.withFilter(p => p._1 + p._2 ==# 5)
     val optimized = shareSubqueriesOpt(testquery)
-    optimized should equal (asExp(indexres) get 5 flatMap identity)
+    optimized should equal (((asExp(indexres) get 5): Exp[Iterable[Seq[(Int, Int)]]]).flatten)
 
     Optimization.removeSubquery(index)
   }
@@ -221,7 +221,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val testquery = l.withFilter(p => p._2 + p._1 ==# 5)
     val optimized = shareSubqueriesOpt(testquery)
-    optimized should equal (asExp(indexres) get 5 flatMap identity)
+    optimized should equal (((asExp(indexres) get 5): Exp[Iterable[Seq[(Int, Int)]]]).flatten)
 
     Optimization.removeSubquery(index)
   }
@@ -233,7 +233,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val testquery = l.withFilter(p => p._1 + p._2 ==# 5)
     val optimized = shareSubqueriesOpt(testquery)
-    optimized should equal (asExp(indexres) get 5 flatMap identity)
+    optimized should equal (((asExp(indexres) get 5): Exp[Iterable[Seq[(Int, Int)]]]).flatten)
 
     Optimization.removeSubquery(index)
   }
@@ -245,7 +245,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
     val testquery = l.withFilter(p => p._1 <= 7 && p._1 + p._2 ==# 5)
     val optimized = shareSubqueriesOpt(testquery)
-    optimized should equal (asExp(indexres) get 5 flatMap identity withFilter (p => p._1 <= 7))
+    optimized should equal (((asExp(indexres) get 5): Exp[Iterable[Seq[(Int, Int)]]]).flatten withFilter (p => p._1 <= 7))
 
     Optimization.removeSubquery(index)
   }
