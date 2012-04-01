@@ -111,21 +111,23 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
 
+  /*
   def titleFilterQuery2(records: Exp[Traversable[Result]], keyword: String) /*: Exp[Traversable[(String, String)]]*/ = for {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
+  */
 
-  val processedRecordsQuery = titleFilterQuery(recordsQuery.toSet, "database")
-  val processedRecordsQuery2 = titleFilterQuery2(recordsQuery, "database")
+  val processedRecordsQuery = titleFilterQuery(recordsQuery/*.toSet*/, "database")
+  //val processedRecordsQuery2 = titleFilterQuery2(recordsQuery, "database")
 
-  val processedRecordsQueryOpt = Optimization.optimize(processedRecordsQuery2)
+  val processedRecordsQueryOpt = Optimization.optimize(processedRecordsQuery)
 
   test("processedRecords should have the results") {
-    processedRecordsQuery2.interpret().toSet should be (processedRecords)
+    processedRecordsQuery.interpret()/*.toSet*/ should be (processedRecords)
     println(processedRecordsQueryOpt)
     //After optims, we even get the type wrong...
-    processedRecordsQueryOpt.interpret().toSet should be (processedRecords)
+    processedRecordsQueryOpt.interpret().asInstanceOf[Traversable[(String, String)]].toSet should be (processedRecords)
   }
 }
 
