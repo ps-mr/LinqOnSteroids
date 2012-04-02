@@ -19,7 +19,7 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   //Having the import here does not work; we later import SampleLibraryLiftingManual which shadows the original objects,
   //
   //import sampleapp._
-  val books: Seq[Book] = Seq(Book("Compilers: Principles, Techniques, and Tools database", "ACM" /*"Pearson Education"*/, Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
+  val books: Seq[Book] = Seq(Book("Compilers: Principles, Techniques, and Tools", "Pearson Education", Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
   val recordsOld = for {
     book <- books
     if book.publisher == "ACM"
@@ -28,12 +28,12 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
 
   val processedRecordsOld = for {
     record <- recordsOld
-    if record._1.startsWith("The")
+    if record._1.startsWith("Compilers")
   } yield (record._1, record._2)
 
   val records = for {
     book <- books
-    if book.publisher == "ACM"
+    if book.publisher == "Pearson Education"
     author <- book.authors
   } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
@@ -41,7 +41,7 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
-  val processedRecords = titleFilter(records, "database")
+  val processedRecords = titleFilter(records, "Principles")
 
   def titleFilterHandOpt1(books: Seq[Book], publisher: String, keyword: String) = for {
     book <- books
@@ -49,7 +49,7 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
     author <- book.authors
     if book.title.contains(keyword)
   } yield (book.title, author.firstName + " " + author.lastName)
-  val processedRecordsOpt1 = titleFilterHandOpt1(books, "ACM", "database")
+  val processedRecordsOpt1 = titleFilterHandOpt1(books, "Pearson Education", "Principles")
 
   def titleFilterHandOpt2(books: Seq[Book], publisher: String, keyword: String) =
     for {
@@ -58,10 +58,10 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
       if book.title.contains(keyword)
       author <- book.authors
     } yield (book.title, author.firstName + " " + author.lastName)
-  val processedRecordsOpt2 = titleFilterHandOpt2(books, "ACM", "database")
+  val processedRecordsOpt2 = titleFilterHandOpt2(books, "Pearson Educationrson Education", "Principles")
 
   val recordsDesugared = books.withFilter(book =>
-    book.publisher == "ACM").flatMap(book =>
+    book.publisher == "Pearson Education").flatMap(book =>
     book.authors.map(author =>
       Result(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
 
@@ -85,7 +85,7 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
 
   val recordsQuery = /*Query(*/for {
    book <- books.asSmartCollection
-   if book.publisher ==# "ACM"
+   if book.publisher ==# "Pearson Education"
    author <- book.authors
  } yield Result(book.title,
     author.firstName + " " + author.lastName,
@@ -103,7 +103,7 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
 
-  val processedRecordsQuery = titleFilterQuery(recordsQuery, "database")
+  val processedRecordsQuery = titleFilterQuery(recordsQuery, "Principles")
 
   val processedRecordsQueryOpt = Optimization.optimize(processedRecordsQuery)
 
