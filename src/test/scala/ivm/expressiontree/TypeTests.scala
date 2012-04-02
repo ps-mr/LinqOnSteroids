@@ -99,10 +99,10 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     new TraversableLikeOps[T, Traversable, Repr] {val t = v}
 
 
-  //Analogous to Lifting.groupBySelImpl
+  //Analogous to Lifting.groupBySelImpl; I copied it here just to test whether expToTraversableLikeOps works.
   def groupBySelImpl[T, Repr <: Traversable[T] with
     TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K])(
-    implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, Repr]] =
+    implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, Repr]] =
   {
     Util.assertTypeAndRet[Exp[Map[K, Repr]]] {
       //Apply implicit conversion explicitly:

@@ -53,7 +53,7 @@ trait TraversableOps {
   def groupBySelImpl[T, Repr <: Traversable[T] with
     TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
                                                                                                    g: Exp[T] => Exp[Rest])(
-    implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
+    implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
 
   //Coll is only needed for TypeFilter.
   trait TraversableLikeOps[T, Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]], Repr <: Traversable[T] with TraversableLike[T, Repr] with Coll[T]] extends FilterMonadicOpsLike[T, Repr] {
@@ -84,11 +84,11 @@ trait TraversableOps {
 
     def view: Exp[TraversableView[T, Repr]] = View(this.t)
 
-    def groupBy[K](f: Exp[T] => Exp[K]): Exp[Map[K, Repr]] =
+    def groupBy[K](f: Exp[T] => Exp[K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr]): Exp[Map[K, Repr]] =
       GroupBy(this.t, FuncExp(f))
 
-    def groupBySel[K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](f: Exp[T] => Exp[K], g: Exp[T] => Exp[Rest])(implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
-      groupBySelImpl(this.t, f, g)(c)
+    def groupBySel[K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](f: Exp[T] => Exp[K], g: Exp[T] => Exp[Rest])(implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
+      groupBySelImpl(this.t, f, g)(cbf, cbf2)
 
     def join[S, TKey, TResult, That](innerColl: Exp[Traversable[S]]) //Split argument list to help type inference deduce S and use it after.
                                     (outerKeySelector: Exp[T] => Exp[TKey],
@@ -325,6 +325,20 @@ object CollectionUtils {
       }
     }
     None
+  }
+
+  def groupBy[A, K, Repr <: Traversable[A]](coll: Repr with Traversable[A])(f: A => K)(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, A, Repr]): immutable.Map[K, Repr] = {
+    val m = mutable.Map.empty[K, Builder[A, Repr]]
+    for (elem <- coll) {
+      val key = f(elem)
+      val bldr = m.getOrElseUpdate(key, cbf(coll) /*coll.companion.newBuilder[A]*/)
+      bldr += elem
+    }
+    val b = immutable.Map.newBuilder[K, Repr]
+    for ((k, v) <- m)
+      b += ((k, v.result()))
+
+    b.result withDefault (_ => cbf(coll).result() /*coll.companion.empty[A].asInstanceOf[Repr]*/)
   }
 
   //This must be only used inside the implementation. Mutability fun!

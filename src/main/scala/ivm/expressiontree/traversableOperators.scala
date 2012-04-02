@@ -182,9 +182,10 @@ case class Forall[T](coll: Exp[Traversable[T]], f: FuncExp[T, Boolean])
   }
 }
 
-case class GroupBy[T, Repr <: TraversableLike[T, Repr], K](base: Exp[Repr], f: Exp[T => K]) extends Arity2OpExp[Repr,
+case class GroupBy[T, Repr <: Traversable[T] with TraversableLike[T, Repr], K](base: Exp[Repr], f: Exp[T => K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr]) extends Arity2OpExp[Repr,
   T => K, immutable.Map[K, Repr], GroupBy[T, Repr, K]](base, f) {
-  override def interpret() = base.interpret() groupBy f.interpret()
+  override def interpret() = CollectionUtils.groupBy(base.interpret())(f.interpret())(cbf)
+    //base.interpret() groupBy f.interpret()
   override def copy(base: Exp[Repr], f: Exp[T => K]) = GroupBy(base, f)
 }
 

@@ -144,7 +144,7 @@ object Lifting
   override def groupBySelImpl[T, Repr <: Traversable[T] with
     TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
                                              g: Exp[T] => Exp[Rest])(
-    implicit c: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
+    implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
   {
     implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
       new TraversableLikeOps[T, Traversable, Repr] {val t = v}
@@ -155,7 +155,7 @@ object Lifting
     val tmp: Exp[Map[K, Repr]] = expToTraversableLikeOps(t).groupBy(f)
     //val tmp: Exp[Map[K, Repr]] = t.groupBy(f)
     //tmp.map(v => (v._1, MapOp(v._2, FuncExp(g)))) //This uses MapOp directly, but map could return other nodes
-    tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(c)))
+    tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(cbf2)))
   }
 
   // XXX: Both these and onExp should not be made available without qualification everywhere. We should just be able to
