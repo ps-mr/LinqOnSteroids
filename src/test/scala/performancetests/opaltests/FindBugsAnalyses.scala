@@ -615,6 +615,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     analyzeUnusedFields()
     analyzeExplicitGC()
     analyzePublicFinalizer()
+    analyzePublicFinalizer2()
     analyzeSerializableNoConstructor()
     analyzeCatchIllegalMonitorStateException()
     analyzeCovariantCompareToMethods()
