@@ -50,7 +50,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
       //hence producing a result of the right dynamic type.
       case Some(t) =>
         println("Found simple index of form " + toLookup)
-        Some(((asExp(t.asInstanceOf[Map[U, Traversable[T]]]) get constantEqSide): Exp[Iterable[Traversable[T]]]) flatten)
+        Some(asExp(t.asInstanceOf[Map[U, Traversable[T]]]) apply constantEqSide)
       case None =>
         println("Found no simple index of form " + toLookup)
         None
@@ -262,7 +262,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
           case Some(t) =>
             println("Found nested index of form " + toLookup)
             //Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) get constantEqSide flatMap identity withFilter FuncExp.makefun(cond, fx))
-            Some(((asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) get constantEqSide): Exp[Iterable[Traversable[TupleT]]]).flatten withFilter FuncExp.makefun(cond, fx))
+            Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) apply constantEqSide withFilter FuncExp.makefun(cond, fx))
           case None =>
             println("Found no nested index of form " + toLookup)
             None
