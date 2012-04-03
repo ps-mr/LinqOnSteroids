@@ -393,8 +393,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import BATLifting._
       import InstructionLifting._
 
-      // Type annotation is needed to get the same type as the other query. If we get a more specific type, we can't call benchQuery because Forceable is not
-      // contravariant in Coll (and can't be made contravariant easily).
       for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods
