@@ -115,7 +115,8 @@ trait ExpSugar extends ConversionDisabler2 {
   implicit def toQuery[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]): UnconvertedExp[Exp[Repr with Traversable[T]]] = new UnconvertedExp(t)
   //We also need this version:
   implicit def toTypeIndexDummy[C[X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new UnconvertedExp(t)
-  def Query[T](t: UnconvertedExp[Exp[Traversable[T]]]) = t.v
+  //def Query[T](t: UnconvertedExp[Exp[Traversable[T]]]) = t.v
+  def Query[T, Repr <: Traversable[T]](t: UnconvertedExp[Exp[Repr with Traversable[T]]]): Exp[Repr with Traversable[T]] = t.v
 
   //This does not work, because it does not constrain type inference enough.
   //implicit def toUnconvertedExp[Repr](t: Exp[Repr]): UnconvertedExp[Exp[Repr]] = new UnconvertedExp(t)

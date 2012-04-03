@@ -61,7 +61,12 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
                                                     extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
     val (expectedRes, timeScala) = benchMarkInternal(msg)(expected)
-    val builtQuery = benchMark("%s Los Setup" format msg, silent = true)(Query(query))
+    //Don't work - bug https://issues.scala-lang.org/browse/SI-5642.
+    //val builtQuery: Exp[Coll with Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query[T, Coll](query))
+    //val builtQuery: Exp[Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query[T, Coll](query))
+    //val builtQuery: Exp[Traversable[T]] = Query[T, Coll](toQuery(query))
+    //works:
+    val builtQuery: Exp[Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query(query))
     benchQuery("%s Los" format msg, builtQuery, expectedRes, extraOptims, timeScala)
     println("\tViolations: " + expectedRes.size)
     expectedRes
