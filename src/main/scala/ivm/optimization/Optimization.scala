@@ -134,6 +134,7 @@ object OptimizationTransforms {
       case And(c @ Const(false), x) => c
       case Or(Const(false), x) => x
       case Or(c @ Const(true), x) => c
+      case Not(Not(c)) => c
       case e => e
     }
 
