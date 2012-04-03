@@ -27,7 +27,10 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
 
     val (res, time) = doRun(msg, v)
     for ((msgExtra, optim) <- optimizerTable[Coll] ++ extraOptims.asInstanceOf[Seq[(String, Exp[Coll] => Exp[Coll])]]) {
+      Optimization.optimize(v) //do it once for the logs!
+      Optimization.pushEnableDebugLog(false)
       val (optimized, optimizationTime) = benchMarkInternal(msg + " Optimization")(optim(Optimization.optimize(v)))
+      Optimization.popEnableDebugLog()
       val (resOpt, timeOpt) = doRun(msg + msgExtra, optimized)
       //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
       // list.flatMap(listEl => set(listEl))
