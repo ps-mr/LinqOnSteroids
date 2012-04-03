@@ -43,7 +43,7 @@ import analyses._
 
 import reader.Java6Framework
 
-import expressiontree.{Exp, Lifting, BATLifting, Util}
+import expressiontree.{CollectionUtils, Exp, Lifting, BATLifting, Util}
 import Lifting._
 import Util.ExtraImplicits._
 import org.scalatest.{FunSuite, BeforeAndAfterAll}
@@ -561,10 +561,11 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
 
   Optimization.pushEnableDebugLog(false)
 
-  benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(methodNameIdx, Some((for {
+  benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(methodNameIdx, Some(
+    CollectionUtils.groupBy(for {
       classFile ← classFiles
       method ← classFile.methods
-    } yield (classFile, method)).groupBy(_._2.name))))
+    } yield (classFile, method))(_._2.name))))
   benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(excHandlerTypeIdx))
   benchMark("Instructions type-index creation")(Optimization.addSubquery(typeIdx))
 
