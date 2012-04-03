@@ -398,8 +398,8 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         method ← classFile.methods
         body ← method.body
         //instruction ← body.instructions
-        instruction ← body.instructions.typeFilter[INVOKESTATIC]
-        if instruction.name ==# "runFinalizersOnExit"
+        instruction ← body.instructions.typeCase(when[INVOKESTATIC](_.name ==# "runFinalizersOnExit", identity)) //.typeFilter[INVOKESTATIC]
+        //if instruction.name ==# "runFinalizersOnExit"
         desc <- Let(instruction.methodDescriptor)
         recv <- instruction.declaringClass.ifInstanceOf[ObjectType]
         if (recv.className ==# "java/lang/System" || recv.className ==# "java/lang/Runtime") &&
