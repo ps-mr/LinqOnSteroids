@@ -544,7 +544,7 @@ object Optimization {
   val subqueries: Map[Exp[_], Any] = Map.empty
 
   def resetSubqueries() = subqueries.clear()
-  def addSubquery[T](_query: Dummy[Exp[T]], res: Option[T] = None) {
+  def addSubquery[T](_query: UnconvertedExp[Exp[T]], res: Option[T] = None) {
     val query = OptimizationTransforms.stripViewUntyped(_query.v)
     val optquery = optimizeIdx(query)
     val intQuery = res match {
@@ -559,7 +559,7 @@ object Optimization {
     subqueries += normalize(optquery) -> intQuery
   }
 
-  def removeSubquery[T](_query: Dummy[Exp[T]]) {
+  def removeSubquery[T](_query: UnconvertedExp[Exp[T]]) {
     val query = _query.v
     subqueries -= normalize(query)
     subqueries -= normalize(optimize(query))

@@ -105,26 +105,26 @@ trait ExpSugar extends ConversionDisabler2 {
   //Simplest possible definition of Query:
   //def Query[Repr](t: Exp[Repr]): Exp[Repr] = t
 
-  class Dummy[+T](val v: T)
+  class UnconvertedExp[+T](val v: T)
 
   //This way, using Query verifies that it's argument is of type Exp[Traversable[T]] without needing to convert it. We could
   //maybe also restrict the result of Query so that only expResult() can be called on it.
   //
-  implicit def toQuery[T](t: Exp[Traversable[T]]) = new Dummy(t)
-  implicit def toTypeIndexDummy[C[X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new Dummy(t)
-  def Query[T](t: Dummy[Exp[Traversable[T]]]) = t.v
+  implicit def toQuery[T](t: Exp[Traversable[T]]) = new UnconvertedExp(t)
+  implicit def toTypeIndexDummy[C[X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new UnconvertedExp(t)
+  def Query[T](t: UnconvertedExp[Exp[Traversable[T]]]) = t.v
 
-  //Note: all the below is probably made unnecessary once Dummy becomes covariant.
+  //Note: all the below is probably made unnecessary once UnconvertedExp becomes covariant.
 
   //With all variants underneath, Scala does not manage to apply toQuery implicitly.
-  //implicit def toQuery[Repr](t: Exp[Repr]): Dummy[Exp[Repr]] = new Dummy(t)
-  //def Query[Repr](t: Dummy[Exp[Repr]]): Exp[Repr] = t.v
+  //implicit def toQuery[Repr](t: Exp[Repr]): UnconvertedExp[Exp[Repr]] = new UnconvertedExp(t)
+  //def Query[Repr](t: UnconvertedExp[Exp[Repr]]): Exp[Repr] = t.v
 
-  //implicit def toQuery[Repr <: Traversable[_]](t: Exp[Repr]): Dummy[Exp[Repr]] = new Dummy(t)
-  //def Query[Repr <: Traversable[_]](t: Dummy[Exp[Repr]]): Exp[Repr] = t.v
+  //implicit def toQuery[Repr <: Traversable[_]](t: Exp[Repr]): UnconvertedExp[Exp[Repr]] = new UnconvertedExp(t)
+  //def Query[Repr <: Traversable[_]](t: UnconvertedExp[Exp[Repr]]): Exp[Repr] = t.v
 
-  //implicit def toQuery[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]): Dummy[Exp[Repr with Traversable[T]]] = new Dummy(t)
-  //def Query[T, Repr <: Traversable[T]](t: Dummy[Exp[Repr with Traversable[T]]]): Exp[Repr with Traversable[T]] = t.v
+  //implicit def toQuery[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]): UnconvertedExp[Exp[Repr with Traversable[T]]] = new UnconvertedExp(t)
+  //def Query[T, Repr <: Traversable[T]](t: UnconvertedExp[Exp[Repr with Traversable[T]]]): Exp[Repr with Traversable[T]] = t.v
 
 
   class Materializable[T](t: Exp[Traversable[T]]) {
