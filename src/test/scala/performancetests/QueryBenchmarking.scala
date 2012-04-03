@@ -32,8 +32,12 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
       // list.flatMap(listEl => set(listEl))
       //returns results in non-deterministic order.
       resOpt should be (res) //keep this and alter queries instead.
-      println("Speedup by this optimization compared to base embedded version: %f" format (timeOpt / time))
-      println("Speedup by this optimization compared to native Scala version: %f" format (timeOpt / timeScala))
+
+      def report(label: String, speedup: Double) {
+        println("Speedup ratio by this optimization compared to %s: %f (i.e. %f less)" format (label, speedup, (1 - speedup) * 100))
+      }
+      report("base embedded version", timeOpt / time)
+      report("native Scala version", timeOpt / timeScala)
     }
 
     res
