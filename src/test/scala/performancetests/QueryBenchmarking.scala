@@ -27,17 +27,21 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
 
     val (res, time) = doRun(msg, v)
     for ((msgExtra, optim) <- optimizerTable[Coll] ++ extraOptims.asInstanceOf[Seq[(String, Exp[Coll] => Exp[Coll])]]) {
-      val (resOpt, timeOpt) = doRun(msg + msgExtra, optim(Optimization.optimize(v)))
+      val (optimized, optimizationTime) = benchMarkInternal(msg + " Optimization")(optim(Optimization.optimize(v)))
+      val (resOpt, timeOpt) = doRun(msg + msgExtra, optimized)
       //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
       // list.flatMap(listEl => set(listEl))
       //returns results in non-deterministic order.
       resOpt should be (res) //keep this and alter queries instead.
 
       def report(label: String, speedup: Double) {
-        println("Speedup ratio by this optimization compared to %s: %f (i.e. %f less)" format (label, speedup, (1 - speedup) * 100))
+        val delta = 1 - speedup
+        val lessOrMore = if (delta > 0) "less" else "MORE"
+        println("Speedup ratio by this optimization compared to %s: %f (i.e. %f%% %s)" format (label, speedup, math.abs(delta) * 100, lessOrMore))
       }
       report("base embedded version", timeOpt / time)
       report("native Scala version", timeOpt / timeScala)
+      report("native Scala version, counting optimization time", (timeOpt + optimizationTime) / timeScala)
     }
 
     res
