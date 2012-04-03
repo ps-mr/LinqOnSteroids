@@ -172,6 +172,12 @@ trait ForceOps {
     }
     def force(t: Exp[Traversable[T]]) = ForceIfPossible(t)
   }
+
+  implicit def SetForceable[T]: Forceable[T, Set[T]] = new Forceable[T, Set[T]] {
+    def force(t: Set[T]) = t
+    def force(t: Exp[Set[T]]) = t
+  }
+
   //Note: type inference does not pick supertypes of arguments unless needed (i.e. if inferring T from t: T, the type
   //of T will be picked usually), therefore this implicit will be picked when needed. Note that since Forceable is invariant,
   //implicit resolution will not have other alternatives
