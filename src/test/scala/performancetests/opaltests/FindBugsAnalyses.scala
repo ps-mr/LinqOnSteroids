@@ -107,17 +107,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       method ← classFile.methods
     } yield (classFile, method)).size)
 
-  private def analyzeConfusedInheritanceNative() = {
-    val protectedFields = benchMark("CI_CONFUSED_INHERITANCE") {
-      for {
-        classFile ← classFiles if classFile.isFinal
-        field ← classFile.fields if field.isProtected
-      } yield (classFile, field)
-    }
-    println("\tViolations: " + protectedFields.size)
-    protectedFields
-  }
-
   // The following code is meant to show how easy it is to write analyses;
   // it is not meant to demonstrate how to write such analyses in an efficient
   // manner.
@@ -125,27 +114,19 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     analyzeConfusedInheritance()
   }
   def analyzeConfusedInheritance() {
-    val protectedFields = analyzeConfusedInheritanceNative()
     // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
-    import BATLifting._
-    val protectedFieldsLos = benchMark("CI_CONFUSED_INHERITANCE Los Setup", silent = true) {
+    benchQueryComplete("CI_CONFUSED_INHERITANCE") {
+      for {
+        classFile ← classFiles if classFile.isFinal
+        field ← classFile.fields if field.isProtected
+      } yield (classFile, field)
+    } {
+      import BATLifting._
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isFinal
         field ← classFile.fields if field.isProtected
       } yield (classFile, field))
     }
-    benchQuery("CI_CONFUSED_INHERITANCE Los", protectedFieldsLos, protectedFields)
-
-    val protectedFieldsLikeLos = benchMark("CI_CONFUSED_INHERITANCE Native Like Los") {
-      (for {
-        classFile ← classFiles.view if classFile.isFinal
-        field ← classFile.fields.view if field.isProtected
-      } yield (classFile, field)).force
-    }
-
-    protectedFieldsLikeLos should be (protectedFields)
-
-    analyzeConfusedInheritanceNative() should be (protectedFields)
   }
 
   test("UnusedFields") {
@@ -177,7 +158,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield (classFile, privateFields)
     }*/
 
-    val unusedFields: Seq[(ClassFile, Set[String])] = benchMark("UUF_UNUSED_FIELD-3") {
+    benchQueryComplete("UUF_UNUSED_FIELD") {
       for {
         classFile ← classFiles if !classFile.isInterfaceDeclaration
         declaringClass = classFile.thisClass
@@ -194,31 +175,24 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         } yield usedPrivateField) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
-    }
-    println("\tViolations: " + unusedFields.size)
-
-    import BATLifting._
-    import InstructionLifting._
-
-    {
-      val unusedFieldsLos1_2 /*: Exp[Traversable[(ClassFile, Traversable[String])]]*/ = benchMark("UUF_UNUSED_FIELD Los-1.3 Setup", silent = true) {
-        Query(for {
-          classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
-          instructions ← Let(for {
-            method ← classFile.methods
-            body ← method.body
-            instruction ← body.instructions
-          } yield instruction)
-          declaringClass ← Let(classFile.thisClass)
-          privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
-          usedPrivateFields ← Let(instructions.typeCase(
-            when[GETFIELD](asGETFIELD => asGETFIELD.declaringClass ==# declaringClass, _.name),
-            when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass ==# declaringClass, _.name)))
-          unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
-          if unusedPrivateFields.size > 0
-        } yield (classFile, privateFields))
-      }
-      benchQuery("UUF_UNUSED_FIELD Los-1.3", unusedFieldsLos1_2, unusedFields)
+    } {
+      import BATLifting._
+      import InstructionLifting._
+      Query(for {
+        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
+        instructions ← Let(for {
+          method ← classFile.methods
+          body ← method.body
+          instruction ← body.instructions
+        } yield instruction)
+        declaringClass ← Let(classFile.thisClass)
+        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
+        usedPrivateFields ← Let(instructions.typeCase(
+          when[GETFIELD](asGETFIELD => asGETFIELD.declaringClass ==# declaringClass, _.name),
+          when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass ==# declaringClass, _.name)))
+        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, privateFields))
     }
   }
 
@@ -229,7 +203,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     val NoArgNoRetMethodDesc = MethodDescriptor(Seq(), VoidType)
 
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
-    val garbageCollectingMethods: Set[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
+    benchQueryComplete("DM_GC") {
       (for {
         classFile ← classFiles
         method ← classFile.methods
@@ -241,51 +215,9 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
           case _ ⇒ false
         })
       } yield (classFile, method, instruction)).toSet
-    }
-
-    println("\tViolations: " + garbageCollectingMethods.size)
-
-    val garbageCollectingMethodsLosLike = benchMark("DM_GC Native Like Los") {
-      (for {
-        classFile ← classFiles
-        method ← classFile.methods
-        body ← method.body.toList
-        instruction ← body.instructions.view
-        if ({
-          val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
-          val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
-
-          asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass == ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
-            asINVOKESTATIC.get.methodDescriptor == NoArgNoRetMethodDesc ||
-            asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass == ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
-              asINVOKEVIRTUAL.get.methodDescriptor == NoArgNoRetMethodDesc
-        })
-      } yield (classFile, method, instruction)).toSet
-    }
-    garbageCollectingMethodsLosLike should be (garbageCollectingMethods)
-
-    val garbageCollectingMethodsLosLike2 = benchMark("DM_GC Native More Like Los") {
-      (for {
-        classFile ← classFiles
-        method ← classFile.methods.view
-        body ← method.body.toList
-        instruction ← body.instructions.view
-        if ({
-          val asINVOKESTATIC = instruction.ifInstanceOf[INVOKESTATIC]
-          val asINVOKEVIRTUAL = instruction.ifInstanceOf[INVOKEVIRTUAL]
-
-          asINVOKESTATIC.isDefined && asINVOKESTATIC.get.declaringClass == ObjectType("java/lang/System") && asINVOKESTATIC.get.name == "gc" &&
-            asINVOKESTATIC.get.methodDescriptor == NoArgNoRetMethodDesc ||
-            asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass == ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
-              asINVOKEVIRTUAL.get.methodDescriptor == NoArgNoRetMethodDesc
-        })
-      } yield (classFile, method, instruction)).toSet
-    }
-    garbageCollectingMethodsLosLike2 should be (garbageCollectingMethods)
-    import BATLifting._
-    import InstructionLifting._
-
-    benchQueryComplete("DM_GC-3")(garbageCollectingMethods, false) {
+    } {
+      import BATLifting._
+      import InstructionLifting._
       (for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods
@@ -304,31 +236,18 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   }
   def analyzePublicFinalizer() {
     // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
-    val classesWithPublicFinalizeMethods = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED") {
+    benchQueryComplete("FI_PUBLIC_SHOULD_BE_PROTECTED") {
       for (
         classFile ← classFiles
         if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
       ) yield classFile
-    }
-    println("\tViolations: " + classesWithPublicFinalizeMethods.length)
-
-    val classesWithPublicFinalizeMethodsLikeLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Native Like Los") {
-      (for (
-        classFile ← classFiles.view
-        if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
-      ) yield classFile).force
-    }
-    classesWithPublicFinalizeMethodsLikeLos should be (classesWithPublicFinalizeMethods)
-
-    import BATLifting._
-
-    val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED Los Setup", silent = true) {
+    } {
+      import BATLifting._
       Query(for (
         classFile ← classFiles.asSmartCollection
         if classFile.methods.exists(method ⇒ method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0)
       ) yield classFile)
     }
-    benchQuery("FI_PUBLIC_SHOULD_BE_PROTECTED Los", classesWithPublicFinalizeMethodsLos, classesWithPublicFinalizeMethods)
   }
 
 
@@ -337,35 +256,20 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   }
   def analyzePublicFinalizer2() {
     // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
-
-    val classesWithPublicFinalizeMethods = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED-2") {
+    benchQueryComplete("FI_PUBLIC_SHOULD_BE_PROTECTED-2") {
       for {
         classFile ← classFiles
         method ← classFile.methods
         if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
       } yield classFile
-    }
-    println("\tViolations: " + classesWithPublicFinalizeMethods.length)
-
-    val classesWithPublicFinalizeMethodsLikeLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED-2 Native Like Los") {
-      for {
-        classFile ← classFiles
-        method ← classFile.methods.view
-        if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
-      } yield classFile
-    }
-    classesWithPublicFinalizeMethodsLikeLos should be (classesWithPublicFinalizeMethods)
-
-    import BATLifting._
-
-    val classesWithPublicFinalizeMethodsLos = benchMark("FI_PUBLIC_SHOULD_BE_PROTECTED-2 Los Setup", silent = true) {
+    } {
+      import BATLifting._
       Query(for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods
         if method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0
       } yield classFile)
     }
-    benchQuery("FI_PUBLIC_SHOULD_BE_PROTECTED-2 Los", classesWithPublicFinalizeMethodsLos, classesWithPublicFinalizeMethods)
   }
 
   test("SerializableNoConstructor") {
@@ -374,7 +278,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   def analyzeSerializableNoConstructor() {
     // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
     val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
-    val classesWithoutDefaultConstructor = benchMark("SE_NO_SUITABLE_CONSTRUCTOR") {
+    benchQueryComplete("SE_NO_SUITABLE_CONSTRUCTOR") {
       for {
         superclass ← classHierarchy.superclasses(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
@@ -383,23 +287,8 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
             !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
         }
       } yield superclass // there can be at most one method
-    }
-    println("\tViolations: " + classesWithoutDefaultConstructor.size)
-
-    val classesWithoutDefaultConstructorLikeLos = benchMark("SE_NO_SUITABLE_CONSTRUCTOR Native Like Los") {
-      (for {
-        superclass ← classHierarchy.superclasses(serializableClasses).view if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
-        {
-          val superClassFile = getClassFile(superclass)
-          !superClassFile.isInterfaceDeclaration &&
-            !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
-        }
-      } yield superclass).force // there can be at most one method
-    }
-    classesWithoutDefaultConstructorLikeLos should be (classesWithoutDefaultConstructorLikeLos)
-
-    import BATLifting._
-    val classesWithoutDefaultConstructorLos = benchMark("SE_NO_SUITABLE_CONSTRUCTOR Los Setup", silent = true) {
+    } {
+      import BATLifting._
       Query(for {
         superclass ← classHierarchy.superclasses(serializableClasses).asSmartCollection if getClassFile.asSmartCollection.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
@@ -409,7 +298,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         }
       } yield superclass) // there can be at most one method
     }
-    benchQuery("SE_NO_SUITABLE_CONSTRUCTOR Los", classesWithoutDefaultConstructorLos, classesWithoutDefaultConstructor)
   }
 
   test("CatchIllegalMonitorStateException") {
@@ -418,29 +306,15 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   def analyzeCatchIllegalMonitorStateException() {
     // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
     val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
-    val catchesIllegalMonitorStateException = benchMark("IMSE_DONT_CATCH_IMSE") {
+    benchQueryComplete("IMSE_DONT_CATCH_IMSE") {
       for {
         classFile ← classFiles if classFile.isClassDeclaration
         method ← classFile.methods
         body ← method.body.toList
         exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType == IllegalMonitorStateExceptionType
       } yield (classFile, method)
-    }
-    println("\tViolations: " + catchesIllegalMonitorStateException.size)
-
-    val catchesIllegalMonitorStateExceptionLikeLos = benchMark("IMSE_DONT_CATCH_IMSE Native Like Los") {
-      (for {
-        classFile ← classFiles.view if classFile.isClassDeclaration
-        method ← classFile.methods
-        body ← method.body.toList
-        exceptionHandler ← body.exceptionHandlers.view if exceptionHandler.catchType == IllegalMonitorStateExceptionType
-      } yield (classFile, method)).force
-    }
-
-    catchesIllegalMonitorStateExceptionLikeLos should be (catchesIllegalMonitorStateException)
-
-    import BATLifting._
-    val catchesIllegalMonitorStateExceptionLos = benchMark("IMSE_DONT_CATCH_IMSE Los Setup", silent = true) {
+    } {
+      import BATLifting._
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
         method ← classFile.methods
@@ -448,7 +322,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType ==# IllegalMonitorStateExceptionType
       } yield (classFile, method))
     }
-    benchQuery("IMSE_DONT_CATCH_IMSE Los", catchesIllegalMonitorStateExceptionLos, catchesIllegalMonitorStateException)
   }
 
   test("CovariantCompareToMethods") {
@@ -456,7 +329,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   }
   def analyzeCovariantCompareToMethods() {
     val comparableType = ObjectType("java/lang/Comparable")
-    val covariantCompareToMethods = benchMark("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF") {
+    benchQueryComplete("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF") {
       // Weakness: In a project, where we extend a predefined class (of the JDK) that
       // inherits from Comparable and in which we define covariant comparesTo method,
       // we will not be able to identify this issue unless we have identified the whole
@@ -467,11 +340,8 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         classFile ← getClassFile.get(comparable).toList
         method @ Method(_, "compareTo", MethodDescriptor(CSeq(parameterType), IntegerType), _) ← classFile.methods if parameterType != ObjectType.Object
       } yield (classFile, method)
-    }
-    println("\tViolations: "+covariantCompareToMethods.size)
-
-    import BATLifting._
-    val covariantCompareToMethodsLos = benchMark("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF Los Setup") {
+    } {
+      import BATLifting._
       Query(for {
         allComparables ← classHierarchy.subtypes(comparableType).toList.asSmartCollection
         comparable ← allComparables
@@ -483,7 +353,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
 
       } yield (classFile, method))
     }
-    benchQuery("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF Los", covariantCompareToMethodsLos, covariantCompareToMethods)
   }
 
   test("AbstractClassesThatDefinesCovariantEquals") {
@@ -491,16 +360,13 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   }
   def analyzeAbstractClassesThatDefinesCovariantEquals() {
     //XXX This analysis was changed for BAT, reconsider.
-    val abstractClassesThatDefinesCovariantEquals = benchMark("EQ_ABSTRACT_SELF") {
+    benchQueryComplete("EQ_ABSTRACT_SELF") {
       for {
         classFile ← classFiles if classFile.isAbstract
         method @ Method(_, "equals", MethodDescriptor(CSeq(parameterType), BooleanType), _) ← classFile.methods if parameterType != ObjectType.Object
       } yield (classFile, method)
-    }
-    println("\tViolations: "+abstractClassesThatDefinesCovariantEquals.size)
-
-    import BATLifting._
-    val abstractClassesThatDefinesCovariantEqualsLos = benchMark("EQ_ABSTRACT_SELF Los Setup", silent = true) {
+    } {
+      import BATLifting._
       Query(for {
         classFile ← classFiles.asSmartCollection if classFile.isAbstract
         method ← classFile.methods
@@ -509,7 +375,6 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType.Object
       } yield (classFile, method))
     }
-    benchQuery("EQ_ABSTRACT_SELF Los", abstractClassesThatDefinesCovariantEqualsLos, abstractClassesThatDefinesCovariantEquals)
   }
 
   test("MethodsThatCallRunFinalizersOnExit") {
