@@ -19,7 +19,7 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   //Having the import here does not work; we later import SampleLibraryLiftingManual which shadows the original objects,
   //
   //import sampleapp._
-  val books: Seq[Book] = Seq(Book("Compilers: Principles, Techniques, and Tools", "Pearson Education", Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
+  val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "Pearson Education", Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
   val recordsOld = for {
     book <- books
     if book.publisher == "ACM"
@@ -37,13 +37,13 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
     author <- book.authors
   } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
-  def titleFilter(records: Seq[Result], keyword: String): Seq[(String, String)] = for {
+  def titleFilter(records: Set[Result], keyword: String): Set[(String, String)] = for {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
   val processedRecords = titleFilter(records, "Principles")
 
-  def titleFilterHandOpt1(books: Seq[Book], publisher: String, keyword: String) = for {
+  def titleFilterHandOpt1(books: Set[Book], publisher: String, keyword: String) = for {
     book <- books
     if book.publisher == publisher
     author <- book.authors
@@ -51,7 +51,7 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   } yield (book.title, author.firstName + " " + author.lastName)
   val processedRecordsOpt1 = titleFilterHandOpt1(books, "Pearson Education", "Principles")
 
-  def titleFilterHandOpt2(books: Seq[Book], publisher: String, keyword: String) =
+  def titleFilterHandOpt2(books: Set[Book], publisher: String, keyword: String) =
     for {
       book <- books
       if book.publisher == publisher
@@ -98,7 +98,7 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
     recordsQueryOpt.interpret() should be (records)
   }
 
-  def titleFilterQuery(records: Exp[Seq[Result]], keyword: String): Exp[Seq[(String, String)]] = for {
+  def titleFilterQuery(records: Exp[Set[Result]], keyword: String): Exp[Set[(String, String)]] = for {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
