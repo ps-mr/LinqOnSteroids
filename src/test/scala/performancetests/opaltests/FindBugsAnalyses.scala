@@ -229,8 +229,8 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     val NoArgNoRetMethodDesc = MethodDescriptor(Seq(), VoidType)
 
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
-    val garbageCollectingMethods: Seq[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
-      for {
+    val garbageCollectingMethods: Set[(ClassFile, Method, Instruction)] = benchMark("DM_GC") {
+      (for {
         classFile ← classFiles
         method ← classFile.methods
         body ← method.body.toList
@@ -240,13 +240,13 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
                INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", NoArgNoRetMethodDesc) ⇒ true
           case _ ⇒ false
         })
-      } yield (classFile, method, instruction)
+      } yield (classFile, method, instruction)).toSet
     }
 
     println("\tViolations: " + garbageCollectingMethods.size)
 
     val garbageCollectingMethodsLosLike = benchMark("DM_GC Native Like Los") {
-      for {
+      (for {
         classFile ← classFiles
         method ← classFile.methods
         body ← method.body.toList
@@ -260,12 +260,12 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass == ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
               asINVOKEVIRTUAL.get.methodDescriptor == NoArgNoRetMethodDesc
         })
-      } yield (classFile, method, instruction)
+      } yield (classFile, method, instruction)).toSet
     }
     garbageCollectingMethodsLosLike should be (garbageCollectingMethods)
 
     val garbageCollectingMethodsLosLike2 = benchMark("DM_GC Native More Like Los") {
-      for {
+      (for {
         classFile ← classFiles
         method ← classFile.methods.view
         body ← method.body.toList
@@ -279,14 +279,14 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
             asINVOKEVIRTUAL.isDefined && asINVOKEVIRTUAL.get.declaringClass == ObjectType("java/lang/Runtime") && asINVOKEVIRTUAL.get.name == "gc" &&
               asINVOKEVIRTUAL.get.methodDescriptor == NoArgNoRetMethodDesc
         })
-      } yield (classFile, method, instruction)
+      } yield (classFile, method, instruction)).toSet
     }
     garbageCollectingMethodsLosLike2 should be (garbageCollectingMethods)
     import BATLifting._
     import InstructionLifting._
 
     benchQueryComplete("DM_GC-3")(garbageCollectingMethods, false) {
-      for {
+      (for {
         classFile ← classFiles.asSmartCollection
         method ← classFile.methods
         body ← method.body
@@ -295,7 +295,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
             instr.declaringClass ==# ObjectType("java/lang/System") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity),
           when[INVOKEVIRTUAL](instr =>
             instr.declaringClass ==# ObjectType("java/lang/Runtime") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity))
-      } yield (classFile, method, instruction)
+      } yield (classFile, method, instruction)).toSet
     }
   }
 

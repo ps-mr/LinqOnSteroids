@@ -117,7 +117,7 @@ trait TraversableOps {
     def toSeq = onExp(this.t)('TraversableLike$toSeq, _.toSeq)
     def flatten[U](implicit asTraversable: T => TraversableOnce[U]) = onExp(this.t)('TraversableLikeOps$flatten, _.flatten)
 
-    def typeCase[Res, That <: TraversableLike[Res, That]](cases: TypeCase[_, Res]*)(implicit c: CanBuildFrom[TraversableView[T, Repr], Res, That]): Exp[That] = TypeCaseExp(this.t, cases)
+    def typeCase[Res](cases: TypeCase[_, Res]*): Exp[Set[Res]] = TypeCaseExp(this.t, cases)
   }
 
   trait TraversableViewLikeOps[

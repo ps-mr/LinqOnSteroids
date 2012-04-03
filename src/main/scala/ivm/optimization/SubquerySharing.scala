@@ -112,7 +112,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   case class FoundTypeCase[BaseT,
   Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr],
   Res,
-  That <: TraversableLike[Res, That]](t: TypeCaseExp[BaseT, Repr, Res, That]) extends FoundNode[BaseT, Repr](t.e) {
+  That](t: TypeCaseExp[BaseT, Repr, Res, That]) extends FoundNode[BaseT, Repr](t.e) {
     type OptRes = Res
     type TupleWith[T] = (Any, T)
     override def buildTuple[T](allFVSeq: Seq[Var])(x: Exp[T]): Exp[(_, T)] = (TupleSupport2.toTuple(allFVSeq), x)
