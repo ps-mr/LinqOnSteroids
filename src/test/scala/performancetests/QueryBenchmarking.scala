@@ -14,11 +14,11 @@ import org.scalatest.matchers.ShouldMatchers
 
 trait QueryBenchmarking extends TestUtil with Benchmarking {
   this: ShouldMatchers =>
-  def optimizerTable[T]: Seq[(String, Exp[T] => Exp[T])] = Seq((" - after optimization", identity _))
+  private def optimizerTable[T]: Seq[(String, Exp[T] => Exp[T])] = Seq((" - after optimization", identity _))
 
-  def benchInterpret[T, Coll <: Traversable[T]](msg: String,
+  private def benchInterpret[T, Coll <: Traversable[T]](msg: String,
                                                 v: Exp[Coll],
-                                                extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)(implicit f: Forceable[T, Coll]): Traversable[T] =
+                                                extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])], timeScala: Double)(implicit f: Forceable[T, Coll]): Traversable[T] =
   {
     def doRun(msg: String, v: Exp[Coll]) = {
       showExpNoVal(v, msg)
@@ -32,17 +32,18 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
       // list.flatMap(listEl => set(listEl))
       //returns results in non-deterministic order.
       resOpt should be (res) //keep this and alter queries instead.
-      println("Speedup by this optimization: %f" format (timeOpt.asInstanceOf[Float] / time))
+      println("Speedup by this optimization compared to base embedded version: %f" format (timeOpt / time))
+      println("Speedup by this optimization compared to native Scala version: %f" format (timeOpt / timeScala))
     }
 
     res
   }
 
-  def benchQuery[T, Coll <: Traversable[T]](msg: String,
+  private def benchQuery[T, Coll <: Traversable[T]](msg: String,
                                             v: Exp[Coll],
                                             expectedResult: Traversable[T],
-                                            extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)(implicit f: Forceable[T, Coll]): Traversable[T] = {
-    val res = benchInterpret[T, Coll](msg, v, extraOptims)
+                                            extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])], timeScala: Double)(implicit f: Forceable[T, Coll]): Traversable[T] = {
+    val res = benchInterpret[T, Coll](msg, v, extraOptims, timeScala)
     res should be (expectedResult)
     res
   }
@@ -51,19 +52,14 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
   // just always have them, i.e. always check dynamically whether forcing is needed, for all LoS queries, slowing them
   // down a tiny insignificant bit.
   def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
-                                                   (expected: => Traversable[T], doBench: Boolean = true)
+                                                   (expected: => Traversable[T])
                                                    (query: => Exp[Coll],
                                                     extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
-    val (expectedRes, time) =
-      if (doBench)
-        benchMarkInternal(msg)(expected)
-      else
-        (expected, 1)
+    val (expectedRes, timeScala) = benchMarkInternal(msg)(expected)
     val builtQuery = benchMark("%s Los Setup" format msg, silent = true)(Query(query))
-    benchQuery("%s Los" format msg, builtQuery, expectedRes, extraOptims)
-    if (doBench)
-      println("\tViolations: " + expectedRes.size)
+    benchQuery("%s Los" format msg, builtQuery, expectedRes, extraOptims, timeScala)
+    println("\tViolations: " + expectedRes.size)
     expectedRes
   }
 }
