@@ -28,7 +28,10 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
     val (res, time) = doRun(msg, v)
     for ((msgExtra, optim) <- optimizerTable[Coll] ++ extraOptims.asInstanceOf[Seq[(String, Exp[Coll] => Exp[Coll])]]) {
       val (resOpt, timeOpt) = doRun(msg + msgExtra, optim(Optimization.optimize(v)))
-      resOpt should be (res)
+      //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
+      // list.flatMap(listEl => set(listEl))
+      //returns results in non-deterministic order.
+      resOpt should be (res) //keep this and alter queries instead.
       println("Speedup by this optimization: %f" format (timeOpt.asInstanceOf[Float] / time))
     }
 
