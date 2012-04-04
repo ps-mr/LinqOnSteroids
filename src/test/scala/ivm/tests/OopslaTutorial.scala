@@ -87,22 +87,23 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
    book <- books.asSmartCollection
    if book.publisher ==# "Pearson Education"
    author <- book.authors
- } yield Result(book.title,
+ } yield (book.title,
     author.firstName + " " + author.lastName,
     book.authors.size - 1)
 
-  val recordsQueryOpt = Optimization.optimize(recordsQuery)
   test("same results") {
     println(recordsQuery)
     recordsQuery.interpret() should be (records)
+    val recordsQueryOpt = Optimization.optimize(recordsQuery)
     println(recordsQueryOpt)
     recordsQueryOpt.interpret() should be (records)
   }
+  type Result2 = (String, String, Int)
 
-  def titleFilterQuery(records: Exp[Set[Result]], keyword: String): Exp[Set[(String, String)]] = for {
+  def titleFilterQuery(records: Exp[Set[Result2]], keyword: String): Exp[Set[(String, String)]] = for {
     record <- records
-    if record.title.contains(keyword)
-  } yield (record.title, record.authorName)
+    if record._1.contains(keyword)
+  } yield (record._1, record._2)
 
   val processedRecordsQuery = titleFilterQuery(recordsQuery, "Principles")
 
@@ -113,7 +114,32 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
     println(processedRecordsQueryOpt)
     processedRecordsQueryOpt.interpret() should be (processedRecords)
   }
+  //A query like processedRecordsQuery cannot really be optimized without unnesting! After that we need inlining,
+  // which we have, and only then the delta-reduction rule for tuples can kick in.
+  // If instead we use Result, we need delta-reduction to work on Result; Result needs to implement ExpProduct, and the
+  // selectors need to implement ExpSelection; I guess for the latter I'd need to manually alter the generated code a
+  // bit (for now).
+
+  // On the other hand, I already understand unnesting.
+  /*
+  Force(MapOp(
+    Filter(
+      View(Force(
+        FlatMap(
+          Filter(
+            View(Const(books)),
+            v40 => Eq(Book_publisher1(v40),Const("Pearson Education"))),
+          v41 => MapOp(
+            Book_authors2(v41),
+            v44 => LiftTuple3(
+              Book_title0(v41),
+              StringConcat(StringConcat(Author_firstName0(v44),Const(" ")),Author_lastName1(v44)),
+              Plus(Size(Book_authors2(v41)),Negate(Const(1)))))))),
+      v42 => Call2('StringOps$contains, Tuple3Proj1(v42), Const("Principles"))),
+    v45 => LiftTuple2(Tuple3Proj1(v45),Tuple3Proj2(v45))))
+    */
 }
+
 
 object SampleLibraryLiftingManual {
   //case class Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int])
