@@ -93,6 +93,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   val recordsQueryOpt = Optimization.optimize(recordsQuery)
   test("same results") {
+    println(recordsQuery)
     recordsQuery.interpret() should be (records)
     println(recordsQueryOpt)
     recordsQueryOpt.interpret() should be (records)
@@ -105,10 +106,10 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   val processedRecordsQuery = titleFilterQuery(recordsQuery, "Principles")
 
-  val processedRecordsQueryOpt = Optimization.optimize(processedRecordsQuery)
-
   test("processedRecords should have the results") {
+    println(processedRecordsQuery)
     processedRecordsQuery.interpret() should be (processedRecords)
+    val processedRecordsQueryOpt = Optimization.optimize(processedRecordsQuery)
     println(processedRecordsQueryOpt)
     processedRecordsQueryOpt.interpret() should be (processedRecords)
   }
