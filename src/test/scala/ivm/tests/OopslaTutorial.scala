@@ -159,6 +159,7 @@ trait SampleAppLifting extends SampleApp {
   //Code to be generated }}}
 }
 
+/*
 class OopslaTutorial extends /*FunSuite with ShouldMatchers with TestUtil with*/ SampleApp {
   val libs: Set[Library] = Set.empty
   val idx = (for {
@@ -194,3 +195,4 @@ class Foo extends OopslaTutorial with SampleAppLifting {
   */
   //That's rather cumbersome. Let's ask for help.
 }
+*/
