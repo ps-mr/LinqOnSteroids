@@ -90,7 +90,8 @@ object FindBugsAnalyses {
 }
 
 class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
-  def this() = this(Seq("lib/scalatest-1.6.1.jar"))
+  //def this() = this(Seq("lib/scalatest-1.6.1.jar"))
+  def this() = this(Seq("src/test/resources/Bugs.zip"))
 
   val classFiles: Seq[ClassFile] = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
     for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
