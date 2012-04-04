@@ -17,6 +17,7 @@ import optimization.Optimization
 
 class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l: Exp[Seq[(Int, Int)]] = asExp(Vector.range(1, 3).flatMap(i => Vector.range(1, 2).map((i, _))))
+  val baseRange = Vector.range(1, 10).asSmartCollection
 
   @Test def testSimpleSharing() {
     val s1 = l.map(p => (p._1 + 1, p._2 + 2))
@@ -53,13 +54,13 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   val l2: Exp[Seq[Int]] =
     for {
-      i <- Vector.range(1, 10).asSmartCollection
+      i <- baseRange
       j <- onExp(i)('Vector$range_1, Vector.range(1, _))
       if (j ==# 5)
     } yield i + j
 
   val l2IdxBase = for {
-    i <- Vector.range(1, 10).asSmartCollection
+    i <- baseRange
     j <- onExp(i)('Vector$range_1, Vector.range(1, _))
   } yield (i, j)
 
@@ -70,7 +71,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   val l3_k: Exp[Seq[Int]] =
     for {
-      i <- Vector.range(1, 10).asSmartCollection
+      i <- baseRange
       j <- onExp(i)('Vector$range_1, Vector.range(1, _))
       k <- onExp(j)('Vector$range_1, Vector.range(1, _))
       if (k ==# 5)
@@ -79,20 +80,20 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   //The if will get lifted by optimizations - that's why l3IdxBase_j needs to be used during indexing.
   val l3_j: Exp[Seq[Int]] =
     for {
-      i <- Vector.range(1, 10).asSmartCollection
+      i <- baseRange
       j <- onExp(i)('Vector$range_1, Vector.range(1, _))
       k <- onExp(j)('Vector$range_1, Vector.range(1, _))
       if (j ==# 5)
     } yield i + j + k
 
   val l3IdxBase_k = for {
-    i <- Vector.range(1, 10).asSmartCollection
+    i <- baseRange
     j <- onExp(i)('Vector$range_1, Vector.range(1, _))
     k <- onExp(j)('Vector$range_1, Vector.range(1, _))
   } yield (i, j, k)
 
   val l3IdxBase_j: Exp[Seq[(Int, Int)]] = for {
-    i <- Vector.range(1, 10).asSmartCollection
+    i <- baseRange
     j <- onExp(i)('Vector$range_1, Vector.range(1, _))
   } yield (i, j)
 
@@ -113,7 +114,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   val l3_shifted: Exp[Seq[Int]] =
     for {
-      i <- Vector.range(1, 10).asSmartCollection
+      i <- baseRange
       j <- onExp(i)('Vector$range_1, Vector.range(1, _))
       if (j ==# 5)
       k <- onExp(j)('Vector$range_1, Vector.range(1, _))
@@ -121,14 +122,14 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   val l3_k1_opt: Exp[Seq[Int]] =
     for {
-      i <- Vector.range(1, 10).asSmartCollection
+      i <- baseRange
       j <- Let(i + 1)
       k <- onExp(j)('Vector$range_1, Vector.range(1, _))
       if (k ==# 5)
     } yield i + j + k
 
   val l3IdxBase_k1_opt = for {
-    i <- Vector.range(1, 10).asSmartCollection
+    i <- baseRange
     j <- Let(i + 1)
     k <- onExp(j)('Vector$range_1, Vector.range(1, _))
   } yield (i, j, k)
@@ -141,7 +142,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   val l3_k_opt: Exp[Seq[Int]] =
     for {
-      i <- Vector.range(1, 10).asSmartCollection
+      i <- baseRange
       j <- Let(i + 1) if (j ==# 2)
       k <- Let(i + j + 2)
       if (k ==# 5)
@@ -150,7 +151,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test def testComplexIndexing3Level_k_opt() {
     val l3IdxBase_k_opt = for {
-      i <- Vector.range(1, 10).asSmartCollection
+      i <- baseRange
       j <- Let(i + 1)
       k <- Let(i + j + 2)
     } yield (i, j, k)
@@ -161,7 +162,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test def testComplexIndexing3Level_k_opt_workaround() {
     val l3IdxBase_k_opt = for {
-      i <- Vector.range(1, 10).asSmartCollection
+      i <- baseRange
       j <- asExp(Seq(i + 1))
       k <- Seq(i + j + 2): Exp[Iterable[Int]]
     } yield (i, j, k)
@@ -172,7 +173,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   val l3_k_seqlet: Exp[Seq[Int]] =
     for {
-      i <- Vector.range(1, 10).asSmartCollection
+      i <- baseRange
       j <- asExp(Seq(i + 1))
       k <- asExp(Seq(i + j + 2))
       if (k ==# 5)
@@ -180,7 +181,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test def testComplexIndexing3Level_k_seqlet() {
     val l3IdxBase_k_seqlet = for {
-      i <- Vector.range(1, 10).asSmartCollection
+      i <- baseRange
       j <- asExp(Seq(i + 1))
       k <- asExp(Seq(i + j + 2))
     } yield (i, j, k)
@@ -191,7 +192,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test def testComplexIndexing3Level_k_seqlet_workaround() {
     val l3IdxBase_k_seqlet = for {
-      i <- Vector.range(1, 10).asSmartCollection
+      i <- baseRange
       j <- asExp(Seq(i + 1))
       k <- Seq(i + j + 2): Exp[Iterable[Int]]
     } yield (i, j, k)
