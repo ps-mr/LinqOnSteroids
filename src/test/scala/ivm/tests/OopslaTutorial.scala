@@ -15,7 +15,7 @@ import Lifting._
 //New example, discussed with Christian.
 
 import sampleapp._
-class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
+class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   //Having the import here does not work; we later import SampleLibraryLiftingManual which shadows the original objects,
   //
   //import sampleapp._
