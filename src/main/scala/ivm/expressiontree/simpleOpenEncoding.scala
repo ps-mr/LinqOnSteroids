@@ -75,7 +75,8 @@ trait FunctionOps {
 
   implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
     f match {
-      case FuncExp(fe) => fe.asInstanceOf[Exp[A] => Exp[B]] //This line should be dropped, but then we'll need to introduce a beta-reducer.
+      //This line should be dropped, but then we'll need to introduce a beta-reducer:
+      case fe: FuncExp[a, b] => fe.f
       // KO: Why do we need a beta-reducer? Since we use HOAS this is just Scala function application
       // and already available in App.interpret
       // But it may still make sense to evaluate such applications right away
