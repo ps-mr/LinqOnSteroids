@@ -362,15 +362,16 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     //XXX This analysis was changed for BAT, reconsider.
     benchQueryComplete("EQ_ABSTRACT_SELF") {
       for {
-        classFile ← classFiles if classFile.isAbstract
-        method @ Method(_, "equals", MethodDescriptor(CSeq(parameterType), BooleanType), _) ← classFile.methods if parameterType != ObjectType.Object
+        classFile ← classFiles
+        method @ Method(_, "equals", MethodDescriptor(CSeq(parameterType), BooleanType), _) ← classFile.methods
+        if  method.isAbstract && parameterType != ObjectType.Object
       } yield (classFile, method)
     } {
       import BATLifting._
       Query(for {
-        classFile ← classFiles.asSmartCollection if classFile.isAbstract
+        classFile ← classFiles.asSmartCollection
         method ← classFile.methods
-        if method.name ==# "equals" && method.descriptor.returnType ==# BooleanType
+        if method.isAbstract && method.name ==# "equals" && method.descriptor.returnType ==# BooleanType
         parameterTypes <- Let(method.descriptor.parameterTypes)
         if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType.Object
       } yield (classFile, method))
