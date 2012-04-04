@@ -94,6 +94,28 @@ trait FunctionOps {
   implicit def expToPartialFunOps[S, T](t: Exp[PartialFunction[S, T]]) = new PartialFunctionOps(t)
 }
 
+trait ExpProduct {
+  //Better name prefix?
+  def metaProductArity: Int
+  def metaProductElement(n: Int): Exp[Any]
+  //The methods below are totally unrelated, they should be pimped instead on Exp[(T1, T2, ..., Tn)].
+
+  //def productArity: Exp[Int]
+  //How to implement this? Create the right dynamic node!
+  //def productElement(n: Exp[Int]): Exp[Any]
+}
+
+trait ExpSelection[TupleT] {
+  val body: (Int, Int, Exp[TupleT])
+}
+//class ExpSelection[TupleT](val arity: Int, val pos: Int, val body: Exp[TupleT])
+object ExpSelection {
+  def unapply(f: Exp[_]): Option[(Int, Int, Exp[_])] = f match {
+    case v: ExpSelection[t] => Some(v.body)
+    case _ => None
+  }
+}
+
 trait TupleOps extends AutoTupleOps {
   this: LiftingConvs =>
   //implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): LiftTuple2[A, B] = LiftTuple2[A, B](pair._1, pair._2)
