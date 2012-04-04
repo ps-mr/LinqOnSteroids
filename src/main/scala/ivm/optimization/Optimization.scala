@@ -492,6 +492,10 @@ object OptimizationTransforms {
     case e => e
   }
 
+  val deltaReductionTuple: PartialFunction[Exp[_], Exp[_]] = {
+    case ExpSelection(arity, selected, e: ExpProduct) => e.metaProductElement(selected - 1)
+  }
+
   val existsUnnester: Exp[_] => Exp[_] = {
     //Rule N9 page 474 in Optimizing Object Queries Using an Effective Calculus, Fegaras and Maier, 2000:
     //c0 withFilter (x0 => c exists (x => p(x))) flatMap (x1 => B [not free in x]) |=> c0 flatMap (x0 => c withFilter (x => p(x)) flatMap restQuery)
