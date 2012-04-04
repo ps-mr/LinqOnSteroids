@@ -496,6 +496,22 @@ object OptimizationTransforms {
     case ExpSelection(arity, selected, e: ExpProduct) => e.metaProductElement(selected - 1)
   }
 
+  val betaReduction: PartialFunction[Exp[_], Exp[_]] = {
+    //case a: App[s, t] => a.f(a.t) //causes a warning
+    case app @ App(fun /* @ FuncExpBody(body)*/, arg)
+      //if ((body findTotFun (_ == fun.x)).length == 1) //Inlining side conditions. Damn, we need to use unrestricted inlining as here, simplify, and then use CSE again,
+      //to have a robust solution.
+    =>
+      fun(arg)
+  }
+
+  val betaDeltaReducer: Exp[_] => Exp[_] = deltaReductionTuple orElse betaReduction orElse {case x => x} //that's the shortest way of writing identity.
+  /*val betaReduction: Exp[_] => Exp[_] = {
+    case a: App[t, u] => a.f(a.t)
+    case ExpSelection(arity, selected, e: ExpProduct) => e.metaProductElement(selected - 1)
+    case e => e
+  }*/
+
   val existsUnnester: Exp[_] => Exp[_] = {
     //Rule N9 page 474 in Optimizing Object Queries Using an Effective Calculus, Fegaras and Maier, 2000:
     //c0 withFilter (x0 => c exists (x => p(x))) flatMap (x1 => B [not free in x]) |=> c0 flatMap (x0 => c withFilter (x => p(x)) flatMap restQuery)
@@ -608,6 +624,8 @@ object Optimization {
 
   def letTransformer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformer)
 
+  def betaDeltaReducer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.betaDeltaReducer)
+
   //removeIdentityMaps is appropriate here because typed-indexing can introduce identity maps.
   def shareSubqueries[T](query: Exp[T]): Exp[T] =
     removeIdentityMaps(new SubquerySharing(subqueries).shareSubqueries(query))
@@ -631,7 +649,7 @@ object Optimization {
                     optimizeCartProdToJoin(
                       removeRedundantOption(toTypeFilter(
                         sizeToEmpty(
-                          removeIdentityMaps(exp)))))))))))))))
+                          removeIdentityMaps(betaDeltaReducer(exp)))))))))))))))) //the call to reducer is to test.
 
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
