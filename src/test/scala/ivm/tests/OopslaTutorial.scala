@@ -90,7 +90,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
  } yield Result(book.title,
     author.firstName + " " + author.lastName,
     book.authors.size - 1)
-  
+
   val recordsQueryOpt = Optimization.optimize(recordsQuery)
   test("same results") {
     recordsQuery.interpret() should be (records)
@@ -120,7 +120,7 @@ object SampleLibraryLiftingManual {
   case class ResultExp(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) extends Arity3Op[Exp[String], Exp[String], Exp[Int], Result, ResultExp](title, authorName, coauthors) {
     def copy(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) = ResultExp(title, authorName, coauthors)
     def interpret() = sampleapp.Result(title.interpret(), authorName.interpret(), coauthors.interpret())
-  } 
+  }
   def Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) = ResultExp(title, authorName, coauthors)
 }
 
