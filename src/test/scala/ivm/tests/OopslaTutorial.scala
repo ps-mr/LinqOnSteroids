@@ -83,13 +83,13 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
 
   Optimization.addSubquery(idxByPublisher)
 
-  val recordsQuery = /*Query(*/for {
+  val recordsQuery = for {
    book <- books.asSmartCollection
    if book.publisher ==# "Pearson Education"
    author <- book.authors
  } yield Result(book.title,
     author.firstName + " " + author.lastName,
-    book.authors.size - 1)//)
+    book.authors.size - 1)
   
   val recordsQueryOpt = Optimization.optimize(recordsQuery)
   test("same results") {
