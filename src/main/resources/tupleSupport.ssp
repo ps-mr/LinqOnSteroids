@@ -75,6 +75,17 @@ case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparam
 }
 
 #end <%-- //We close and reopen the loop because there are no unary tuples. --%>
+
+trait ExpProduct {
+  def productArity: Exp[Int]
+
+  //How to implement this? Create the right dynamic node!
+  //def productElement(n: Exp[Int]): Exp[Any]
+  //Better name prefix?
+  def metaProductArity: Int
+  def metaProductElement(n: Int): Exp[Any]
+}
+
 #for (arity <- minTupleArity to maxArity)
 <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2 %>
 //////////////////////////////////////////
@@ -97,16 +108,6 @@ case class Tuple${arity}Proj${i}[${tparams}](p: Exp[(${tparams})]) extends Arity
 ////////////////////////////////////////////////
 // SUPPORT FOR TUPLES - AUTOMATIC CONVERSIONS //
 ////////////////////////////////////////////////
-
-trait ExpProduct {
-  def productArity: Exp[Int]
-
-  //How to implement this?
-  //def productElement(n: Exp[Int]): Exp[Any]
-  //Better name prefix?
-  def metaProductArity: Int
-  def metaProductElement(n: Int): Exp[Any]
-}
 
 trait AutoTupleOps {
   this: LiftingConvs =>
