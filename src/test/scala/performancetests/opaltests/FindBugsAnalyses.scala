@@ -346,7 +346,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       Query(for {
         allComparables ← classHierarchy.subtypes(comparableType).toList.asSmartCollection
         comparable ← allComparables
-        classFile ← getClassFile.get(comparable)
+        classFile ← getClassFile.get(comparable) //getClassFile is lifted through Const and makes optimization expensive.
         method ← classFile.methods //if parameterType != ObjectType.Object
         if method.name ==# "compareTo" && method.descriptor.returnType ==# IntegerType
         parameterTypes <- Let(method.descriptor.parameterTypes)
