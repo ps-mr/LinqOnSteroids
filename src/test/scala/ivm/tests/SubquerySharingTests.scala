@@ -22,7 +22,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test def testSimpleSharing() {
     val s1 = l.map(p => (p._1 + 1, p._2 + 2))
     val ress1 = s1.interpret()
-    Optimization.addSubquery(s1)
+    Optimization.addIndex(s1)
 
     val q = l.map(p => (p._1 + 1, p._2 + 2)).withFilter(_._1 ==# 5)
     val res = Optimization.shareSubqueries(q)
@@ -33,7 +33,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val res2 = Optimization.shareSubqueries(q2)
     res2 should equal (q2)
 
-    Optimization.removeSubquery(s1)
+    Optimization.removeIndex(s1)
   }
 
   def indexingTest[T, U, TupleT](query: Exp[Seq[T]], idx: Exp[Map[U, TupleT]])(expectedOptQueryProducer: Exp[Map[U, TupleT]] => Exp[Traversable[T]]) {
@@ -42,9 +42,9 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     query.interpret() should be (expectedOptQuery.interpret().force) //The call to force makes sure that
     // the expected value in error messages shows the actual collection contents.
 
-    Optimization.addSubquery(idx)
+    Optimization.addIndex(idx)
     val optQuery = Optimization.optimize(query)
-    Optimization.removeSubquery(idx)
+    Optimization.removeIndex(idx)
 
     optQuery should be (expectedOptQuery)
     //We assumed that if optQuery == expectedOptQuery, then optQuery.interpret() == expectedOptQuery.interpret() == query.interpret()
@@ -206,57 +206,57 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test def testIndexing {
     val index = l.groupBy(p => p._1 + p._2)
     val indexres = index.interpret()
-    Optimization.addSubquery(index)
+    Optimization.addIndex(index)
 
     val testquery = l.withFilter(p => p._1 + p._2 ==# 5)
     val optimized = shareSubqueriesOpt(testquery)
     optimized should equal (asExp(indexres) apply 5)
 
-    Optimization.removeSubquery(index)
+    Optimization.removeIndex(index)
   }
 
   @Test def testIndexingQueryNorm() {
     val index = l.groupBy(p => p._1 + p._2)
     val indexres = index.interpret()
-    Optimization.addSubquery(index)
+    Optimization.addIndex(index)
 
     val testquery = l.withFilter(p => p._2 + p._1 ==# 5)
     val optimized = shareSubqueriesOpt(testquery)
     optimized should equal (asExp(indexres) apply 5)
 
-    Optimization.removeSubquery(index)
+    Optimization.removeIndex(index)
   }
 
   @Test def testIndexingIndexNorm() {
     val index = l.groupBy(p => p._2 + p._1) //The index should be normalized, test this
     val indexres = index.interpret()
-    Optimization.addSubquery(index)
+    Optimization.addIndex(index)
 
     val testquery = l.withFilter(p => p._1 + p._2 ==# 5)
     val optimized = shareSubqueriesOpt(testquery)
     optimized should equal (asExp(indexres) apply 5)
 
-    Optimization.removeSubquery(index)
+    Optimization.removeIndex(index)
   }
 
   @Test def testCNFconversion {
     val index = l.groupBy(p => p._1 + p._2)
     val indexres = index.interpret()
-    Optimization.addSubquery(index)
+    Optimization.addIndex(index)
 
     val testquery = l.withFilter(p => p._1 <= 7 && p._1 + p._2 ==# 5)
     val optimized = shareSubqueriesOpt(testquery)
     optimized should equal ((asExp(indexres) apply 5) withFilter (p => p._1 <= 7))
 
-    Optimization.removeSubquery(index)
+    Optimization.removeIndex(index)
   }
 
 
   @Test def testRemoveSubquery() {
     val index = l.groupBy(p => p._1 + p._2)
     Optimization.resetSubqueries()
-    Optimization.addSubquery(index)
-    Optimization.removeSubquery(index)
+    Optimization.addIndex(index)
+    Optimization.removeIndex(index)
     Optimization.subqueries should be (Map.empty)
   }
 }

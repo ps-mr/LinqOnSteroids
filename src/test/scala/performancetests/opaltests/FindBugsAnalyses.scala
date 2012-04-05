@@ -561,13 +561,13 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
 
   Optimization.pushEnableDebugLog(false)
 
-  benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(methodNameIdx, Some(
+  benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addIndex(methodNameIdx, Some(
     CollectionUtils.groupBy(for {
       classFile ← classFiles
       method ← classFile.methods
     } yield (classFile, method))(_._2.name))))
-  benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(excHandlerTypeIdx))
-  benchMark("Instructions type-index creation")(Optimization.addSubquery(typeIdx))
+  benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addIndex(excHandlerTypeIdx))
+  benchMark("Instructions type-index creation")(Optimization.addIndex(typeIdx))
 
   Optimization.popEnableDebugLog()
 
@@ -605,9 +605,9 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   //}
 
   def tearDownIndexes() {
-    Optimization.removeSubquery(methodNameIdx)
-    Optimization.removeSubquery(excHandlerTypeIdx)
-    Optimization.removeSubquery(typeIdx)
+    Optimization.removeIndex(methodNameIdx)
+    Optimization.removeIndex(excHandlerTypeIdx)
+    Optimization.removeIndex(typeIdx)
   }
 
   def analyze() {

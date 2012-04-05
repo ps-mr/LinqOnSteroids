@@ -81,7 +81,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   val idxByPublisher =
     books.asSmartCollection groupBy (_.publisher)
 
-  Optimization.addSubquery(idxByPublisher)
+  Optimization.addIndex(idxByPublisher)
 
   val recordsQuery = for {
    book <- books.asSmartCollection

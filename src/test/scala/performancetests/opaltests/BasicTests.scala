@@ -450,13 +450,13 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       // per each instruction. The fix was adding toSeq above. In fact, this transformation could probably be done also on the query to optimize;
       // after that, the optimizer would again find a matching subquery. The new runtime is ~ 0.3-0.4 sec.
       val evaluatedtypeindex = benchMark("los6 Seq-index (less manually optimized) creation"){ typeIdx.interpret() }
-      Optimization.addSubquery(typeIdx, Some(evaluatedtypeindex))
+      Optimization.addIndex(typeIdx, Some(evaluatedtypeindex))
 
       val methodsLos6 = asExp(evaluatedtypeindex).get[INSTANCEOF].map(_._1._2.name).toSet
 
       Optimization.optimize(methodsLos5Seq) should be (methodsLos6)
 
-      Optimization.removeSubquery(typeIdx)
+      Optimization.removeIndex(typeIdx)
 
       val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized)") {
         methodsLos6.interpret()
