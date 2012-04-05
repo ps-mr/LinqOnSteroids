@@ -16,7 +16,7 @@ import Lifting._
 
 import sampleapp._
 class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
-  //Having the import here does not work; we later import SampleLibraryLiftingManual which shadows the original objects,
+  //Having the import here does not work; we later import BookLiftingManual which shadows the original objects,
   //
   //import sampleapp._
   val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "Pearson Education", Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
@@ -72,8 +72,8 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
 
-  import SampleLibraryLifting._
-  import SampleLibraryLiftingManual._
+  import BookLifting._
+  import BookLiftingManual._
 
   //But the correct index by title should be:
   val idxByTitle = books.groupBy(_.title)
@@ -141,7 +141,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
 }
 
 
-object SampleLibraryLiftingManual {
+object BookLiftingManual {
   //case class Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int])
   import sampleapp._
   case class ResultExp(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) extends Arity3Op[Exp[String], Exp[String], Exp[Int], Result, ResultExp](title, authorName, coauthors) {
