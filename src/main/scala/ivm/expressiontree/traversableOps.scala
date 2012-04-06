@@ -23,12 +23,14 @@ trait TraversableOps {
   def newUnion[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U >: T, That <: Traversable[U]](base: Exp[Repr with Traversable[T]], that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
     Union(base, that)
 
+  trait Holder[Repr] {
+    val t: Exp[Repr]
+  }
 
   /* Lift faithfully the FilterMonadic trait except foreach and withFilter, since we have a special lifting for it.
    * This trait is used both for concrete collections of type Repr <: FilterMonadic[T, Repr].
    */
-  trait FilterMonadicOpsLike[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] {
-    val t: Exp[Repr]
+  trait FilterMonadicOpsLike[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends Holder[Repr] {
     def map[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
       newMapOp(this.t, FuncExp(f))
     def flatMap[U, That <: Traversable[U]](f: Exp[T] => Exp[Traversable[U]])
@@ -56,7 +58,7 @@ trait TraversableOps {
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
 
   //Coll is only needed for TypeFilter.
-  trait TraversableLikeOps[T, Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]], Repr <: Traversable[T] with TraversableLike[T, Repr] with Coll[T]] extends FilterMonadicOpsLike[T, Repr] {
+  trait TraversableLikeOps[T, Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]], Repr <: Traversable[T] with TraversableLike[T, Repr] with Coll[T]] extends FilterMonadicOpsLike[T, Repr] with WithFilterImpl[T, Repr] {
     def collect[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[Option[U]])
                                           (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] = {
       newMapOp(newWithFilter(this.t,
@@ -129,21 +131,26 @@ trait TraversableOps {
   {
     def force[That](implicit bf: CanBuildFrom[Repr, T, That]) = Force(this.t)
 
-    def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
-      newFilter[T, ViewColl](this.t, FuncExp(f))
+    //def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
+      //newFilter[T, ViewColl](this.t, FuncExp(f))
     //TODO: override operations to avoid using CanBuildFrom
   }
+
+  implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
+    new TraversableLikeOps[T, Traversable, Repr] {val t = v}
+  implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Repr with Traversable[T]) =
+    expToTraversableLikeOps(v)
+
+  //Repr = Range does not satisfy the bound given by:
+  //  Repr <: Traversable[T] with TraversableLike[T, Repr]
+  //Hence we need this extra conversion.
+  implicit def expRangeToTraversableLikeOps(r: Exp[Range]) = expToTraversableLikeOps(r: Exp[IndexedSeq[Int]])
+  implicit def rangeToTraversableLikeOps(r: Range) = expToTraversableLikeOps(r: Exp[IndexedSeq[Int]])
 
   class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable, Traversable[T]] with WithFilterImpl[T,  Traversable[T]]
 
   class TraversableViewOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val t: Exp[TraversableView[T, Repr]])
     extends TraversableViewLikeOps[T, Repr, Traversable, TraversableView[T, Repr]]
-
-  implicit def expToTravExp[T](t: Exp[Traversable[T]]): TraversableOps[T] = new TraversableOps(t)
-  implicit def tToTravExp[T](t: Traversable[T]): TraversableOps[T] = {
-    //toExp(t)
-    expToTravExp(t)
-  }
 
   implicit def expToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Exp[TraversableView[T, Repr]]): TraversableViewOps[T, Repr] = new TraversableViewOps(t)
   implicit def tToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
@@ -212,7 +219,7 @@ trait CollectionMapOps {
   import collection.{Map, MapLike}
 
   trait MapLikeOps[K, V, Coll[K, V] <: Map[K, V] with MapLike[K, V, Coll[K, V]]]
-    extends TraversableLikeOps[(K, V), Iterable, Coll[K, V]] with WithFilterImpl[(K, V), Coll[K, V]] {
+    extends Holder[Coll[K, V]] {
     def get(key: Exp[K]): Exp[Option[V]] = onExp(t, key)('Map$get, _ get _)
     /*
     //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
@@ -241,39 +248,20 @@ trait MapOps extends CollectionMapOps {
 
 trait IterableOps {
   this: LiftingConvs with TraversableOps =>
-  class IterableOps[T](val t: Exp[Iterable[T]]) extends TraversableLikeOps[T, Iterable, Iterable[T]] with WithFilterImpl[T, Iterable[T]]
-
-  implicit def expToIterableExp[T](t: Exp[Iterable[T]]): IterableOps[T] = new IterableOps(t)
-  implicit def tToIterableExp[T](t: Iterable[T]): IterableOps[T] =
-    expToIterableExp(t)
 }
 
 //Unlike for other collection, Seq by default refers to collection.Seq, not to collection.immutable.Seq
 trait CollectionSeqOps {
   this: LiftingConvs with TraversableOps =>
-  import collection.SeqLike
-  trait SeqLikeOps[T, Coll[+T] <: Seq[T] with SeqLike[T, Coll[T]]] extends TraversableLikeOps[T, Coll, Coll[T]] with WithFilterImpl[T, Coll[T]]
-
-  class CollectionSeqOps[T](val t: Exp[Seq[T]]) extends SeqLikeOps[T, Seq]
 
   implicit def CollectionSeqExp2ExpSeq[T](e: Seq[Exp[T]]): Exp[Seq[T]] = ExpSeq(e)
-
-  implicit def expToCollectionSeqExp[T](t: Exp[Seq[T]]): CollectionSeqOps[T] = new CollectionSeqOps(t)
-  implicit def tToCollectionSeqExp[T](t: Seq[T]): CollectionSeqOps[T] =
-    expToCollectionSeqExp(t)
 }
 
 trait SeqOps extends CollectionSeqOps {
   this: LiftingConvs with TraversableOps =>
   import collection.immutable.Seq
 
-  class SeqOps[T](val t: Exp[Seq[T]]) extends SeqLikeOps[T, Seq]
-
   implicit def SeqExp2ExpSeq[T](e: Seq[Exp[T]]): Exp[Seq[T]] = ExpSeq(e)
-
-  implicit def expToSeqExp[T](t: Exp[Seq[T]]): SeqOps[T] = new SeqOps(t)
-  implicit def tToSeqExp[T](t: Seq[T]): SeqOps[T] =
-    expToSeqExp(t)
 }
 
 trait CollectionSetOps {
@@ -283,7 +271,7 @@ trait CollectionSetOps {
   import collection.{SetLike, Set}
 
   trait SetLikeOps[T, Coll[T] <: Set[T] with SetLike[T, Coll[T]]]
-    extends TraversableLikeOps[T, Coll, Coll[T]] with WithFilterImpl[T, Coll[T]] {
+    extends Holder[Coll[T]] {
     def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
     def contains(el: Exp[T]) = apply(el)
     def --(that: Exp[Traversable[T]]): Exp[Coll[T]] =

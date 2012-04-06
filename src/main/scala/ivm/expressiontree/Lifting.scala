@@ -5,7 +5,7 @@ import collection.generic.CanBuildFrom
 import ivm.collections.TypeMapping
 
 trait OptionLifting extends BaseExps {
-  this: IterableOps =>
+  this: TraversableOps =>
   implicit def expOption2Iterable[T](t: Exp[Option[T]]) = onExp(t)(OptionOps.OptionToIterableId, x => x: Iterable[T])
 
   // We would like to have this conversion available:
@@ -153,14 +153,7 @@ object Lifting
                                              g: Exp[T] => Exp[Rest])(
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
   {
-    implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
-      new TraversableLikeOps[T, Traversable, Repr] {val t = v}
-
-    //val tmp: Exp[Map[K, Repr]] = t.groupBy(f) //can't write this, because we have no lifting for TraversableLike
-    //val tmp: Exp[Map[K, Repr]] = GroupBy(t, FuncExp(f))
-    //Report the need to apply this explicitly - it should be easy to reduce.
-    val tmp: Exp[Map[K, Repr]] = expToTraversableLikeOps(t).groupBy(f)
-    //val tmp: Exp[Map[K, Repr]] = t.groupBy(f)
+    val tmp: Exp[Map[K, Repr]] = t.groupBy(f)
     //tmp.map(v => (v._1, MapOp(v._2, FuncExp(g)))) //This uses MapOp directly, but map could return other nodes
     tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(cbf2)))
   }

@@ -209,11 +209,8 @@ object OptimizationTransforms {
     def apply[T](e: Exp[T]) = e match {
       case m: MapOp[t, repr, u, that] =>
         Util.assertType[Exp[repr]](m.base)
-        implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
-          new TraversableLikeOps[T, Traversable, Repr] {val t = v}
-
-        //(m.base map m.f)(m.c) //does not work here - the conversion is ambiguous.
-        (expToTraversableLikeOps(m.base) map m.f)(m.c) //works
+        (m.base map m.f)(m.c)
+        //Outdated comments:
         //m.base.map[u, that](m.f)(m.c) //does not work for the same reason - m.base is considered as having type Exp[Traversable[t]]. That's however because of my implicit conversion, which is
         //rather limited.
         //MapOp[t, repr, u, that](m.base, m.f)(m.c) //works

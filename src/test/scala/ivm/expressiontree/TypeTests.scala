@@ -90,14 +90,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   import collection.TraversableLike
   import collection.generic.CanBuildFrom
-  //We need to only import this class:
-  import Lifting.{TraversableLikeOps, fToFunOps}
-  //If we import everything, we introduce ambiguous conversions in scope.
-  //import Lifting._
-  //Hmmm... is this conversion enough to always produce the correct type?
-  implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
-    new TraversableLikeOps[T, Traversable, Repr] {val t = v}
-
+  import Lifting._
 
   //Analogous to Lifting.groupBySelImpl; I copied it here just to test whether expToTraversableLikeOps works.
   def groupBySelImpl[T, Repr <: Traversable[T] with
@@ -105,10 +98,6 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, Repr]] =
   {
     Util.assertTypeAndRet[Exp[Map[K, Repr]]] {
-      //Apply implicit conversion explicitly:
-      //expToTraversableLikeOps(t).groupBy(f)
-      //Rely on implicit conversion.
-      //Here this works, as long as other ambiguous conversions are not in scope as well!
       t.groupBy(f)
     }
   }
