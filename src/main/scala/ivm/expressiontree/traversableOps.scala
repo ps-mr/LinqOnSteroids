@@ -154,7 +154,6 @@ trait TraversableOps {
   implicit def tToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
 
   implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e)
-  implicit def SetExp2ExpSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
 }
 
 trait ForceOps {
@@ -293,6 +292,7 @@ trait CollectionSetOps {
   class CollectionSetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set]
   implicit def expToCollectionSetExp[T](t: Exp[Set[T]]): CollectionSetOps[T] = new CollectionSetOps(t)
   implicit def tToCollectionSetExp[T](t: Set[T]): CollectionSetOps[T] = expToCollectionSetExp(t)
+  implicit def CollectionSetExp2ExpCollectionSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
 }
 
 trait SetOps extends CollectionSetOps {
@@ -304,6 +304,7 @@ trait SetOps extends CollectionSetOps {
   class SetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set]
   implicit def expToSetExp[T](t: Exp[Set[T]]): SetOps[T] = new SetOps(t)
   implicit def tToSetExp[T](t: Set[T]): SetOps[T] = expToSetExp(t)
+  implicit def SetExp2ExpSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
 }
 
 sealed trait MaybeSub[-A, +B]
