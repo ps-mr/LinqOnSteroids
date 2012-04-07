@@ -58,7 +58,7 @@ trait TraversableOps {
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
 
   //Coll is only needed for TypeFilter.
-  trait TraversableLikeOps[T, Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]], Repr <: Traversable[T] with TraversableLike[T, Repr] with Coll[T]] extends FilterMonadicOpsLike[T, Repr] with WithFilterImpl[T, Repr] {
+  trait TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends FilterMonadicOpsLike[T, Repr] with WithFilterImpl[T, Repr] {
     def collect[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[Option[U]])
                                           (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] = {
       newMapOp(newWithFilter(this.t,
@@ -125,9 +125,8 @@ trait TraversableOps {
   trait TraversableViewLikeOps[
     T,
     Repr <: Traversable[T] with TraversableLike[T, Repr],
-    Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]],
-    ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl] with Coll[T]]
-    extends TraversableLikeOps[T, Coll, ViewColl] with WithFilterable[T, ViewColl]
+    ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
+    extends TraversableLikeOps[T, ViewColl] with WithFilterable[T, ViewColl]
   {
     def force[That](implicit bf: CanBuildFrom[Repr, T, That]) = Force(this.t)
 
@@ -137,7 +136,7 @@ trait TraversableOps {
   }
 
   implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
-    new TraversableLikeOps[T, Traversable, Repr] {val t = v}
+    new TraversableLikeOps[T, Repr] {val t = v}
   implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Repr with Traversable[T]) =
     expToTraversableLikeOps(v)
 
@@ -147,10 +146,8 @@ trait TraversableOps {
   implicit def expRangeToTraversableLikeOps(r: Exp[Range]) = expToTraversableLikeOps(r: Exp[IndexedSeq[Int]])
   implicit def rangeToTraversableLikeOps(r: Range) = expToTraversableLikeOps(r: Exp[IndexedSeq[Int]])
 
-  class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable, Traversable[T]] with WithFilterImpl[T,  Traversable[T]]
-
   class TraversableViewOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val t: Exp[TraversableView[T, Repr]])
-    extends TraversableViewLikeOps[T, Repr, Traversable, TraversableView[T, Repr]]
+    extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]]
 
   implicit def expToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Exp[TraversableView[T, Repr]]): TraversableViewOps[T, Repr] = new TraversableViewOps(t)
   implicit def tToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
@@ -218,8 +215,8 @@ trait CollectionMapOps {
   this: LiftingConvs with TraversableOps with FunctionOps =>
   import collection.{Map, MapLike}
 
-  trait MapLikeOps[K, V, Coll[K, V] <: Map[K, V] with MapLike[K, V, Coll[K, V]]]
-    extends Holder[Coll[K, V]] {
+  trait MapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]]
+    extends Holder[Repr] {
     def get(key: Exp[K]): Exp[Option[V]] = onExp(t, key)('Map$get, _ get _)
     /*
     //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
@@ -228,22 +225,14 @@ trait CollectionMapOps {
     }
     */
   }
-
-  class CollectionMapOps[K, V](val t: Exp[Map[K, V]]) extends MapLikeOps[K, V, Map]
-
-  implicit def expToCollectionMapExp[K, V](t: Exp[Map[K, V]]): CollectionMapOps[K, V] = new CollectionMapOps(t)
-  implicit def tToCollectionMapExp[K, V](t: Map[K, V]): CollectionMapOps[K, V] =
-    expToCollectionMapExp(t)
+  implicit def expToMapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]](v: Exp[Repr with Map[K, V]]) =
+    new MapLikeOps[K, V, Repr] {val t = v}
+  implicit def toMapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]](v: Repr with Map[K, V]) =
+    expToMapLikeOps(v)
 }
 
 trait MapOps extends CollectionMapOps {
   this: LiftingConvs with TraversableOps with FunctionOps =>
-
-  class MapOps[K, V](val t: Exp[Map[K, V]]) extends MapLikeOps[K, V, Map]
-
-  implicit def expToMapExp[K, V](t: Exp[Map[K, V]]): MapOps[K, V] = new MapOps(t)
-  implicit def tToMapExp[K, V](t: Map[K, V]): MapOps[K, V] =
-    expToMapExp(t)
 }
 
 trait IterableOps {
@@ -270,28 +259,23 @@ trait CollectionSetOps {
   //and get the right type.
   import collection.{SetLike, Set}
 
-  trait SetLikeOps[T, Coll[T] <: Set[T] with SetLike[T, Coll[T]]]
-    extends Holder[Coll[T]] {
+  trait SetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]]
+    extends Holder[Repr] {
     def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
     def contains(el: Exp[T]) = apply(el)
-    def --(that: Exp[Traversable[T]]): Exp[Coll[T]] =
+    def --(that: Exp[Traversable[T]]): Exp[Repr] =
       Diff(t, that)
   }
-  class CollectionSetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set]
-  implicit def expToCollectionSetExp[T](t: Exp[Set[T]]): CollectionSetOps[T] = new CollectionSetOps(t)
-  implicit def tToCollectionSetExp[T](t: Set[T]): CollectionSetOps[T] = expToCollectionSetExp(t)
+
+  implicit def expToSetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]](v: Exp[Repr with Set[T]]) =
+    new SetLikeOps[T, Repr] {val t = v}
+  implicit def toSetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]](v: Repr with Set[T]) =
+    expToSetLikeOps(v)
   implicit def CollectionSetExp2ExpCollectionSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
 }
 
 trait SetOps extends CollectionSetOps {
   this: LiftingConvs with TraversableOps =>
-  //For convenience, also have a lifting for scala.Set = scala.collection.immutable.Set.
-
-  // This class differs from CollectionSetOps because it extends TraversableLikeOps[T, collection.immutable.Set, collection.immutable.Set[T]]
-  // instead of TraversableLikeOps[T, collection.Set, collection.Set[T]].
-  class SetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set]
-  implicit def expToSetExp[T](t: Exp[Set[T]]): SetOps[T] = new SetOps(t)
-  implicit def tToSetExp[T](t: Set[T]): SetOps[T] = expToSetExp(t)
   implicit def SetExp2ExpSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
 }
 

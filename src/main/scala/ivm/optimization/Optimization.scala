@@ -436,9 +436,9 @@ object OptimizationTransforms {
 
 
   val removeRedundantOption: Exp[_] => Exp[_] = {
-      case e @ FlatMap(coll: Exp[Traversable[t]], (fmFun: FuncExp[_, Traversable[u]])) =>
-        tryRemoveRedundantLet(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
-      case e => e
+    case e @ FlatMap(coll: Exp[Traversable[t]], (fmFun: FuncExp[_, Traversable[u]])) =>
+      tryRemoveRedundantLet(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
+    case e => e
   }
 
   private def buildHoistedFilterForFlatMap[T, U, V](coll1: Exp[Traversable[T]], fmFun: FuncExp[T, Traversable[V]],
@@ -468,11 +468,11 @@ object OptimizationTransforms {
     c flatMap FuncExp.makefun(Seq(f.body), f.x)
 
   val mapToFlatMap: Exp[_] => Exp[_] = {
-      case MapOp(c: Exp[Traversable[t]], f) =>
-        buildMapToFlatMap(c, f)
-      /*case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
-        c flatMap FuncExp.makefun(Some(f.body), f.x)*/
-      case e => e
+    case MapOp(c: Exp[Traversable[t]], f) =>
+      buildMapToFlatMap(c, f)
+    /*case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
+      c flatMap FuncExp.makefun(Some(f.body), f.x)*/
+    case e => e
   }
 
   private def buildFlatMapToMap[T, U](c: Exp[Traversable[T]], body: Exp[U], f: FuncExp[T, Traversable[U]]): Exp[Traversable[U]] =

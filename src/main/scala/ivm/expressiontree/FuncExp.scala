@@ -106,12 +106,6 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, 
 
 object FuncExpInt {
   private[expressiontree] val env = new ScalaThreadLocal[Map[Int, Any]](new HashMap[Int, Any]())
-
-  //Constructs FuncExpInt from HOAS. This also applies normalization-by-evaluation in the process.
-  def apply[S, T](f: Exp[S] => Exp[T]) = {
-    val v = FuncExp.gensym[S]()
-    new FuncExpInt(f(v), v)
-  }
 }
 
 class FuncExpInt2[S1, S2, T](val foasBody: Exp[T], v1: TypedVar[S1], v2: TypedVar[S2])
@@ -153,8 +147,14 @@ case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends A
 }
 
 object FuncExp {
+  //Constructs FuncExpInt from HOAS. This also applies normalization-by-evaluation in the process.
+  def toFOAS[S, T](funBody: Exp[S] => Exp[T]) = {
+    val v = FuncExp.gensym[S]()
+    new FuncExpInt(funBody(v), v)
+  }
+
   //Force switch to FuncExpInt everywhere with a single line of code :-)
-  def apply[S, T](f: Exp[S] => Exp[T]) = FuncExpInt.apply(f)
+  def apply[S, T](f: Exp[S] => Exp[T]) = toFOAS(f)
   def unapply(f: FuncExp[_, _]) = Some(f.f)
 
   private val varCounter = new AtomicInteger(0)
