@@ -135,6 +135,8 @@ trait TraversableOps {
     //TODO: override operations to avoid using CanBuildFrom
   }
 
+  //This version does not work, due to https://issues.scala-lang.org/browse/SI-5298:
+  //implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr])
   implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
     new TraversableLikeOps[T, Repr] {val t = v}
   implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Repr with Traversable[T]) =
