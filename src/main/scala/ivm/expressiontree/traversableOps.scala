@@ -58,7 +58,7 @@ trait TraversableOps {
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
 
   //Coll is only needed for TypeFilter.
-  trait TraversableLikeOps[T, Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]], Repr <: Traversable[T] with TraversableLike[T, Repr] with Coll[T]] extends FilterMonadicOpsLike[T, Repr] with WithFilterImpl[T, Repr] {
+  trait TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends FilterMonadicOpsLike[T, Repr] with WithFilterImpl[T, Repr] {
     def collect[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[Option[U]])
                                           (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] = {
       newMapOp(newWithFilter(this.t,
@@ -125,9 +125,8 @@ trait TraversableOps {
   trait TraversableViewLikeOps[
     T,
     Repr <: Traversable[T] with TraversableLike[T, Repr],
-    Coll[X] <: Traversable[X] with TraversableLike[X, Coll[X]],
-    ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl] with Coll[T]]
-    extends TraversableLikeOps[T, Coll, ViewColl] with WithFilterable[T, ViewColl]
+    ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
+    extends TraversableLikeOps[T, ViewColl] with WithFilterable[T, ViewColl]
   {
     def force[That](implicit bf: CanBuildFrom[Repr, T, That]) = Force(this.t)
 
@@ -137,7 +136,7 @@ trait TraversableOps {
   }
 
   implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
-    new TraversableLikeOps[T, Traversable, Repr] {val t = v}
+    new TraversableLikeOps[T, Repr] {val t = v}
   implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Repr with Traversable[T]) =
     expToTraversableLikeOps(v)
 
@@ -147,10 +146,10 @@ trait TraversableOps {
   implicit def expRangeToTraversableLikeOps(r: Exp[Range]) = expToTraversableLikeOps(r: Exp[IndexedSeq[Int]])
   implicit def rangeToTraversableLikeOps(r: Range) = expToTraversableLikeOps(r: Exp[IndexedSeq[Int]])
 
-  class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable, Traversable[T]] with WithFilterImpl[T,  Traversable[T]]
+  class TraversableOps[T](val t: Exp[Traversable[T]]) extends TraversableLikeOps[T, Traversable[T]] with WithFilterImpl[T,  Traversable[T]]
 
   class TraversableViewOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val t: Exp[TraversableView[T, Repr]])
-    extends TraversableViewLikeOps[T, Repr, Traversable, TraversableView[T, Repr]]
+    extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]]
 
   implicit def expToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Exp[TraversableView[T, Repr]]): TraversableViewOps[T, Repr] = new TraversableViewOps(t)
   implicit def tToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
