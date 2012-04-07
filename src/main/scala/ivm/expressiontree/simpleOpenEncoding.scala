@@ -17,7 +17,7 @@ import collection.mutable
  */
 trait ConversionDisabler {
   //We forbid implicit conversion from Unit to Exp[Unit] by making it ambiguous. To this end we declare noToExpForUnit.
-  //It is more specific than toExp[Unit] because it's not generic, but is declared in a superclass, hence
+  //It is more specific than pure[Unit] because it's not generic, but is declared in a superclass, hence
   //has less priority. Ambiguity follows.
   implicit def noToExpForUnit(t: Unit): Exp[Unit] = null
   //Ditto. Creating Const nodes for mutable collection is a contradiction; moreover, those nodes would send no
@@ -30,9 +30,9 @@ trait LiftingConvs extends ConversionDisabler {
   //The following variant would avoid ugliness like:
   //implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
   //but it does not work (bug https://issues.scala-lang.org/browse/SI-3346).
-  //implicit def toExp[T, U <% T](t: U): Exp[T] = Const(t)
+  //implicit def pure[T, U <% T](t: U): Exp[T] = Const(t)
   //So let's keep it simple.
-  implicit def toExp[T](t: T): Exp[T] = Const(t)
+  implicit def pure[T](t: T): Exp[T] = Const(t)
 
   //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
   //parameter of Exp here.

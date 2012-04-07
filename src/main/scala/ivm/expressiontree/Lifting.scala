@@ -88,7 +88,7 @@ trait OptionLifting extends BaseExps {
 trait ExpSugar extends ConversionDisabler2 {
   this: BaseExps =>
   //XXX: evaluate whether this interface is good.
-  def NULL = toExp(null)
+  def NULL = pure(null)
 
   implicit def toPimper[T](t: T) = new WithAsSmartCollection(t)
 

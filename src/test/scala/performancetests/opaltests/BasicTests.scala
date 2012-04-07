@@ -53,8 +53,8 @@ object BATLiftingExperimental {
           case ca: Code_attribute =>
             assert(ca != null) //This is satisfied because of the pattern match.
             Some((ca.maxStack, ca.maxLocals,
-              toExp(ca.instructions), //This is needed to allow predefined implicit conversions to trigger.
-              // We can call toExp unconditionally in the generated version of this instructions.
+              pure(ca.instructions), //This is needed to allow predefined implicit conversions to trigger.
+              // We can call pure unconditionally in the generated version of this instructions.
               ca.exceptionHandlers, ca.attributes))
           case _ =>
             None
@@ -86,7 +86,7 @@ object OpalTestData {
   //Use this for debugging - the actual data is too big and slows down debugging too much.
   //val testdata: Set[ClassFile]  = Set.empty
   val testdata: Set[ClassFile]  = getTestData.toSet
-  val queryData = toExp(testdata)
+  val queryData = pure(testdata)
 
   //Size of the expected query results. 84 has been simply measured when the results were correct.
   //Not very pretty, but better than nothing
@@ -408,7 +408,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     //println(evaluatedtypeindex.map.keys)
 
     //val methodsLos6 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
-    //XXX this code, instead of using typeindex: Exp[...], uses toExp(typeindex.interpret()), which is a hack. The goal
+    //XXX this code, instead of using typeindex: Exp[...], uses pure(typeindex.interpret()), which is a hack. The goal
     //is to have the index evaluated at all - otherwise there would be no speed-up. However, the proper solution is to
     //wrap the query result in something similar to IncrementalResult's constructor: Exp[T] -> Exp[T] - so that the result
     //is materialized and incrementally maintained.

@@ -10,7 +10,7 @@ import org.junit.Test
 import collection.TraversableView
 
 class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
-  val l: Exp[Traversable[Int]] = toExp(Vector.range(1, 10))
+  val l: Exp[Traversable[Int]] = pure(Vector.range(1, 10))
   def withFilterQueries = {
     val q1 = for (
                x <- for (c <- l if c + 3 ==# 7; if c + 8 ==# 19) yield c

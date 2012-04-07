@@ -9,7 +9,7 @@ import org.junit.Test
 import expressiontree.Exp
 
 class NormalizationTests extends JUnitSuite with ShouldMatchersForJUnit {
-  val l: Exp[Traversable[Int]] = toExp(Vector.range(1, 10))
+  val l: Exp[Traversable[Int]] = pure(Vector.range(1, 10))
 
   @Test
   def testnormalization() {

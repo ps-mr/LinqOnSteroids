@@ -18,8 +18,8 @@ class JoinCreationTest extends JUnitSuite with ShouldMatchersForJUnit with Bench
   def performancetests() {
     //small performance test
     val testSize = 2000
-    val c1: Exp[Traversable[Int]] = toExp(Vector.range(1,testSize))
-    val c2: Exp[Traversable[Int]] = toExp(Vector.range(1,testSize))
+    val c1: Exp[Traversable[Int]] = pure(Vector.range(1,testSize))
+    val c2: Exp[Traversable[Int]] = pure(Vector.range(1,testSize))
     val n1 = Vector.range(1,testSize)
     val n2 = Vector.range(1,testSize)
     val notoptimized = for (k <- c1; k2 <- c2 if k ==# k2) yield k+k2
