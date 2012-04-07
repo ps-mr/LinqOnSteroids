@@ -217,8 +217,8 @@ trait CollectionMapOps {
   this: LiftingConvs with TraversableOps with FunctionOps =>
   import collection.{Map, MapLike}
 
-  trait MapLikeOps[K, V, Coll[K, V] <: Map[K, V] with MapLike[K, V, Coll[K, V]]]
-    extends Holder[Coll[K, V]] {
+  trait MapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]]
+    extends Holder[Repr] {
     def get(key: Exp[K]): Exp[Option[V]] = onExp(t, key)('Map$get, _ get _)
     /*
     //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
@@ -228,7 +228,7 @@ trait CollectionMapOps {
     */
   }
 
-  class CollectionMapOps[K, V](val t: Exp[Map[K, V]]) extends MapLikeOps[K, V, Map]
+  class CollectionMapOps[K, V](val t: Exp[Map[K, V]]) extends MapLikeOps[K, V, Map[K, V]]
 
   implicit def expToCollectionMapExp[K, V](t: Exp[Map[K, V]]): CollectionMapOps[K, V] = new CollectionMapOps(t)
   implicit def tToCollectionMapExp[K, V](t: Map[K, V]): CollectionMapOps[K, V] =
@@ -238,7 +238,7 @@ trait CollectionMapOps {
 trait MapOps extends CollectionMapOps {
   this: LiftingConvs with TraversableOps with FunctionOps =>
 
-  class MapOps[K, V](val t: Exp[Map[K, V]]) extends MapLikeOps[K, V, Map]
+  class MapOps[K, V](val t: Exp[Map[K, V]]) extends MapLikeOps[K, V, Map[K, V]]
 
   implicit def expToMapExp[K, V](t: Exp[Map[K, V]]): MapOps[K, V] = new MapOps(t)
   implicit def tToMapExp[K, V](t: Map[K, V]): MapOps[K, V] =
@@ -269,14 +269,14 @@ trait CollectionSetOps {
   //and get the right type.
   import collection.{SetLike, Set}
 
-  trait SetLikeOps[T, Coll[T] <: Set[T] with SetLike[T, Coll[T]]]
-    extends Holder[Coll[T]] {
+  trait SetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]]
+    extends Holder[Repr] {
     def apply(el: Exp[T]): Exp[Boolean] = Contains(t, el)
     def contains(el: Exp[T]) = apply(el)
-    def --(that: Exp[Traversable[T]]): Exp[Coll[T]] =
+    def --(that: Exp[Traversable[T]]): Exp[Repr] =
       Diff(t, that)
   }
-  class CollectionSetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set]
+  class CollectionSetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set[T]]
   implicit def expToCollectionSetExp[T](t: Exp[Set[T]]): CollectionSetOps[T] = new CollectionSetOps(t)
   implicit def tToCollectionSetExp[T](t: Set[T]): CollectionSetOps[T] = expToCollectionSetExp(t)
   implicit def CollectionSetExp2ExpCollectionSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
@@ -288,7 +288,7 @@ trait SetOps extends CollectionSetOps {
 
   // This class differs from CollectionSetOps because it extends TraversableLikeOps[T, collection.immutable.Set, collection.immutable.Set[T]]
   // instead of TraversableLikeOps[T, collection.Set, collection.Set[T]].
-  class SetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set]
+  class SetOps[T](val t: Exp[Set[T]]) extends SetLikeOps[T, Set[T]]
   implicit def expToSetExp[T](t: Exp[Set[T]]): SetOps[T] = new SetOps(t)
   implicit def tToSetExp[T](t: Set[T]): SetOps[T] = expToSetExp(t)
   implicit def SetExp2ExpSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
