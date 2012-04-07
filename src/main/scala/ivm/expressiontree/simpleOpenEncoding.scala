@@ -73,7 +73,7 @@ trait FunctionOps {
   //Should we add this?
   implicit def funcExp[S, T](f: Exp[S] => Exp[T]) = FuncExp(f)
 
-  implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
+  implicit def app[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
     f match {
       //This line should be dropped, but then we'll need to introduce a beta-reducer:
       case fe: FuncExp[a, b] => fe.f
