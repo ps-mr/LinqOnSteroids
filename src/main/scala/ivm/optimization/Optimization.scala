@@ -495,7 +495,7 @@ object OptimizationTransforms {
 
   val betaReduction: PartialFunction[Exp[_], Exp[_]] = {
     //case a: App[s, t] => a.f(a.t) //causes a warning
-    case app @ App(fun /* @ FuncExpBody(body)*/, arg)
+    case appNode @ App(fun /* @ FuncExpBody(body)*/, arg)
       //if ((body findTotFun (_ == fun.x)).length == 1) //Inlining side conditions. Damn, we need to use unrestricted inlining as here, simplify, and then use CSE again,
       //to have a robust solution.
     =>
