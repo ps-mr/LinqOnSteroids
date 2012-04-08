@@ -102,14 +102,14 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testTypeCase() {
-    val exp = Seq(1, "foo", 5.0, new AnyRef).asSmartCollection typeCase (when[Int](_.toString), when[String](identity))
+    val exp = Seq(1, "foo", 5.0, new AnyRef).asSmart typeCase (when[Int](_.toString), when[String](identity))
     println(exp)
     println(exp.interpret().force)
   }
 
   @Test
   def testTypeCase2() {
-    val exp = Seq(1, "foo", 5.0, new AnyRef).asSmartCollection typeCase (when[Int](_ => true, _ => "an int" /* + _.interpret(); _.toString*/), when[String](_ => true, identity))
+    val exp = Seq(1, "foo", 5.0, new AnyRef).asSmart typeCase (when[Int](_ => true, _ => "an int" /* + _.interpret(); _.toString*/), when[String](_ => true, identity))
     println(exp)
     println(exp.interpret().force)
   }

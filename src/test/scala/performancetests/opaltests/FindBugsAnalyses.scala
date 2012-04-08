@@ -124,7 +124,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for {
-        classFile ← classFiles.asSmartCollection if classFile.isFinal
+        classFile ← classFiles.asSmart if classFile.isFinal
         field ← classFile.fields if field.isProtected
       } yield (classFile, field))
     }
@@ -180,7 +180,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import BATLifting._
       import InstructionLifting._
       Query(for {
-        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
+        classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
           method ← classFile.methods
           body ← method.body
@@ -220,7 +220,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import BATLifting._
       import InstructionLifting._
       (for {
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         method ← classFile.methods
         body ← method.body
         instruction ← body.instructions.typeCase(
@@ -245,7 +245,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for (
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         if classFile.methods.exists(method ⇒ method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0)
       ) yield classFile)
     }
@@ -266,7 +266,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for {
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         method ← classFile.methods
         if method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0
       } yield classFile)
@@ -291,9 +291,9 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for {
-        superclass ← classHierarchy.superclasses(serializableClasses).asSmartCollection if getClassFile.asSmartCollection.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+        superclass ← classHierarchy.superclasses(serializableClasses).asSmart if getClassFile.asSmart.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
-          val superClassFile = getClassFile.asSmartCollection.apply(superclass)
+          val superClassFile = getClassFile.asSmart.apply(superclass)
           !superClassFile.isInterfaceDeclaration &&
             !superClassFile.constructors.exists(_.descriptor.parameterTypes.length ==# 0)
         }
@@ -317,7 +317,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for {
-        classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
+        classFile ← classFiles.asSmart if classFile.isClassDeclaration
         method ← classFile.methods
         body ← method.body
         exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType ==# IllegalMonitorStateExceptionType
@@ -344,7 +344,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for {
-        allComparables ← classHierarchy.subtypes(comparableType).toList.asSmartCollection
+        allComparables ← classHierarchy.subtypes(comparableType).toList.asSmart
         comparable ← allComparables
         classFile ← getClassFile.get(comparable) //getClassFile is lifted through Const and makes optimization expensive.
         method ← classFile.methods //if parameterType != ObjectType.Object
@@ -370,7 +370,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for {
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         method ← classFile.methods
         if method.isAbstract && method.name ==# "equals" && method.descriptor.returnType ==# BooleanType
         parameterTypes <- Let(method.descriptor.parameterTypes)
@@ -396,7 +396,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import InstructionLifting._
 
       for {
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         method ← classFile.methods
         body ← method.body
         //instruction ← body.instructions
@@ -432,7 +432,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import BATLifting._
 
       for {
-        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSmartCollection
+        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSmart
         cloneable ← allCloneable
         classFile ← getClassFile.get(cloneable)
         if !(classFile.methods exists (method => method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"))
@@ -463,7 +463,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import BATLifting._
       import InstructionLifting._
       for {
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
         superClass ← classFile.superClass
         method ← classFile.methods
@@ -493,7 +493,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import BATLifting._
       import InstructionLifting._
       for {
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
         method ← classFile.methods
         if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
@@ -539,12 +539,12 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   import BATLifting._
 
   val methodNameIdx: Exp[Map[String, Seq[(ClassFile, Method)]]] = (for {
-    classFile ← classFiles.asSmartCollection
+    classFile ← classFiles.asSmart
     method ← classFile.methods
   } yield (classFile, method)).groupBy(_._2.name)
 
   val excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, Code, ExceptionHandler)]]] = (for {
-    classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
+    classFile ← classFiles.asSmart if classFile.isClassDeclaration
     method ← classFile.methods
     body ← method.body
     exceptionHandler ← body.exceptionHandlers
@@ -552,7 +552,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
 
   type QueryAnd[+T] = ((ClassFile, Method, Code), T)
   val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
-    classFile ← classFiles.asSmartCollection
+    classFile ← classFiles.asSmart
     method ← classFile.methods
     body ← method.body
     instruction ← body.instructions
@@ -576,14 +576,14 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     import BATLifting._
     /*
     (for {
-      classFile ← classFiles.asSmartCollection
+      classFile ← classFiles.asSmart
       method ← classFile.methods
     } yield (classFile, method)).size
     */
 
     /*
     methodNameIdx = (for {
-      classFile ← classFiles.asSmartCollection
+      classFile ← classFiles.asSmart
       method ← classFile.methods
     } yield (classFile, method)).groupBy(_._2.name)
 
@@ -593,7 +593,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } yield (classFile, method)).groupBy(_._2.name)
 
     val idxBase = for {
-      classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
+      classFile ← classFiles.asSmart if classFile.isClassDeclaration
       method ← classFile.methods
       body ← method.body
       exceptionHandler ← body.exceptionHandlers

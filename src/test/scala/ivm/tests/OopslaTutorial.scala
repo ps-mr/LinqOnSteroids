@@ -79,12 +79,12 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   val idxByTitle = books.groupBy(_.title)
 
   val idxByPublisher =
-    books.asSmartCollection groupBy (_.publisher)
+    books.asSmart groupBy (_.publisher)
 
   Optimization.addIndex(idxByPublisher)
 
   val recordsQuery = for {
-   book <- books.asSmartCollection
+   book <- books.asSmart
    if book.publisher ==# "Pearson Education"
    author <- book.authors
  } yield (book.title,
@@ -190,7 +190,7 @@ trait SampleAppLifting extends SampleApp {
 class OopslaTutorial extends /*FunSuite with ShouldMatchers with TestUtil with*/ SampleApp {
   val libs: Set[Library] = Set.empty
   val idx = (for {
-    lib <- libs //.asSmartCollection
+    lib <- libs //.asSmart
     ver <- lib.versions
   } yield (lib, ver)).groupBy {
     //libver => (libver._1, libver._2.version)
@@ -202,20 +202,20 @@ class OopslaTutorial extends /*FunSuite with ShouldMatchers with TestUtil with*/
 
 class Foo extends OopslaTutorial with SampleAppLifting {
   val idxBase = for {
-    lib <- libs.asSmartCollection
+    lib <- libs.asSmart
     ver <- expToLibraryOps(lib).versions
   } yield (lib, ver)
 
   val idxSQuOpt = idxBase groupBy (
     libver => (libver._1, libver._2.version))
 
-  for (lib <- libs.asSmartCollection) yield
+  for (lib <- libs.asSmart) yield
     Library(lib.name, lib.versions, lib.users + 1)
 
   //Query possibly to present
   /*
   (for {
-    lib <- libs.asSmartCollection
+    lib <- libs.asSmart
     ver <- lib.versions
     if ver.developers ==# Seq("Foo") /*boring*/ && ver.depends ==# Seq(lib) //We want to construct a sequence with lib, but let's not do it here.
   } yield (lib, asExp(Set(ver)))) groupBy (_._1) map (x => (x._1, /*x._2._1,*/ x._2.foldr(Set.empty)(_._2 union _._2) flatMap identity /*.flatten*/))

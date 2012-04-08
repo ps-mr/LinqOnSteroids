@@ -62,7 +62,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testHoistFilter() {
-    val base = Vector.range(1, 6).asSmartCollection
+    val base = Vector.range(1, 6).asSmart
     val query =
       for {
         i <- base
@@ -114,7 +114,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
     opt21.interpret() should be (query2.interpret())
   }
 
-  val baseCol = Seq(1) asSmartCollection
+  val baseCol = Seq(1) asSmart
 
   @Test
   def testRemoveRedundantOption() {
@@ -135,7 +135,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testMapToFlatMapAndBack() {
-    val baseRange = (1 to 10) asSmartCollection
+    val baseRange = (1 to 10) asSmart
     val query = for (i <- baseRange) yield i
     import Optimization._
     val transf = mapToFlatMap(query)

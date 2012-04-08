@@ -26,7 +26,7 @@ case class Const[T](x: T) extends Arity0Exp[T] {
   }
 }
 
-//This class has much faster hashing and comparison; we use it when we can semantically afford it, that is within asSmartCollection.
+//This class has much faster hashing and comparison; we use it when we can semantically afford it, that is within asSmart.
 class ConstByIdentity[T](content: T) extends Const(content) {
   override def canEqual(o: Any) = o.isInstanceOf[ConstByIdentity[_]]
 
