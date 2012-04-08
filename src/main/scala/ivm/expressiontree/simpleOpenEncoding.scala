@@ -137,7 +137,7 @@ trait TupleOps extends AutoTupleOps {
   //To "unlift" a pair, here's my first solution:
   /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Tuple2Proj1(pair), Tuple2Proj2(pair))
   //
-  //The second one is just pimpl-my-library.
+  //The second one is just pimp-my-library.
 }
 
 trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
