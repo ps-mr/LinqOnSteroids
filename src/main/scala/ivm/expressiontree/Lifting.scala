@@ -6,8 +6,8 @@ import ivm.collections.TypeMapping
 
 trait OptionLifting extends BaseExps {
   this: TraversableOps =>
-  implicit def expOption2Iterable[T](t: Exp[Option[T]]): Exp[Iterable[T]] = convLift(t, OptionOps.OptionToIterableId)
-
+  //implicit def expOption2Iterable[T](t: Exp[Option[T]]): Exp[Iterable[T]] = convLift(t, OptionOps.OptionToIterableId)
+  implicit def liftConv[T, U](t: Exp[T])(implicit conv: T => U): Exp[U] = convLift(t, 'liftConvXXX)
   // We would like to have this conversion available:
   //   implicit def expOption2TraversableOps[T](t: Exp[Option[T]]) = (t: Exp[Iterable[T]]): TraversableOps[T]
   // so that we can invoke Traversable methods on Exp[Option[T]]. However, we also want to have more specifics methods
@@ -55,10 +55,10 @@ trait OptionLifting extends BaseExps {
     // TODO apparently, the implicit conversions from Scala are not that powerful; for instance, Some(1) flatMap (Seq(_))
     // is not accepted. I guess I should revert this, or argue why it's better.
 
-    def filter(p: Exp[T] => Exp[Boolean]): Exp[Iterable[T]] = (t: Exp[Iterable[T]]) filter p
-    def withFilter(p: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] = (t: Exp[Iterable[T]]) withFilter p
-    def map[U](f: Exp[T] => Exp[U]): Exp[Iterable[U]] = (t: Exp[Iterable[T]]) map f
-    def flatMap[U, That](f: Exp[T] => Exp[Traversable[U]]) = (t: Exp[Iterable[T]]) flatMap f
+    def filter(p: Exp[T] => Exp[Boolean]): Exp[Iterable[T]] = (liftConv(t): Exp[Iterable[T]]) filter p
+    def withFilter(p: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] = (liftConv(t): Exp[Iterable[T]]) withFilter p
+    def map[U](f: Exp[T] => Exp[U]): Exp[Iterable[U]] = (liftConv(t): Exp[Iterable[T]]) map f
+    def flatMap[U, That](f: Exp[T] => Exp[Traversable[U]]) = (liftConv(t): Exp[Iterable[T]]) flatMap f
 
     //Note: we do not support call-by-name parameters; therefore we currently provide only orElse, and expect the user to
     //provide a default which will never fail evalution through exceptions but only evaluate to None.

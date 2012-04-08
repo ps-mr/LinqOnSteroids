@@ -361,7 +361,7 @@ object OptimizationTransforms {
     val containingX = fmFun.body.findTotFun(_.children.contains(X))
     containingX.head match {
       case instanceOfNode@IfInstanceOf(X, _) if containingX.forall(_ == instanceOfNode) =>
-        if (containingXParent.forall(_ == (instanceOfNode: Exp[Iterable[_]]))) {
+        if (containingXParent.forall(_ == (liftConv(instanceOfNode): Exp[Iterable[_]]))) {
           val v = FuncExp.gensym()
           val transformed = fmFun.body.substSubTerm(containingXParent.head, Seq(v))
           buildTypeFilter(coll, instanceOfNode.classS, FuncExp.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)
