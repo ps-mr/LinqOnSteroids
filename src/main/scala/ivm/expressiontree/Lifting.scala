@@ -6,7 +6,7 @@ import ivm.collections.TypeMapping
 
 trait OptionLifting extends BaseExps {
   this: TraversableOps =>
-  implicit def expOption2Iterable[T](t: Exp[Option[T]]) = onExp(t)(OptionOps.OptionToIterableId, x => x: Iterable[T])
+  implicit def expOption2Iterable[T](t: Exp[Option[T]]): Exp[Iterable[T]] = convLift(t, OptionOps.OptionToIterableId)
 
   // We would like to have this conversion available:
   //   implicit def expOption2TraversableOps[T](t: Exp[Option[T]]) = (t: Exp[Iterable[T]]): TraversableOps[T]

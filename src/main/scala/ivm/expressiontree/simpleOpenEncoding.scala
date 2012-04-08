@@ -70,6 +70,16 @@ trait FunctionOps {
   def onExp[A0, A1, A2, A3, A4, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3], a4: Exp[A4])(id: Symbol, f: (A0, A1, A2, A3, A4) => Res): Exp[Res] =
     liftCall(id, f, a0, a1, a2, a3, a4)
 
+  /*
+  //This is not applied implicitly.
+  implicit def liftConv[T, U](t: Exp[T])(implicit tM: Manifest[T], uM: Manifest[U], conv: T => U): Exp[U] =
+    onExp(t)(Symbol("liftConv_%s_%s" format (tM.erasure.getName, uM.erasure.getName)), conv)
+  */
+
+  //Use something derived from the above to lift other implicit conversions.
+  def convLift[T, U](t: Exp[T], id: Symbol)(implicit conv: T => U): Exp[U] =
+    onExp(t)(id, conv)
+
   //Should we add this?
   implicit def funcExp[S, T](f: Exp[S] => Exp[T]) = FuncExp(f)
 
