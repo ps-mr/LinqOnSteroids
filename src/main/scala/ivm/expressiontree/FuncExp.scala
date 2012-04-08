@@ -173,10 +173,10 @@ object FuncExp {
   def makepairfun[S1, S2, T](e: Exp[T], v1: TypedVar[/*S1*/_], v2: TypedVar[/*S2*/_]): FuncExp[(S1, S2), T] = {
     //This implementation is correct but slow!
     //FuncExp(p => e.substSubTerm(v1, Tuple2Proj1(p)).substSubTerm(v2, Tuple2Proj2(p)))
-    //This implementation is correct but limits further optimizations since it uses the opaque onExp
+    //This implementation is correct but limits further optimizations since it uses the opaque fmap
     /*FuncExp(arg =>
       App(
-        Lifting.onExp(new FuncExpInt[Any, (Any => T)](new FuncExpInt(e, v1), v2))('tupledCurried, x => Function.tupled(Function.uncurried(x))),
+        Lifting.fmap(new FuncExpInt[Any, (Any => T)](new FuncExpInt(e, v1), v2))('tupledCurried, x => Function.tupled(Function.uncurried(x))),
         arg))*/
     new FuncExpInt2(e, v1, v2)
   }

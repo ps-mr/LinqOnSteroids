@@ -31,15 +31,15 @@ trait OptionLifting extends BaseExps {
   implicit def expToOptionOps[T](t: Exp[Option[T]]) = new OptionOps(t)
   class OptionOps[T](t: Exp[Option[T]]) {
     import OptionOps._
-    def isDefined = onExp(t)('isDefined, _.isDefined)
-    def get = onExp(t)('get, _.get)
+    def isDefined = fmap(t)('isDefined, _.isDefined)
+    def get = fmap(t)('get, _.get)
 
     /*
-    def filter(p: Exp[T] => Exp[Boolean]): Exp[Option[T]] = onExp(t, FuncExp(p))(OptionFilterId, _ filter _) //(t: Exp[Iterable[T]]) withFilter p
+    def filter(p: Exp[T] => Exp[Boolean]): Exp[Option[T]] = fmap(t, FuncExp(p))(OptionFilterId, _ filter _) //(t: Exp[Iterable[T]]) withFilter p
     //We do not lift Option.withFilter because it returns a different type; we could provide operations
     //for that type as well, but I do not see the point of doing that, especially for a side-effect-free predicate.
     def withFilter(p: Exp[T] => Exp[Boolean]) = filter(p)
-    def map[U](f: Exp[T] => Exp[U]): Exp[Option[U]] = onExp(t, FuncExp(f))(OptionMapId, _ map _) //(t: Exp[Iterable[T]]) map f
+    def map[U](f: Exp[T] => Exp[U]): Exp[Option[U]] = fmap(t, FuncExp(f))(OptionMapId, _ map _) //(t: Exp[Iterable[T]]) map f
 
     // Finally, we can't provide the two implicit conversions as overloaded version of OptionOps.flatMap - or not directly
     // with Java-style overloading, first because the two overloaded signature:
@@ -62,9 +62,9 @@ trait OptionLifting extends BaseExps {
 
     //Note: we do not support call-by-name parameters; therefore we currently provide only orElse, and expect the user to
     //provide a default which will never fail evalution through exceptions but only evaluate to None.
-    //def getOrElse[U >: T](v: /*=> */ Exp[U]) = onExp(t, v)('Option$getOrElse, _ getOrElse _)
-    def orElse[U >: T](v: /*=> */ Exp[Option[U]]) = onExp(t, v)('Option$orElse, _ orElse _)
-    def getOrElse[U >: T](default: /*=> */ Exp[U]) = OptionGetOrElse(t, default) //onExp(t, v)('Option$getOrElse, _ getOrElse _)
+    //def getOrElse[U >: T](v: /*=> */ Exp[U]) = fmap(t, v)('Option$getOrElse, _ getOrElse _)
+    def orElse[U >: T](v: /*=> */ Exp[Option[U]]) = fmap(t, v)('Option$orElse, _ orElse _)
+    def getOrElse[U >: T](default: /*=> */ Exp[U]) = OptionGetOrElse(t, default) //fmap(t, v)('Option$getOrElse, _ getOrElse _)
   }
 
   //Note: even though ExpOption does not directly contain Exp nodes, it contains them indirectly, and they also need to be
@@ -100,7 +100,7 @@ trait ExpSugar extends ConversionDisabler2 {
   implicit def toArrayPimper[T](t: Array[T]) = new ArrayWithAsSmartCollection(t)
   //Either we use ArrayWithAsSmartCollection, or we create an implicit conversion from Exp[Array[T]] to TraverableOps[T] by adding the final cast to TraversableOps[T] here.
   //Since this is an implicit conversion, we can't just return Exp[Seq[T]] and rely on an additional implicit conversion to supply lifted collection methods.
-  //implicit def expArrayToExpSeq[T](x: Exp[Array[T]]) = onExp(x)('castToSeq, x => x: Seq[T]): TraversableOps[T]
+  //implicit def expArrayToExpSeq[T](x: Exp[Array[T]]) = fmap(x)('castToSeq, x => x: Seq[T]): TraversableOps[T]
 
   //Simplest possible definition of Query:
   //def Query[Repr](t: Exp[Repr]): Exp[Repr] = t
@@ -158,7 +158,7 @@ object Lifting
     tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(cbf2)))
   }
 
-  // XXX: Both these and onExp should not be made available without qualification everywhere. We should just be able to
+  // XXX: Both these and fmap should not be made available without qualification everywhere. We should just be able to
   // import them, but we should not pollute the namespace for client code.
 
   //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:

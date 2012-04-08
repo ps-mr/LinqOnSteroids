@@ -71,15 +71,15 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   //Code to be generated {{{
   implicit def expToDeveloperOps(t: Exp[Developer]) = new DeveloperOps(t)
   class DeveloperOps(t: Exp[Developer]) {
-    def name = onExp(t)('Developer$name, _.name)
-    def website = onExp(t)('Developer$website, _.website)
+    def name = fmap(t)('Developer$name, _.name)
+    def website = fmap(t)('Developer$website, _.website)
   }
 
   implicit def expToLibraryOps(t: Exp[Library]) = new LibraryOps(t)
   class LibraryOps(t: Exp[Library]) {
-    def name = onExp(t)('Library$name, _.name)
-    def depends = onExp(t)('Library$depends, _.depends)
-    def developers = onExp(t)('Library$developers, _.developers)
+    def name = fmap(t)('Library$name, _.name)
+    def depends = fmap(t)('Library$depends, _.depends)
+    def developers = fmap(t)('Library$developers, _.developers)
   }
   //Code to be generated }}}
 
@@ -301,7 +301,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     val a: Exp[Int] = 1
     val b = a + 2
     //With a smart signatures, type inference works:
-    val c2 = onExp(1)('plusOne, _ + 1)
+    val c2 = fmap(1)('plusOne, _ + 1)
     val c3 = withExpFunc(1)(_ + 1)
 
     println(a)

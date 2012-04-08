@@ -164,25 +164,25 @@ trait SampleAppLifting extends SampleApp {
   //Code to be generated {{{
   implicit def expToDeveloperOps(t: Exp[Developer]) = new DeveloperOps(t)
   class DeveloperOps(t: Exp[Developer]) {
-    def name = onExp(t)('Developer$name, _.name)
-    def website = onExp(t)('Developer$website, _.website)
+    def name = fmap(t)('Developer$name, _.name)
+    def website = fmap(t)('Developer$website, _.website)
   }
 
   implicit def expToLibraryVersionOps(t: Exp[LibraryVersion]) = new LibraryVersionOps(t)
   class LibraryVersionOps(t: Exp[LibraryVersion]) {
-    def version = onExp(t)('SampleApp$Library$version, _.version) //Remove class names from API! Use Manifests for that, and for arguments - but doesn't work for
+    def version = fmap(t)('SampleApp$Library$version, _.version) //Remove class names from API! Use Manifests for that, and for arguments - but doesn't work for
     //parameterized types! Well, who cares when it's generated?
-    def depends = onExp(t)('SampleApp$Library$depends, _.depends)
-    def developers = onExp(t)('SampleApp$Library$developers, _.developers)
+    def depends = fmap(t)('SampleApp$Library$depends, _.depends)
+    def developers = fmap(t)('SampleApp$Library$developers, _.developers)
   }
 
   implicit def expToLibraryOps(t: Exp[Library]) = new LibraryOps(t)
   class LibraryOps(t: Exp[Library]) {
-    def name = onExp(t)('Library$name, _.name)
-    def versions = onExp(t)('Library$versions, _.versions)
-    def users = onExp(t)('Library$users, _.users)
+    def name = fmap(t)('Library$name, _.name)
+    def versions = fmap(t)('Library$versions, _.versions)
+    def users = fmap(t)('Library$users, _.users)
   }
-  def Library(name: Exp[String], versions: Exp[Set[LibraryVersion]], users: Exp[Int]): Exp[Library] = onExp(name, versions, users)('Library, Library(_, _, _))
+  def Library(name: Exp[String], versions: Exp[Set[LibraryVersion]], users: Exp[Int]): Exp[Library] = fmap(name, versions, users)('Library, Library(_, _, _))
   //Code to be generated }}}
 }
 

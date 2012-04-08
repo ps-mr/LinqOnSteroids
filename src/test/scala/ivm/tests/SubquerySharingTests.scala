@@ -55,13 +55,13 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l2: Exp[Seq[Int]] =
     for {
       i <- baseRange
-      j <- onExp(i)('Vector$range_1, Vector.range(1, _))
+      j <- fmap(i)('Vector$range_1, Vector.range(1, _))
       if (j ==# 5)
     } yield i + j
 
   val l2IdxBase = for {
     i <- baseRange
-    j <- onExp(i)('Vector$range_1, Vector.range(1, _))
+    j <- fmap(i)('Vector$range_1, Vector.range(1, _))
   } yield (i, j)
 
   @Test def testComplexIndexing() {
@@ -72,8 +72,8 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l3_k: Exp[Seq[Int]] =
     for {
       i <- baseRange
-      j <- onExp(i)('Vector$range_1, Vector.range(1, _))
-      k <- onExp(j)('Vector$range_1, Vector.range(1, _))
+      j <- fmap(i)('Vector$range_1, Vector.range(1, _))
+      k <- fmap(j)('Vector$range_1, Vector.range(1, _))
       if (k ==# 5)
     } yield i + j + k
 
@@ -81,20 +81,20 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l3_j: Exp[Seq[Int]] =
     for {
       i <- baseRange
-      j <- onExp(i)('Vector$range_1, Vector.range(1, _))
-      k <- onExp(j)('Vector$range_1, Vector.range(1, _))
+      j <- fmap(i)('Vector$range_1, Vector.range(1, _))
+      k <- fmap(j)('Vector$range_1, Vector.range(1, _))
       if (j ==# 5)
     } yield i + j + k
 
   val l3IdxBase_k = for {
     i <- baseRange
-    j <- onExp(i)('Vector$range_1, Vector.range(1, _))
-    k <- onExp(j)('Vector$range_1, Vector.range(1, _))
+    j <- fmap(i)('Vector$range_1, Vector.range(1, _))
+    k <- fmap(j)('Vector$range_1, Vector.range(1, _))
   } yield (i, j, k)
 
   val l3IdxBase_j: Exp[Seq[(Int, Int)]] = for {
     i <- baseRange
-    j <- onExp(i)('Vector$range_1, Vector.range(1, _))
+    j <- fmap(i)('Vector$range_1, Vector.range(1, _))
   } yield (i, j)
 
   @Test def testComplexIndexing3Level_j() {
@@ -102,9 +102,9 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     //Here p(0) and p(1) have type Exp[Int] but only by chance. If the index were tuple-based, it'd have type Exp[Seq[(Int, Int)]]. Since the tuple members have the same type,
     //the seq-based index has type Exp[Seq[Seq[Int]]].
     //Exp[Seq[(Int, String)]] would become Exp[Seq[Seq[Any]]], and p(0) would then have type Any.
-    //indexingTest(l3_j, l3Idx){ _ get 5 flatMap identity flatMap (p => for (k <- onExp(p(1))('Vector$range_1, Vector.range(1, _))) yield p(0) + p(1) + k) }
-    indexingTest(l3_j, l3Idx){ _(5) flatMap (p => for (k <- onExp(p._2)('Vector$range_1, Vector.range(1, _))) yield p._1 + p._2 + k) }
-    indexingTest(l3_shifted, l3Idx){ _(5) flatMap (p => for (k <- onExp(p._2)('Vector$range_1, Vector.range(1, _))) yield p._1 + p._2 + k) }
+    //indexingTest(l3_j, l3Idx){ _ get 5 flatMap identity flatMap (p => for (k <- fmap(p(1))('Vector$range_1, Vector.range(1, _))) yield p(0) + p(1) + k) }
+    indexingTest(l3_j, l3Idx){ _(5) flatMap (p => for (k <- fmap(p._2)('Vector$range_1, Vector.range(1, _))) yield p._1 + p._2 + k) }
+    indexingTest(l3_shifted, l3Idx){ _(5) flatMap (p => for (k <- fmap(p._2)('Vector$range_1, Vector.range(1, _))) yield p._1 + p._2 + k) }
   }
 
   @Test def testComplexIndexing3Level_k() {
@@ -115,23 +115,23 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l3_shifted: Exp[Seq[Int]] =
     for {
       i <- baseRange
-      j <- onExp(i)('Vector$range_1, Vector.range(1, _))
+      j <- fmap(i)('Vector$range_1, Vector.range(1, _))
       if (j ==# 5)
-      k <- onExp(j)('Vector$range_1, Vector.range(1, _))
+      k <- fmap(j)('Vector$range_1, Vector.range(1, _))
     } yield i + j + k
 
   val l3_k1_opt: Exp[Seq[Int]] =
     for {
       i <- baseRange
       j <- Let(i + 1)
-      k <- onExp(j)('Vector$range_1, Vector.range(1, _))
+      k <- fmap(j)('Vector$range_1, Vector.range(1, _))
       if (k ==# 5)
     } yield i + j + k
 
   val l3IdxBase_k1_opt = for {
     i <- baseRange
     j <- Let(i + 1)
-    k <- onExp(j)('Vector$range_1, Vector.range(1, _))
+    k <- fmap(j)('Vector$range_1, Vector.range(1, _))
   } yield (i, j, k)
 
 

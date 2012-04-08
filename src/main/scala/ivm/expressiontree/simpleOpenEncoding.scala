@@ -91,25 +91,25 @@ trait FunctionOps {
   def liftCall[A0, A1, A2, A3, A4, Res](id: Symbol, callfunc: (A0, A1, A2, A3, A4) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3], arg4: Exp[A4]) =
     new Call5(id, callfunc, arg0, arg1, arg2, arg3, arg4)
 
-  def onExp[A0, Res](t: Exp[A0])(id: Symbol, f: A0 => Res): Exp[Res] = liftCall(id, f, t)
-  def onExp[A0, A1, Res](a0: Exp[A0], a1: Exp[A1])(id: Symbol, f: (A0, A1) => Res): Exp[Res] = liftCall(id, f, a0, a1)
-  def onExp[A0, A1, A2, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2])(id: Symbol, f: (A0, A1, A2) => Res): Exp[Res] = liftCall(id, f, a0, a1, a2)
-  def onExp[A0, A1, A2, A3, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3])(id: Symbol, f: (A0, A1, A2, A3) => Res): Exp[Res] =
+  def fmap[A0, Res](t: Exp[A0])(id: Symbol, f: A0 => Res): Exp[Res] = liftCall(id, f, t)
+  def fmap[A0, A1, Res](a0: Exp[A0], a1: Exp[A1])(id: Symbol, f: (A0, A1) => Res): Exp[Res] = liftCall(id, f, a0, a1)
+  def fmap[A0, A1, A2, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2])(id: Symbol, f: (A0, A1, A2) => Res): Exp[Res] = liftCall(id, f, a0, a1, a2)
+  def fmap[A0, A1, A2, A3, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3])(id: Symbol, f: (A0, A1, A2, A3) => Res): Exp[Res] =
     liftCall(id, f, a0, a1, a2, a3)
-  def onExp[A0, A1, A2, A3, A4, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3], a4: Exp[A4])(id: Symbol, f: (A0, A1, A2, A3, A4) => Res): Exp[Res] =
+  def fmap[A0, A1, A2, A3, A4, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3], a4: Exp[A4])(id: Symbol, f: (A0, A1, A2, A3, A4) => Res): Exp[Res] =
     liftCall(id, f, a0, a1, a2, a3, a4)
 
   /*
   //This is not applied implicitly.
   implicit def liftConv[T, U](t: Exp[T])(implicit tM: Manifest[T], uM: Manifest[U], conv: T => U): Exp[U] =
-    onExp(t)(Symbol("liftConv_%s_%s" format (tM.erasure.getName, uM.erasure.getName)), conv)
+    fmap(t)(Symbol("liftConv_%s_%s" format (tM.erasure.getName, uM.erasure.getName)), conv)
   //Not even this version is applied implicitly:
   implicit def liftConv[T, U](t: Exp[T])(implicit conv: T => U): Exp[U] = convLift(t, 'liftConvXXX)
   */
 
   //Use something derived from the above to lift other implicit conversions.
   def convLift[T, U](t: Exp[T], id: Symbol)(implicit conv: T => U): Exp[U] =
-    onExp(t)(id, conv)
+    fmap(t)(id, conv)
 
   //Should we add this?
   implicit def funcExp[S, T](f: Exp[S] => Exp[T]) = FuncExp(f)
@@ -193,11 +193,11 @@ trait NumOps {
   }
 
   class FractionalOps[T: Fractional](t: Exp[T]) {
-    def /(that: Exp[T]): Exp[T] = onExp(implicitly[Fractional[T]], this.t, that)('FractionalOps$div, _.div(_, _))
+    def /(that: Exp[T]): Exp[T] = fmap(implicitly[Fractional[T]], this.t, that)('FractionalOps$div, _.div(_, _))
   }
 
   class IntegralOps[T: Integral](t: Exp[T]) {
-    def %(that: Exp[T]): Exp[T] = onExp(implicitly[Integral[T]], this.t, that)('IntegralOps$mod, _.rem(_, _))
+    def %(that: Exp[T]): Exp[T] = fmap(implicitly[Integral[T]], this.t, that)('IntegralOps$mod, _.rem(_, _))
   }
 
   //Solution 1:
@@ -227,7 +227,7 @@ trait BaseTypesOps {
 
   class StringOps(t: Exp[String]) {
     def +(that: Exp[String]) = StringConcat(t, that)
-    def contains(that: Exp[CharSequence]) = onExp(this.t, that)('StringOps$contains, _ contains _)
+    def contains(that: Exp[CharSequence]) = fmap(this.t, that)('StringOps$contains, _ contains _)
   }
 
   class BooleanOps(b: Exp[Boolean]) {

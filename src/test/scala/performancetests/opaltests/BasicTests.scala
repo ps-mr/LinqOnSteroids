@@ -66,7 +66,7 @@ object BATLiftingExperimental {
   object INSTANCEOF {
     def unapply(t: Exp[_]): Option[Exp[ReferenceType]] = {
       if ((t ne null) && t.interpret().isInstanceOf[INSTANCEOF])
-        Some(onExp(t.asInstanceOf[Exp[INSTANCEOF]])('referenceType, _.referenceType))
+        Some(fmap(t.asInstanceOf[Exp[INSTANCEOF]])('referenceType, _.referenceType))
       else None
     }
   }
@@ -292,13 +292,13 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     val methodsLos3 = queryData.flatMap( cf => cf.methods
       .flatMap( m => m.attributes
       .collect(
-      a => onExp(a)('instanceOf$CodeAttribute,
+      a => fmap(a)('instanceOf$CodeAttribute,
         x =>
           if (x.isInstanceOf[Code])
             Some(x.asInstanceOf[Code])
           else None))
       .flatMap( c => c.instructions)
-      .filter( a => onExp(a)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF]))
+      .filter( a => fmap(a)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF]))
       .map( _ => m.name)))
 
     val m3Int: Traversable[String] = benchMark("los3") {
@@ -312,9 +312,9 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         cf <- queryData
         m <- cf.methods
         a <- m.attributes
-        if onExp(a)('instanceOf$CodeAttribute, _.isInstanceOf[Code])
+        if fmap(a)('instanceOf$CodeAttribute, _.isInstanceOf[Code])
         i <- a.asInstanceOf[Exp[Code]].instructions //This cast works perfectly
-        if onExp(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
+        if fmap(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
       } yield m.name
     val m4Int: Traversable[String] = benchMark("los4") {
       methodsLos4.interpret()

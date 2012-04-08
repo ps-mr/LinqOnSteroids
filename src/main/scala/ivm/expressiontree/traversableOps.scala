@@ -115,9 +115,9 @@ trait TraversableOps {
     }
 
     //XXX: Generate these wrappers, also for other methods.
-    def toSet = onExp(this.t)('TraversableLike$toSet, _.toSet)
-    def toSeq = onExp(this.t)('TraversableLike$toSeq, _.toSeq)
-    def flatten[U](implicit asTraversable: T => TraversableOnce[U]) = onExp(this.t)('TraversableLikeOps$flatten, _.flatten)
+    def toSet = fmap(this.t)('TraversableLike$toSet, _.toSet)
+    def toSeq = fmap(this.t)('TraversableLike$toSeq, _.toSeq)
+    def flatten[U](implicit asTraversable: T => TraversableOnce[U]) = fmap(this.t)('TraversableLikeOps$flatten, _.flatten)
 
     def typeCase[Res](cases: TypeCase[_, Res]*): Exp[Set[Res]] = TypeCaseExp(this.t, cases)
   }
@@ -225,7 +225,7 @@ trait CollectionMapOps {
 
   trait MapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]]
     extends Holder[Repr] {
-    def get(key: Exp[K]): Exp[Option[V]] = onExp(t, key)('Map$get, _ get _)
+    def get(key: Exp[K]): Exp[Option[V]] = fmap(t, key)('Map$get, _ get _)
     /*
     //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
     case class WithFilter(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[IterableView[(K, V), Map[K, V]]] {
@@ -479,7 +479,7 @@ trait TypeFilterOps {
   //Experiments
   /*
   class GroupByTupleType[U, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](val t: Exp[C[U]]) {
-    def groupByTupleType[T, D[_]](typeEqual: U =:= D[T])(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t map (x => onExp(x)('foo, typeEqual)), FuncExp(f))
+    def groupByTupleType[T, D[_]](typeEqual: U =:= D[T])(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t map (x => fmap(x)('foo, typeEqual)), FuncExp(f))
   }
   */
   //Copied from Scalaz and altered a bit. Not sure all this generality is useful since we only use it for tuples.
