@@ -198,7 +198,7 @@ trait SampleAppLifting extends SampleApp {
 }
 
 /*
-class OopslaTutorial extends /*FunSuite with ShouldMatchers with TestUtil with*/ SampleApp {
+class OopslaTutorialOld extends /*FunSuite with ShouldMatchers with TestUtil with*/ SampleApp {
   val libs: Set[Library] = Set.empty
   val idx = (for {
     lib <- libs //.asSmart
@@ -211,7 +211,7 @@ class OopslaTutorial extends /*FunSuite with ShouldMatchers with TestUtil with*/
   for (lib <- libs) yield Library(lib.name, lib.versions, lib.users + 1)
 }
 
-class Foo extends OopslaTutorial with SampleAppLifting {
+class Foo extends OopslaTutorialOld with SampleAppLifting {
   val idxBase = for {
     lib <- libs.asSmart
     ver <- expToLibraryOps(lib).versions
@@ -231,6 +231,7 @@ class Foo extends OopslaTutorial with SampleAppLifting {
     if ver.developers ==# Seq("Foo") /*boring*/ && ver.depends ==# Seq(lib) //We want to construct a sequence with lib, but let's not do it here.
   } yield (lib, asExp(Set(ver)))) groupBy (_._1) map (x => (x._1, /*x._2._1,*/ x._2.foldr(Set.empty)(_._2 union _._2) flatMap identity /*.flatten*/))
   */
-  //That's rather cumbersome. Let's ask for help.
+  //But that's too cumbersome; moreover, it runs into some limitations, because folds are not yet lifted (and that's easy to fix) and
+  //the yielded expression uses nested generic constructors and hence needs asExp.
 }
 */
