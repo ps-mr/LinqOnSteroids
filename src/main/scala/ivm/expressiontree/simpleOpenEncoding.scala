@@ -46,8 +46,29 @@ trait LiftingConvs extends ConversionDisabler {
 }
 
 trait ConversionDisabler2 extends LiftingConvs {
-  //Disable conversion
+  //Disable conversion - should no more be needed, but it is, as explained below.
   implicit def noAsSmartCollForExp[T](t: Exp[T]): WithAsSmartCollection[Exp[T]] = null
+  /* Assume that `class WithAsSmartCollection[T](t: T)` contains:
+def asSmartCollection(implicit conv: T => Exp[T]) = conv(t)
+   * (as it does at the moment of this writing).
+   * Consider this test: disable the effect of this conversion by using toPimper explicitly:
+toPimper(Const(1)).asSmartCollection
+   * This code is accepted, while
+scala> toPimper(Const(1): Exp[Int]) asSmartCollection
+   * gives the expected error, i.e.:
+<console>:37: error: ambiguous implicit values:
+ both method noPureForExp in trait ConversionDisabler of type [T](t: ivm.expressiontree.Exp[T])ivm.expressiontree.Exp[ivm.expressiontree.Exp[T]]
+ and method pure in trait LiftingConvs of type [T](t: T)ivm.expressiontree.Exp[T]
+ match expected type ivm.expressiontree.Exp[Int] => ivm.expressiontree.Exp[ivm.expressiontree.Exp[Int]]
+              toPimper(Const(1): Exp[Int]) asSmartCollection
+   * The compiler is even right, since we do ask for a very specific conversion, from T to Exp[T]; when T = Const[Int], we
+   * only have a conversion from U = Exp[Int] to Exp[U] >: Exp[T]. If we write instead:
+def asSmartCollection[U >: T](implicit conv: U => Exp[U]): Exp[U] = conv(t)
+   * then U might as well be Any; luckily, pure[T] is always available, and noPureForExp will be available as well on expressions.
+   * However, the compiler still deduced U = T, so that noPureForExp is not found. The last attempt is this:
+def asSmartCollection[U >: T](implicit conv: T => Exp[U]): Exp[U] = conv(t)
+   * with the same result - toPimper(Const(1)).asSmartCollection is accepted.
+   */
 }
 
 trait FunctionOps {
