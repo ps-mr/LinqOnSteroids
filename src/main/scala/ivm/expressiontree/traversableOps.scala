@@ -135,6 +135,10 @@ trait TraversableOps {
     //TODO: override operations to avoid using CanBuildFrom
   }
 
+  //Compare collection nodes by identity.
+  //Saves costs when comparing collections, which happens during optimization.
+  implicit def pureColl[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Repr with Traversable[T]) = new ConstByIdentity(v)
+
   //This version does not work, due to https://issues.scala-lang.org/browse/SI-5298:
   //implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr])
   implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
@@ -142,6 +146,8 @@ trait TraversableOps {
   implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Repr with Traversable[T]) =
     expToTraversableLikeOps(v)
 
+  //Ranges are cheap to compare for equality; hence we can easily use pure, not pureColl, for them.
+  implicit def pureRange(r: Range): Exp[Range] = pure(r)
   //Repr = Range does not satisfy the bound given by:
   //  Repr <: Traversable[T] with TraversableLike[T, Repr]
   //Hence we need this extra conversion.
