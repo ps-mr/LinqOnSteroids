@@ -1,6 +1,7 @@
 package ivm.expressiontree
 
 import collection.mutable
+import ivm.optimization.Optimization
 
 /**
  * Here I show yet another encoding of expression trees, where methods
@@ -42,6 +43,11 @@ trait LiftingConvs extends ConversionDisabler {
 
   class WithAsSmartCollection[T](t: T) {
     def asSmart(implicit conv: T => Exp[T]) = conv(t)
+  }
+
+  implicit def withOptimize[T](t: Exp[T]) = new WithOptimize(t)
+  class WithOptimize[T](t: Exp[T]) {
+    def optimize = Optimization.optimize(t)
   }
 }
 
