@@ -225,7 +225,7 @@ trait BaseTypesOps {
   }
 
   class StringOps(t: Exp[String]) {
-    def +(that: Exp[String]) = StringConcat(t, that)
+    def +(that: Exp[String]): Exp[String] = StringConcat(t, that)
     def contains(that: Exp[CharSequence]) = fmap(this.t, that)('StringOps$contains, _ contains _)
   }
 

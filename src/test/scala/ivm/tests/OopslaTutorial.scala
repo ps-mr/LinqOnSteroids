@@ -91,6 +91,17 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
     author.firstName + " " + author.lastName,
     book.authors.size - 1)
 
+  val recordsQuery2: Exp[Set[(String, Set[String], Int)]] = for {
+    book <- books.asSmart
+    if book.publisher ==# "Pearson Education"
+    author <- book.authors
+  } yield (book.title,
+      //Sets are invariant! Hence we can't convert a set of StringConcat to a set of Exp[String] (which is due to our framework)
+      //and we can't convert a Set[Exp[String]] to Set[Exp[AnyRef]] (which is independent of our framework, since Set[String] cannot be
+      //converted to Set[AnyRef]).
+      asExp(Set(author.firstName + " " + author.lastName)),
+      book.authors.size - 1)
+
   test("same results") {
     println(recordsQuery)
     recordsQuery.interpret() should be (records)
