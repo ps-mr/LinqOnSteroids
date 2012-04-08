@@ -24,6 +24,7 @@ trait ConversionDisabler {
   //notification for updates to the underlying collection.
   //To test, edit testNoMutableConst below to see that the currently commented-out code does not compile.
   implicit def noConstForMutableColl[T](t: mutable.Traversable[T]): Exp[mutable.Traversable[T]] = null
+  implicit def noToExpForExp[T](t: Exp[T]): Exp[Exp[T]] = null
 }
 
 trait LiftingConvs extends ConversionDisabler {
