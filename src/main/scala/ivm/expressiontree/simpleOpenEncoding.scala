@@ -74,6 +74,8 @@ trait FunctionOps {
   //This is not applied implicitly.
   implicit def liftConv[T, U](t: Exp[T])(implicit tM: Manifest[T], uM: Manifest[U], conv: T => U): Exp[U] =
     onExp(t)(Symbol("liftConv_%s_%s" format (tM.erasure.getName, uM.erasure.getName)), conv)
+  //Not even this version is applied implicitly:
+  implicit def liftConv[T, U](t: Exp[T])(implicit conv: T => U): Exp[U] = convLift(t, 'liftConvXXX)
   */
 
   //Use something derived from the above to lift other implicit conversions.
