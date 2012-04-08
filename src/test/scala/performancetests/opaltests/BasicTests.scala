@@ -434,6 +434,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     {
       implicit def tuple2ToTuple2Exp[A1, A2](tuple: (Exp[A1], Exp[A2])): LiftTuple2[A1, A2] =
         LiftTuple2[A1, A2](tuple._1, tuple._2)
+      //This does not work as desired, because of https://issues.scala-lang.org/browse/SI-5651, a dup we reported of
+      //https://issues.scala-lang.org/browse/SI-3346
       implicit def tuple2ToTuple2ExpPrime[A1, A2, E1 <% Exp[A1], E2 <% Exp[A2]](tuple: (E1, E2)): LiftTuple2[A1, A2] =
         LiftTuple2[A1, A2](tuple._1, tuple._2)
       //Same code as above, except that the index returns all free variables, so that the optimizer might find it.
@@ -444,9 +446,20 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         i <- ca.instructions
       //} yield tuple2ToTuple2Exp(asExp((cf, m, ca)), i) //works, cumbersome
       //} yield tuple2ToTuple2ExpPrime((cf, m, ca), i) //works
-      } yield (asExp((cf, m, ca)), i) //works, good, but does not use the provided conversion!
+      } yield (asExp((cf, m, ca)), i) //works, good, but does not use the provided conversion and requires asExp!
       //} yield asExp(((cf, m, ca), i)) //does not work, same as below.
       //} yield /*tuple2ToTuple2ExpPrime*/((cf, m, ca), i) //does not work, gives an error about a view not being found.
+
+      val typeIdxBase2: Exp[Seq[((ClassFile, Method), Instruction)]] = for {
+        cf <- queryData.toSeq
+        m <- cf.methods
+        ca <- m.attributes.typeFilter[Code]
+        i <- ca.instructions
+      //} yield tuple2ToTuple2Exp(asExp((cf, m)), i) //works, cumbersome
+      //} yield tuple2ToTuple2ExpPrime((cf, m), i) //works
+      } yield (asExp((cf, m)), i) //works, good, but does not use the provided conversion and requires asExp!
+      //} yield asExp(((cf, m), i)) //does not work, same as below.
+      //} yield /*tuple2ToTuple2ExpPrime*/((cf, m), i) //does not work, gives an error about a view not being found.
 
       //The type annotation here is needed, because type inference interferes with implicit lookup (apparently).
       val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
