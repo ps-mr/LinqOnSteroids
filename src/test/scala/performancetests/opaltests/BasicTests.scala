@@ -432,7 +432,9 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
     type QueryAnd[+T] = ((ClassFile, Method, Code), T);
     {
-      implicit def tuple2ToTuple2Exp[A1, A2, E1 <% Exp[A1], E2 <% Exp[A2]](tuple: (E1, E2)): LiftTuple2[A1, A2] =
+      implicit def tuple2ToTuple2Exp[A1, A2](tuple: (Exp[A1], Exp[A2])): LiftTuple2[A1, A2] =
+        LiftTuple2[A1, A2](tuple._1, tuple._2)
+      implicit def tuple2ToTuple2ExpPrime[A1, A2, E1 <% Exp[A1], E2 <% Exp[A2]](tuple: (E1, E2)): LiftTuple2[A1, A2] =
         LiftTuple2[A1, A2](tuple._1, tuple._2)
       //Same code as above, except that the index returns all free variables, so that the optimizer might find it.
       val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
@@ -441,8 +443,10 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         ca <- m.attributes.typeFilter[Code]
         i <- ca.instructions
       //} yield tuple2ToTuple2Exp(asExp((cf, m, ca)), i) //works, cumbersome
-      } yield tuple2ToTuple2Exp((cf, m, ca), i) //works
-      //} yield /*tuple2ToTuple2Exp*/((cf, m, ca), i) //does not work
+      //} yield tuple2ToTuple2ExpPrime((cf, m, ca), i) //works
+      } yield (asExp((cf, m, ca)), i) //works, good, but does not use the provided conversion!
+      //} yield asExp(((cf, m, ca), i)) //does not work, same as below.
+      //} yield /*tuple2ToTuple2ExpPrime*/((cf, m, ca), i) //does not work, gives an error about a view not being found.
 
       //The type annotation here is needed, because type inference interferes with implicit lookup (apparently).
       val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
