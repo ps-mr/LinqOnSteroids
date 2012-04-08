@@ -40,7 +40,8 @@ trait LiftingConvs extends ConversionDisabler {
   def asExp[T](t: Exp[T]) = t
 
   class WithAsSmartCollection[T](t: T) {
-    def asSmartCollection = new ConstByIdentity(t) //asExp(t)
+    //def asSmartCollection = new ConstByIdentity(t) //asExp(t)
+    def asSmartCollection(implicit conv: T => Exp[T]) = conv(t)
   }
 }
 

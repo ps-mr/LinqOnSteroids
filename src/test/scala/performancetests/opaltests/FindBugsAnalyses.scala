@@ -293,7 +293,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       Query(for {
         superclass ← classHierarchy.superclasses(serializableClasses).asSmartCollection if getClassFile.asSmartCollection.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
-          val superClassFile = (getClassFile.asSmartCollection)(superclass)
+          val superClassFile = getClassFile.asSmartCollection.apply(superclass)
           !superClassFile.isInterfaceDeclaration &&
             !superClassFile.constructors.exists(_.descriptor.parameterTypes.length ==# 0)
         }
