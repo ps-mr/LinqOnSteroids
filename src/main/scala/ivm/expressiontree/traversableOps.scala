@@ -32,10 +32,7 @@ trait TraversableOps {
     val t: Exp[Repr]
   }
 
-  /* Lift faithfully the FilterMonadic trait except foreach and withFilter, since we have a special lifting for it.
-   * This trait is used both for concrete collections of type Repr <: FilterMonadic[T, Repr].
-   */
-  trait FilterMonadicOpsLike[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends Holder[Repr] {
+  trait TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends Holder[Repr] {
     def map[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
       newMapOp(this.t, FuncExp(f))
     def flatMap[U, That <: Traversable[U]](f: Exp[T] => Exp[Traversable[U]])
@@ -43,11 +40,7 @@ trait TraversableOps {
       newFlatMap(this.t, FuncExp(f))
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
       newWithFilter(this.t, FuncExp(f))
-  }
 
-
-  //Coll is only needed for TypeFilter.
-  trait TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends FilterMonadicOpsLike[T, Repr] {
     def exists(f: Exp[T] => Exp[Boolean]) = !IsEmpty(this withFilter f)//(withFilter f).isEmpty
     //The awkward use of andThen below is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
     def forall(f: Exp[T] => Exp[Boolean]) = IsEmpty(this withFilter (f andThen (!(_)))) //Forall(this.t, FuncExp(f))
