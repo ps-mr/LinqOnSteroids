@@ -502,7 +502,7 @@ object OptimizationTransforms {
       fun(arg)
   }
 
-  val betaDeltaReducer: Exp[_] => Exp[_] = deltaReductionTuple orElse betaReduction orElse {case x => x} //that's the shortest way of writing identity.
+  val betaDeltaReducer: Exp[_] => Exp[_] = deltaReductionTuple orElse betaReduction orElse {case e => e} //that's the shortest way of writing identity.
   /*val betaReduction: Exp[_] => Exp[_] = {
     case a: App[t, u] => a.f(a.t)
     case ExpSelection(arity, selected, e: ExpProduct) => e.metaProductElement(selected - 1)

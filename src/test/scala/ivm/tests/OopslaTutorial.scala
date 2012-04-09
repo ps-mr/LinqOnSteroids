@@ -31,16 +31,23 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
     if record._1.startsWith("Compilers")
   } yield (record._1, record._2)
 
+  type Result2 = (String, String, Int)
+
   val records = for {
     book <- books
     if book.publisher == "Pearson Education"
     author <- book.authors
-  } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
+//  } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
+  } yield (book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
-  def titleFilter(records: Set[Result], keyword: String): Set[(String, String)] = for {
+  //def titleFilter(records: Set[Result], keyword: String): Set[(String, String)] = for {
+  def titleFilter(records: Set[Result2], keyword: String): Set[(String, String)] = for {
     record <- records
-    if record.title.contains(keyword)
-  } yield (record.title, record.authorName)
+      if record._1.contains(keyword)
+  } yield (record._1, record._2)
+//    if record.title.contains(keyword)
+//  } yield (record.title, record.authorName)
+
   val processedRecords = titleFilter(records, "Principles")
 
   def titleFilterHandOpt1(books: Set[Book], publisher: String, keyword: String) = for {
@@ -63,14 +70,16 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   val recordsDesugared = books.withFilter(book =>
     book.publisher == "Pearson Education").flatMap(book =>
     book.authors.map(author =>
-      Result(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
+//      Result(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
+      (book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
 
   test("recordsDesugared should be records") {
     recordsDesugared should be (records)
     recordsOld should not be (records)
   }
 
-  val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
+  //val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
+  val idxByAuthor = records.groupBy(_._2) //Index books by author - the index by title is a bit more boring, but not so much actually!
 
   import BookLifting._
   import BookLiftingManual._
@@ -81,7 +90,9 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   val idxByPublisher =
     books.asSmart groupBy (_.publisher)
 
-  Optimization.addIndex(idxByPublisher)
+  val doIndex = false //Disable this to test other optimizations, like unnesting
+  if (doIndex)
+    Optimization.addIndex(idxByPublisher)
 
   val recordsQuery = for {
    book <- books.asSmart
@@ -109,7 +120,6 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
     println(recordsQueryOpt)
     recordsQueryOpt.interpret() should be (records)
   }
-  type Result2 = (String, String, Int)
 
   def titleFilterQuery(records: Exp[Set[Result2]], keyword: String): Exp[Set[(String, String)]] = for {
     record <- records
