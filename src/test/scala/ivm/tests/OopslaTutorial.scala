@@ -129,17 +129,28 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   val processedRecordsQuery = titleFilterQuery(recordsQuery, "Principles")
 
   test("processedRecords should have the results") {
-    println(processedRecordsQuery)
+    showExp(processedRecordsQuery, "processedRecordsQuery")
     processedRecordsQuery.interpret() should be (processedRecords)
     val processedRecordsQueryOpt = Optimization.optimize(processedRecordsQuery)
-    println(processedRecordsQueryOpt)
+    showExp(processedRecordsQueryOpt, "processedRecordsQueryOpt")
     processedRecordsQueryOpt.interpret() should be (processedRecords)
+    def titleFilterHandOpt2Query(books: Exp[Set[Book]], publisher: String, keyword: String): Exp[Set[(String, String)]] =
+      for {
+        book <- books
+        if book.publisher ==# publisher && book.title.contains(keyword)
+        author <- book.authors
+      } yield (book.title, author.firstName + " " + author.lastName)
+    val expectedRes = titleFilterHandOpt2Query(books, "Pearson Education", "Principles")
+    //showExp(expectedRes, "expectedRes")
+    processedRecordsQueryOpt should be (expectedRes)
   }
   //A query like processedRecordsQuery cannot really be optimized without unnesting! After that we need inlining,
   // which we have, and only then the delta-reduction rule for tuples can kick in.
   // If instead we use Result, we need delta-reduction to work on Result; Result needs to implement ExpProduct, and the
   // selectors need to implement ExpSelection; I guess for the latter I'd need to manually alter the generated code a
-  // bit (for now).
+  // bit (for now), but it is surely possible to recognize case classes (deployed software does it) and add ExpProduct
+  // and ExpSelection for them.
+  // Possible idea: after all, case classes even implement Product themselves! Might be helpful.
 
   // On the other hand, I already understand unnesting.
   /*

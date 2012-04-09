@@ -529,6 +529,75 @@ object OptimizationTransforms {
     case e => e
   }
 
+  //XXX: an extra safety condition is that we must reject a nested collection with stronger algebraic laws;
+  //in the monoid comprehension calculus this is required for an expression to be _syntactically_ valid, but here it is
+  //not.
+  //For instance, this code would unnest a subquery creating a set (hence performing duplicate elimination) nested into
+  //a query creating a list.
+  val generalUnnesting: Exp[_] => Exp[_] = {
+    /*
+     * v = E' map (x' => e')
+     * v flatMap (y => e) |-> E ' flatMap (x' => letExp(e')(y => e))
+     * v filter (y => p) |-> ...
+     */
+    /* A somewhat interesting compile error:
+    case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
+      collEp flatMap FuncExp.makefun(letExp(ep)(fy), fxp.x)
+    results in:
+[error] /Users/pgiarrusso/Documents/Research/Sorgenti/linqonsteroids/src/main/scala/ivm/optimization/Optimization.scala:536: value flatMap is not a member of ivm.expressiontree.Exp[Any]
+[error]       collEp flatMap FuncExp.makefun(letExp(ep)(fy), fxp.x)
+[error]              ^
+      * However, scalac seems "right": collEp has type Exp[Repr], which apparently erases to Exp[Any] even if a type bound _is_ given.
+      * XXX report this as another bug.
+      */
+    /*case FlatMap(FlatMap(collEp: Exp[Traversable[t]], fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
+      collEp flatMap FuncExp.makefun(letExp(ep)(fy.f), fxp.x)*/
+    case FlatMap(FlatMap(collEp: Exp[Traversable[t]], fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
+      collEp flatMap FuncExp.makefun(ep flatMap fy, fxp.x).f
+      //collEp flatMap FuncExp.makefun(Seq(ep) map (fy)/*Seq(ep) map fy*/, fxp.x).f
+    case Filter(FlatMap(collEp: Exp[Traversable[t]], fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
+      //collEp filter FuncExp.makefun(letExp(ep)(fy), fxp.x)
+      collEp flatMap FuncExp.makefun(ep filter app(fy), fxp.x)
+    case e => e
+  }
+
+  /*
+   * Consider:
+   * coll1 flatMap (x1 => coll2 map (x2 => (x1, x2)) filter (pair => test(pair._1))
+   * Conceptually, here the filter might be hoisted because it only depends on x1. But that's not visible unless we
+   * merge the map and the filter, fuse their functions, and extract the filter again with transformedFilterToFilter.
+   */
+  val mergeFilterWithMap: Exp[_] => Exp[_] = {
+    case MapOp(Filter(coll: Exp[Traversable[t]], pred @ FuncExpBody(test)), mapFun) =>
+      //After this optimization, we need to float the if_# to around the body of mapFun
+      //coll flatMap (FuncExp.makefun(if_# (test)(Seq(pred.x)) else_# {Seq.empty}, pred.x) andThen mapFun)
+      //Let's do this directly:
+      coll flatMap FuncExp.makefun(
+        if_# (test) {
+          Seq(mapFun(pred.x))
+        } else_# {
+          Seq.empty
+        }, pred.x)
+
+    case Filter(MapOp(coll: Exp[Traversable[t]], mapFun), pred) =>
+      coll flatMap FuncExp.makefun(letExp(mapFun.body)(FuncExp.makefun(if_# (pred.body) (Seq(pred.x)) else_# (Seq.empty), pred.x)), mapFun.x)
+    case e => e
+  }
+
+  val transformedFilterToFilter: Exp[_] => Exp[_] = {
+    //case FlatMap(coll, fmFun @ FuncExpBody(IfThenElse(test, thenBranch @ ExpSeq(Seq(element)), elseBranch @ ExpSeq(Seq())))) =>
+      //coll filter
+    case FlatMap(coll: Exp[Traversable[t]], fmFun @ FuncExpBody(IfThenElse(test, thenBranch, elseBranch @ ExpSeq(Seq())))) =>
+      coll filter FuncExp.makefun(test, fmFun.x) flatMap FuncExp.makefun(thenBranch, fmFun.x)
+    case e => e
+  }
+
+  val simplifyForceView: Exp[_] => Exp[_] = {
+    case View(Force(coll)) => coll
+    case Force(View(coll)) => coll
+    case e => e
+  }
+
   // Add view and force around Filter to imitate withFilter.
   // Transformation rule:
   // coll.filter(f).*map(g) -> coll.view.filter(f).*map(g).force
@@ -621,32 +690,50 @@ object Optimization {
 
   def letTransformer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformer)
 
+  //This should be called after any sort of inlining, including for instance map fusion.
   def betaDeltaReducer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.betaDeltaReducer)
+
+  //Unsafe yet, hence not used!
+  def existsUnnester[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.existsUnnester)
+
+  def generalUnnesting[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.generalUnnesting)
+
+  def simplifyForceView[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.simplifyForceView)
+
+  def mergeFilterWithMap[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeFilterWithMap)
+
+  def transformedFilterToFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.transformedFilterToFilter)
 
   //removeIdentityMaps is appropriate here because typed-indexing can introduce identity maps.
   def shareSubqueries[T](query: Exp[T]): Exp[T] =
     removeIdentityMaps(new SubquerySharing(subqueries).shareSubqueries(query))
 
+  //Internally converts to flatMap normal form
   def handleFilters[T](exp: Exp[T]): Exp[T] =
     flatMapToMap(
       mergeFilters(
         hoistFilter( //Do this before merging filters!
           mapToFlatMap(exp))))
 
+  //Call this whenever new MapOp nodes might be created, to simplify them if needed.
+  //Requires map+flatMap normal form
+  def handleNewMaps[T](exp: Exp[T]): Exp[T] =
+    removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
+      reassociateOps(betaDeltaReducer(
+        mergeMaps(exp))))
+
   private def optimizeBase[T](exp: Exp[T]): Exp[T] =
-  filterToWithFilter(
+  handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
     mergeFilters( //Merge filters again after indexing, since it introduces new filters.
       simplifyFilters(
         shareSubqueries(mapToFlatMap(
-          removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation
-            reassociateOps(
-              mergeMaps(
+          handleNewMaps(
                 cartProdToAntiJoin(
                   handleFilters(
                     optimizeCartProdToJoin(
                       removeRedundantOption(toTypeFilter(
-                        sizeToEmpty(
-                          removeIdentityMaps(betaDeltaReducer(exp)))))))))))))))) //the call to reducer is to test.
+                        flatMapToMap(sizeToEmpty(generalUnnesting(mapToFlatMap(
+                          removeIdentityMaps(betaDeltaReducer(exp))))))))))))))))))))))) //the call to reducer is to test.
 
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
@@ -654,8 +741,9 @@ object Optimization {
   private def optimizeIdx[T](exp: Exp[T]): Exp[T] =
     flatMapToMap(optimizeBase(exp))
 
+  //After letTransformer (an inliner), we need to reduce redexes which arised.
   def optimize[T](exp: Exp[T]): Exp[T] =
-    flatMapToMap(letTransformer(optimizeBase(exp)))
+    flatMapToMap(betaDeltaReducer(letTransformer(optimizeBase(exp))))
 
   private val enableDebugLogStack = Stack(true)
 
