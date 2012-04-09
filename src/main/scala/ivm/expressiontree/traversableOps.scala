@@ -36,18 +36,6 @@ trait TraversableOps {
     def flatMap[U, That <: Traversable[U]](f: Exp[T] => Exp[Traversable[U]])
                                           (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
       newFlatMap(this.t, FuncExp(f))
-  }
-
-  //This is just an interface for documentation purposes.
-  trait WithFilterable[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] {
-    def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Repr]
-    def exists(f: Exp[T] => Exp[Boolean]) = !IsEmpty(this withFilter f)//(withFilter f).isEmpty
-    //The awkward use of andThen below is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
-    def forall(f: Exp[T] => Exp[Boolean]) = IsEmpty(this withFilter (f andThen (!(_)))) //Forall(this.t, FuncExp(f))
-  }
-
-  trait WithFilterImpl[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends WithFilterable[T, Repr] {
-    this: FilterMonadicOpsLike[T, Repr] =>
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
       newWithFilter(this.t, FuncExp(f))
   }
@@ -58,7 +46,11 @@ trait TraversableOps {
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
 
   //Coll is only needed for TypeFilter.
-  trait TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends FilterMonadicOpsLike[T, Repr] with WithFilterImpl[T, Repr] {
+  trait TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends FilterMonadicOpsLike[T, Repr] {
+    def exists(f: Exp[T] => Exp[Boolean]) = !IsEmpty(this withFilter f)//(withFilter f).isEmpty
+    //The awkward use of andThen below is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
+    def forall(f: Exp[T] => Exp[Boolean]) = IsEmpty(this withFilter (f andThen (!(_)))) //Forall(this.t, FuncExp(f))
+
     def collect[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[Option[U]])
                                           (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] = {
       newMapOp(newWithFilter(this.t,
@@ -126,7 +118,7 @@ trait TraversableOps {
     T,
     Repr <: Traversable[T] with TraversableLike[T, Repr],
     ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
-    extends TraversableLikeOps[T, ViewColl] with WithFilterable[T, ViewColl]
+    extends TraversableLikeOps[T, ViewColl]
   {
     def force[That](implicit bf: CanBuildFrom[Repr, T, That]) = Force(this.t)
 
