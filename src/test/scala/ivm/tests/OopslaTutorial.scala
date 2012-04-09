@@ -128,22 +128,40 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   val processedRecordsQuery = titleFilterQuery(recordsQuery, "Principles")
 
-  test("processedRecords should have the results") {
+  def titleFilterHandOpt2Query(books: Exp[Set[Book]], publisher: String, keyword: String): Exp[Set[(String, String)]] =
+    for {
+      book <- books
+      if book.publisher ==# publisher && book.title.contains(keyword)
+      author <- book.authors
+    } yield (book.title, author.firstName + " " + author.lastName)
+  val processedQueryExpectedOptimRes = titleFilterHandOpt2Query(books, "Pearson Education", "Principles")
+
+  test("processedRecords should have the same results as the lifted version") {
     showExp(processedRecordsQuery, "processedRecordsQuery")
     processedRecordsQuery.interpret() should be (processedRecords)
     val processedRecordsQueryOpt = Optimization.optimize(processedRecordsQuery)
     showExp(processedRecordsQueryOpt, "processedRecordsQueryOpt")
     processedRecordsQueryOpt.interpret() should be (processedRecords)
-    def titleFilterHandOpt2Query(books: Exp[Set[Book]], publisher: String, keyword: String): Exp[Set[(String, String)]] =
-      for {
-        book <- books
-        if book.publisher ==# publisher && book.title.contains(keyword)
-        author <- book.authors
-      } yield (book.title, author.firstName + " " + author.lastName)
-    val expectedRes = titleFilterHandOpt2Query(books, "Pearson Education", "Principles")
-    //showExp(expectedRes, "expectedRes")
-    processedRecordsQueryOpt should be (expectedRes)
+    //showExp(processedQueryExpectedOptimRes, "processedQueryExpectedOptimRes")
+    processedRecordsQueryOpt should be (processedQueryExpectedOptimRes)
   }
+
+  def titleFilterQuery2(records: Exp[Set[Result2]])(keyword: Exp[String]): Exp[Set[(String, String)]] = for {
+    record <- records
+    if record._1.contains(keyword)
+  } yield (record._1, record._2)
+
+  //Optimize the query before specifying the keyword to lookup.
+  val processedRecordsQueryOptFun = asExp(titleFilterQuery2(recordsQuery) _).optimize
+  val processedRecordsQueryOptRes = processedRecordsQueryOptFun("Principles")
+
+  test("processedRecords should have the same results as the lifted function version") {
+    processedRecordsQueryOptRes.interpret() should be (processedRecords)
+    showExp(processedRecordsQueryOptRes, "processedRecordsQueryOptRes")
+    processedRecordsQueryOptRes.interpret() should be (processedRecords)
+    processedRecordsQueryOptRes should be (processedQueryExpectedOptimRes)
+  }
+
   //A query like processedRecordsQuery cannot really be optimized without unnesting! After that we need inlining,
   // which we have, and only then the delta-reduction rule for tuples can kick in.
   // If instead we use Result, we need delta-reduction to work on Result; Result needs to implement ExpProduct, and the
@@ -151,25 +169,6 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   // bit (for now), but it is surely possible to recognize case classes (deployed software does it) and add ExpProduct
   // and ExpSelection for them.
   // Possible idea: after all, case classes even implement Product themselves! Might be helpful.
-
-  // On the other hand, I already understand unnesting.
-  /*
-  Force(MapOp(
-    Filter(
-      View(Force(
-        FlatMap(
-          Filter(
-            View(Const(books)),
-            v40 => Eq(Book_publisher1(v40),Const("Pearson Education"))),
-          v41 => MapOp(
-            Book_authors2(v41),
-            v44 => LiftTuple3(
-              Book_title0(v41),
-              StringConcat(StringConcat(Author_firstName0(v44),Const(" ")),Author_lastName1(v44)),
-              Plus(Size(Book_authors2(v41)),Negate(Const(1)))))))),
-      v42 => Call2('StringOps$contains, Tuple3Proj1(v42), Const("Principles"))),
-    v45 => LiftTuple2(Tuple3Proj1(v45),Tuple3Proj2(v45))))
-    */
 }
 
 
