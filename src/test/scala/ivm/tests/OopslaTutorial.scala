@@ -146,6 +146,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
     processedRecordsQueryOpt should be (processedQueryExpectedOptimRes)
   }
 
+  //keyword _must_ be Exp[String].
   def titleFilterQuery2(records: Exp[Set[Result2]])(keyword: Exp[String]): Exp[Set[(String, String)]] = for {
     record <- records
     if record._1.contains(keyword)
@@ -153,6 +154,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   //Optimize the query before specifying the keyword to lookup.
   val processedRecordsQueryOptFun = asExp(titleFilterQuery2(recordsQuery) _).optimize
+  Util.assertType[Exp[String => Set[(String, String)]]](processedRecordsQueryOptFun)
   val processedRecordsQueryOptRes = processedRecordsQueryOptFun("Principles")
 
   test("processedRecords should have the same results as the lifted function version") {
