@@ -741,9 +741,10 @@ object Optimization {
   private def optimizeIdx[T](exp: Exp[T]): Exp[T] =
     flatMapToMap(optimizeBase(exp))
 
-  //After letTransformer (an inliner), we need to reduce redexes which arised.
+  //After letTransformer (an inliner), we can reduce redexes which arised; let's not do that, to avoid inlining
+  // let definitions introduced by the user.
   def optimize[T](exp: Exp[T]): Exp[T] =
-    flatMapToMap(betaDeltaReducer(letTransformer(optimizeBase(exp))))
+    flatMapToMap(letTransformer(betaDeltaReducer(optimizeBase(exp))))
 
   private val enableDebugLogStack = Stack(true)
 
