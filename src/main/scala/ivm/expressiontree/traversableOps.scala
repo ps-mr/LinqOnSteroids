@@ -32,7 +32,7 @@ trait TraversableOps {
     val t: Exp[Repr]
   }
 
-  trait TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends Holder[Repr] {
+  class TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](protected val t: Exp[Repr]) {
     def map[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
       newMapOp(this.t, FuncExp(f))
     def flatMap[U, That <: Traversable[U]](f: Exp[T] => Exp[Traversable[U]])
@@ -108,11 +108,11 @@ trait TraversableOps {
     def typeCase[Res](cases: TypeCase[_, Res]*): Exp[Set[Res]] = TypeCaseExp(this.t, cases)
   }
 
-  trait TraversableViewLikeOps[
+  class TraversableViewLikeOps[
     T,
     Repr <: Traversable[T] with TraversableLike[T, Repr],
-    ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
-    extends TraversableLikeOps[T, ViewColl]
+    ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]](tp: Exp[ViewColl])
+    extends TraversableLikeOps[T, ViewColl](tp)
   {
     def force[That](implicit bf: CanBuildFrom[Repr, T, That]) = Force(this.t)
 
@@ -128,7 +128,7 @@ trait TraversableOps {
   //This version does not work, due to https://issues.scala-lang.org/browse/SI-5298:
   //implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr])
   implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
-    new TraversableLikeOps[T, Repr] {val t = v}
+    new TraversableLikeOps[T, Repr](v)
   implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Repr with Traversable[T]) =
     expToTraversableLikeOps(v)
 
@@ -140,8 +140,9 @@ trait TraversableOps {
   implicit def expRangeToTraversableLikeOps(r: Exp[Range]) = expToTraversableLikeOps(r: Exp[IndexedSeq[Int]])
   implicit def rangeToTraversableLikeOps(r: Range) = expToTraversableLikeOps(r: Exp[IndexedSeq[Int]])
 
-  class TraversableViewOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](val t: Exp[TraversableView[T, Repr]])
-    extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]]
+  //XXX: this class is now essentially useless.
+  class TraversableViewOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](tp: Exp[TraversableView[T, Repr]])
+    extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]](tp)
 
   implicit def expToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Exp[TraversableView[T, Repr]]): TraversableViewOps[T, Repr] = new TraversableViewOps(t)
   implicit def tToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
