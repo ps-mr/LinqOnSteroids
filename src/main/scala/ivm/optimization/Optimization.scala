@@ -288,6 +288,8 @@ object OptimizationTransforms {
   }
 
   val reassociateOps: Exp[_] => Exp[_] = {
+    case n @ Negate(Const(c)) =>
+      n.isNum.negate(c)
     case p@Plus(l, r) =>
       buildSum(l, r)(p.isNum)
     case t@Times(l, r) =>
