@@ -232,6 +232,8 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     }
   }
 
+  //XXX: for the native version, FI_PUBLIC_SHOULD_BE_PROTECTED is faster; for the LoS version, FI_PUBLIC_SHOULD_BE_PROTECTED-2 is faster.
+  //However, the first one should get as fast if I enable the unnesting of Exists.
   test("PublicFinalizer") {
     analyzePublicFinalizer()
   }
