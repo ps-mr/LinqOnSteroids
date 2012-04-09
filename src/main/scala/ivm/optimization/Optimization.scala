@@ -570,7 +570,16 @@ object OptimizationTransforms {
    * merge the map and the filter, fuse their functions, and extract the filter again with transformedFilterToFilter.
    */
   val mergeFilterWithMap: Exp[_] => Exp[_] = {
+    case Filter(MapOp(coll: Exp[Traversable[t]], mapFun), pred) => //This case should have higher priority, it seems more useful.
+      coll flatMap FuncExp.makefun(letExp(mapFun.body)(FuncExp.makefun(if_# (pred.body) (Seq(pred.x)) else_# (Seq.empty), pred.x)), mapFun.x)
+      //We preserve sharing here with letExp; currently, subsequent stages will do indiscriminate inlining and replicate the map, but
+      //the inliner will later be improved.
+      //This case, together with inlinng and transformedFilterToFilter, is equivalent to what Tillmann suggested and
+      //then dismissed.
+      /*
     case MapOp(Filter(coll: Exp[Traversable[t]], pred @ FuncExpBody(test)), mapFun) =>
+      //This transformation cancels with transformedFilterToFilter + flatMapToMap. Not sure if it's ever useful.
+      //It could be useful as a separate stage, if this turns out to be a faster implementation.
       //After this optimization, we need to float the if_# to around the body of mapFun
       //coll flatMap (FuncExp.makefun(if_# (test)(Seq(pred.x)) else_# {Seq.empty}, pred.x) andThen mapFun)
       //Let's do this directly:
@@ -580,9 +589,7 @@ object OptimizationTransforms {
         } else_# {
           Seq.empty
         }, pred.x)
-
-    case Filter(MapOp(coll: Exp[Traversable[t]], mapFun), pred) =>
-      coll flatMap FuncExp.makefun(letExp(mapFun.body)(FuncExp.makefun(if_# (pred.body) (Seq(pred.x)) else_# (Seq.empty), pred.x)), mapFun.x)
+        */
     case e => e
   }
 

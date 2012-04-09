@@ -151,4 +151,35 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
     transf should be ((Let(1)) flatMap (Let(_)))
     flatMapToMap(transf) should be (query)
   }
+
+  @Test
+  def unnestingFromPaper() {
+    val Xquery = for {
+      x <- (1 to 10).asSmart
+      y <- (1 to 10).asSmart
+      if y % 2 ==# 0
+    } yield (x, y)
+    //This is an example where map fusion is applicable, but is a rather stupid case.
+    val Yquery = for {
+      pair <- Xquery
+    } yield (pair._1, pair._2 + 1)
+
+    Yquery.optimize should be (for {
+      x <- (1 to 10).asSmart
+      y <- (1 to 10).asSmart
+      if y % 2 ==# 0
+    } yield (x, 1 + y))
+
+    //this example works now even in practice! Making it work requires various forms of fusion and inlining, together with filter hoisting.
+    val Zquery = for {
+      pair <- Xquery
+      if (pair._1 % 2 ==# 0)
+    } yield pair
+    Zquery.optimize should be (for {
+      x <- (1 to 10).asSmart
+      if x % 2 ==# 0
+      y <- (1 to 10).asSmart
+      if y % 2 ==# 0
+    } yield (x, y))
+  }
 }
