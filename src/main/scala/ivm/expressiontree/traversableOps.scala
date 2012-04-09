@@ -23,6 +23,11 @@ trait TraversableOps {
   def newUnion[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U >: T, That <: Traversable[U]](base: Exp[Repr with Traversable[T]], that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
     Union(base, that)
 
+  def groupBySelImpl[T, Repr <: Traversable[T] with
+    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
+                                                                                                   g: Exp[T] => Exp[Rest])(
+    implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
+
   trait Holder[Repr] {
     val t: Exp[Repr]
   }
@@ -40,10 +45,6 @@ trait TraversableOps {
       newWithFilter(this.t, FuncExp(f))
   }
 
-  def groupBySelImpl[T, Repr <: Traversable[T] with
-    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
-                                                                                                   g: Exp[T] => Exp[Rest])(
-    implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
 
   //Coll is only needed for TypeFilter.
   trait TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] extends FilterMonadicOpsLike[T, Repr] {
