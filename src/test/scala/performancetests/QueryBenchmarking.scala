@@ -50,12 +50,6 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
     res
   }
 
-  private def benchQuery[T, Coll <: Traversable[T]](msg: String,
-                                            v: Exp[Coll with Traversable[T]],
-                                            extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])], timeScala: Double)(implicit f: Forceable[T, Coll]): Traversable[T] = {
-    benchInterpret[T, Coll](msg, v, extraOptims, timeScala)
-  }
-
   // The pattern matching costs of using force are quite annoying. I expect them to be small; so it would be be best to
   // just always have them, i.e. always check dynamically whether forcing is needed, for all LoS queries, slowing them
   // down a tiny insignificant bit.
@@ -71,7 +65,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
     //val builtQuery: Exp[Traversable[T]] = Query[T, Coll](toQuery(query))
     //works:
     val builtQuery: Exp[Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query(query))
-    val res = benchQuery("%s Los" format msg, builtQuery, extraOptims, timeScala)
+    val res = benchInterpret("%s Los" format msg, builtQuery, extraOptims, timeScala)
     res should be (expectedRes)
     println("\tViolations: " + expectedRes.size)
     expectedRes
