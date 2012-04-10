@@ -613,9 +613,11 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   //}
 
   def tearDownIndexes() {
-    Optimization.removeIndex(methodNameIdx)
-    Optimization.removeIndex(excHandlerTypeIdx)
-    Optimization.removeIndex(typeIdx)
+    if (!onlyOptimized) {
+      Optimization.removeIndex(methodNameIdx)
+      Optimization.removeIndex(excHandlerTypeIdx)
+      Optimization.removeIndex(typeIdx)
+    }
   }
 
   def analyze() {

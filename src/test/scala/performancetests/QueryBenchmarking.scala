@@ -17,11 +17,9 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
 
   def onlyOptimized = false
 
-  private def optimizerTable[T]: Seq[(String, Exp[T] => Exp[T])] = Seq((" - after optimization", identity _))
-
   private def benchInterpret[T, Coll <: Traversable[T]](msg: String,
                                                 v: Exp[Coll with Traversable[T]],
-                                                extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])], timeScala: Double)(implicit f: Forceable[T, Coll]): Traversable[T] =
+                                                timeScala: Double)(implicit f: Forceable[T, Coll]): Traversable[T] =
   {
     def doRun(msg: String, v: Exp[Coll]) = {
       if (!onlyOptimized)
@@ -34,10 +32,12 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
         doRun(msg, v)
       else
         (null, -1.0)
-    for ((msgExtra, optim) <- optimizerTable[Coll] ++ extraOptims.asInstanceOf[Seq[(String, Exp[Coll] => Exp[Coll])]]) {
-      Optimization.optimize(v) //do it once for the logs!
+    val msgExtra = " - after optimization";
+    {
+      if (!onlyOptimized)
+        Optimization.optimize(v) //do it once for the logs!
       Optimization.pushEnableDebugLog(false)
-      val (optimized, optimizationTime) = benchMarkInternal(msg + " Optimization")(optim(Optimization.optimize(v)))
+      val (optimized, optimizationTime) = benchMarkInternal(msg + " Optimization")(Optimization.optimize(v))
       Optimization.popEnableDebugLog()
       val (resOpt, timeOpt) = doRun(msg + msgExtra, optimized)
       if (!onlyOptimized) {
@@ -55,9 +55,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
         report("native Scala version", timeOpt / timeScala)
         report("native Scala version, counting optimization time", (timeOpt + optimizationTime) / timeScala)
       }
+      resOpt
     }
-
-    res
   }
 
   // The pattern matching costs of using force are quite annoying. I expect them to be small; so it would be be best to
@@ -65,8 +64,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
   // down a tiny insignificant bit.
   def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
                                                    (expected: => Traversable[T])
-                                                   (query: => Exp[Coll],
-                                                    extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)
+                                                   (query: => Exp[Coll])
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
     val (expectedRes, timeScala) =
       if (!onlyOptimized)
@@ -79,7 +77,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
     //val builtQuery: Exp[Traversable[T]] = Query[T, Coll](toQuery(query))
     //works:
     val builtQuery: Exp[Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query(query))
-    val res = benchInterpret("%s Los" format msg, builtQuery, extraOptims, timeScala)
+    val res = benchInterpret("%s Los" format msg, builtQuery, timeScala)
     if (!onlyOptimized) {
       res should be (expectedRes)
     }
