@@ -61,8 +61,8 @@ object OptimizationTransforms {
    */
   //XXX: rewrite to expect only flatMap nodes, i.e. after mapToFlatMap, and see what happens.
   val cartProdToJoin: Exp[_] => Exp[_] = {
-    case e @ FlatMap(fmColl: Exp[Traversable[_]],
-      fmFun @ FuncExpBody(MapOp(Filter(filterColl: Exp[Traversable[_]], filterFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
+    case e @ FlatMap(fmColl,
+      fmFun @ FuncExpBody(MapOp(Filter(filterColl, filterFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
       if !filterColl.isOrContains(fmFun.x)
     =>
       if (!(lhs.isOrContains(filterFun.x)) && !(rhs.isOrContains(fmFun.x)))
@@ -96,10 +96,10 @@ object OptimizationTransforms {
   }
 
   val cartProdToAntiJoin: Exp[_] => Exp[_] = {
-    case e @ Filter(filteredColl: Exp[Traversable[_]],
+    case e @ Filter(filteredColl,
       filterFun @ FuncExpBody(Forall(forallColl, forallFun @ FuncExpBody(Not(Eq(lhs, rhs))))))
-    //case FlatMap(fmColl: Exp[Traversable[_]],
-      //fmFun @ FuncExpBody(MapOp(Filter(filterColl: Exp[Traversable[_]], filterFun @ FuncExpBody(Not(Eq(lhs, rhs)))), moFun)))
+    //case FlatMap(fmColl,
+      //fmFun @ FuncExpBody(MapOp(Filter(filterColl, filterFun @ FuncExpBody(Not(Eq(lhs, rhs)))), moFun)))
       if !forallColl.isOrContains(filterFun.x)
     =>
       if (!(rhs.isOrContains(filterFun.x)) && !(lhs.isOrContains(forallFun.x)))
@@ -170,7 +170,7 @@ object OptimizationTransforms {
   //Now we'd like a non-work-duplicating inliner. We'd need a linear type system as in GHC's inliner.
 
   val mergeMaps: Exp[_] => Exp[_] = {
-    case MapOp(MapOp(coll: Exp[Traversable[_]], f), g) =>
+    case MapOp(MapOp(coll, f), g) =>
       //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
       //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
       buildMergedMaps(coll, f, g)
@@ -180,11 +180,11 @@ object OptimizationTransforms {
   }
 
   val mergeFlatMaps: Exp[_] => Exp[_] = {
-    case FlatMap(MapOp(coll: Exp[Traversable[_]], f), g) =>
+    case FlatMap(MapOp(coll, f), g) =>
       //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
       //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
       mergeFlatMaps(coll flatMap (x => letExp(f(x))(g)))
-    case MapOp(FlatMap(coll: Exp[Traversable[_]], f), g) =>
+    case MapOp(FlatMap(coll, f), g) =>
       //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
       //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
       mergeFlatMaps(coll flatMap (x => letExp(f(x))(_ map g)))
@@ -300,7 +300,7 @@ object OptimizationTransforms {
   val mergeFilters: Exp[_] => Exp[_] = {
     case e @ Filter(col, f) =>
       stripViewUntyped(col) match {
-        case Filter(col2: Exp[Traversable[_]], f2) =>
+        case Filter(col2, f2) =>
           mergeFilters(
             col2 withFilter {
               (x: Exp[_]) => And(f2(x), f(x))
@@ -387,7 +387,7 @@ object OptimizationTransforms {
    */
 
   val toTypeFilter: Exp[_] => Exp[_] = {
-    case e @ FlatMap(coll: Exp[Traversable[_]], fmFun: FuncExp[t, u]) =>
+    case e @ FlatMap(coll, fmFun: FuncExp[t, u]) =>
       tryBuildTypeFilter(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
     case e => e
   }
@@ -460,7 +460,7 @@ object OptimizationTransforms {
   //exactly what we need!
   //Scalac miscompiles this code if I write it the obvious way - without optimizations enabled!
   val hoistFilter: Exp[_] => Exp[_] = {
-    case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(FlatMap(Filter(coll2: Exp[Traversable[_]], filterFun), fmFun2)))
+    case FlatMap(coll1, fmFun @ FuncExpBody(FlatMap(Filter(coll2, filterFun), fmFun2)))
       if !filterFun.body.isOrContains(filterFun.x) =>
       buildHoistedFilterForFlatMap(coll1, fmFun, coll2, filterFun, fmFun2)
     case e => e
@@ -517,7 +517,7 @@ object OptimizationTransforms {
     //where restQuery = x => [x1 |-> x0]B
     //However, that's only valid if the return value of the expression is an idempotent monoid, as stated there. We can workaround that by converting
     //the result of flatMap to a set.
-    case FlatMap(Filter(c0, f @ FuncExpBody(Not(IsEmpty(Filter(c: Exp[Traversable[u]], p))))), fmFun) =>
+    case FlatMap(Filter(c0, f @ FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
       //Since x0 = f.x, and fmFun = x1 => B, then [x1 |-> x0]B is (x1 => B) x0, that is fmFun(f.x), and restQuery = x => [x1 |-> x0]B =
       val restQuery = FuncExp.makefun(fmFun(f.x), p.x)
       //toSet remove any duplicates to preserve semantics; in the expression c exists p, p might be true for more elements of c. When unnesting,
