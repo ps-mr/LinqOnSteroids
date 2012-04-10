@@ -37,12 +37,13 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   }
 
   def indexingTest[T, U, TupleT](query: Exp[Seq[T]], idx: Exp[Map[U, TupleT]])(expectedOptQueryProducer: Exp[Map[U, TupleT]] => Exp[Traversable[T]]) {
-    val idxRes = asExp(idx.interpret())
+    val idxResRaw = idx.interpret()
+    val idxRes = asExp(idxResRaw)
     val expectedOptQuery = expectedOptQueryProducer(idxRes)
     query.interpret() should be (expectedOptQuery.interpret().force) //The call to force makes sure that
     // the expected value in error messages shows the actual collection contents.
 
-    Optimization.addIndex(idx)
+    Optimization.addIndex(idx, Some(idxResRaw))
     val optQuery = Optimization.optimize(query)
     Optimization.removeIndex(idx)
 
@@ -157,7 +158,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     } yield (i, j, k)
 
     val l3Idx = l3IdxBase_k_opt groupBy { _._3 }
-    indexingTest(l3_k_opt, l3Idx){ idx => (idx(5).view filter (_._2 ==# 2) map (p => p._1 + p._2 + p._3)).force }
+    indexingTest(l3_k_opt, l3Idx){ idx => (idx(5) filter (_._2 ==# 2) map (p => p._1 + p._2 + p._3)) }
   }
 
   @Test def testComplexIndexing3Level_k_opt_workaround() {
@@ -168,7 +169,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     } yield (i, j, k)
 
     val l3Idx = l3IdxBase_k_opt groupBy { _._3 }
-    indexingTest(l3_k_opt, l3Idx){ idx => (idx(5).view filter (_._2 ==# 2) map (p => p._1 + p._2 + p._3)).force }
+    indexingTest(l3_k_opt, l3Idx){ idx => (idx(5) filter (_._2 ==# 2) map (p => p._1 + p._2 + p._3)) }
   }
 
   val l3_k_seqlet: Exp[Seq[Int]] =
@@ -206,7 +207,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test def testIndexing {
     val index = l.groupBy(p => p._1 + p._2)
     val indexres = index.interpret()
-    Optimization.addIndex(index)
+    Optimization.addIndex(index, Some(indexres))
 
     val testquery = l.withFilter(p => p._1 + p._2 ==# 5)
     val optimized = shareSubqueriesOpt(testquery)
@@ -218,7 +219,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test def testIndexingQueryNorm() {
     val index = l.groupBy(p => p._1 + p._2)
     val indexres = index.interpret()
-    Optimization.addIndex(index)
+    Optimization.addIndex(index, Some(indexres))
 
     val testquery = l.withFilter(p => p._2 + p._1 ==# 5)
     val optimized = shareSubqueriesOpt(testquery)
@@ -230,7 +231,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test def testIndexingIndexNorm() {
     val index = l.groupBy(p => p._2 + p._1) //The index should be normalized, test this
     val indexres = index.interpret()
-    Optimization.addIndex(index)
+    Optimization.addIndex(index, Some(indexres))
 
     val testquery = l.withFilter(p => p._1 + p._2 ==# 5)
     val optimized = shareSubqueriesOpt(testquery)
@@ -242,7 +243,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test def testCNFconversion {
     val index = l.groupBy(p => p._1 + p._2)
     val indexres = index.interpret()
-    Optimization.addIndex(index)
+    Optimization.addIndex(index, Some(indexres))
 
     val testquery = l.withFilter(p => p._1 <= 7 && p._1 + p._2 ==# 5)
     val optimized = shareSubqueriesOpt(testquery)
