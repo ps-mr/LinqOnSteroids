@@ -313,7 +313,7 @@ object OptimizationTransforms {
   //Recognize relational-algebra set operations; they can be executed more efficiently if one of the two members is indexed.
   //However, sets are already always indexed, so these optimizations will not have a huge impact by themselves.
   val setIntersection: Exp[_] => Exp[_] = {
-    case e @ Filter(col: Exp[Traversable[t]], predFun @ FuncExpBody(Contains(col2, x))) if (x == predFun.x) =>
+    case e @ Filter(col, predFun @ FuncExpBody(Contains(col2, x))) if (x == predFun.x) =>
       //XXX transformation not implemented
       e //col.join(col2)(identity, identity, _._1) //Somewhat expensive implementation of intersection.
       //e //Intersect(col, col2)
@@ -517,7 +517,7 @@ object OptimizationTransforms {
     //where restQuery = x => [x1 |-> x0]B
     //However, that's only valid if the return value of the expression is an idempotent monoid, as stated there. We can workaround that by converting
     //the result of flatMap to a set.
-    case FlatMap(Filter(c0: Exp[Traversable[t]], f @ FuncExpBody(Not(IsEmpty(Filter(c: Exp[Traversable[u]], p))))), fmFun) =>
+    case FlatMap(Filter(c0, f @ FuncExpBody(Not(IsEmpty(Filter(c: Exp[Traversable[u]], p))))), fmFun) =>
       //Since x0 = f.x, and fmFun = x1 => B, then [x1 |-> x0]B is (x1 => B) x0, that is fmFun(f.x), and restQuery = x => [x1 |-> x0]B =
       val restQuery = FuncExp.makefun(fmFun(f.x), p.x)
       //toSet remove any duplicates to preserve semantics; in the expression c exists p, p might be true for more elements of c. When unnesting,
@@ -577,7 +577,7 @@ object OptimizationTransforms {
       //This case, together with inlinng and transformedFilterToFilter, is equivalent to what Tillmann suggested and
       //then dismissed.
       /*
-    case MapOp(Filter(coll: Exp[Traversable[t]], pred @ FuncExpBody(test)), mapFun) =>
+    case MapOp(Filter(coll, pred @ FuncExpBody(test)), mapFun) =>
       //This transformation cancels with transformedFilterToFilter + flatMapToMap. Not sure if it's ever useful.
       //It could be useful as a separate stage, if this turns out to be a faster implementation.
       //After this optimization, we need to float the if_# to around the body of mapFun
@@ -613,7 +613,7 @@ object OptimizationTransforms {
   // where *map stands for map or flatMap (the same on both sides).
   //Note: this assumes that maps have been converted to flatMaps.
   val filterToWithFilter: Exp[_] => Exp[_] = {
-    case FlatMap(Filter(coll: Exp[Traversable[t]], p), f) =>
+    case FlatMap(Filter(coll, p), f) =>
       (stripView(coll).view filter p flatMap f).force
     case e => e
   }
@@ -629,7 +629,7 @@ object OptimizationTransforms {
   //This type is incorrect whenever T is a view type. Be careful!
   private[optimization] def stripViewUntyped[T](coll: Exp[T]): Exp[T] =
     coll match {
-      case View(coll2: Exp[Traversable[t]]) => coll2.asInstanceOf[Exp[T]]
+      case View(coll2) => coll2.asInstanceOf[Exp[T]]
       case _ => coll
     }
 }

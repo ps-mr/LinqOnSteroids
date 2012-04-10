@@ -25,7 +25,7 @@ case class MapOp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
   override def copy(base: Exp[Repr], f: FuncExp[T, U]) = MapOp[T, Repr, U, That](base, f)
 }
 
-case class Filter[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr],
+case class Filter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr with Traversable[T]],
                                                       f: FuncExp[T, Boolean]) extends Arity2Op[Exp[Repr], FuncExp[T, Boolean], Repr, Filter[T, Repr]](base, f) {
   override def interpret() = base.interpret() filter f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = Filter(base, f)
@@ -38,7 +38,7 @@ case class WithFilter[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr],
   override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = WithFilter[T, Repr](base, f)
 }
 
-case class View[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr with TraversableLike[T, Repr]]) extends Arity1OpExp[Repr, TraversableView[T, Repr], View[T, Repr]](base) {
+case class View[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr with Traversable[T] with TraversableLike[T, Repr]]) extends Arity1OpExp[Repr, TraversableView[T, Repr], View[T, Repr]](base) {
   override def interpret() = base.interpret().view
   override def copy(base: Exp[Repr]) = View(base)
 }
