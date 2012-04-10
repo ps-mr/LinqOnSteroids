@@ -95,7 +95,8 @@ trait Benchmarking {
 
     for (i <- 1 to warmUpLoops)
       toBench
-    System.gc()
+    if (!debugBench)
+      System.gc()
 
     if (hasConsoleOutput)
       newLine()
@@ -108,7 +109,8 @@ trait Benchmarking {
       for (i <- 1 to execLoops)
         ret = toBench
       stats.update((System.nanoTime() - before) / execLoops)
-      System.gc()
+      if (!debugBench)
+        System.gc()
     }
     if (!hasConsoleOutput)
       print(" ended benchmarking, name = %s, time = " format name)
