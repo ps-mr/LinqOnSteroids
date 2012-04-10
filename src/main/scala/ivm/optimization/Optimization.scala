@@ -197,7 +197,7 @@ object OptimizationTransforms {
   }
   val mergeMaps2: Transformer = new Transformer {
     def apply[T](e: Exp[T]) = e match {
-      case MapOp(MapOp(coll: Exp[Traversable[t]], f1), f2) =>
+      case MapOp(MapOp(coll, f1), f2) =>
         mergeMaps2(buildMergedMaps(coll, f1, f2)).
           //Note the need for this cast.
           asInstanceOf[Exp[T]]
@@ -438,7 +438,7 @@ object OptimizationTransforms {
 
 
   val removeRedundantOption: Exp[_] => Exp[_] = {
-    case e @ FlatMap(coll: Exp[Traversable[t]], (fmFun: FuncExp[_, Traversable[u]])) =>
+    case e @ FlatMap(coll, (fmFun: FuncExp[_, Traversable[u]])) =>
       tryRemoveRedundantLet(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
     case e => e
   }
@@ -470,7 +470,7 @@ object OptimizationTransforms {
     c flatMap FuncExp.makefun(Seq(f.body), f.x)
 
   val mapToFlatMap: Exp[_] => Exp[_] = {
-    case MapOp(c: Exp[Traversable[t]], f) =>
+    case MapOp(c, f) =>
       buildMapToFlatMap(c, f)
     /*case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
       c flatMap FuncExp.makefun(Some(f.body), f.x)*/
@@ -481,7 +481,7 @@ object OptimizationTransforms {
     c map FuncExp.makefun(body, f.x)
 
   val flatMapToMap: Exp[_] => Exp[_] = {
-    case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(Seq(body)))) =>
+    case FlatMap(c, f @ FuncExpBody(ExpSeq(Seq(body)))) =>
       buildFlatMapToMap(c, body, f)
     case e => e
   }
@@ -552,7 +552,7 @@ object OptimizationTransforms {
       * However, scalac seems "right": collEp has type Exp[Repr], which apparently erases to Exp[Any] even if a type bound _is_ given.
       * XXX report this as another bug.
       */
-    /*case FlatMap(FlatMap(collEp: Exp[Traversable[t]], fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
+    /*case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
       collEp flatMap FuncExp.makefun(letExp(ep)(fy.f), fxp.x)*/
     case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
       collEp flatMap FuncExp.makefun(ep flatMap fy, fxp.x).f
@@ -596,7 +596,7 @@ object OptimizationTransforms {
   val transformedFilterToFilter: Exp[_] => Exp[_] = {
     //case FlatMap(coll, fmFun @ FuncExpBody(IfThenElse(test, thenBranch @ ExpSeq(Seq(element)), elseBranch @ ExpSeq(Seq())))) =>
       //coll filter
-    case FlatMap(coll: Exp[Traversable[t]], fmFun @ FuncExpBody(IfThenElse(test, thenBranch, elseBranch @ ExpSeq(Seq())))) =>
+    case FlatMap(coll, fmFun @ FuncExpBody(IfThenElse(test, thenBranch, elseBranch @ ExpSeq(Seq())))) =>
       coll filter FuncExp.makefun(test, fmFun.x) flatMap FuncExp.makefun(thenBranch, fmFun.x)
     case e => e
   }
