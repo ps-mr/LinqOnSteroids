@@ -26,8 +26,8 @@ class TransformedFuncPerfTests extends JUnitSuite with ShouldMatchersForJUnit wi
   override val warmUpLoops = 4000
   override val effectiveExecLoops = 10
   val collSize = if (debugBench) 10 else 100
-  val l: Exp[Traversable[Int]] = toExp(ArrayBuffer.range(1, collSize))
-  val l2: Exp[Traversable[Int]] = toExp(ArrayBuffer.range(1, collSize))
+  val l: Exp[Traversable[Int]] = pure(ArrayBuffer.range(1, collSize))
+  val l2: Exp[Traversable[Int]] = pure(ArrayBuffer.range(1, collSize))
 
   def testBenchmarkTransforms[T](t: Exp[T]) {
     val (_, tTransf) = testRebuild(t)

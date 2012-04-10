@@ -14,8 +14,8 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
   def test(x: Int, y: Int): Boolean = x+y == 12
   def foo(x: Int): Int = x
   def bar(x: Int): Int = x
-  val l: Exp[Traversable[Int]] = toExp(Vector.range(1,10))
-  val j: Exp[Traversable[Int]] = toExp(Vector.range(1,10))
+  val l: Exp[Traversable[Int]] = pure(Vector.range(1,10))
+  val j: Exp[Traversable[Int]] = pure(Vector.range(1,10))
   val q = for (k  <- l if k <= 5) yield 3 + k
   val r = for (k  <- l; k2  <- j if k ==# k2) yield k + k2
   val r1 = for (k <- l; k2 <- j if k + k2 ==# k2 + k) yield k + k2
@@ -102,14 +102,14 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testTypeCase() {
-    val exp = Seq(1, "foo", 5.0, new AnyRef).asSmartCollection typeCase (when[Int](_.toString), when[String](identity))
+    val exp = Seq(1, "foo", 5.0, new AnyRef).asSmart typeCase (when[Int](_.toString), when[String](identity))
     println(exp)
     println(exp.interpret().force)
   }
 
   @Test
   def testTypeCase2() {
-    val exp = Seq(1, "foo", 5.0, new AnyRef).asSmartCollection typeCase (when[Int](_ => true, _ => "an int" /* + _.interpret(); _.toString*/), when[String](_ => true, identity))
+    val exp = Seq(1, "foo", 5.0, new AnyRef).asSmart typeCase (when[Int](_ => true, _ => "an int" /* + _.interpret(); _.toString*/), when[String](_ => true, identity))
     println(exp)
     println(exp.interpret().force)
   }

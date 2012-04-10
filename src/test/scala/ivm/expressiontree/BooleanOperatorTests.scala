@@ -27,7 +27,7 @@ class BooleanOperatorTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testShortCircuit() {
-    val coll = Seq(None, Some(1)) asSmartCollection
+    val coll = Seq(None, Some(1)) asSmart
     val query = for {
       v <- coll
       //This line executes correctly only if And is short-circuiting, as it should be.

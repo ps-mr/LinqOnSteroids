@@ -74,7 +74,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     }
 
   //We have to strip View if needed on _both_ sides before performing the match, to increase the chance of a match.
-  //This is done here on one side, and on Optimization.addSubquery on the other side. Note that only the top-level strip
+  //This is done here on one side, and on Optimization.addIndex on the other side. Note that only the top-level strip
   //is visible.
   //Rewrite (if possible) coll.withFilter(elem => F[elem] ==# k && OtherConds[elem]) to (coll.groupBy(elem => F[elem]))(k).withFilter(x => OtherConds[x]),
   //with F and OtherConds expression contexts and under the condition that coll.groupBy(f) is already available as a precomputed subquery (i.e. an index).

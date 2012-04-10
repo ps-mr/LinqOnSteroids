@@ -2,13 +2,6 @@ package ivm.expressiontree
 
 case class Const[T](x: T) extends Arity0Exp[T] {
   override def interpret() = x
-  /*
-  override def equals(other: Any) = other match {
-    case that: Const[_] => (that canEqual this) && (x.asInstanceOf[AnyRef] eq that.x.asInstanceOf[AnyRef])
-    case _ => false
-  }
-  override def hashCode() = System.identityHashCode(x.asInstanceOf[AnyRef])
-  */
   override def toString = {
     val s =
       x match {
@@ -31,4 +24,16 @@ case class Const[T](x: T) extends Arity0Exp[T] {
         s
     "Const(" + shortened + ")"
   }
+}
+
+//This class has much faster hashing and comparison; we use it when we can semantically afford it, that is within asSmart.
+class ConstByIdentity[T](content: T) extends Const(content) {
+  override def canEqual(o: Any) = o.isInstanceOf[ConstByIdentity[_]]
+
+  override def equals(other: Any) = other match {
+    case that: ConstByIdentity[_] => (that canEqual this) && (x.asInstanceOf[AnyRef] eq that.x.asInstanceOf[AnyRef])
+    case _ => false
+  }
+
+  override def hashCode() = System.identityHashCode(x.asInstanceOf[AnyRef])
 }

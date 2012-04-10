@@ -1,6 +1,7 @@
 package ivm.expressiontree
 
 import collection.mutable
+import ivm.optimization.Optimization
 
 /**
  * Here I show yet another encoding of expression trees, where methods
@@ -17,35 +18,62 @@ import collection.mutable
  */
 trait ConversionDisabler {
   //We forbid implicit conversion from Unit to Exp[Unit] by making it ambiguous. To this end we declare noToExpForUnit.
-  //It is more specific than toExp[Unit] because it's not generic, but is declared in a superclass, hence
+  //It is more specific than pure[Unit] because it's not generic, but is declared in a superclass, hence
   //has less priority. Ambiguity follows.
   implicit def noToExpForUnit(t: Unit): Exp[Unit] = null
   //Ditto. Creating Const nodes for mutable collection is a contradiction; moreover, those nodes would send no
   //notification for updates to the underlying collection.
   //To test, edit testNoMutableConst below to see that the currently commented-out code does not compile.
   implicit def noConstForMutableColl[T](t: mutable.Traversable[T]): Exp[mutable.Traversable[T]] = null
+  implicit def noPureForExp[T](t: Exp[T]): Exp[Exp[T]] = null
 }
 
 trait LiftingConvs extends ConversionDisabler {
   //The following variant would avoid ugliness like:
   //implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
   //but it does not work (bug https://issues.scala-lang.org/browse/SI-3346).
-  //implicit def toExp[T, U <% T](t: U): Exp[T] = Const(t)
+  //implicit def pure[T, U <% T](t: U): Exp[T] = Const(t)
   //So let's keep it simple.
-  implicit def toExp[T](t: T): Exp[T] = Const(t)
+  implicit def pure[T](t: T): Exp[T] = Const(t)
 
   //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
   //parameter of Exp here.
   def asExp[T](t: Exp[T]) = t
 
   class WithAsSmartCollection[T](t: T) {
-    def asSmartCollection = asExp(t)
+    def asSmart(implicit conv: T => Exp[T]) = conv(t)
+  }
+
+  implicit def withOptimize[T](t: Exp[T]) = new WithOptimize(t)
+  class WithOptimize[T](t: Exp[T]) {
+    def optimize = Optimization.optimize(t)
   }
 }
 
 trait ConversionDisabler2 extends LiftingConvs {
-  //Disable conversion
-  implicit def noAsSmartCollForExp[T](t: Exp[T]): WithAsSmartCollection[Exp[T]] = null
+  //Disable conversion - should no more be needed, but it is, as explained below.
+  implicit def noAsSmartForExp[T](t: Exp[T]): WithAsSmartCollection[Exp[T]] = null
+  /* Assume that `class WithAsSmartCollection[T](t: T)` contains:
+def asSmart(implicit conv: T => Exp[T]) = conv(t)
+   * (as it does at the moment of this writing).
+   * Consider this test: disable the effect of this conversion by using toPimper explicitly:
+toPimper(Const(1)).asSmart
+   * This code is accepted, while
+scala> toPimper(Const(1): Exp[Int]) asSmart
+   * gives the expected error, i.e.:
+<console>:37: error: ambiguous implicit values:
+ both method noPureForExp in trait ConversionDisabler of type [T](t: ivm.expressiontree.Exp[T])ivm.expressiontree.Exp[ivm.expressiontree.Exp[T]]
+ and method pure in trait LiftingConvs of type [T](t: T)ivm.expressiontree.Exp[T]
+ match expected type ivm.expressiontree.Exp[Int] => ivm.expressiontree.Exp[ivm.expressiontree.Exp[Int]]
+              toPimper(Const(1): Exp[Int]) asSmart
+   * The compiler is even right, since we do ask for a very specific conversion, from T to Exp[T]; when T = Const[Int], we
+   * only have a conversion from U = Exp[Int] to Exp[U] >: Exp[T]. If we write instead:
+def asSmart[U >: T](implicit conv: U => Exp[U]): Exp[U] = conv(t)
+   * then U might as well be Any; luckily, pure[T] is always available, and noPureForExp will be available as well on expressions.
+   * However, the compiler still deduced U = T, so that noPureForExp is not found. The last attempt is this:
+def asSmart[U >: T](implicit conv: T => Exp[U]): Exp[U] = conv(t)
+   * with the same result - toPimper(Const(1)).asSmart is accepted.
+   */
 }
 
 trait FunctionOps {
@@ -62,20 +90,33 @@ trait FunctionOps {
   def liftCall[A0, A1, A2, A3, A4, Res](id: Symbol, callfunc: (A0, A1, A2, A3, A4) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3], arg4: Exp[A4]) =
     new Call5(id, callfunc, arg0, arg1, arg2, arg3, arg4)
 
-  def onExp[A0, Res](t: Exp[A0])(id: Symbol, f: A0 => Res): Exp[Res] = liftCall(id, f, t)
-  def onExp[A0, A1, Res](a0: Exp[A0], a1: Exp[A1])(id: Symbol, f: (A0, A1) => Res): Exp[Res] = liftCall(id, f, a0, a1)
-  def onExp[A0, A1, A2, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2])(id: Symbol, f: (A0, A1, A2) => Res): Exp[Res] = liftCall(id, f, a0, a1, a2)
-  def onExp[A0, A1, A2, A3, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3])(id: Symbol, f: (A0, A1, A2, A3) => Res): Exp[Res] =
+  def fmap[A0, Res](t: Exp[A0])(id: Symbol, f: A0 => Res): Exp[Res] = liftCall(id, f, t)
+  def fmap[A0, A1, Res](a0: Exp[A0], a1: Exp[A1])(id: Symbol, f: (A0, A1) => Res): Exp[Res] = liftCall(id, f, a0, a1)
+  def fmap[A0, A1, A2, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2])(id: Symbol, f: (A0, A1, A2) => Res): Exp[Res] = liftCall(id, f, a0, a1, a2)
+  def fmap[A0, A1, A2, A3, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3])(id: Symbol, f: (A0, A1, A2, A3) => Res): Exp[Res] =
     liftCall(id, f, a0, a1, a2, a3)
-  def onExp[A0, A1, A2, A3, A4, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3], a4: Exp[A4])(id: Symbol, f: (A0, A1, A2, A3, A4) => Res): Exp[Res] =
+  def fmap[A0, A1, A2, A3, A4, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3], a4: Exp[A4])(id: Symbol, f: (A0, A1, A2, A3, A4) => Res): Exp[Res] =
     liftCall(id, f, a0, a1, a2, a3, a4)
+
+  /*
+  //This is not applied implicitly.
+  implicit def liftConv[T, U](t: Exp[T])(implicit tM: Manifest[T], uM: Manifest[U], conv: T => U): Exp[U] =
+    fmap(t)(Symbol("liftConv_%s_%s" format (tM.erasure.getName, uM.erasure.getName)), conv)
+  //Not even this version is applied implicitly:
+  implicit def liftConv[T, U](t: Exp[T])(implicit conv: T => U): Exp[U] = convLift(t, 'liftConvXXX)
+  */
+
+  //Use something derived from the above to lift other implicit conversions.
+  def convLift[T, U](t: Exp[T], id: Symbol)(implicit conv: T => U): Exp[U] =
+    fmap(t)(id, conv)
 
   //Should we add this?
   implicit def funcExp[S, T](f: Exp[S] => Exp[T]) = FuncExp(f)
 
-  implicit def fToFunOps[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
+  implicit def app[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
     f match {
-      case FuncExp(fe) => fe.asInstanceOf[Exp[A] => Exp[B]] //This line should be dropped, but then we'll need to introduce a beta-reducer.
+      //This line should be dropped, but then we'll need to introduce a beta-reducer:
+      case fe: FuncExp[a, b] => fe.f
       // KO: Why do we need a beta-reducer? Since we use HOAS this is just Scala function application
       // and already available in App.interpret
       // But it may still make sense to evaluate such applications right away
@@ -94,6 +135,28 @@ trait FunctionOps {
   implicit def expToPartialFunOps[S, T](t: Exp[PartialFunction[S, T]]) = new PartialFunctionOps(t)
 }
 
+trait ExpProduct {
+  //Better name prefix?
+  def metaProductArity: Int
+  def metaProductElement(n: Int): Exp[Any]
+  //The methods below are totally unrelated, they should be pimped instead on Exp[(T1, T2, ..., Tn)].
+
+  //def productArity: Exp[Int]
+  //How to implement this? Create the right dynamic node!
+  //def productElement(n: Exp[Int]): Exp[Any]
+}
+
+trait ExpSelection[TupleT] {
+  val body: (Int, Int, Exp[TupleT])
+}
+//class ExpSelection[TupleT](val arity: Int, val pos: Int, val body: Exp[TupleT])
+object ExpSelection {
+  def unapply(f: Exp[_]): Option[(Int, Int, Exp[_])] = f match {
+    case v: ExpSelection[t] => Some(v.body)
+    case _ => None
+  }
+}
+
 trait TupleOps extends AutoTupleOps {
   this: LiftingConvs =>
   //implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): LiftTuple2[A, B] = LiftTuple2[A, B](pair._1, pair._2)
@@ -101,7 +164,7 @@ trait TupleOps extends AutoTupleOps {
   //To "unlift" a pair, here's my first solution:
   /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Tuple2Proj1(pair), Tuple2Proj2(pair))
   //
-  //The second one is just pimpl-my-library.
+  //The second one is just pimp-my-library.
 }
 
 trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
@@ -129,11 +192,11 @@ trait NumOps {
   }
 
   class FractionalOps[T: Fractional](t: Exp[T]) {
-    def /(that: Exp[T]): Exp[T] = onExp(implicitly[Fractional[T]], this.t, that)('FractionalOps$div, _.div(_, _))
+    def /(that: Exp[T]): Exp[T] = fmap(implicitly[Fractional[T]], this.t, that)('FractionalOps$div, _.div(_, _))
   }
 
   class IntegralOps[T: Integral](t: Exp[T]) {
-    def %(that: Exp[T]): Exp[T] = onExp(implicitly[Integral[T]], this.t, that)('IntegralOps$mod, _.rem(_, _))
+    def %(that: Exp[T]): Exp[T] = fmap(implicitly[Integral[T]], this.t, that)('IntegralOps$mod, _.rem(_, _))
   }
 
   //Solution 1:
@@ -162,8 +225,8 @@ trait BaseTypesOps {
   }
 
   class StringOps(t: Exp[String]) {
-    def +(that: Exp[String]) = StringConcat(t, that)
-    def contains(that: Exp[CharSequence]) = onExp(this.t, that)('StringOps$contains, _ contains _)
+    def +(that: Exp[String]): Exp[String] = StringConcat(t, that)
+    def contains(that: Exp[CharSequence]) = fmap(this.t, that)('StringOps$contains, _ contains _)
   }
 
   class BooleanOps(b: Exp[Boolean]) {

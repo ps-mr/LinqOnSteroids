@@ -33,7 +33,7 @@ class CallTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testWithExp() {
-    //Normally use onExp instead - we want to show the problem with this definition.
+    //Normally use fmap instead - we want to show the problem with this definition.
     def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = asExp(f)(t)
 
     val a = withExp(1)(1 +)
@@ -43,8 +43,8 @@ class CallTests extends JUnitSuite with ShouldMatchersForJUnit {
     //definition
     a should not equal (b)
 
-    val c = onExp(1)('plusOne, 1 +)
-    val d = onExp(1)('plusOne, 1 +)
+    val c = fmap(1)('plusOne, 1 +)
+    val d = fmap(1)('plusOne, 1 +)
 
     c should equal (d)
   }

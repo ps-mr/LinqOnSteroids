@@ -71,15 +71,15 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   //Code to be generated {{{
   implicit def expToDeveloperOps(t: Exp[Developer]) = new DeveloperOps(t)
   class DeveloperOps(t: Exp[Developer]) {
-    def name = onExp(t)('Developer$name, _.name)
-    def website = onExp(t)('Developer$website, _.website)
+    def name = fmap(t)('Developer$name, _.name)
+    def website = fmap(t)('Developer$website, _.website)
   }
 
   implicit def expToLibraryOps(t: Exp[Library]) = new LibraryOps(t)
   class LibraryOps(t: Exp[Library]) {
-    def name = onExp(t)('Library$name, _.name)
-    def depends = onExp(t)('Library$depends, _.depends)
-    def developers = onExp(t)('Library$developers, _.developers)
+    def name = fmap(t)('Library$name, _.name)
+    def depends = fmap(t)('Library$depends, _.depends)
+    def developers = fmap(t)('Library$developers, _.developers)
   }
   //Code to be generated }}}
 
@@ -111,9 +111,9 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     } //XXX: we want Seq here, not Traversable.
 
     val LibrariesAndHackersSmart = for {
-      lib <- testLibs.asSmartCollection //change 1
+      lib <- testLibs.asSmart //change 1
       libDev <- lib.developers
-      dev <- testHackers.asSmartCollection //change 2 (really needed here, unlike I thought!)
+      dev <- testHackers.asSmart //change 2 (really needed here, unlike I thought!)
       if (libDev ==# dev.name) //if (libDev == dev.name) //Change 3: use '==#' instead of ==
     } yield (lib, dev)
     checkResult(LibrariesAndHackersSmart)
@@ -121,8 +121,8 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     showExp(Optimization.optimize(LibrariesAndHackersSmart), "optimized for comprehension over libraries and developers, using join")
 
     val LibrariesAndHackersSmartNested = for {
-      libDevPair <- for (lib <- testLibs.asSmartCollection; libDev <- lib.developers) yield (lib, libDev)
-      dev <- testHackers.asSmartCollection //change 2 (really needed here, unlike I thought!)
+      libDevPair <- for (lib <- testLibs.asSmart; libDev <- lib.developers) yield (lib, libDev)
+      dev <- testHackers.asSmart //change 2 (really needed here, unlike I thought!)
       if (libDevPair._2 ==# dev.name) //if (libDev == dev.name) //Change 3: use '==#' instead of ==
     } yield (libDevPair._1, dev)
     checkResult(LibrariesAndHackersSmartNested)
@@ -131,7 +131,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     showExp(Optimization.optimize(LibrariesAndHackersSmartNested), "optimized for comprehension over libraries and developers, using join; this is what we actually want!")
 
     val LibrariesAndHackersExplicitJoin =
-      (for (lib <- testLibs.asSmartCollection; libDev <- lib.developers) yield (lib, libDev)).join(testHackers)(_._2, _.name, x => (x._1._1, x._2))
+      (for (lib <- testLibs.asSmart; libDev <- lib.developers) yield (lib, libDev)).join(testHackers)(_._2, _.name, x => (x._1._1, x._2))
     showExp(LibrariesAndHackersExplicitJoin, "explicit join")
     showExp(Optimization.optimize(LibrariesAndHackersExplicitJoin), "optimized explicit join")
     checkResult(LibrariesAndHackersExplicitJoin)
@@ -141,7 +141,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   @Test def mistakesWithForComprehensions() {
     //Demonstrate a problem: here we need to explicitly convert the second collection; automatic conversions happen only
     val LibrariesAndHackersTest = for {
-      lib <- testLibs.asSmartCollection //change 1
+      lib <- testLibs.asSmart //change 1
       libDev <- lib.developers
       dev <- testHackers //change 2 (not really needed here, but...)
     } yield (lib, dev)
@@ -149,7 +149,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     assertType[Exp[Seq[(ivm.expressiontree.Exp[Library], Developer)]]](LibrariesAndHackersTest)
     //checkResult(LibrariesAndHackersTest) //Can't be called
     val LibrariesAndHackersTest2 = for {
-      lib <- testLibs.asSmartCollection //change 1
+      lib <- testLibs.asSmart //change 1
       libDev <- lib.developers
       dev <- testHackers //change 2 (not really needed here, but...)
     } yield asExp((lib, asExp(dev)))
@@ -265,7 +265,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   def testTraversable() {
     val data = Seq(1, 2, 2, 3, 5, 5, 3)
     val a: Exp[Seq[Int]] = data
-    val a2 = data.asSmartCollection
+    val a2 = data.asSmart
     assertType[Exp[Traversable[Int]]](a2) //assertType[Exp[Seq[Int]]](a2)
     val b1 = a.map(_ + 1)
     val b2 = a2.map(1 + _)
@@ -283,7 +283,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   def testSet() {
     val data = Set(1, 2, 3, 5)
     val a: Exp[Set[Int]] = data
-    val a2 = data.asSmartCollection
+    val a2 = data.asSmart
     assertType[Exp[Set[Int]]](a2)
     val b1 = a.map(_ + 1)
     val b2 = a2.map(1 + _)
@@ -301,7 +301,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     val a: Exp[Int] = 1
     val b = a + 2
     //With a smart signatures, type inference works:
-    val c2 = onExp(1)('plusOne, _ + 1)
+    val c2 = fmap(1)('plusOne, _ + 1)
     val c3 = withExpFunc(1)(_ + 1)
 
     println(a)

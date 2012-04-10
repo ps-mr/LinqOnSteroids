@@ -53,8 +53,8 @@ object BATLiftingExperimental {
           case ca: Code_attribute =>
             assert(ca != null) //This is satisfied because of the pattern match.
             Some((ca.maxStack, ca.maxLocals,
-              toExp(ca.instructions), //This is needed to allow predefined implicit conversions to trigger.
-              // We can call toExp unconditionally in the generated version of this instructions.
+              pure(ca.instructions), //This is needed to allow predefined implicit conversions to trigger.
+              // We can call pure unconditionally in the generated version of this instructions.
               ca.exceptionHandlers, ca.attributes))
           case _ =>
             None
@@ -66,7 +66,7 @@ object BATLiftingExperimental {
   object INSTANCEOF {
     def unapply(t: Exp[_]): Option[Exp[ReferenceType]] = {
       if ((t ne null) && t.interpret().isInstanceOf[INSTANCEOF])
-        Some(onExp(t.asInstanceOf[Exp[INSTANCEOF]])('referenceType, _.referenceType))
+        Some(fmap(t.asInstanceOf[Exp[INSTANCEOF]])('referenceType, _.referenceType))
       else None
     }
   }
@@ -86,7 +86,7 @@ object OpalTestData {
   //Use this for debugging - the actual data is too big and slows down debugging too much.
   //val testdata: Set[ClassFile]  = Set.empty
   val testdata: Set[ClassFile]  = getTestData.toSet
-  val queryData = toExp(testdata)
+  val queryData = pure(testdata)
 
   //Size of the expected query results. 84 has been simply measured when the results were correct.
   //Not very pretty, but better than nothing
@@ -292,13 +292,13 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     val methodsLos3 = queryData.flatMap( cf => cf.methods
       .flatMap( m => m.attributes
       .collect(
-      a => onExp(a)('instanceOf$CodeAttribute,
+      a => fmap(a)('instanceOf$CodeAttribute,
         x =>
           if (x.isInstanceOf[Code])
             Some(x.asInstanceOf[Code])
           else None))
       .flatMap( c => c.instructions)
-      .filter( a => onExp(a)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF]))
+      .filter( a => fmap(a)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF]))
       .map( _ => m.name)))
 
     val m3Int: Traversable[String] = benchMark("los3") {
@@ -312,9 +312,9 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         cf <- queryData
         m <- cf.methods
         a <- m.attributes
-        if onExp(a)('instanceOf$CodeAttribute, _.isInstanceOf[Code])
+        if fmap(a)('instanceOf$CodeAttribute, _.isInstanceOf[Code])
         i <- a.asInstanceOf[Exp[Code]].instructions //This cast works perfectly
-        if onExp(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
+        if fmap(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
       } yield m.name
     val m4Int: Traversable[String] = benchMark("los4") {
       methodsLos4.interpret()
@@ -408,7 +408,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     //println(evaluatedtypeindex.map.keys)
 
     //val methodsLos6 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
-    //XXX this code, instead of using typeindex: Exp[...], uses toExp(typeindex.interpret()), which is a hack. The goal
+    //XXX this code, instead of using typeindex: Exp[...], uses pure(typeindex.interpret()), which is a hack. The goal
     //is to have the index evaluated at all - otherwise there would be no speed-up. However, the proper solution is to
     //wrap the query result in something similar to IncrementalResult's constructor: Exp[T] -> Exp[T] - so that the result
     //is materialized and incrementally maintained.
@@ -432,7 +432,11 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 
     type QueryAnd[+T] = ((ClassFile, Method, Code), T);
     {
-      implicit def tuple2ToTuple2Exp[A1, A2, E1 <% Exp[A1], E2 <% Exp[A2]](tuple: (E1, E2)): LiftTuple2[A1, A2] =
+      implicit def tuple2ToTuple2Exp[A1, A2](tuple: (Exp[A1], Exp[A2])): LiftTuple2[A1, A2] =
+        LiftTuple2[A1, A2](tuple._1, tuple._2)
+      //This does not work as desired, because of https://issues.scala-lang.org/browse/SI-5651, a dup we reported of
+      //https://issues.scala-lang.org/browse/SI-3346
+      implicit def tuple2ToTuple2ExpPrime[A1, A2, E1 <% Exp[A1], E2 <% Exp[A2]](tuple: (E1, E2)): LiftTuple2[A1, A2] =
         LiftTuple2[A1, A2](tuple._1, tuple._2)
       //Same code as above, except that the index returns all free variables, so that the optimizer might find it.
       val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
@@ -441,8 +445,21 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         ca <- m.attributes.typeFilter[Code]
         i <- ca.instructions
       //} yield tuple2ToTuple2Exp(asExp((cf, m, ca)), i) //works, cumbersome
-      } yield tuple2ToTuple2Exp((cf, m, ca), i) //works
-      //} yield /*tuple2ToTuple2Exp*/((cf, m, ca), i) //does not work
+      //} yield tuple2ToTuple2ExpPrime((cf, m, ca), i) //works
+      } yield (asExp((cf, m, ca)), i) //works, good, but does not use the provided conversion and requires asExp!
+      //} yield asExp(((cf, m, ca), i)) //does not work, same as below.
+      //} yield /*tuple2ToTuple2ExpPrime*/((cf, m, ca), i) //does not work, gives an error about a view not being found.
+
+      val typeIdxBase2: Exp[Seq[((ClassFile, Method), Instruction)]] = for {
+        cf <- queryData.toSeq
+        m <- cf.methods
+        ca <- m.attributes.typeFilter[Code]
+        i <- ca.instructions
+      //} yield tuple2ToTuple2Exp(asExp((cf, m)), i) //works, cumbersome
+      //} yield tuple2ToTuple2ExpPrime((cf, m), i) //works
+      } yield (asExp((cf, m)), i) //works, good, but does not use the provided conversion and requires asExp!
+      //} yield asExp(((cf, m), i)) //does not work, same as below.
+      //} yield /*tuple2ToTuple2ExpPrime*/((cf, m), i) //does not work, gives an error about a view not being found.
 
       //The type annotation here is needed, because type inference interferes with implicit lookup (apparently).
       val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
@@ -450,13 +467,13 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       // per each instruction. The fix was adding toSeq above. In fact, this transformation could probably be done also on the query to optimize;
       // after that, the optimizer would again find a matching subquery. The new runtime is ~ 0.3-0.4 sec.
       val evaluatedtypeindex = benchMark("los6 Seq-index (less manually optimized) creation"){ typeIdx.interpret() }
-      Optimization.addSubquery(typeIdx, Some(evaluatedtypeindex))
+      Optimization.addIndex(typeIdx, Some(evaluatedtypeindex))
 
       val methodsLos6 = asExp(evaluatedtypeindex).get[INSTANCEOF].map(_._1._2.name).toSet
 
       Optimization.optimize(methodsLos5Seq) should be (methodsLos6)
 
-      Optimization.removeSubquery(typeIdx)
+      Optimization.removeIndex(typeIdx)
 
       val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized)") {
         methodsLos6.interpret()

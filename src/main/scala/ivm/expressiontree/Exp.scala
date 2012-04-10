@@ -80,7 +80,7 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   //Methods for the clients of the library, rather than for the implementations.
   //They simply produce the appropriate expression tree nodes.
   final def ==#[S >: T](that: Exp[S]): Exp[Boolean] = Eq(this, that)
-  // This variant is needed because null <: S but also null <: Exp[S], so the needed call to toExp won't be inserted
+  // This variant is needed because null <: S but also null <: Exp[S], so the needed call to pure won't be inserted
   // manually when that is statically known to be null.
   final def ==#(that: Null): Exp[Boolean] = Eq(this, Const(null))
 

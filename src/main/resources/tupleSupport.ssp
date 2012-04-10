@@ -75,19 +75,27 @@ case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparam
 }
 
 #end <%-- //We close and reopen the loop because there are no unary tuples. --%>
+
 #for (arity <- minTupleArity to maxArity)
 <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2 %>
 //////////////////////////////////////////
 // SUPPORT FOR TUPLES OF ARITY ${arity} //
 //////////////////////////////////////////
 
-case class LiftTuple${arity}[${tparams}](${paramsDeclOverride}) extends Arity${arity}OpExp[${tparams}, (${tparams}), LiftTuple${arity}[${tparams}]](${params}) {
+case class LiftTuple${arity}[${tparams}](${paramsDeclOverride}) extends Arity${arity}OpExp[${tparams}, (${tparams}), LiftTuple${arity}[${tparams}]](${params}) with ExpProduct {
   def copy(${paramsDecl}) = LiftTuple${arity}(${params})
   def interpret() = (${interpretParams})
+  def metaProductArity: Int = ${arity}
+  def metaProductElement(n: Int): Exp[Any] = (n: @switch) match {
+    ${baseParLoop(arity)(i => "case %d => %s%d" format (i - 1, argPfx, i), "\n    ")}
+  }
 }
 
 #for (i <- 1 to arity)
-case class Tuple${arity}Proj${i}[${tparams}](p: Exp[(${tparams})]) extends Arity1OpExp[(${tparams}), A${i}, Tuple${arity}Proj${i}[${tparams}]](p) {
+case class Tuple${arity}Proj${i}[${tparams}](p: Exp[(${tparams})]) extends Arity1OpExp[(${tparams}), A${i}, Tuple${arity}Proj${i}[${tparams}]](p) with
+  ExpSelection[(${tparams})]
+{
+  val body: (Int, Int, Exp[(${tparams})]) = (${arity}, ${i}, p)
   def copy(p: Exp[(${tparams})]) = Tuple${arity}Proj${i}(p)
   def interpret() = p.interpret()._${i}
 }
@@ -97,16 +105,6 @@ case class Tuple${arity}Proj${i}[${tparams}](p: Exp[(${tparams})]) extends Arity
 ////////////////////////////////////////////////
 // SUPPORT FOR TUPLES - AUTOMATIC CONVERSIONS //
 ////////////////////////////////////////////////
-
-trait ExpProduct {
-  def productArity: Exp[Int]
-
-  //How to implement this?
-  //def productElement(n: Exp[Int]): Exp[Any]
-  //Better name prefix?
-  def metaProductArity: Int
-  def metaProductElement(n: Int): Exp[Any]
-}
 
 trait AutoTupleOps {
   this: LiftingConvs =>

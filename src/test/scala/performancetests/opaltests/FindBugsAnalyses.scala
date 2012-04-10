@@ -90,7 +90,13 @@ object FindBugsAnalyses {
 }
 
 class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
-  def this() = this(Seq("lib/scalatest-1.6.1.jar"))
+  //def this() = this(Seq("lib/scalatest-1.6.1.jar"))
+  def this() = this(Seq("src/test/resources/Bugs.zip"))
+
+  //This is to have a run comparable with FindBugs
+  //override def onlyOptimized = true
+  //Standard execution
+  override def onlyOptimized = false
 
   val classFiles: Seq[ClassFile] = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
     for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
@@ -123,7 +129,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for {
-        classFile ← classFiles.asSmartCollection if classFile.isFinal
+        classFile ← classFiles.asSmart if classFile.isFinal
         field ← classFile.fields if field.isProtected
       } yield (classFile, field))
     }
@@ -162,7 +168,8 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       for {
         classFile ← classFiles if !classFile.isInterfaceDeclaration
         declaringClass = classFile.thisClass
-        privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
+        privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet //XXX toSet is unneeded, field names are unique.
+      //Note that this could even allow unnesting - should we try to have this unnested?
         unusedPrivateFields = privateFields -- (for {
           method ← classFile.methods
           body ← method.body.toList
@@ -179,7 +186,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import BATLifting._
       import InstructionLifting._
       Query(for {
-        classFile ← classFiles.asSmartCollection if !classFile.isInterfaceDeclaration
+        classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
           method ← classFile.methods
           body ← method.body
@@ -219,7 +226,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import BATLifting._
       import InstructionLifting._
       (for {
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         method ← classFile.methods
         body ← method.body
         instruction ← body.instructions.typeCase(
@@ -231,6 +238,8 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     }
   }
 
+  //XXX: for the native version, FI_PUBLIC_SHOULD_BE_PROTECTED is faster; for the LoS version, FI_PUBLIC_SHOULD_BE_PROTECTED-2 is faster.
+  //However, the first one should get as fast if I enable the unnesting of Exists.
   test("PublicFinalizer") {
     analyzePublicFinalizer()
   }
@@ -244,7 +253,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for (
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         if classFile.methods.exists(method ⇒ method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0)
       ) yield classFile)
     }
@@ -265,7 +274,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for {
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         method ← classFile.methods
         if method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0
       } yield classFile)
@@ -290,9 +299,9 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for {
-        superclass ← classHierarchy.superclasses(serializableClasses).asSmartCollection if getClassFile.asSmartCollection.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+        superclass ← classHierarchy.superclasses(serializableClasses).asSmart if getClassFile.asSmart.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
-          val superClassFile = (getClassFile.asSmartCollection)(superclass)
+          val superClassFile = getClassFile.asSmart.apply(superclass)
           !superClassFile.isInterfaceDeclaration &&
             !superClassFile.constructors.exists(_.descriptor.parameterTypes.length ==# 0)
         }
@@ -316,7 +325,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for {
-        classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
+        classFile ← classFiles.asSmart if classFile.isClassDeclaration
         method ← classFile.methods
         body ← method.body
         exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType ==# IllegalMonitorStateExceptionType
@@ -343,9 +352,9 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for {
-        allComparables ← classHierarchy.subtypes(comparableType).toList.asSmartCollection
+        allComparables ← classHierarchy.subtypes(comparableType).toList.asSmart
         comparable ← allComparables
-        classFile ← getClassFile.get(comparable)
+        classFile ← getClassFile.get(comparable) //getClassFile is lifted through Const and makes optimization expensive.
         method ← classFile.methods //if parameterType != ObjectType.Object
         if method.name ==# "compareTo" && method.descriptor.returnType ==# IntegerType
         parameterTypes <- Let(method.descriptor.parameterTypes)
@@ -369,7 +378,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       Query(for {
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         method ← classFile.methods
         if method.isAbstract && method.name ==# "equals" && method.descriptor.returnType ==# BooleanType
         parameterTypes <- Let(method.descriptor.parameterTypes)
@@ -395,7 +404,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import InstructionLifting._
 
       for {
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         method ← classFile.methods
         body ← method.body
         //instruction ← body.instructions
@@ -431,7 +440,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import BATLifting._
 
       for {
-        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSmartCollection
+        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSmart
         cloneable ← allCloneable
         classFile ← getClassFile.get(cloneable)
         if !(classFile.methods exists (method => method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"))
@@ -462,7 +471,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import BATLifting._
       import InstructionLifting._
       for {
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
         superClass ← classFile.superClass
         method ← classFile.methods
@@ -492,12 +501,12 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import BATLifting._
       import InstructionLifting._
       for {
-        classFile ← classFiles.asSmartCollection
+        classFile ← classFiles.asSmart
         if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
         method ← classFile.methods
         if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
         //Shouldn't we have a lifter for this? Yep.
-        if !onExp(classFile.thisClass)('foo, classHierarchy.isSubtypeOf(_, ObjectType("java/lang/Cloneable")).getOrElse(false))
+        if !fmap(classFile.thisClass)('foo, classHierarchy.isSubtypeOf(_, ObjectType("java/lang/Cloneable")).getOrElse(false))
       } yield (classFile.thisClass.className, method.name)
     }
   }
@@ -538,12 +547,12 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   import BATLifting._
 
   val methodNameIdx: Exp[Map[String, Seq[(ClassFile, Method)]]] = (for {
-    classFile ← classFiles.asSmartCollection
+    classFile ← classFiles.asSmart
     method ← classFile.methods
   } yield (classFile, method)).groupBy(_._2.name)
 
   val excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, Code, ExceptionHandler)]]] = (for {
-    classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
+    classFile ← classFiles.asSmart if classFile.isClassDeclaration
     method ← classFile.methods
     body ← method.body
     exceptionHandler ← body.exceptionHandlers
@@ -551,7 +560,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
 
   type QueryAnd[+T] = ((ClassFile, Method, Code), T)
   val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
-    classFile ← classFiles.asSmartCollection
+    classFile ← classFiles.asSmart
     method ← classFile.methods
     body ← method.body
     instruction ← body.instructions
@@ -560,13 +569,13 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
 
   Optimization.pushEnableDebugLog(false)
 
-  benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addSubquery(methodNameIdx, Some(
+  benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addIndex(methodNameIdx, Some(
     CollectionUtils.groupBy(for {
       classFile ← classFiles
       method ← classFile.methods
     } yield (classFile, method))(_._2.name))))
-  benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addSubquery(excHandlerTypeIdx))
-  benchMark("Instructions type-index creation")(Optimization.addSubquery(typeIdx))
+  benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addIndex(excHandlerTypeIdx))
+  benchMark("Instructions type-index creation")(Optimization.addIndex(typeIdx))
 
   Optimization.popEnableDebugLog()
 
@@ -575,14 +584,14 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     import BATLifting._
     /*
     (for {
-      classFile ← classFiles.asSmartCollection
+      classFile ← classFiles.asSmart
       method ← classFile.methods
     } yield (classFile, method)).size
     */
 
     /*
     methodNameIdx = (for {
-      classFile ← classFiles.asSmartCollection
+      classFile ← classFiles.asSmart
       method ← classFile.methods
     } yield (classFile, method)).groupBy(_._2.name)
 
@@ -592,7 +601,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } yield (classFile, method)).groupBy(_._2.name)
 
     val idxBase = for {
-      classFile ← classFiles.asSmartCollection if classFile.isClassDeclaration
+      classFile ← classFiles.asSmart if classFile.isClassDeclaration
       method ← classFile.methods
       body ← method.body
       exceptionHandler ← body.exceptionHandlers
@@ -604,9 +613,11 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   //}
 
   def tearDownIndexes() {
-    Optimization.removeSubquery(methodNameIdx)
-    Optimization.removeSubquery(excHandlerTypeIdx)
-    Optimization.removeSubquery(typeIdx)
+    if (!onlyOptimized) {
+      Optimization.removeIndex(methodNameIdx)
+      Optimization.removeIndex(excHandlerTypeIdx)
+      Optimization.removeIndex(typeIdx)
+    }
   }
 
   def analyze() {

@@ -15,8 +15,8 @@ import Lifting._
 //New example, discussed with Christian.
 
 import sampleapp._
-class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
-  //Having the import here does not work; we later import SampleLibraryLiftingManual which shadows the original objects,
+class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
+  //Having the import here does not work; we later import BookLiftingManual which shadows the original objects,
   //
   //import sampleapp._
   val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "Pearson Education", Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
@@ -31,16 +31,23 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
     if record._1.startsWith("Compilers")
   } yield (record._1, record._2)
 
+  type Result2 = (String, String, Int)
+
   val records = for {
     book <- books
     if book.publisher == "Pearson Education"
     author <- book.authors
-  } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
+//  } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
+  } yield (book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
-  def titleFilter(records: Set[Result], keyword: String): Set[(String, String)] = for {
+  //def titleFilter(records: Set[Result], keyword: String): Set[(String, String)] = for {
+  def titleFilter(records: Set[Result2], keyword: String): Set[(String, String)] = for {
     record <- records
-    if record.title.contains(keyword)
-  } yield (record.title, record.authorName)
+      if record._1.contains(keyword)
+  } yield (record._1, record._2)
+//    if record.title.contains(keyword)
+//  } yield (record.title, record.authorName)
+
   val processedRecords = titleFilter(records, "Principles")
 
   def titleFilterHandOpt1(books: Set[Book], publisher: String, keyword: String) = for {
@@ -63,64 +70,117 @@ class SampleQuery extends FunSuite with ShouldMatchers with TestUtil {
   val recordsDesugared = books.withFilter(book =>
     book.publisher == "Pearson Education").flatMap(book =>
     book.authors.map(author =>
-      Result(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
+//      Result(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
+      (book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
 
   test("recordsDesugared should be records") {
     recordsDesugared should be (records)
     recordsOld should not be (records)
   }
 
-  val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
+  //val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
+  val idxByAuthor = records.groupBy(_._2) //Index books by author - the index by title is a bit more boring, but not so much actually!
 
-  import SampleLibraryLifting._
-  import SampleLibraryLiftingManual._
+  import BookLifting._
+  import BookLiftingManual._
 
   //But the correct index by title should be:
   val idxByTitle = books.groupBy(_.title)
 
   val idxByPublisher =
-    books.asSmartCollection groupBy (_.publisher)
+    books.asSmart groupBy (_.publisher)
 
-  Optimization.addSubquery(idxByPublisher)
+  val doIndex = false //Disable this to test other optimizations, like unnesting
+  if (doIndex)
+    Optimization.addIndex(idxByPublisher)
 
-  val recordsQuery = /*Query(*/for {
-   book <- books.asSmartCollection
+  val recordsQuery = for {
+   book <- books.asSmart
    if book.publisher ==# "Pearson Education"
    author <- book.authors
- } yield Result(book.title,
+ } yield (book.title,
     author.firstName + " " + author.lastName,
-    book.authors.size - 1)//)
-  
-  val recordsQueryOpt = Optimization.optimize(recordsQuery)
+    book.authors.size - 1)
+
+  val recordsQuery2: Exp[Set[(String, Set[String], Int)]] = for {
+    book <- books.asSmart
+    if book.publisher ==# "Pearson Education"
+    author <- book.authors
+  } yield (book.title,
+      //Sets are invariant! Hence we can't convert a set of StringConcat to a set of Exp[String] (which is due to our framework)
+      //and we can't convert a Set[Exp[String]] to Set[Exp[AnyRef]] (which is independent of our framework, since Set[String] cannot be
+      //converted to Set[AnyRef]).
+      asExp(Set(author.firstName + " " + author.lastName)),
+      book.authors.size - 1)
+
   test("same results") {
+    println(recordsQuery)
     recordsQuery.interpret() should be (records)
+    val recordsQueryOpt = Optimization.optimize(recordsQuery)
     println(recordsQueryOpt)
     recordsQueryOpt.interpret() should be (records)
   }
 
-  def titleFilterQuery(records: Exp[Set[Result]], keyword: String): Exp[Set[(String, String)]] = for {
+  def titleFilterQuery(records: Exp[Set[Result2]], keyword: String): Exp[Set[(String, String)]] = for {
     record <- records
-    if record.title.contains(keyword)
-  } yield (record.title, record.authorName)
+    if record._1.contains(keyword)
+  } yield (record._1, record._2)
 
   val processedRecordsQuery = titleFilterQuery(recordsQuery, "Principles")
 
-  val processedRecordsQueryOpt = Optimization.optimize(processedRecordsQuery)
+  def titleFilterHandOpt2Query(books: Exp[Set[Book]], publisher: String, keyword: String): Exp[Set[(String, String)]] =
+    for {
+      book <- books
+      if book.publisher ==# publisher && book.title.contains(keyword)
+      author <- book.authors
+    } yield (book.title, author.firstName + " " + author.lastName)
+  val processedQueryExpectedOptimRes = titleFilterHandOpt2Query(books, "Pearson Education", "Principles")
 
-  test("processedRecords should have the results") {
+  test("processedRecords should have the same results as the lifted version") {
+    showExp(processedRecordsQuery, "processedRecordsQuery")
     processedRecordsQuery.interpret() should be (processedRecords)
-    println(processedRecordsQueryOpt)
+    val processedRecordsQueryOpt = Optimization.optimize(processedRecordsQuery)
+    showExp(processedRecordsQueryOpt, "processedRecordsQueryOpt")
     processedRecordsQueryOpt.interpret() should be (processedRecords)
+    //showExp(processedQueryExpectedOptimRes, "processedQueryExpectedOptimRes")
+    processedRecordsQueryOpt should be (processedQueryExpectedOptimRes)
   }
+
+  //keyword _must_ be Exp[String].
+  def titleFilterQuery2(records: Exp[Set[Result2]])(keyword: Exp[String]): Exp[Set[(String, String)]] = for {
+    record <- records
+    if record._1.contains(keyword)
+  } yield (record._1, record._2)
+
+  //Optimize the query before specifying the keyword to lookup.
+  val processedRecordsQueryOptFun = asExp(titleFilterQuery2(recordsQuery) _).optimize
+  Util.assertType[Exp[String => Set[(String, String)]]](processedRecordsQueryOptFun)
+  val processedRecordsQueryOptRes = processedRecordsQueryOptFun("Principles")
+
+  test("processedRecords should have the same results as the lifted function version") {
+    processedRecordsQueryOptRes.interpret() should be (processedRecords)
+    showExp(processedRecordsQueryOptRes, "processedRecordsQueryOptRes")
+    processedRecordsQueryOptRes.interpret() should be (processedRecords)
+    processedRecordsQueryOptRes should be (processedQueryExpectedOptimRes)
+  }
+
+  //A query like processedRecordsQuery cannot really be optimized without unnesting! After that we need inlining,
+  // which we have, and only then the delta-reduction rule for tuples can kick in.
+  // If instead we use Result, we need delta-reduction to work on Result; Result needs to implement ExpProduct, and the
+  // selectors need to implement ExpSelection; I guess for the latter I'd need to manually alter the generated code a
+  // bit (for now), but it is surely possible to recognize case classes (deployed software does it) and add ExpProduct
+  // and ExpSelection for them.
+  // Possible idea: after all, case classes even implement Product themselves! Might be helpful.
 }
 
-object SampleLibraryLiftingManual {
+
+object BookLiftingManual {
   //case class Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int])
   import sampleapp._
   case class ResultExp(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) extends Arity3Op[Exp[String], Exp[String], Exp[Int], Result, ResultExp](title, authorName, coauthors) {
     def copy(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) = ResultExp(title, authorName, coauthors)
     def interpret() = sampleapp.Result(title.interpret(), authorName.interpret(), coauthors.interpret())
-  } 
+  }
   def Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) = ResultExp(title, authorName, coauthors)
 }
 
@@ -137,32 +197,33 @@ trait SampleAppLifting extends SampleApp {
   //Code to be generated {{{
   implicit def expToDeveloperOps(t: Exp[Developer]) = new DeveloperOps(t)
   class DeveloperOps(t: Exp[Developer]) {
-    def name = onExp(t)('Developer$name, _.name)
-    def website = onExp(t)('Developer$website, _.website)
+    def name = fmap(t)('Developer$name, _.name)
+    def website = fmap(t)('Developer$website, _.website)
   }
 
   implicit def expToLibraryVersionOps(t: Exp[LibraryVersion]) = new LibraryVersionOps(t)
   class LibraryVersionOps(t: Exp[LibraryVersion]) {
-    def version = onExp(t)('SampleApp$Library$version, _.version) //Remove class names from API! Use Manifests for that, and for arguments - but doesn't work for
+    def version = fmap(t)('SampleApp$Library$version, _.version) //Remove class names from API! Use Manifests for that, and for arguments - but doesn't work for
     //parameterized types! Well, who cares when it's generated?
-    def depends = onExp(t)('SampleApp$Library$depends, _.depends)
-    def developers = onExp(t)('SampleApp$Library$developers, _.developers)
+    def depends = fmap(t)('SampleApp$Library$depends, _.depends)
+    def developers = fmap(t)('SampleApp$Library$developers, _.developers)
   }
 
   implicit def expToLibraryOps(t: Exp[Library]) = new LibraryOps(t)
   class LibraryOps(t: Exp[Library]) {
-    def name = onExp(t)('Library$name, _.name)
-    def versions = onExp(t)('Library$versions, _.versions)
-    def users = onExp(t)('Library$users, _.users)
+    def name = fmap(t)('Library$name, _.name)
+    def versions = fmap(t)('Library$versions, _.versions)
+    def users = fmap(t)('Library$users, _.users)
   }
-  def Library(name: Exp[String], versions: Exp[Set[LibraryVersion]], users: Exp[Int]): Exp[Library] = onExp(name, versions, users)('Library, Library(_, _, _))
+  def Library(name: Exp[String], versions: Exp[Set[LibraryVersion]], users: Exp[Int]): Exp[Library] = fmap(name, versions, users)('Library, Library(_, _, _))
   //Code to be generated }}}
 }
 
-class OopslaTutorial extends /*FunSuite with ShouldMatchers with TestUtil with*/ SampleApp {
+/*
+class OopslaTutorialOld extends /*FunSuite with ShouldMatchers with TestUtil with*/ SampleApp {
   val libs: Set[Library] = Set.empty
   val idx = (for {
-    lib <- libs //.asSmartCollection
+    lib <- libs //.asSmart
     ver <- lib.versions
   } yield (lib, ver)).groupBy {
     //libver => (libver._1, libver._2.version)
@@ -172,25 +233,27 @@ class OopslaTutorial extends /*FunSuite with ShouldMatchers with TestUtil with*/
   for (lib <- libs) yield Library(lib.name, lib.versions, lib.users + 1)
 }
 
-class Foo extends OopslaTutorial with SampleAppLifting {
+class Foo extends OopslaTutorialOld with SampleAppLifting {
   val idxBase = for {
-    lib <- libs.asSmartCollection
+    lib <- libs.asSmart
     ver <- expToLibraryOps(lib).versions
   } yield (lib, ver)
 
   val idxSQuOpt = idxBase groupBy (
     libver => (libver._1, libver._2.version))
 
-  for (lib <- libs.asSmartCollection) yield
+  for (lib <- libs.asSmart) yield
     Library(lib.name, lib.versions, lib.users + 1)
 
   //Query possibly to present
   /*
   (for {
-    lib <- libs.asSmartCollection
+    lib <- libs.asSmart
     ver <- lib.versions
     if ver.developers ==# Seq("Foo") /*boring*/ && ver.depends ==# Seq(lib) //We want to construct a sequence with lib, but let's not do it here.
   } yield (lib, asExp(Set(ver)))) groupBy (_._1) map (x => (x._1, /*x._2._1,*/ x._2.foldr(Set.empty)(_._2 union _._2) flatMap identity /*.flatten*/))
   */
-  //That's rather cumbersome. Let's ask for help.
+  //But that's too cumbersome; moreover, it runs into some limitations, because folds are not yet lifted (and that's easy to fix) and
+  //the yielded expression uses nested generic constructors and hence needs asExp.
 }
+*/
