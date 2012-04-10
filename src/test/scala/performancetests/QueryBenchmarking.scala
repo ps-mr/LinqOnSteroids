@@ -24,23 +24,28 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
                                                 extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])], timeScala: Double)(implicit f: Forceable[T, Coll]): Traversable[T] =
   {
     def doRun(msg: String, v: Exp[Coll]) = {
-      showExpNoVal(v, msg)
+      if (!onlyOptimized)
+        showExpNoVal(v, msg)
       benchMarkInternal(msg)(v.expResult().force)
     }
 
-    val (res, time) = doRun(msg, v)
+    val (res, time) =
+      if (!onlyOptimized)
+        doRun(msg, v)
+      else
+        (null, -1.0)
     for ((msgExtra, optim) <- optimizerTable[Coll] ++ extraOptims.asInstanceOf[Seq[(String, Exp[Coll] => Exp[Coll])]]) {
       Optimization.optimize(v) //do it once for the logs!
       Optimization.pushEnableDebugLog(false)
       val (optimized, optimizationTime) = benchMarkInternal(msg + " Optimization")(optim(Optimization.optimize(v)))
       Optimization.popEnableDebugLog()
       val (resOpt, timeOpt) = doRun(msg + msgExtra, optimized)
-      //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
-      // list.flatMap(listEl => set(listEl))
-      //returns results in non-deterministic order.
-      resOpt should be (res) //keep this and alter queries instead.
-
       if (!onlyOptimized) {
+        //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
+        // list.flatMap(listEl => set(listEl))
+        //returns results in non-deterministic order.
+        resOpt should be (res) //keep this and alter queries instead.
+
         def report(label: String, speedup: Double) {
           val delta = 1 - speedup
           val lessOrMore = if (delta > 0) "less" else "MORE"
