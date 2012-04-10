@@ -61,8 +61,8 @@ object OptimizationTransforms {
    */
   //XXX: rewrite to expect only flatMap nodes, i.e. after mapToFlatMap, and see what happens.
   val cartProdToJoin: Exp[_] => Exp[_] = {
-    case e @ FlatMap(fmColl: Exp[Traversable[_]],
-      fmFun @ FuncExpBody(MapOp(Filter(filterColl: Exp[Traversable[_]], filterFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
+    case e @ FlatMap(fmColl,
+      fmFun @ FuncExpBody(MapOp(Filter(filterColl, filterFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
       if !filterColl.isOrContains(fmFun.x)
     =>
       if (!(lhs.isOrContains(filterFun.x)) && !(rhs.isOrContains(fmFun.x)))
@@ -96,10 +96,10 @@ object OptimizationTransforms {
   }
 
   val cartProdToAntiJoin: Exp[_] => Exp[_] = {
-    case e @ Filter(filteredColl: Exp[Traversable[_]],
+    case e @ Filter(filteredColl,
       filterFun @ FuncExpBody(Forall(forallColl, forallFun @ FuncExpBody(Not(Eq(lhs, rhs))))))
-    //case FlatMap(fmColl: Exp[Traversable[_]],
-      //fmFun @ FuncExpBody(MapOp(Filter(filterColl: Exp[Traversable[_]], filterFun @ FuncExpBody(Not(Eq(lhs, rhs)))), moFun)))
+    //case FlatMap(fmColl,
+      //fmFun @ FuncExpBody(MapOp(Filter(filterColl, filterFun @ FuncExpBody(Not(Eq(lhs, rhs)))), moFun)))
       if !forallColl.isOrContains(filterFun.x)
     =>
       if (!(rhs.isOrContains(filterFun.x)) && !(lhs.isOrContains(forallFun.x)))
@@ -170,7 +170,7 @@ object OptimizationTransforms {
   //Now we'd like a non-work-duplicating inliner. We'd need a linear type system as in GHC's inliner.
 
   val mergeMaps: Exp[_] => Exp[_] = {
-    case MapOp(MapOp(coll: Exp[Traversable[_]], f), g) =>
+    case MapOp(MapOp(coll, f), g) =>
       //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
       //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
       buildMergedMaps(coll, f, g)
@@ -180,11 +180,11 @@ object OptimizationTransforms {
   }
 
   val mergeFlatMaps: Exp[_] => Exp[_] = {
-    case FlatMap(MapOp(coll: Exp[Traversable[_]], f), g) =>
+    case FlatMap(MapOp(coll, f), g) =>
       //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
       //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
       mergeFlatMaps(coll flatMap (x => letExp(f(x))(g)))
-    case MapOp(FlatMap(coll: Exp[Traversable[_]], f), g) =>
+    case MapOp(FlatMap(coll, f), g) =>
       //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
       //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
       mergeFlatMaps(coll flatMap (x => letExp(f(x))(_ map g)))
@@ -197,7 +197,7 @@ object OptimizationTransforms {
   }
   val mergeMaps2: Transformer = new Transformer {
     def apply[T](e: Exp[T]) = e match {
-      case MapOp(MapOp(coll: Exp[Traversable[t]], f1), f2) =>
+      case MapOp(MapOp(coll, f1), f2) =>
         mergeMaps2(buildMergedMaps(coll, f1, f2)).
           //Note the need for this cast.
           asInstanceOf[Exp[T]]
@@ -300,7 +300,7 @@ object OptimizationTransforms {
   val mergeFilters: Exp[_] => Exp[_] = {
     case e @ Filter(col, f) =>
       stripViewUntyped(col) match {
-        case Filter(col2: Exp[Traversable[_]], f2) =>
+        case Filter(col2, f2) =>
           mergeFilters(
             col2 withFilter {
               (x: Exp[_]) => And(f2(x), f(x))
@@ -313,7 +313,7 @@ object OptimizationTransforms {
   //Recognize relational-algebra set operations; they can be executed more efficiently if one of the two members is indexed.
   //However, sets are already always indexed, so these optimizations will not have a huge impact by themselves.
   val setIntersection: Exp[_] => Exp[_] = {
-    case e @ Filter(col: Exp[Traversable[t]], predFun @ FuncExpBody(Contains(col2, x))) if (x == predFun.x) =>
+    case e @ Filter(col, predFun @ FuncExpBody(Contains(col2, x))) if (x == predFun.x) =>
       //XXX transformation not implemented
       e //col.join(col2)(identity, identity, _._1) //Somewhat expensive implementation of intersection.
       //e //Intersect(col, col2)
@@ -387,7 +387,7 @@ object OptimizationTransforms {
    */
 
   val toTypeFilter: Exp[_] => Exp[_] = {
-    case e @ FlatMap(coll: Exp[Traversable[_]], fmFun: FuncExp[t, u]) =>
+    case e @ FlatMap(coll, fmFun: FuncExp[t, u]) =>
       tryBuildTypeFilter(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
     case e => e
   }
@@ -438,7 +438,7 @@ object OptimizationTransforms {
 
 
   val removeRedundantOption: Exp[_] => Exp[_] = {
-    case e @ FlatMap(coll: Exp[Traversable[t]], (fmFun: FuncExp[_, Traversable[u]])) =>
+    case e @ FlatMap(coll, (fmFun: FuncExp[_, Traversable[u]])) =>
       tryRemoveRedundantLet(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
     case e => e
   }
@@ -460,7 +460,7 @@ object OptimizationTransforms {
   //exactly what we need!
   //Scalac miscompiles this code if I write it the obvious way - without optimizations enabled!
   val hoistFilter: Exp[_] => Exp[_] = {
-    case FlatMap(coll1: Exp[Traversable[_]], fmFun @ FuncExpBody(FlatMap(Filter(coll2: Exp[Traversable[_]], filterFun), fmFun2)))
+    case FlatMap(coll1, fmFun @ FuncExpBody(FlatMap(Filter(coll2, filterFun), fmFun2)))
       if !filterFun.body.isOrContains(filterFun.x) =>
       buildHoistedFilterForFlatMap(coll1, fmFun, coll2, filterFun, fmFun2)
     case e => e
@@ -470,7 +470,7 @@ object OptimizationTransforms {
     c flatMap FuncExp.makefun(Seq(f.body), f.x)
 
   val mapToFlatMap: Exp[_] => Exp[_] = {
-    case MapOp(c: Exp[Traversable[t]], f) =>
+    case MapOp(c, f) =>
       buildMapToFlatMap(c, f)
     /*case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
       c flatMap FuncExp.makefun(Some(f.body), f.x)*/
@@ -481,7 +481,7 @@ object OptimizationTransforms {
     c map FuncExp.makefun(body, f.x)
 
   val flatMapToMap: Exp[_] => Exp[_] = {
-    case FlatMap(c: Exp[Traversable[t]], f @ FuncExpBody(ExpSeq(Seq(body)))) =>
+    case FlatMap(c, f @ FuncExpBody(ExpSeq(Seq(body)))) =>
       buildFlatMapToMap(c, body, f)
     case e => e
   }
@@ -517,7 +517,7 @@ object OptimizationTransforms {
     //where restQuery = x => [x1 |-> x0]B
     //However, that's only valid if the return value of the expression is an idempotent monoid, as stated there. We can workaround that by converting
     //the result of flatMap to a set.
-    case FlatMap(Filter(c0: Exp[Traversable[t]], f @ FuncExpBody(Not(IsEmpty(Filter(c: Exp[Traversable[u]], p))))), fmFun) =>
+    case FlatMap(Filter(c0, f @ FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
       //Since x0 = f.x, and fmFun = x1 => B, then [x1 |-> x0]B is (x1 => B) x0, that is fmFun(f.x), and restQuery = x => [x1 |-> x0]B =
       val restQuery = FuncExp.makefun(fmFun(f.x), p.x)
       //toSet remove any duplicates to preserve semantics; in the expression c exists p, p might be true for more elements of c. When unnesting,
@@ -552,7 +552,7 @@ object OptimizationTransforms {
       * However, scalac seems "right": collEp has type Exp[Repr], which apparently erases to Exp[Any] even if a type bound _is_ given.
       * XXX report this as another bug.
       */
-    /*case FlatMap(FlatMap(collEp: Exp[Traversable[t]], fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
+    /*case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
       collEp flatMap FuncExp.makefun(letExp(ep)(fy.f), fxp.x)*/
     case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
       collEp flatMap FuncExp.makefun(ep flatMap fy, fxp.x).f
@@ -577,7 +577,7 @@ object OptimizationTransforms {
       //This case, together with inlinng and transformedFilterToFilter, is equivalent to what Tillmann suggested and
       //then dismissed.
       /*
-    case MapOp(Filter(coll: Exp[Traversable[t]], pred @ FuncExpBody(test)), mapFun) =>
+    case MapOp(Filter(coll, pred @ FuncExpBody(test)), mapFun) =>
       //This transformation cancels with transformedFilterToFilter + flatMapToMap. Not sure if it's ever useful.
       //It could be useful as a separate stage, if this turns out to be a faster implementation.
       //After this optimization, we need to float the if_# to around the body of mapFun
@@ -596,7 +596,7 @@ object OptimizationTransforms {
   val transformedFilterToFilter: Exp[_] => Exp[_] = {
     //case FlatMap(coll, fmFun @ FuncExpBody(IfThenElse(test, thenBranch @ ExpSeq(Seq(element)), elseBranch @ ExpSeq(Seq())))) =>
       //coll filter
-    case FlatMap(coll: Exp[Traversable[t]], fmFun @ FuncExpBody(IfThenElse(test, thenBranch, elseBranch @ ExpSeq(Seq())))) =>
+    case FlatMap(coll, fmFun @ FuncExpBody(IfThenElse(test, thenBranch, elseBranch @ ExpSeq(Seq())))) =>
       coll filter FuncExp.makefun(test, fmFun.x) flatMap FuncExp.makefun(thenBranch, fmFun.x)
     case e => e
   }
@@ -613,7 +613,7 @@ object OptimizationTransforms {
   // where *map stands for map or flatMap (the same on both sides).
   //Note: this assumes that maps have been converted to flatMaps.
   val filterToWithFilter: Exp[_] => Exp[_] = {
-    case FlatMap(Filter(coll: Exp[Traversable[t]], p), f) =>
+    case FlatMap(Filter(coll, p), f) =>
       (stripView(coll).view filter p flatMap f).force
     case e => e
   }
@@ -629,7 +629,7 @@ object OptimizationTransforms {
   //This type is incorrect whenever T is a view type. Be careful!
   private[optimization] def stripViewUntyped[T](coll: Exp[T]): Exp[T] =
     coll match {
-      case View(coll2: Exp[Traversable[t]]) => coll2.asInstanceOf[Exp[T]]
+      case View(coll2) => coll2.asInstanceOf[Exp[T]]
       case _ => coll
     }
 }
