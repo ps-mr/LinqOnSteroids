@@ -554,10 +554,10 @@ object OptimizationTransforms {
       */
     /*case FlatMap(FlatMap(collEp: Exp[Traversable[t]], fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
       collEp flatMap FuncExp.makefun(letExp(ep)(fy.f), fxp.x)*/
-    case FlatMap(FlatMap(collEp: Exp[Traversable[t]], fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
+    case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
       collEp flatMap FuncExp.makefun(ep flatMap fy, fxp.x).f
       //collEp flatMap FuncExp.makefun(Seq(ep) map (fy)/*Seq(ep) map fy*/, fxp.x).f
-    case Filter(FlatMap(collEp: Exp[Traversable[t]], fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
+    case Filter(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
       //collEp filter FuncExp.makefun(letExp(ep)(fy), fxp.x)
       collEp flatMap FuncExp.makefun(ep filter app(fy), fxp.x)
     case e => e
@@ -570,7 +570,7 @@ object OptimizationTransforms {
    * merge the map and the filter, fuse their functions, and extract the filter again with transformedFilterToFilter.
    */
   val mergeFilterWithMap: Exp[_] => Exp[_] = {
-    case Filter(MapOp(coll: Exp[Traversable[t]], mapFun), pred) => //This case should have higher priority, it seems more useful.
+    case Filter(MapOp(coll, mapFun), pred) => //This case should have higher priority, it seems more useful.
       coll flatMap FuncExp.makefun(letExp(mapFun.body)(FuncExp.makefun(if_# (pred.body) (Seq(pred.x)) else_# (Seq.empty), pred.x)), mapFun.x)
       //We preserve sharing here with letExp; currently, subsequent stages will do indiscriminate inlining and replicate the map, but
       //the inliner will later be improved.

@@ -12,14 +12,14 @@ import collection._
 //I believe that in pattern matching, base will be deduced to have type Exp[Repr] which erases to Exp[Any] because the type bounds are not
 //considered well-enough.
 case class FlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
-                   U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
+                   U, That <: Traversable[U]](base: Exp[Repr with Traversable[T]], f: FuncExp[T, Traversable[U]])
                             (implicit /*protected[this]*/ val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, Traversable[U]], That, FlatMap[T, Repr, U, That]](base, f) {
   override def interpret() = (base.interpret() flatMap f.interpret())(Traversable.canBuildFrom).asInstanceOf[That]
   override def copy(base: Exp[Repr], f: FuncExp[T, Traversable[U]]) = FlatMap[T, Repr, U, That](base, f)
 }
 
 case class MapOp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
-                 U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr], f: FuncExp[T, U])
+                 U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr with Traversable[T]], f: FuncExp[T, U])
                           (implicit /*protected[this] */val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, U], That, MapOp[T, Repr, U, That]](base, f) {
   override def interpret() = base.interpret() map f.interpret()
   override def copy(base: Exp[Repr], f: FuncExp[T, U]) = MapOp[T, Repr, U, That](base, f)
