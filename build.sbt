@@ -1,7 +1,7 @@
 import java.io.FileWriter
 import scalariform.formatter.preferences._
 import de.johoop.findbugs4sbt.FindBugs._
-//import com.typesafe.startscript.StartScriptPlugin
+import com.typesafe.startscript.StartScriptPlugin
 
 name := "LinqOnSteroids"
 
@@ -113,8 +113,10 @@ object GitVersion {
   }) :+ verFile
 }
 
-//This code is currently not needed.
-////Generate start scripts
+//Generate start scripts
 //seq(StartScriptPlugin.startScriptForClassesSettings: _*)
+seq(StartScriptPlugin.startScriptForJarSettings: _*)
 
-//mainClass in Compile := Some("ivm.generation.Generator")
+mainClass in Test := Some("performancetests.opaltests.FindBugsAnalyses")
+
+mainClass in Compile := Some("performancetests.opaltests.FindBugsAnalyses")

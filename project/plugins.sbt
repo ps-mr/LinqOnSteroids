@@ -7,8 +7,7 @@ addSbtPlugin("de.johoop" % "findbugs4sbt" % "1.1.3")
 libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.6.1"
 
 
-//Currently not needed:
-//addSbtPlugin("com.typesafe.startscript" % "xsbt-start-script-plugin" % "0.5.0")
+addSbtPlugin("com.typesafe.startscript" % "xsbt-start-script-plugin" % "0.5.1")
 
 //This is enough to build our own generator:
 libraryDependencies += "org.fusesource.scalate" % "scalate-core" % "1.5.3"
