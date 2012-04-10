@@ -32,31 +32,29 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
         doRun(msg, v)
       else
         (null, -1.0)
-    val msgExtra = " - after optimization";
-    {
-      if (!onlyOptimized)
-        Optimization.optimize(v) //do it once for the logs!
-      Optimization.pushEnableDebugLog(false)
-      val (optimized, optimizationTime) = benchMarkInternal(msg + " Optimization")(Optimization.optimize(v))
-      Optimization.popEnableDebugLog()
-      val (resOpt, timeOpt) = doRun(msg + msgExtra, optimized)
-      if (!onlyOptimized) {
-        //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
-        // list.flatMap(listEl => set(listEl))
-        //returns results in non-deterministic order.
-        resOpt should be (res) //keep this and alter queries instead.
+    val msgExtra = " - after optimization"
+    if (!onlyOptimized)
+      Optimization.optimize(v) //do it once for the logs!
+    Optimization.pushEnableDebugLog(false)
+    val (optimized, optimizationTime) = benchMarkInternal(msg + " Optimization")(Optimization.optimize(v))
+    Optimization.popEnableDebugLog()
+    val (resOpt, timeOpt) = doRun(msg + msgExtra, optimized)
+    if (!onlyOptimized) {
+      //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
+      // list.flatMap(listEl => set(listEl))
+      //returns results in non-deterministic order.
+      resOpt should be (res) //keep this and alter queries instead.
 
-        def report(label: String, speedup: Double) {
-          val delta = 1 - speedup
-          val lessOrMore = if (delta > 0) "less" else "MORE"
-          println("Speedup ratio by this optimization compared to %s: %f (i.e. %f%% %s)" format (label, speedup, math.abs(delta) * 100, lessOrMore))
-        }
-        report("base embedded version", timeOpt / time)
-        report("native Scala version", timeOpt / timeScala)
-        report("native Scala version, counting optimization time", (timeOpt + optimizationTime) / timeScala)
+      def report(label: String, speedup: Double) {
+        val delta = 1 - speedup
+        val lessOrMore = if (delta > 0) "less" else "MORE"
+        println("Speedup ratio by this optimization compared to %s: %f (i.e. %f%% %s)" format (label, speedup, math.abs(delta) * 100, lessOrMore))
       }
-      resOpt
+      report("base embedded version", timeOpt / time)
+      report("native Scala version", timeOpt / timeScala)
+      report("native Scala version, counting optimization time", (timeOpt + optimizationTime) / timeScala)
     }
+    resOpt
   }
 
   // The pattern matching costs of using force are quite annoying. I expect them to be small; so it would be be best to
