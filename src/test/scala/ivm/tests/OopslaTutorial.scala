@@ -128,6 +128,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   val processedRecordsQuery = titleFilterQuery(recordsQuery, "Principles")
 
+  //We lift the hand-optimized version to verify that the optimizer produces the same code.
   def titleFilterHandOpt2Query(books: Exp[Set[Book]], publisher: String, keyword: String): Exp[Set[(String, String)]] =
     for {
       book <- books
