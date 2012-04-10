@@ -93,6 +93,11 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   //def this() = this(Seq("lib/scalatest-1.6.1.jar"))
   def this() = this(Seq("src/test/resources/Bugs.zip"))
 
+  //This is to have a run comparable with FindBugs
+  //override def onlyOptimized = true
+  //Standard execution
+  override def onlyOptimized = false
+
   val classFiles: Seq[ClassFile] = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
     for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
   }
@@ -163,7 +168,8 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       for {
         classFile ← classFiles if !classFile.isInterfaceDeclaration
         declaringClass = classFile.thisClass
-        privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet
+        privateFields = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet //XXX toSet is unneeded, field names are unique.
+      //Note that this could even allow unnesting - should we try to have this unnested?
         unusedPrivateFields = privateFields -- (for {
           method ← classFile.methods
           body ← method.body.toList

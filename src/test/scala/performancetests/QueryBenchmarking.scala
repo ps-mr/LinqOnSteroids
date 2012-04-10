@@ -14,6 +14,9 @@ import org.scalatest.matchers.ShouldMatchers
 
 trait QueryBenchmarking extends TestUtil with Benchmarking {
   this: ShouldMatchers =>
+
+  def onlyOptimized = false
+
   private def optimizerTable[T]: Seq[(String, Exp[T] => Exp[T])] = Seq((" - after optimization", identity _))
 
   private def benchInterpret[T, Coll <: Traversable[T]](msg: String,
@@ -37,14 +40,16 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
       //returns results in non-deterministic order.
       resOpt should be (res) //keep this and alter queries instead.
 
-      def report(label: String, speedup: Double) {
-        val delta = 1 - speedup
-        val lessOrMore = if (delta > 0) "less" else "MORE"
-        println("Speedup ratio by this optimization compared to %s: %f (i.e. %f%% %s)" format (label, speedup, math.abs(delta) * 100, lessOrMore))
+      if (!onlyOptimized) {
+        def report(label: String, speedup: Double) {
+          val delta = 1 - speedup
+          val lessOrMore = if (delta > 0) "less" else "MORE"
+          println("Speedup ratio by this optimization compared to %s: %f (i.e. %f%% %s)" format (label, speedup, math.abs(delta) * 100, lessOrMore))
+        }
+        report("base embedded version", timeOpt / time)
+        report("native Scala version", timeOpt / timeScala)
+        report("native Scala version, counting optimization time", (timeOpt + optimizationTime) / timeScala)
       }
-      report("base embedded version", timeOpt / time)
-      report("native Scala version", timeOpt / timeScala)
-      report("native Scala version, counting optimization time", (timeOpt + optimizationTime) / timeScala)
     }
 
     res
@@ -58,16 +63,22 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
                                                    (query: => Exp[Coll],
                                                     extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])] = Seq.empty)
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
-    val (expectedRes, timeScala) = benchMarkInternal(msg)(expected)
-    //Don't work - bug https://issues.scala-lang.org/browse/SI-5642.
+    val (expectedRes, timeScala) =
+      if (!onlyOptimized)
+        benchMarkInternal(msg)(expected)
+      else
+        (null, -1.0)
+    //Those versions don't work - bug https://issues.scala-lang.org/browse/SI-5642.
     //val builtQuery: Exp[Coll with Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query[T, Coll](query))
     //val builtQuery: Exp[Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query[T, Coll](query))
     //val builtQuery: Exp[Traversable[T]] = Query[T, Coll](toQuery(query))
     //works:
     val builtQuery: Exp[Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query(query))
     val res = benchInterpret("%s Los" format msg, builtQuery, extraOptims, timeScala)
-    res should be (expectedRes)
-    println("\tViolations: " + expectedRes.size)
-    expectedRes
+    if (!onlyOptimized) {
+      res should be (expectedRes)
+    }
+    println("\tViolations: " + res.size)
+    res
   }
 }
