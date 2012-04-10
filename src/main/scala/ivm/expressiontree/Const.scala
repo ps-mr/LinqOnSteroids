@@ -22,7 +22,7 @@ case class Const[T](x: T) extends Arity0Exp[T] {
       }
       else
         s
-    "Const(" + shortened + ")"
+    productPrefix + "(" + shortened + ")"
   }
 }
 
@@ -36,4 +36,5 @@ class ConstByIdentity[T](content: T) extends Const(content) {
   }
 
   override def hashCode() = System.identityHashCode(x.asInstanceOf[AnyRef])
+  override def productPrefix = "ConstByIdentity"
 }
