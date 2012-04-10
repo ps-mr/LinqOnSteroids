@@ -17,7 +17,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
   private def optimizerTable[T]: Seq[(String, Exp[T] => Exp[T])] = Seq((" - after optimization", identity _))
 
   private def benchInterpret[T, Coll <: Traversable[T]](msg: String,
-                                                v: Exp[Coll],
+                                                v: Exp[Coll with Traversable[T]],
                                                 extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])], timeScala: Double)(implicit f: Forceable[T, Coll]): Traversable[T] =
   {
     def doRun(msg: String, v: Exp[Coll]) = {
@@ -51,12 +51,9 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
   }
 
   private def benchQuery[T, Coll <: Traversable[T]](msg: String,
-                                            v: Exp[Coll],
-                                            expectedResult: Traversable[T],
+                                            v: Exp[Coll with Traversable[T]],
                                             extraOptims: Seq[(String, Exp[Nothing] => Exp[Nothing])], timeScala: Double)(implicit f: Forceable[T, Coll]): Traversable[T] = {
-    val res = benchInterpret[T, Coll](msg, v, extraOptims, timeScala)
-    res should be (expectedResult)
-    res
+    benchInterpret[T, Coll](msg, v, extraOptims, timeScala)
   }
 
   // The pattern matching costs of using force are quite annoying. I expect them to be small; so it would be be best to
@@ -74,7 +71,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
     //val builtQuery: Exp[Traversable[T]] = Query[T, Coll](toQuery(query))
     //works:
     val builtQuery: Exp[Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query(query))
-    benchQuery("%s Los" format msg, builtQuery, expectedRes, extraOptims, timeScala)
+    val res = benchQuery("%s Los" format msg, builtQuery, extraOptims, timeScala)
+    res should be (expectedRes)
     println("\tViolations: " + expectedRes.size)
     expectedRes
   }
