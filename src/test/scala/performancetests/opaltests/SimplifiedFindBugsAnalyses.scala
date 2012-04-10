@@ -57,7 +57,12 @@ import de.tud.cs.st.util.perf.PerformanceEvaluation
  * The implemented static analyses are insprired by Findbugs
  * (http://findbugs.sourceforge.net/bugDescriptions.html).
  */
-
+/*
+ * I don't want to maintain a separate and potentially diverging code clone.
+ * Among other things, this does not call any optimizations.
+ * By unrelated renames (asSmartCollection -> asSmart, and possibly others), this stopped compiling, which serves my point.
+ */
+/*
 object JustOptimizedFindBugsAnalyses {
 
     val pe = new PerformanceEvaluation {};
@@ -410,3 +415,4 @@ object JustOptimizedFindBugsAnalyses {
         }
     }
 }
+*/
