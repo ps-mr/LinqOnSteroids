@@ -127,9 +127,20 @@ trait TraversableOps {
 
   //This version does not work, due to https://issues.scala-lang.org/browse/SI-5298:
   //implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr])
+  /*
+  //With this version, we need an extra overload for Range <: IndexedSeq[Int] <: IndexedSeqLike[Int, IndexedSeq[Int]].
   implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with Traversable[T]]) =
     new TraversableLikeOps[T, Repr](v)
   implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Repr with Traversable[T]) =
+    expToTraversableLikeOps(v)
+  implicit def expRangeToTraversableLikeOps(r: Exp[Range]) = expToTraversableLikeOps(r: Exp[IndexedSeq[Int]])
+  */
+  /* Instead, use TraversableLike[T, Repr] in the bound, so that it can be considered when looking for a matching Repr;
+   * Repr is now deduced by matching against TraversableLike[T, Repr]. At least `with` is still commutative - this works
+   * irrespective of the order in which the bounds are considered. */
+  implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with TraversableLike[T, Repr]]) =
+    new TraversableLikeOps[T, Repr](v)
+  implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Repr with TraversableLike[T, Repr]) =
     expToTraversableLikeOps(v)
 
   //Ranges are cheap to compare for equality; hence we can easily use pure, not pureColl, for them.
@@ -137,7 +148,6 @@ trait TraversableOps {
   //Repr = Range does not satisfy the bound given by:
   //  Repr <: Traversable[T] with TraversableLike[T, Repr]
   //Hence we need this extra conversion.
-  implicit def expRangeToTraversableLikeOps(r: Exp[Range]) = expToTraversableLikeOps(r: Exp[IndexedSeq[Int]])
   implicit def rangeToTraversableLikeOps(r: Range) = expToTraversableLikeOps(r: Exp[IndexedSeq[Int]])
 
   //XXX: this class is now essentially useless.
