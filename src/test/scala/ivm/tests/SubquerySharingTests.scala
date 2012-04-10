@@ -36,14 +36,15 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     Optimization.removeIndex(s1)
   }
 
+  def shareSubqueriesOpt[T](x: Exp[T]) = Optimization.simplifyFilters(Optimization.shareSubqueries(x))
+
   def indexingTest[T, U, TupleT](query: Exp[Seq[T]], idx: Exp[Map[U, TupleT]], fullOptim: Boolean = true)(expectedOptQueryProducer: Exp[Map[U, TupleT]] => Exp[Traversable[T]]) {
-    val idxResRaw = idx.interpret()
-    val idxRes = asExp(idxResRaw)
+    val idxRes = idx.interpret()
     val expectedOptQuery = expectedOptQueryProducer(idxRes)
     query.interpret() should be (expectedOptQuery.interpret().force) //The call to force makes sure that
     // the expected value in error messages shows the actual collection contents.
 
-    Optimization.addIndex(idx, Some(idxResRaw))
+    Optimization.addIndex(idx, Some(idxRes))
     val optQuery =
       if (fullOptim)
         Optimization.optimize(query)
@@ -205,8 +206,6 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val l3Idx = l3IdxBase_k_seqlet groupBy { _._3 }
     indexingTest(l3_k_seqlet, l3Idx){ _(5) map (p => p._1 + p._2 + p._3) }
   }
-
-  def shareSubqueriesOpt[T](x: Exp[T]) = Optimization.simplifyFilters(Optimization.shareSubqueries(x))
 
   @Test def testIndexing() {
     val index = l.groupBy(p => p._1 + p._2)
