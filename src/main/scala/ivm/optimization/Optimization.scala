@@ -492,7 +492,8 @@ object OptimizationTransforms {
   }
 
   val deltaReductionTuple: PartialFunction[Exp[_], Exp[_]] = {
-    case ExpSelection(arity, selected, e: ExpProduct) => e.metaProductElement(selected - 1)
+    case ExpSelection(arity, selected, e: ExpProduct) =>
+      e.metaProductElement(selected - 1)
   }
 
   val betaReduction: PartialFunction[Exp[_], Exp[_]] = {
