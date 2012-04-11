@@ -507,9 +507,9 @@ object OptimizationTransforms {
       fun(arg)
   }
 
-  val emptyTransform: PartialFunction[Exp[_], Exp[_]] = {
-    case e => e
-  }
+   //This is the shortest way of writing identity.
+  val emptyTransform: PartialFunction[Exp[_], Exp[_]] = {case e => e}
+
   // Fixpoint iteration for beta-delta reduction :-). This works very well because:
   //   (f andThen g).isDefinedAt = f.isDefinedAt. (and g is supposed to be total - this code won't work so well if g is
   // in fact partial, another example of PartialFunction <: Function1 being totally confusing).
@@ -529,7 +529,7 @@ object OptimizationTransforms {
   //def betaDeltaReducer: Exp[_] => Exp[_] = (deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse {case e => e} //that's the shortest way of writing identity.
   //This one always terminates, as long as the involved PartialFunctions are only defined when they do transform their input.
   //TODO: write a Kleene star to encapsulate this pattern; then lookup under what name is this technique already known.
-  def betaDeltaReducer(exp: Exp[_]): Exp[_] = ((deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse emptyTransform)(exp) //that's the shortest way of writing identity.
+  def betaDeltaReducer(exp: Exp[_]): Exp[_] = ((deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse emptyTransform)(exp)
   /*val betaReduction: Exp[_] => Exp[_] = {
     case a: App[t, u] => a.f(a.t)
     case ExpSelection(arity, selected, e: ExpProduct) => e.metaProductElement(selected - 1)
