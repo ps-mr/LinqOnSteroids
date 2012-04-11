@@ -24,7 +24,7 @@ object ScalaSigHelpers {
 
   def getScalaSig(className: String) = ScalaSigParser.parse(Class.forName(className)).get
 
-  def getMethodSymbols(symbol: ClassSymbol, sig: ScalaSig, fil: MethodSymbol => Boolean): Seq[MethodSymbol] = {
+  def getMethodSymbols(symbol: ClassSymbol, fil: MethodSymbol => Boolean): Seq[MethodSymbol] = {
     (symbol.children filter (s => s.isMethod && fil(s.asInstanceOf[MethodSymbol]))).map (s => s match {
       case MethodSymbol(_, _) => s.asInstanceOf[MethodSymbol]
     })

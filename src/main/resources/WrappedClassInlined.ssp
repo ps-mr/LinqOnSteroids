@@ -8,7 +8,7 @@ val classFile: String %>
 <% val scalaSig = getScalaSig(classFile)
    val classSymbol = scalaSig.topLevelClasses.head
    val fil: MethodSymbol => Boolean = s => !(s.name == "<init>" || s.isOverride || s.isPrivate || s.isProtected || s.isSynthetic || s.name.contains("$"))
-   val symbols = getMethodSymbols(classSymbol, scalaSig, fil)
+   val symbols = getMethodSymbols(classSymbol, fil)
    var i = 0
    symbols foreach ( n => { %>
     def ${n.name}${unescape(getTypeParameters(n))}${getParametersAsString(n)}: ${getResultType(n)} = new ${className}_${n.name}${i}(t${getParameterNamesAsString(n, ",", "")})
