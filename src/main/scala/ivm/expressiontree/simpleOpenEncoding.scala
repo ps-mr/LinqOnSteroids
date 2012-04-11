@@ -147,7 +147,7 @@ trait ExpProduct {
 }
 
 trait ExpSelection[TupleT] {
-  val body: (Int, Int, Exp[TupleT])
+  def body: (Int, Int, Exp[TupleT])
 }
 //class ExpSelection[TupleT](val arity: Int, val pos: Int, val body: Exp[TupleT])
 object ExpSelection {

@@ -34,7 +34,7 @@ val classFile: String %>
     def copy(t: Exp[${className}]${paramsDef}) = new ${wName}(t${paramsToPass})<%
       if (n.isCaseAccessor) {%>
 
-    val body = (<%=caseClassArity%>, <%=caseClassSelectorIdx%>, t)
+    def body = (<%=caseClassArity%>, <%=caseClassSelectorIdx%>, t)
 <% } %>
   }
 <% i = i+1}) %>
