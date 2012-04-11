@@ -528,6 +528,7 @@ object OptimizationTransforms {
   //This recursive def does not work either - upon a call it tries to unfold itself.
   //def betaDeltaReducer: Exp[_] => Exp[_] = (deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse {case e => e} //that's the shortest way of writing identity.
   //This one always terminates, as long as the involved PartialFunctions are only defined when they do transform their input.
+  //TODO: write a Kleene star to encapsulate this pattern; then lookup under what name is this technique already known.
   def betaDeltaReducer(exp: Exp[_]): Exp[_] = ((deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse emptyTransform)(exp) //that's the shortest way of writing identity.
   /*val betaReduction: Exp[_] => Exp[_] = {
     case a: App[t, u] => a.f(a.t)
