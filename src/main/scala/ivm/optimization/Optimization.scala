@@ -505,7 +505,28 @@ object OptimizationTransforms {
       fun(arg)
   }
 
-  val betaDeltaReducer: Exp[_] => Exp[_] = deltaReductionTuple orElse betaReduction orElse {case e => e} //that's the shortest way of writing identity.
+  val emptyTransform: PartialFunction[Exp[_], Exp[_]] = {
+    case e => e
+  }
+  // Fixpoint iteration for beta-delta reduction :-). This works very well because:
+  //   (f andThen g).isDefinedAt = f.isDefinedAt. (and g is supposed to be total - this code won't work so well if g is
+  // in fact partial, another example of PartialFunction <: Function1 being totally confusing).
+
+  // The recursion scheme here is remarkably similar to the one used with parser combinators:
+  //   statements = (statement ~ statements) | empty
+  // which can be shortened (IIRC) to:
+  //   statements = statement*
+  // Remember that Scala parser combinators are applicative parsers (i.e. Applicative and Alternative). Also note that
+  // Alternative is described as "A monoid on applicative functors". Which nowadays is even obvious to me, oh my God!
+  // Are my transformers an instance of the same structure?
+  //Note: there's a reason parser combinators take their arguments by value; partial function combinators don't, hence we
+  //suffer a lot
+  //Note: recursive vals don't work - a recursive definition like this requires def.
+  //val betaDeltaReducer: Exp[_] => Exp[_] = (deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse {case e => e} //that's the shortest way of writing identity.
+  //This recursive def does not work either - upon a call it tries to unfold itself.
+  //def betaDeltaReducer: Exp[_] => Exp[_] = (deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse {case e => e} //that's the shortest way of writing identity.
+  //This one usually terminates, but not always :-(.
+  def betaDeltaReducer(exp: Exp[_]): Exp[_] = ((deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse emptyTransform)(exp) //that's the shortest way of writing identity.
   /*val betaReduction: Exp[_] => Exp[_] = {
     case a: App[t, u] => a.f(a.t)
     case ExpSelection(arity, selected, e: ExpProduct) => e.metaProductElement(selected - 1)
