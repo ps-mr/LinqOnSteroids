@@ -132,6 +132,61 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
             //but there is no type <: that2; in particular, we can't write Traversable[u2] <: that2.
             //What we know (but the compiler doesn't) is that that2 is a collection type, whose element type is equal
             //to u2, and we essentially know that from the contract.
+            //However, maybe not everything is necessarily lost; Traversable[u2] >: that2 = repr <: Traversable[t] still
+            //gives constraints, namely that that2 = repr must be also a subtype of u2 with t; that's exactly what we
+            //would need, but Scalac instead fails. Here's the new output of -explaintypes showing the failure.
+/*
+that2 <: Traversable[t with u2] with scala.collection.TraversableLike[t with u2,that2]?
+  that2 <: Traversable[t with u2]?
+    Traversable[u2] <: Traversable[t with u2]?
+      u2 <: t with u2?
+        u2 <: t?
+          u2 <: Nothing?
+            <notype> <: Nothing?
+            false
+            Any <: Nothing?
+              <notype> <: Nothing?
+              false
+            false
+          false
+          Any <: t?
+            Any <: Nothing?
+              <notype> <: Nothing?
+              false
+            false
+          false
+        false
+      false
+    false
+    Traversable[u2] with scala.collection.TraversableLike[u2,that2] <: Traversable[t with u2]?
+      Traversable[u2] <: Traversable[t with u2]?
+        u2 <: t with u2?
+          u2 <: t?
+            u2 <: Nothing?
+              <notype> <: Nothing?
+              false
+              Any <: Nothing?
+                <notype> <: Nothing?
+                false
+              false
+            false
+            Any <: t?
+              Any <: Nothing?
+                <notype> <: Nothing?
+                false
+              false
+            false
+          false
+        false
+      false
+      scala.collection.TraversableLike[u2,that2] <: Traversable[t with u2]?
+        <notype> <: Traversable[t with u2]?
+        false
+      false
+    false
+  false
+false
+ */
 
             //We could have a different design where m.base would have type CollectionExp[t, repr], or where t would be
             //available as a type member/type function of repr. So the map would accept a function f of type
@@ -152,8 +207,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
             //(m2.base map (m2.f andThen m.f.f))(m.c) //... also m.c has the wrong type
             //(m2.base map (m2.f andThen m.f.f))(m.c.asInstanceOf[CanBuildFrom[repr2, u, that]]) //... so we ignore the type of CanBuildFrom,
             //since instances are anyway defined so that it does not matter.
-            //If know we remove the t = u2 equality, we need to use this code (with an extra cast):
-            (m2.base map (m2.f andThen m.f.f.asInstanceOf[Exp[u2] => Exp[u]]))(m.c.asInstanceOf[CanBuildFrom[repr2, u, that]]) //... so we ignore the type of CanBuildFrom,
+            //If now we remove the t = u2 equality, we need to use this code (with an extra cast):
+            //(m2.base map (m2.f andThen m.f.f.asInstanceOf[Exp[u2] => Exp[u]]))(m.c.asInstanceOf[CanBuildFrom[repr2, u, that]]) //... so we ignore the type of CanBuildFrom,
           case _ => e
         }
       case _ => e
