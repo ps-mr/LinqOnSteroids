@@ -128,10 +128,10 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield (classFile, field)
     } {
       import BATLifting._
-      Query(for {
+      for {
         classFile ← classFiles.asSmart if classFile.isFinal
         field ← classFile.fields if field.isProtected
-      } yield (classFile, field))
+      } yield (classFile, field)
     }
   }
 
@@ -185,7 +185,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } {
       import BATLifting._
       import InstructionLifting._
-      Query(for {
+      for {
         classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration
         instructions ← Let(for {
           method ← classFile.methods
@@ -199,7 +199,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
           when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass ==# declaringClass, _.name)))
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields))
+      } yield (classFile, privateFields)
     }
   }
 
@@ -252,10 +252,10 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       ) yield classFile
     } {
       import BATLifting._
-      Query(for (
+      for (
         classFile ← classFiles.asSmart
         if classFile.methods.exists(method ⇒ method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0)
-      ) yield classFile)
+      ) yield classFile
     }
   }
 
@@ -273,11 +273,11 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield classFile
     } {
       import BATLifting._
-      Query(for {
+      for {
         classFile ← classFiles.asSmart
         method ← classFile.methods
         if method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0
-      } yield classFile)
+      } yield classFile
     }
   }
 
@@ -298,14 +298,14 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield superclass // there can be at most one method
     } {
       import BATLifting._
-      Query(for {
+      for {
         superclass ← classHierarchy.superclasses(serializableClasses).asSmart if getClassFile.asSmart.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
           val superClassFile = getClassFile.asSmart.apply(superclass)
           !superClassFile.isInterfaceDeclaration &&
             !superClassFile.constructors.exists(_.descriptor.parameterTypes.length ==# 0)
         }
-      } yield superclass) // there can be at most one method
+      } yield superclass // there can be at most one method
     }
   }
 
@@ -324,12 +324,12 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield (classFile, method)
     } {
       import BATLifting._
-      Query(for {
+      for {
         classFile ← classFiles.asSmart if classFile.isClassDeclaration
         method ← classFile.methods
         body ← method.body
         exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType ==# IllegalMonitorStateExceptionType
-      } yield (classFile, method))
+      } yield (classFile, method)
     }
   }
 
@@ -351,7 +351,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield (classFile, method)
     } {
       import BATLifting._
-      Query(for {
+      for {
         allComparables ← classHierarchy.subtypes(comparableType).toList.asSmart
         comparable ← allComparables
         classFile ← getClassFile.get(comparable) //getClassFile is lifted through Const and makes optimization expensive.
@@ -360,7 +360,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         parameterTypes <- Let(method.descriptor.parameterTypes)
         if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType.Object
 
-      } yield (classFile, method))
+      } yield (classFile, method)
     }
   }
 
@@ -368,22 +368,21 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     analyzeAbstractClassesThatDefinesCovariantEquals()
   }
   def analyzeAbstractClassesThatDefinesCovariantEquals() {
-    //XXX This analysis was changed for BAT, reconsider.
     benchQueryComplete("EQ_ABSTRACT_SELF") {
       for {
         classFile ← classFiles
         method @ Method(_, "equals", MethodDescriptor(CSeq(parameterType), BooleanType), _) ← classFile.methods
-        if  method.isAbstract && parameterType != ObjectType.Object
+        if method.isAbstract && parameterType != ObjectType.Object
       } yield (classFile, method)
     } {
       import BATLifting._
-      Query(for {
+      for {
         classFile ← classFiles.asSmart
         method ← classFile.methods
         if method.isAbstract && method.name ==# "equals" && method.descriptor.returnType ==# BooleanType
         parameterTypes <- Let(method.descriptor.parameterTypes)
         if parameterTypes.length ==# 1 && parameterTypes(0) !=# ObjectType.Object
-      } yield (classFile, method))
+      } yield (classFile, method)
     }
   }
 
