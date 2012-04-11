@@ -116,12 +116,12 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   // The following code is meant to show how easy it is to write analyses;
   // it is not meant to demonstrate how to write such analyses in an efficient
   // manner.
-  test("ConfusedInheritance") {
+  test("ProtectedField") {
     analyzeConfusedInheritance()
   }
   def analyzeConfusedInheritance() {
     // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
-    benchQueryComplete("CI_CONFUSED_INHERITANCE") {
+    benchQueryComplete("PROTECTED_FIELD"){ //FB:"CI_CONFUSED_INHERITANCE") {
       for {
         classFile ← classFiles if classFile.isFinal
         field ← classFile.fields if field.isProtected
@@ -164,7 +164,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield (classFile, privateFields)
     }*/
 
-    benchQueryComplete("UUF_UNUSED_FIELD") {
+    benchQueryComplete("UNUSED_PRIVATE_FIELD"){ // FB: "UUF_UNUSED_FIELD") { // However, we only focus on private fields.
       for {
         classFile ← classFiles if !classFile.isInterfaceDeclaration
         declaringClass = classFile.thisClass
@@ -210,7 +210,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     val NoArgNoRetMethodDesc = MethodDescriptor(Seq(), VoidType)
 
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
-    benchQueryComplete("DM_GC") {
+    benchQueryComplete("GC_CALL"){ // FB: "DM_GC") {
       (for {
         classFile ← classFiles
         method ← classFile.methods
@@ -245,7 +245,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   }
   def analyzePublicFinalizer() {
     // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
-    benchQueryComplete("FI_PUBLIC_SHOULD_BE_PROTECTED") {
+    benchQueryComplete("FINALIZER_NOT_PROTECTED"){ // FB: "FI_PUBLIC_SHOULD_BE_PROTECTED") {
       for (
         classFile ← classFiles
         if classFile.methods.exists(method ⇒ method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0)
@@ -265,7 +265,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   }
   def analyzePublicFinalizer2() {
     // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
-    benchQueryComplete("FI_PUBLIC_SHOULD_BE_PROTECTED-2") {
+    benchQueryComplete("FINALIZER_NOT_PROTECTED-2") {
       for {
         classFile ← classFiles
         method ← classFile.methods
@@ -287,7 +287,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   def analyzeSerializableNoConstructor() {
     // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
     val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
-    benchQueryComplete("SE_NO_SUITABLE_CONSTRUCTOR") {
+    benchQueryComplete("NO_SUITABLE_CONSTRUCTOR") { // FB: SE_NO_SUITABLE_CONSTRUCTOR
       for {
         superclass ← classHierarchy.superclasses(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
@@ -315,7 +315,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   def analyzeCatchIllegalMonitorStateException() {
     // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
     val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
-    benchQueryComplete("IMSE_DONT_CATCH_IMSE") {
+    benchQueryComplete("DONT_CATCH_IMSE") { // FB: IMSE_DONT_CATCH_IMSE
       for {
         classFile ← classFiles if classFile.isClassDeclaration
         method ← classFile.methods
@@ -338,7 +338,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   }
   def analyzeCovariantCompareToMethods() {
     val comparableType = ObjectType("java/lang/Comparable")
-    benchQueryComplete("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF") {
+    benchQueryComplete("COVARIANT_COMPARETO"){// FB: "CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF") {
       // Weakness: In a project, where we extend a predefined class (of the JDK) that
       // inherits from Comparable and in which we define covariant comparesTo method,
       // we will not be able to identify this issue unless we have identified the whole
@@ -368,7 +368,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     analyzeAbstractClassesThatDefinesCovariantEquals()
   }
   def analyzeAbstractClassesThatDefinesCovariantEquals() {
-    benchQueryComplete("EQ_ABSTRACT_SELF") {
+    benchQueryComplete("COVARIANT_EQUALS") { // FB: EQ_ABSTRACT_SELF") {
       for {
         classFile ← classFiles
         method @ Method(_, "equals", MethodDescriptor(CSeq(parameterType), BooleanType), _) ← classFile.methods
@@ -390,7 +390,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     analyzeMethodsThatCallRunFinalizersOnExit()
   }
   def analyzeMethodsThatCallRunFinalizersOnExit() {
-    benchQueryComplete("DM_RUN_FINALIZERS_ON_EXIT") {
+    benchQueryComplete("RUN_FINALIZERS_ON_EXIT") { // FB: DM_RUN_FINALIZERS_ON_EXIT
       for {
         classFile ← classFiles
         method ← classFile.methods
@@ -422,10 +422,11 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   }
   def analyzeCloneableNoClone() {
     // FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)
-    benchQueryComplete("CN_IDIOM") {
-      // Weakness: We will not identify cloneable classes in projects, where we extend a predefined
-      // class (of the JDK) that indirectly inherits from Cloneable. ME
-      // Why? PG
+    benchQueryComplete("NO_CLONE"){//  CN_IDIOM") {
+      // Weakness: If we only analyze a project's class files, but omit the JDK, we will not identify
+      // cloneable classes in projects, where we extend a predefined
+      // class (of the JDK) that indirectly inherits from Cloneable. (If an analysis does not not include the
+      // JDK, we have only a partial view of the project's class hierarchy.)
       for {
         allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList
         cloneable ← allCloneable
@@ -447,12 +448,12 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     }
   }
 
-  test("CloneDoesNotCallSuperClone") {
+  test("SuperCloneMissing") {
     analyzeCloneDoesNotCallSuperClone()
   }
   def analyzeCloneDoesNotCallSuperClone() {
     //XXX This analysis was changed for BAT, and now adapted here; retest.
-    benchQueryComplete("CN_IDIOM_NO_SUPER_CALL") {
+    benchQueryComplete("SUPER_CLONE_MISSING"){ // FB: CN_IDIOM_NO_SUPER_CALL") {
       // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
       for {
         classFile ← classFiles
@@ -484,11 +485,11 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     }
   }
 
-  test("CloneButNotCloneable") {
+  test("NotCloenable") {
     analyzeCloneButNotCloneable()
   }
   def analyzeCloneButNotCloneable() {
-    benchQueryComplete("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE") {
+    benchQueryComplete("NOT_CLONEABLE"){ // FB: CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE") {
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
       for {
         classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
@@ -568,12 +569,12 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
 
   Optimization.pushEnableDebugLog(false)
 
-  benchMark("Method-name index creation (for e.g. FI_PUBLIC_SHOULD_BE_PROTECTED)")(Optimization.addIndex(methodNameIdx, Some(
+  benchMark("Method-name index creation (for e.g. FINALIZER_NOT_PROTECTED)"/* FB:  FI_PUBLIC_SHOULD_BE_PROTECTED*/)(Optimization.addIndex(methodNameIdx, Some(
     CollectionUtils.groupBy(for {
       classFile ← classFiles
       method ← classFile.methods
     } yield (classFile, method))(_._2.name))))
-  benchMark("Exception-handler-type index creation (for e.g. IMSE_DONT_CATCH_IMSE)")(Optimization.addIndex(excHandlerTypeIdx))
+  benchMark("Exception-handler-type index creation (for e.g. DONT_CATCH_IMSE)"/* FB: DONT_CATCH_IMSE*/)(Optimization.addIndex(excHandlerTypeIdx))
   benchMark("Instructions type-index creation")(Optimization.addIndex(typeIdx))
 
   Optimization.popEnableDebugLog()
