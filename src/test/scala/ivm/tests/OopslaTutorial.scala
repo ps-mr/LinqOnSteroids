@@ -179,11 +179,19 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
 
 object BookLiftingManual {
+  import annotation.switch
+
   //case class Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int])
   import sampleapp._
-  case class ResultExp(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) extends Arity3Op[Exp[String], Exp[String], Exp[Int], Result, ResultExp](title, authorName, coauthors) {
+  case class ResultExp(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) extends Arity3Op[Exp[String], Exp[String], Exp[Int], Result, ResultExp](title, authorName, coauthors) with ExpProduct {
     def copy(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) = ResultExp(title, authorName, coauthors)
     def interpret() = sampleapp.Result(title.interpret(), authorName.interpret(), coauthors.interpret())
+    def metaProductArity = 3
+    def metaProductElement(n: Int): Exp[Any] = (n: @switch) match {
+      case 0 => t1
+      case 1 => t2
+      case 2 => t3
+    }
   }
   def Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) = ResultExp(title, authorName, coauthors)
 }

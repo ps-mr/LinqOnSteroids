@@ -30,6 +30,18 @@ object ScalaSigHelpers {
     })
   }
 
+  def getCaseAccessors(symbol: ClassSymbol, fil: MethodSymbol => Boolean): Seq[MethodSymbol] = {
+    for {
+      s <- symbol.children
+      if s.isMethod && s.isCaseAccessor
+      ms @ MethodSymbol(_, _) = s
+      if fil(ms)
+    } yield ms
+    /*(symbol.children filter (s => s.isMethod && fil(s.asInstanceOf[MethodSymbol]) && s.isCaseAccessor)).map (s => s match {
+      case MethodSymbol(_, _) => s.asInstanceOf[MethodSymbol]
+    })*/
+  }
+
   def getClassesInPackage(packageName: String, filter: String => Boolean = (_ => true)): Seq[String] = {
     val classLoader = Thread.currentThread().getContextClassLoader()
     val path = packageName.replace('.', '/')
@@ -88,6 +100,7 @@ object ScalaSigHelpers {
       case _ =>
     }
     if (symbol.isCase && !symbol.isMethod) buffer += "case"
+    if (symbol.isCaseAccessor) buffer += "caseAccessor"
     return buffer.toList
   }
 
