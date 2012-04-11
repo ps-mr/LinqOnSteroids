@@ -498,7 +498,9 @@ object OptimizationTransforms {
 
   val betaReduction: PartialFunction[Exp[_], Exp[_]] = {
     //case a: App[s, t] => a.f(a.t) //causes a warning
-    case appNode @ App(fun /* @ FuncExpBody(body)*/, arg)
+    //To ensure termination, this must only apply if this rule changes behavior, that is, if App contains a FuncExp!
+    //Otherwise fToFunOps will recreate a new App node.
+    case appNode @ App(fun: FuncExp[_, _], arg)
       //if ((body findTotFun (_ == fun.x)).length == 1) //Inlining side conditions. Damn, we need to use unrestricted inlining as here, simplify, and then use CSE again,
       //to have a robust solution.
     =>
@@ -525,7 +527,7 @@ object OptimizationTransforms {
   //val betaDeltaReducer: Exp[_] => Exp[_] = (deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse {case e => e} //that's the shortest way of writing identity.
   //This recursive def does not work either - upon a call it tries to unfold itself.
   //def betaDeltaReducer: Exp[_] => Exp[_] = (deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse {case e => e} //that's the shortest way of writing identity.
-  //This one usually terminates, but not always :-(.
+  //This one always terminates, as long as the involved PartialFunctions are only defined when they do transform their input.
   def betaDeltaReducer(exp: Exp[_]): Exp[_] = ((deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse emptyTransform)(exp) //that's the shortest way of writing identity.
   /*val betaReduction: Exp[_] => Exp[_] = {
     case a: App[t, u] => a.f(a.t)
