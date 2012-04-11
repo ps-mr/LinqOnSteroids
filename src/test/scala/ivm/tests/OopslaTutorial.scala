@@ -82,7 +82,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   val idxByPublisher =
     books.asSmart groupBy (_.publisher)
 
-  val doIndex = false //Disable this to test other optimizations, like unnesting
+  val doIndex = true //Disable this to test other optimizations, like unnesting
   if (doIndex)
     Optimization.addIndex(idxByPublisher)
 
@@ -108,11 +108,19 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
       book.authors.size - 1)
 
   test("same results") {
-    println(recordsQuery)
+    showExp(recordsQuery, "recordsQuery")
     recordsQuery.interpret() should be (records)
     val recordsQueryOpt = Optimization.optimize(recordsQuery)
-    println(recordsQueryOpt)
+    showExp(recordsQueryOpt, "recordsQueryOpt")
     recordsQueryOpt.interpret() should be (records)
+    val indexedQuery =
+      (for {
+        book <- idxByPublisher("Pearson Education")
+        author <- book.authors
+      } yield Result(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)).optimize
+    showExp(indexedQuery, "indexedQuery")
+    if (doIndex)
+      recordsQueryOpt should be (indexedQuery)
   }
 
   def titleFilterQuery(records: Exp[Set[Result]], keyword: String): Exp[Set[(String, String)]] = for {
@@ -138,7 +146,8 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
     showExp(processedRecordsQueryOpt, "processedRecordsQueryOpt")
     processedRecordsQueryOpt.interpret() should be (processedRecords)
     //showExp(processedQueryExpectedOptimRes, "processedQueryExpectedOptimRes")
-    processedRecordsQueryOpt should be (processedQueryExpectedOptimRes)
+    if (!doIndex)
+      processedRecordsQueryOpt should be (processedQueryExpectedOptimRes)
   }
 
   //keyword _must_ be Exp[String].
@@ -159,7 +168,8 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
     processedRecordsQueryOptRes.interpret() should be (processedRecords)
     showExp(processedRecordsQueryOptRes, "processedRecordsQueryOptRes")
     processedRecordsQueryOptRes.interpret() should be (processedRecords)
-    processedRecordsQueryOptRes should be (processedQueryExpectedOptimRes)
+    if (!doIndex)
+      processedRecordsQueryOptRes should be (processedQueryExpectedOptimRes)
   }
 
   //A query like processedRecordsQuery cannot really be optimized without unnesting! After that we need inlining,
