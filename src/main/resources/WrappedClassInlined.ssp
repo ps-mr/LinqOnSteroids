@@ -7,14 +7,11 @@ val classFile: String %>
   class ${className}Ops(t: Exp[${className}]) {
 <% val scalaSig = getScalaSig(classFile)
    val classSymbol = scalaSig.topLevelClasses.head
-   %>    //Modifiers: <%= getModifiers(classSymbol) %>
-<%
    val fil: MethodSymbol => Boolean = s => !(s.name == "<init>" || s.isOverride || s.isPrivate || s.isProtected || s.isSynthetic || s.name.contains("$"))
    val symbols = getMethodSymbols(classSymbol, fil)
    var i = 0
    val caseClassArity = getCaseAccessors(classSymbol, fil).length
    symbols foreach ( n => { %>
-    //Modifiers: <%= getModifiers(n) %>
     def ${n.name}${unescape(getTypeParameters(n))}${getParametersAsString(n)}: ${getResultType(n)} = new ${className}_${n.name}${i}(t${getParameterNamesAsString(n, ",", "")})
 <% i = i+1}) %>
   }
