@@ -148,7 +148,7 @@ case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends A
 
 object FuncExp {
   //Constructs FuncExpInt from HOAS. This also applies normalization-by-evaluation in the process.
-  def toFOAS[S, T](funBody: Exp[S] => Exp[T]) = {
+  def toFOAS[S, T](funBody: Exp[S] => Exp[T]): FuncExpInt[S, T] = {
     val v = FuncExp.gensym[S]()
     new FuncExpInt(funBody(v), v)
   }
@@ -156,6 +156,10 @@ object FuncExp {
   //Force switch to FuncExpInt everywhere with a single line of code :-)
   def apply[S, T](f: Exp[S] => Exp[T]) = toFOAS(f)
   def unapply(f: FuncExp[_, _]) = Some(f.f)
+
+  def rename[S, T](f: FuncExp[S, T]): FuncExpInt[S, T] = {
+    toFOAS(f.f)
+  }
 
   private val varCounter = new AtomicInteger(0)
   def gensymId(): Int = varCounter.incrementAndGet()

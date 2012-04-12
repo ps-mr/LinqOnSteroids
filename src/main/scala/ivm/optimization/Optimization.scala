@@ -508,7 +508,13 @@ object OptimizationTransforms {
       //if ((body findTotFun (_ == fun.x)).length == 1) //Inlining side conditions. Damn, we need to use unrestricted inlining as here, simplify, and then use CSE again,
       //to have a robust solution.
     =>
-      fun(arg)
+      //See TAPL page 75 - we need this transformation whenever we might duplicate terms. XXX check if other
+      // transformations duplicate terms. Map fusion uses letExp, to allow for a smarter inliner - I hope I was
+      // consistent in doing this.
+      fun(arg) transform {
+        case fun: FuncExp[_, _] => FuncExp.rename(fun)
+        case e => e
+      }
   }
 
    //This is the shortest way of writing identity.
