@@ -229,6 +229,10 @@ object OptimizationTransforms {
   // We make sure that right children are never Plus expressions and that constants are moved to the left (using rules R2 and R7).
   // All `Const` nodes are then constant-folded together (using rules R1 and R9).
   //
+  // For instance, both (1 + x) + 2 and 1 + (x + 2) are rewritten to (1 + 2) + x
+  // and then to 3 + x, conceptually (in practice,
+  // such steps are fused together).
+  //
   // Note: keep in mind that the transformation is applied bottom-up; moreover, whenever a new expression is built, new sums
   // are created by recursive invocation of buildSum, except in the default case.
   // Note 2: in their picture, "t_x" represents an arbitrary node, even in rule R7.

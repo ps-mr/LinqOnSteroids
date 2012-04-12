@@ -113,6 +113,11 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
     val recordsQueryOpt = Optimization.optimize(recordsQuery)
     showExp(recordsQueryOpt, "recordsQueryOpt")
     recordsQueryOpt.interpret() should be (records)
+    //The call to optimize is needed to get the same query as recordsQueryOpt for two reasons:
+    //- we need to replace the index with the preevaluated one (not with an equal collection, but the same one)
+    //- optimize also normalizes some details of the query.
+    //  For instance reassociation transforms book.authors.size - 1 to (-1) + book.authors.size.
+    //  This normalization allows more effective constant folding - see Optimization.buildSum and its comment.
     val indexedQuery =
       (for {
         book <- idxByPublisher("Pearson Education")
@@ -157,9 +162,9 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   } yield (record.title, record.authorName)
 
   //Move this in the main text framework
-  def function[S, T](fun: Exp[S] => Exp[T]): Exp[S => T] = asExp(fun)
+  //def function[S, T](fun: Exp[S] => Exp[T]): Exp[S => T] = asExp(fun)
   //Optimize the query before specifying the keyword to lookup.
-  val processedRecordsQueryOptFun = function((kw: Exp[String]) => titleFilterQuery2(recordsQuery, kw)).optimize
+  val processedRecordsQueryOptFun = FuncExp((kw: Exp[String]) => titleFilterQuery2(recordsQuery, kw)).optimize
   Util.assertType[Exp[String => Set[(String, String)]]](processedRecordsQueryOptFun)
   //In the paper this is lookupFunction.
   val processedRecordsQueryOptRes = processedRecordsQueryOptFun("Principles")
