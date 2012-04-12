@@ -314,13 +314,12 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   }
   def analyzeCatchIllegalMonitorStateException() {
     // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
-    val IllegalMonitorStateExceptionType = ObjectType("java/lang/IllegalMonitorStateException")
     benchQueryComplete("DONT_CATCH_IMSE") { // FB: IMSE_DONT_CATCH_IMSE
       for {
         classFile ← classFiles if classFile.isClassDeclaration
         method ← classFile.methods
         body ← method.body.toList
-        exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType == IllegalMonitorStateExceptionType
+        exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType == ObjectType("java/lang/IllegalMonitorStateException")
       } yield (classFile, method)
     } {
       import BATLifting._
@@ -328,7 +327,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         classFile ← classFiles.asSmart if classFile.isClassDeclaration
         method ← classFile.methods
         body ← method.body
-        exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType ==# IllegalMonitorStateExceptionType
+        exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType ==# ObjectType("java/lang/IllegalMonitorStateException")
       } yield (classFile, method)
     }
   }
