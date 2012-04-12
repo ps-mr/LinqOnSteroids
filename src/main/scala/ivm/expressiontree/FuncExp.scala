@@ -77,7 +77,7 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
 }
 
 //The higher-order representation is constructed and passed to FuncExp to share code.
-class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, T](FuncExp.closeOver(foasBody, v)) {
+class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, T](FuncExp.toHOAS(foasBody, v)) {
   override def arrowString = "=>"
 
   //The following two overrides must be either both present or both absent. Without this override, the body would be
@@ -164,12 +164,12 @@ object FuncExp {
 
   val varzero = gensym()
 
-  def closeOver[S, T](e: Exp[T], v: TypedVar[S]): Exp[S] => Exp[T] = x => e.substSubTerm(v, x)
-  //def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = FuncExp(closeOver(e, v))
+  def toHOAS[S, T](openTerm: Exp[T], v: TypedVar[S]): Exp[S] => Exp[T] = x => openTerm.substSubTerm(v, x)
+  //def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = FuncExp(toHOAS(e, v))
   //def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = new FuncExpInt(e, v)
   def makefun[S, T](e: Exp[T], v: TypedVar[/*S*/_]): FuncExp[S, T] = new FuncExpInt(e, v)
 
-  def makePartialFun[S, T](e: Exp[Option[T]], v: TypedVar[S]): PartialFuncExp[S, T] = PartialFuncExp(closeOver(e, v))
+  def makePartialFun[S, T](e: Exp[Option[T]], v: TypedVar[S]): PartialFuncExp[S, T] = PartialFuncExp(toHOAS(e, v))
   def makepairfun[S1, S2, T](e: Exp[T], v1: TypedVar[/*S1*/_], v2: TypedVar[/*S2*/_]): FuncExp[(S1, S2), T] = {
     //This implementation is correct but slow!
     //FuncExp(p => e.substSubTerm(v1, Tuple2Proj1(p)).substSubTerm(v2, Tuple2Proj2(p)))
