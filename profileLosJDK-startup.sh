@@ -13,10 +13,10 @@ gitV=$(git describe --always --dirty)
 echo "Git version: $gitV" > $out
 > $outCSV
 
-sbt test:compile
+sbt compile stage
 for ((i=0; i < $nIters; i++)); do
   {
-    $(which time) -f "$gitV;%e;%U;%S;%P" sbt "test:run /usr/lib/jvm/jre-1.6.0-openjdk.x86_64/lib/rt.jar"
+    $(which time) -f "$gitV;%e;%U;%S;%P" ./target/start /usr/lib/jvm/jre-1.6.0-openjdk.x86_64/lib/rt.jar
   } >>$out 2>&1
   tail -1 $out >> $outCSV
 done
