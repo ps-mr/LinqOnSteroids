@@ -14,6 +14,7 @@ echo "Git version: $gitV" > $out
 > $outCSV
 
 sbt compile stage
+. javaSettings.inc
 for ((i=0; i < $nIters; i++)); do
   {
     $(which time) -f "$gitV;%e;%U;%S;%P" ./target/start /usr/lib/jvm/jre-1.6.0-openjdk.x86_64/lib/rt.jar
