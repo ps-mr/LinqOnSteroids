@@ -9,7 +9,7 @@ out=profileLogJDK-startup-`timestamp`
 outCSV=startup-JDK.csv
 nIters=40
 
-gitV=$(git describe --always --dirty)
+gitV=$(git describe --always --dirty --abbrev=40)
 echo "Git version: $gitV" > $out
 > $outCSV
 
