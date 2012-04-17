@@ -406,8 +406,8 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         classFile ← classFiles.asSmart
         method ← classFile.methods
         body ← method.body
-        instruction ← body.instructions.typeCase(when[INVOKESTATIC](_.name ==# "runFinalizersOnExit", identity))
-        if instruction.declaringClass ==# ObjectType("java/lang/System") || instruction.declaringClass ==# ObjectType("java/lang/Runtime")
+        instruction ← body.instructions.typeCase(when[INVOKESTATIC](
+          instruction => instruction.name ==# "runFinalizersOnExit" && (instruction.declaringClass ==# ObjectType("java/lang/System") || instruction.declaringClass ==# ObjectType("java/lang/Runtime")), identity))
         //the method descriptor is not checked in FindBugs - there's no need
         // && instruction.methodDescriptor == MethodDescriptor(Seq(BooleanType), VoidType)
       } yield (classFile, method, instruction)
