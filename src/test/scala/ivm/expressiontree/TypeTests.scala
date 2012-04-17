@@ -6,6 +6,8 @@ import org.scalatest.matchers.{HavePropertyMatchResult, HavePropertyMatcher, Sho
 import java.io.{Closeable, File}
 import java.nio.channels.FileChannel
 import performancetests.Benchmarking
+import collection.TraversableLike
+import collection.generic.CanBuildFrom
 
 trait TypeMatchers {
   def typ[ExpectedT: ClassManifest] = new HavePropertyMatcher[Any, OptManifest[_]] {
@@ -86,6 +88,14 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     }
     val newself = e.genericConstructor(transformedChilds)
     transformer(newself, env).asInstanceOf[Exp[T]]
+  }
+  //Calling this app hides the existing implicit conversion.
+  def app2[A, B](f: Exp[A => B]): Exp[A] => Exp[B] = arg => App(f, arg)
+
+  case class MapOp2[T, Repr, U, That](base: Exp[TraversableLike[T, Repr]], f: FuncExp[T, U])
+                                     (implicit /*protected[this] */val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[TraversableLike[T, Repr]], FuncExp[T, U], That, MapOp2[T, Repr, U, That]](base, f) {
+    override def interpret() = base.interpret() map f.interpret()
+    override def copy(base: Exp[TraversableLike[T, Repr]], f: FuncExp[T, U]) = MapOp2[T, Repr, U, That](base, f)
   }
 
   import collection.TraversableLike
