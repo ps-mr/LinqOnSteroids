@@ -176,6 +176,8 @@ object OptimizationTransforms {
       buildMergedMaps(coll, f, g)
       //Since inner nodes were already optimized, coll will not be a MapOp node, hence we needn't call mergeMaps on the
       //result.
+      //coll map (x => g(f(x)))
+      //coll.map(FuncExp(f.andThen(g))) //Demonstrate norm-by-eval.
     case e => e
   }
 
