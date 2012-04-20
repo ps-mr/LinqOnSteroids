@@ -11,13 +11,13 @@ val classFile: String %>
    val symbols = getMethodSymbols(classSymbol, fil)
    var i = 0
    val caseClassArity = getCaseAccessors(classSymbol, fil).length
-   symbols foreach ( n => { %>
+   symbols foreach { n => %>
     def ${n.name}${unescape(getTypeParameters(n))}${getParametersAsString(n)}: ${getResultType(n)} = new ${className}_${n.name}${i}(t${getParameterNamesAsString(n, ",", "")})
-<% i = i+1}) %>
+<% i = i+1 } %>
   }
 <% i = 0
    var caseClassSelectorIdx = 0
-   symbols foreach ( n => {
+   symbols foreach { n =>
      val wName = className + "_" + n.name + i
      val paramsDef = getParametersAsString(n, true, ",", "", ",", implicits = false)
      val paramsToPass = getParameterNamesAsString(n, ",", "")
@@ -37,4 +37,4 @@ val classFile: String %>
     def body = (<%=caseClassArity%>, <%=caseClassSelectorIdx%>, t)
 <% } %>
   }
-<% i = i+1}) %>
+<% i = i+1 } %>
