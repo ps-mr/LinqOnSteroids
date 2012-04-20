@@ -275,6 +275,7 @@ object ScalaSigHelpers {
     }
   }
 
+  //Implements the Lift meta-function from the paper, I'd guess. PG.
   def getWrappedType(t: Type, m: Map[String,String] = Map.empty)(implicit flags: sigp.TypeFlags): String = {
     t match {
       case ThisType(symbol) => WRAP_BEGIN + sigp.processName(symbol.path) + ".type" + WRAP_END
