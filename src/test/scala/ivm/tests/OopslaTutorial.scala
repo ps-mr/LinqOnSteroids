@@ -154,18 +154,20 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
       processedRecordsQueryOpt should be (processedQueryExpectedOptimRes)
   }
 
-  //keyword _must_ be Exp[String].
+  //XXX do we actually need to change the type of keyword? Can't we just use Exp[String] like in the paper?
+  //Optimize the query before specifying the keyword to lookup.
+  //We first modify the type of titleFilterQuery, in particular the type of its `keyword` parameter.
+  //Before, `keyword` had type String instead of Exp[String], because the code worked
+  //either way.
+  //For this example, instead, keyword must have type Exp[String], like in the paper.
   def titleFilterQuery2(records: Exp[Set[Result]], keyword: Exp[String]): Exp[Set[(String, String)]] = for {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
 
-  //Move this in the main text framework
-  //def function[S, T](fun: Exp[S] => Exp[T]): Exp[S => T] = asExp(fun)
-  //Optimize the query before specifying the keyword to lookup.
   val processedRecordsQueryOptFun = Fun((kw: Exp[String]) => titleFilterQuery2(recordsQuery, kw)).optimize
   Util.assertType[Exp[String => Set[(String, String)]]](processedRecordsQueryOptFun)
-  //In the paper this is lookupFunction.
+  //XXX In the paper this is lookupFunction.
   val processedRecordsQueryOptRes = processedRecordsQueryOptFun("Principles")
 
   test("processedRecords should have the same results as the lifted function version") {
