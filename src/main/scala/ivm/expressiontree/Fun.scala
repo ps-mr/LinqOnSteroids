@@ -108,7 +108,7 @@ object FunInterp {
   private[expressiontree] val env = new ScalaThreadLocal[Map[Int, Any]](new HashMap[Int, Any]())
 }
 
-class FuncExpInt2[S1, S2, T](val foasBody: Exp[T], v1: TypedVar[S1], v2: TypedVar[S2])
+class FunInterp2[S1, S2, T](val foasBody: Exp[T], v1: TypedVar[S1], v2: TypedVar[S2])
   extends Fun[(S1, S2), T](p => foasBody.substSubTerm(v1, Tuple2Proj1(p)).substSubTerm(v2, Tuple2Proj2(p)))
 {
   override def arrowString = "=i=>"
@@ -182,6 +182,6 @@ object Fun {
       App(
         Lifting.fmap(new FunInterp[Any, (Any => T)](new FunInterp(e, v1), v2))('tupledCurried, x => Function.tupled(Function.uncurried(x))),
         arg))*/
-    new FuncExpInt2(e, v1, v2)
+    new FunInterp2(e, v1, v2)
   }
 }
