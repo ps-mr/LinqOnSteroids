@@ -78,7 +78,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
   def testAntiJoin() {
     val r = for (k <- l if j forall (k2 => k !=# k2)) yield k
     val rAntiJoin = Optimization.cartProdToAntiJoin(r)
-    //This was problematic because it transforms the newly-built Fun nodes into FuncExpInt ones, so we test that it works.
+    //This was problematic because it transforms the newly-built Fun nodes into FunInterp ones, so we test that it works.
     val rOpt = optimize(rAntiJoin)
     println(r)
     println(rAntiJoin)

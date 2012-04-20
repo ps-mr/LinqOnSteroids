@@ -70,7 +70,7 @@ trait FoldOperators {
   }
 
   //Here I accept a primitive function because I believe the overhead for expression trees would be too significant, especially with all the wrapping and unwrapping done by convertBinFunInternal.
-  //However, normalization-by-evaluation and a two-argument version of FuncExpInt could come to the rescue!
+  //However, normalization-by-evaluation and a two-argument version of FunInterp could come to the rescue!
   case class TreeFold[T](coll: Exp[Traversable[T]], f: (T, T) => T, z: T) extends Arity1OpExp[Traversable[T], T, TreeFold[T]](coll) with TravMsgSeqSubscriber[T, Traversable[T]] with MsgSeqPublisher[T, Exp[T]] { //Arity2OpExp[Traversable[T], (T, T) => T, T](coll, f) {
     private def combineIfAvailable(arr: Buffer[T], i: Int) =
       if (i + 1 < arr.size)

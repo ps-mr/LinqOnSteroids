@@ -77,7 +77,7 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
 }
 
 //The higher-order representation is constructed and passed to Fun to share code.
-class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends Fun[S, T](Fun.toHOAS(foasBody, v)) {
+class FunInterp[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends Fun[S, T](Fun.toHOAS(foasBody, v)) {
   override def arrowString = "=>"
 
   //The following two overrides must be either both present or both absent. Without this override, the body would be
@@ -87,14 +87,14 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends Fun[S, T](F
 
   override def interpret(): S => T = {
     //Close over the current environment, and ensure it is stored in the returned closure.
-    val env = FuncExpInt.env.get()
-    z => FuncExpInt.env.withValue(env + (v.id -> z))(foasBody.interpret())
+    val env = FunInterp.env.get()
+    z => FunInterp.env.withValue(env + (v.id -> z))(foasBody.interpret())
     /*
     // This is broken when more functions are nested. Bad things can happen if res is a Scala View which will
     // still execute an interpreted function, which references an environment. We are not constructing closures, but
     // using dynamic scoping!!
     z => {
-      import FuncExpInt._
+      import FunInterp._
       env.get()(v.id) = z
       val res = foasBody.interpret()
       env.get() -= v.id
@@ -104,7 +104,7 @@ class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends Fun[S, T](F
   }
 }
 
-object FuncExpInt {
+object FunInterp {
   private[expressiontree] val env = new ScalaThreadLocal[Map[Int, Any]](new HashMap[Int, Any]())
 }
 
@@ -114,13 +114,13 @@ class FuncExpInt2[S1, S2, T](val foasBody: Exp[T], v1: TypedVar[S1], v2: TypedVa
   override def arrowString = "=i=>"
   override def interpret() = {
     //Close over the current environment, and ensure it is stored in the returned closure.
-    val env = FuncExpInt.env.get()
+    val env = FunInterp.env.get()
     //Apparently, on case functions the type annotation must be on the immediately enclosing expression - putting it as
     //the return value of interpret() does not work. Workaround this bug this way.
     val interpFun: ((S1, S2)) => T =
     {
       case (z1, z2) =>
-        FuncExpInt.env.withValue(env + (v1.id -> z1) + (v2.id -> z2))(foasBody.interpret())
+        FunInterp.env.withValue(env + (v1.id -> z1) + (v2.id -> z2))(foasBody.interpret())
     }
     interpFun
   }
@@ -147,17 +147,17 @@ case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends A
 }
 
 object Fun {
-  //Constructs FuncExpInt from HOAS. This also applies normalization-by-evaluation in the process.
-  def toFOAS[S, T](funBody: Exp[S] => Exp[T]): FuncExpInt[S, T] = {
+  //Constructs FunInterp from HOAS. This also applies normalization-by-evaluation in the process.
+  def toFOAS[S, T](funBody: Exp[S] => Exp[T]): FunInterp[S, T] = {
     val v = Fun.gensym[S]()
-    new FuncExpInt(funBody(v), v)
+    new FunInterp(funBody(v), v)
   }
 
-  //Force switch to FuncExpInt everywhere with a single line of code :-)
+  //Force switch to FunInterp everywhere with a single line of code :-)
   def apply[S, T](f: Exp[S] => Exp[T]) = toFOAS(f)
   def unapply(f: Fun[_, _]) = Some(f.f)
 
-  def rename[S, T](f: Fun[S, T]): FuncExpInt[S, T] = {
+  def rename[S, T](f: Fun[S, T]): FunInterp[S, T] = {
     toFOAS(f.f)
   }
 
@@ -170,8 +170,8 @@ object Fun {
 
   def toHOAS[S, T](openTerm: Exp[T], v: TypedVar[S]): Exp[S] => Exp[T] = x => openTerm.substSubTerm(v, x)
   //def makefun[S, T](e: Exp[T], v: Var): Fun[S, T] = Fun(toHOAS(e, v))
-  //def makefun[S, T](e: Exp[T], v: Var): Fun[S, T] = new FuncExpInt(e, v)
-  def makefun[S, T](e: Exp[T], v: TypedVar[/*S*/_]): Fun[S, T] = new FuncExpInt(e, v)
+  //def makefun[S, T](e: Exp[T], v: Var): Fun[S, T] = new FunInterp(e, v)
+  def makefun[S, T](e: Exp[T], v: TypedVar[/*S*/_]): Fun[S, T] = new FunInterp(e, v)
 
   def makePartialFun[S, T](e: Exp[Option[T]], v: TypedVar[S]): PartialFuncExp[S, T] = PartialFuncExp(toHOAS(e, v))
   def makepairfun[S1, S2, T](e: Exp[T], v1: TypedVar[/*S1*/_], v2: TypedVar[/*S2*/_]): Fun[(S1, S2), T] = {
@@ -180,7 +180,7 @@ object Fun {
     //This implementation is correct but limits further optimizations since it uses the opaque fmap
     /*Fun(arg =>
       App(
-        Lifting.fmap(new FuncExpInt[Any, (Any => T)](new FuncExpInt(e, v1), v2))('tupledCurried, x => Function.tupled(Function.uncurried(x))),
+        Lifting.fmap(new FunInterp[Any, (Any => T)](new FunInterp(e, v1), v2))('tupledCurried, x => Function.tupled(Function.uncurried(x))),
         arg))*/
     new FuncExpInt2(e, v1, v2)
   }
