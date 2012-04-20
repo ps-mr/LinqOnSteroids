@@ -1,11 +1,11 @@
-package sampleapp
+package dbschema
 
 import ivm.expressiontree.{Lifting, ExpSelection, Arity1Op, Exp}
 import Lifting._
 
 package object squopt {<%
   for(c <- List("Author", "Book", "Result", "MethodRecord")) {
-    render("WrappedClassInlined.ssp", Map("classFile" -> ("sampleapp." + c)))
+    render("WrappedClassInlined.ssp", Map("classFile" -> ("dbschema." + c)))
     //Won't work, since String is a purely Java class, hence has no Scala reflection info. We'd need to duplicate what we
     //did for Java classes.
     //render("WrappedClassInlined.ssp", Map("classFile" -> "java.lang.String"))
