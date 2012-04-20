@@ -154,7 +154,7 @@ object Lifting
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
   {
     val tmp: Exp[Map[K, Repr]] = t.groupBy(f)
-    //tmp.map(v => (v._1, MapOp(v._2, Fun(g)))) //This uses MapOp directly, but map could return other nodes
+    //tmp.map(v => (v._1, MapNode(v._2, Fun(g)))) //This uses MapNode directly, but map could return other nodes
     tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(cbf2)))
   }
 

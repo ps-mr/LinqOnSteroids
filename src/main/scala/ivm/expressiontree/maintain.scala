@@ -29,7 +29,7 @@ import collection.TraversableLike
 
 // Let us first implement incremental view maintenance for sets.
 
-//Trait implementing incremental view maintenance for MapOp operations
+//Trait implementing incremental view maintenance for MapNode operations
 trait MapOpMaintainer[T, U, Repr] extends EvtTransformer[T, U, Repr] {
   def fInt: T => U
   override def transformedMessages(pub: Repr, evt: TravMessage[T]) = {
@@ -174,13 +174,13 @@ trait OneRootTraversableMaintainer[SrcMsg, Src <: Traversable[SrcMsg], +Res] ext
 //Don't make Repr so specific as IncCollectionReifier. Making Repr any specific
 //is entirely optional - it just enables the listener to get a more specific
 //type for the pub param to notify(), if he cares.
-class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
+class MapNodeMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr], f: Fun[T, U])
-                         (implicit override val c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
+                         (implicit override val c: CanBuildFrom[Repr, U, That]) extends MapNode[T, Repr, U, That](base, f)
     with MapOpMaintainer[T, U, Exp[Repr]] with OneRootTraversableMaintainer[T, Repr, That]
-    with MsgSeqPublisher[That, MapOpMaintainerExp[T, Repr, U, That]] {
+    with MsgSeqPublisher[That, MapNodeMaintainerExp[T, Repr, U, That]] {
   override def fInt = f.interpret()
-  override def copy(base: Exp[Repr], f: Fun[T, U]) = new MapOpMaintainerExp[T, Repr, U, That](base, f)
+  override def copy(base: Exp[Repr], f: Fun[T, U]) = new MapNodeMaintainerExp[T, Repr, U, That](base, f)
 }
 
 class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],

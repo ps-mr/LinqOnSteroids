@@ -15,7 +15,7 @@ trait TraversableOps {
   def newMapOp[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr],
                                                                                                    f: Fun[T, U])
                                                                                                   (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-    MapOp(base, f)
+    MapNode(base, f)
   def newFlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]](base: Exp[Repr], f: Fun[T, Traversable[U]])
                                         (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
     FlatMap(base, f)

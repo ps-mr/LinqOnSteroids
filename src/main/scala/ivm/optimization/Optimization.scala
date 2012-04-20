@@ -62,7 +62,7 @@ object OptimizationTransforms {
   //XXX: rewrite to expect only flatMap nodes, i.e. after mapToFlatMap, and see what happens.
   val cartProdToJoin: Exp[_] => Exp[_] = {
     case e @ FlatMap(fmColl,
-      fmFun @ FuncExpBody(MapOp(Filter(filterColl, filterFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
+      fmFun @ FuncExpBody(MapNode(Filter(filterColl, filterFun @ FuncExpBody(Eq(lhs, rhs))), moFun)))
       if !filterColl.isOrContains(fmFun.x)
     =>
       if (!(lhs.isOrContains(filterFun.x)) && !(rhs.isOrContains(fmFun.x)))
@@ -99,7 +99,7 @@ object OptimizationTransforms {
     case e @ Filter(filteredColl,
       filterFun @ FuncExpBody(Forall(forallColl, forallFun @ FuncExpBody(Not(Eq(lhs, rhs))))))
     //case FlatMap(fmColl,
-      //fmFun @ FuncExpBody(MapOp(Filter(filterColl, filterFun @ FuncExpBody(Not(Eq(lhs, rhs)))), moFun)))
+      //fmFun @ FuncExpBody(MapNode(Filter(filterColl, filterFun @ FuncExpBody(Not(Eq(lhs, rhs)))), moFun)))
       if !forallColl.isOrContains(filterFun.x)
     =>
       if (!(rhs.isOrContains(filterFun.x)) && !(lhs.isOrContains(forallFun.x)))
@@ -139,7 +139,7 @@ object OptimizationTransforms {
     }
 
   val removeIdentityMaps: Exp[_] => Exp[_] = {
-    case MapOp(col, FuncExpIdentity()) =>
+    case MapNode(col, FuncExpIdentity()) =>
       col
     case e => e
   }
@@ -148,10 +148,10 @@ object OptimizationTransforms {
   private def removeIdentityMaps[T](e: Exp[T]): Exp[T] =
     e match {
       //Alternative 1 - a cast is required:
-      case MapOp(col: Exp[_ /*T*/], FuncExpIdentity()) =>
+      case MapNode(col: Exp[_ /*T*/], FuncExpIdentity()) =>
         col.asInstanceOf[Exp[T]]
       //Alternative 2 - causes a warning, but works and is more elegant:
-      case MapOp(col: Exp[T], FuncExpIdentity()) =>
+      case MapNode(col: Exp[T], FuncExpIdentity()) =>
         col
       //Possibility 2 is what is used in the Scala-virtualized tutorial.
       case e => e
@@ -170,11 +170,11 @@ object OptimizationTransforms {
   //Now we'd like a non-work-duplicating inliner. We'd need a linear type system as in GHC's inliner.
 
   val mergeMaps: Exp[_] => Exp[_] = {
-    case MapOp(MapOp(coll, f), g) =>
+    case MapNode(MapNode(coll, f), g) =>
       //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
       //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
       buildMergedMaps(coll, f, g)
-      //Since inner nodes were already optimized, coll will not be a MapOp node, hence we needn't call mergeMaps on the
+      //Since inner nodes were already optimized, coll will not be a MapNode node, hence we needn't call mergeMaps on the
       //result.
       //coll map (x => g(f(x)))
       //coll.map(Fun(f.andThen(g))) //Demonstrate norm-by-eval.
@@ -182,11 +182,11 @@ object OptimizationTransforms {
   }
 
   val mergeFlatMaps: Exp[_] => Exp[_] = {
-    case FlatMap(MapOp(coll, f), g) =>
+    case FlatMap(MapNode(coll, f), g) =>
       //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
       //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
       mergeFlatMaps(coll flatMap (x => letExp(f(x))(g)))
-    case MapOp(FlatMap(coll, f), g) =>
+    case MapNode(FlatMap(coll, f), g) =>
       //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
       //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
       mergeFlatMaps(coll flatMap (x => letExp(f(x))(_ map g)))
@@ -199,7 +199,7 @@ object OptimizationTransforms {
   }
   val mergeMaps2: Transformer = new Transformer {
     def apply[T](e: Exp[T]) = e match {
-      case MapOp(MapOp(coll, f1), f2) =>
+      case MapNode(MapNode(coll, f1), f2) =>
         mergeMaps2(buildMergedMaps(coll, f1, f2)).
           //Note the need for this cast.
           asInstanceOf[Exp[T]]
@@ -209,14 +209,14 @@ object OptimizationTransforms {
 
   val mergeMaps3: Transformer = new Transformer {
     def apply[T](e: Exp[T]) = e match {
-      case m: MapOp[t, repr, u, that] =>
+      case m: MapNode[t, repr, u, that] =>
         Util.assertType[Exp[repr]](m.base)
         (m.base map m.f)(m.c)
         //Outdated comments:
         //m.base.map[u, that](m.f)(m.c) //does not work for the same reason - m.base is considered as having type Exp[Traversable[t]]. That's however because of my implicit conversion, which is
         //rather limited.
-        //MapOp[t, repr, u, that](m.base, m.f)(m.c) //works
-        //MapOp(m.base, m.f)(m.c) //works
+        //MapNode[t, repr, u, that](m.base, m.f)(m.c) //works
+        //MapNode(m.base, m.f)(m.c) //works
       case _ => e
     }
   }
@@ -426,7 +426,7 @@ object OptimizationTransforms {
     //@tailrec
     def isSupported(insideConv: Exp[_], LetNode: Exp[_]): Boolean =
       insideConv match {
-        case MapOp(subColl, f) => isSupported(subColl, LetNode) && !f.body.isOrContains(X)
+        case MapNode(subColl, f) => isSupported(subColl, LetNode) && !f.body.isOrContains(X)
         case Filter(subColl, f) => isSupported(stripViewUntyped(subColl), LetNode) && !f.body.isOrContains(X)
         case FlatMap(subColl, f) => isSupported(subColl, LetNode) && !f.body.isOrContains(X)
         case LetNode => true
@@ -476,7 +476,7 @@ object OptimizationTransforms {
     c flatMap Fun.makefun(Seq(f.body), f.x)
 
   val mapToFlatMap: Exp[_] => Exp[_] = {
-    case MapOp(c, f) =>
+    case MapNode(c, f) =>
       buildMapToFlatMap(c, f)
     /*case Call2(OptionMapId, _, c: Exp[Option[t]], f: Fun[_, u]) =>
       c flatMap Fun.makefun(Some(f.body), f.x)*/
@@ -607,14 +607,14 @@ object OptimizationTransforms {
    * merge the map and the filter, fuse their functions, and extract the filter again with transformedFilterToFilter.
    */
   val mergeFilterWithMap: Exp[_] => Exp[_] = {
-    case Filter(MapOp(coll, mapFun), pred) => //This case should have higher priority, it seems more useful.
+    case Filter(MapNode(coll, mapFun), pred) => //This case should have higher priority, it seems more useful.
       coll flatMap Fun.makefun(letExp(mapFun.body)(Fun.makefun(if_# (pred.body) (Seq(pred.x)) else_# (Seq.empty), pred.x)), mapFun.x)
       //We preserve sharing here with letExp; currently, subsequent stages will do indiscriminate inlining and replicate the map, but
       //the inliner will later be improved.
       //This case, together with inlinng and transformedFilterToFilter, is equivalent to what Tillmann suggested and
       //then dismissed.
       /*
-    case MapOp(Filter(coll, pred @ FuncExpBody(test)), mapFun) =>
+    case MapNode(Filter(coll, pred @ FuncExpBody(test)), mapFun) =>
       //This transformation cancels with transformedFilterToFilter + flatMapToMap. Not sure if it's ever useful.
       //It could be useful as a separate stage, if this turns out to be a faster implementation.
       //After this optimization, we need to float the if_# to around the body of mapFun
@@ -761,7 +761,7 @@ object Optimization {
         hoistFilter( //Do this before merging filters!
           mapToFlatMap(exp))))
 
-  //Call this whenever new MapOp nodes might be created, to simplify them if needed.
+  //Call this whenever new MapNode nodes might be created, to simplify them if needed.
   //Requires map+flatMap normal form
   def handleNewMaps[T](exp: Exp[T]): Exp[T] =
     removeIdentityMaps( //Do this again, in case maps became identity maps after reassociation

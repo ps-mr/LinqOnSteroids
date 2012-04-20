@@ -18,11 +18,11 @@ case class FlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
   override def copy(base: Exp[Repr], f: Fun[T, Traversable[U]]) = FlatMap[T, Repr, U, That](base, f)
 }
 
-case class MapOp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
+case class MapNode[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr with Traversable[T]], f: Fun[T, U])
-                          (implicit /*protected[this] */val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], Fun[T, U], That, MapOp[T, Repr, U, That]](base, f) {
+                          (implicit /*protected[this] */val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], Fun[T, U], That, MapNode[T, Repr, U, That]](base, f) {
   override def interpret() = base.interpret() map f.interpret()
-  override def copy(base: Exp[Repr], f: Fun[T, U]) = MapOp[T, Repr, U, That](base, f)
+  override def copy(base: Exp[Repr], f: Fun[T, U]) = MapNode[T, Repr, U, That](base, f)
 }
 
 case class Filter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr with Traversable[T]],

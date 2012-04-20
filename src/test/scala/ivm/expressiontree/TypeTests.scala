@@ -119,15 +119,15 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   val mergeMaps = new Transformer {
     //import optimization.&
     def apply[T](e: Exp[T]) = e match {
-      //case (m: MapOp[t, repr, u, that]) & MapOp(c, base) => //doesn't refine the type of c and base.
-      case m: MapOp[t, repr, u, that] => //T = that
+      //case (m: MapNode[t, repr, u, that]) & MapNode(c, base) => //doesn't refine the type of c and base.
+      case m: MapNode[t, repr, u, that] => //T = that
         //m.base.map(m.f)(m.c)
         Util.assertType[Exp[repr]](m.base)
         val ret1 = (m.base map m.f)(m.c)
 
         m.base match {
-          case m2: MapOp[t2, repr2, u2, that2] =>
-          //case m2: MapOp[t2, repr2, `t` /*u2*/, that2] =>//gives a warning
+          case m2: MapNode[t2, repr2, u2, that2] =>
+          //case m2: MapNode[t2, repr2, `t` /*u2*/, that2] =>//gives a warning
             //Scalac gets that2 = repr, but not that u2 = t.
             //What type inference could deduce:
             //m.base.type <: Exp[repr]
