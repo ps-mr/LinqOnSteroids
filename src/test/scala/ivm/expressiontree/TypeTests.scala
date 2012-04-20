@@ -92,10 +92,10 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   //Calling this app hides the existing implicit conversion.
   def app2[A, B](f: Exp[A => B]): Exp[A] => Exp[B] = arg => App(f, arg)
 
-  case class MapOp2[T, Repr, U, That](base: Exp[TraversableLike[T, Repr]], f: FuncExp[T, U])
-                                     (implicit /*protected[this] */val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[TraversableLike[T, Repr]], FuncExp[T, U], That, MapOp2[T, Repr, U, That]](base, f) {
+  case class MapOp2[T, Repr, U, That](base: Exp[TraversableLike[T, Repr]], f: Fun[T, U])
+                                     (implicit /*protected[this] */val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[TraversableLike[T, Repr]], Fun[T, U], That, MapOp2[T, Repr, U, That]](base, f) {
     override def interpret() = base.interpret() map f.interpret()
-    override def copy(base: Exp[TraversableLike[T, Repr]], f: FuncExp[T, U]) = MapOp2[T, Repr, U, That](base, f)
+    override def copy(base: Exp[TraversableLike[T, Repr]], f: Fun[T, U]) = MapOp2[T, Repr, U, That](base, f)
   }
 
   import collection.TraversableLike

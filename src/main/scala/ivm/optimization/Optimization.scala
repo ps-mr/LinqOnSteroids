@@ -10,15 +10,15 @@ import collection.TraversableLike
 
 //Pattern-matchers for simplifying writing patterns
 object FuncExpBody {
-  def unapply[S, T](f: FuncExp[S, T]): Option[Exp[T]] = Some(f.body)
+  def unapply[S, T](f: Fun[S, T]): Option[Exp[T]] = Some(f.body)
 }
 
 object FuncExpBodyUntyped {
-  def unapply(f: FuncExp[_, _]): Option[Exp[_]] = Some(f.body)
+  def unapply(f: Fun[_, _]): Option[Exp[_]] = Some(f.body)
 }
 
 object FuncExpIdentity {
-  def unapply[S, T](f: FuncExp[S, T]): Boolean = f.body == f.x
+  def unapply[S, T](f: Fun[S, T]): Boolean = f.body == f.x
 }
 
 //Pattern match to connect two conditions
@@ -39,13 +39,13 @@ object OptimizationTransforms {
   private def buildJoin[T, S, TKey, TResult](fmColl: Exp[Traversable[T]],
                                                   wfColl: Exp[Traversable[S]],
                                                   lhs: Exp[TKey], rhs: Exp[TKey],
-                                                  moFun: FuncExp[S, TResult], fmFun: FuncExp[T, Traversable[TResult]],
-                                                  wfFun: FuncExp[S, Boolean]): Exp[Traversable[TResult]] /*Join[T, S, TKey, TResult]*/ = {
+                                                  moFun: Fun[S, TResult], fmFun: Fun[T, Traversable[TResult]],
+                                                  wfFun: Fun[S, Boolean]): Exp[Traversable[TResult]] /*Join[T, S, TKey, TResult]*/ = {
     stripView(fmColl).join(
       stripView(wfColl))(
-      FuncExp.makefun[T, TKey](lhs, fmFun.x).f,
-      FuncExp.makefun[S, TKey](rhs, wfFun.x).f,
-      FuncExp.makepairfun[T, S, TResult](
+      Fun.makefun[T, TKey](lhs, fmFun.x).f,
+      Fun.makefun[S, TKey](rhs, wfFun.x).f,
+      Fun.makepairfun[T, S, TResult](
         moFun.body,
         fmFun.x,
         moFun.x).f)
@@ -77,17 +77,17 @@ object OptimizationTransforms {
   private def buildAntiJoin[T, S, TKey](filteredColl: Exp[Traversable[T]],
                                                  forallColl: Exp[Traversable[S]],
                                                  lhs: Exp[TKey], rhs: Exp[TKey],
-                                                 filterFun: FuncExp[T, Boolean],
-                                                 forallFun: FuncExp[S, Boolean]): Exp[Traversable[T]] /*Join[T, S, TKey, TResult]*/ = {
+                                                 filterFun: Fun[T, Boolean],
+                                                 forallFun: Fun[S, Boolean]): Exp[Traversable[T]] /*Join[T, S, TKey, TResult]*/ = {
     //XXX: in this version of the work, we should create a custom node, since our handling of redexes is not yet perfect -
     //we currently assume expression trees are already beta-reduced when _comparing_ them and looking for common subexpressions.
     //OTOH, performing beta-reduction risks introducing non-termination inside optimization.
 
     //We must hoist the creation of the subcollection, so that we build the index only once. We use letExp to this end.
-    val lhsFun = FuncExp.makefun[T, TKey](lhs, filterFun.x)
+    val lhsFun = Fun.makefun[T, TKey](lhs, filterFun.x)
     // lhsFun is used only in one location in a loop; thanks to normalization-by-evaluation, we can inline it while being
     // sure that term manipulation is only done at optimization time.
-    letExp((forallColl map FuncExp.makefun[S, TKey](rhs, forallFun.x).f).toSet){
+    letExp((forallColl map Fun.makefun[S, TKey](rhs, forallFun.x).f).toSet){
       subColl =>
         stripView(filteredColl) withFilter {
           x =>
@@ -159,12 +159,12 @@ object OptimizationTransforms {
   */
 
   //Same problem also when fusing map and flatMap (which we don't do yet).
-  private def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: FuncExp[T, U], g: FuncExp[U, V]): Exp[Traversable[V]] =
+  private def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: Fun[T, U], g: Fun[U, V]): Exp[Traversable[V]] =
     coll.map(x => letExp(f(x))(g))
     //coll.map(f.f andThen g.f) //Old implementation, equivalent to inlining f(x) in the body of g. This might duplicate work!
     //coll.map(g.f andThen f.f) //Here the typechecker can reject this line.
 
-  /*private def buildMergedFlatMap[T, U, V](coll: Exp[Traversable[T]], f: FuncExp[T, U], g: FuncExp[U, Traversable[V]]) =
+  /*private def buildMergedFlatMap[T, U, V](coll: Exp[Traversable[T]], f: Fun[T, U], g: Fun[U, Traversable[V]]) =
     coll flatMap (x => letExp(f(x))(g))*/
 
   //Now we'd like a non-work-duplicating inliner. We'd need a linear type system as in GHC's inliner.
@@ -177,7 +177,7 @@ object OptimizationTransforms {
       //Since inner nodes were already optimized, coll will not be a MapOp node, hence we needn't call mergeMaps on the
       //result.
       //coll map (x => g(f(x)))
-      //coll.map(FuncExp(f.andThen(g))) //Demonstrate norm-by-eval.
+      //coll.map(Fun(f.andThen(g))) //Demonstrate norm-by-eval.
     case e => e
   }
 
@@ -353,14 +353,14 @@ object OptimizationTransforms {
     case e => e
   }
 
-  private def buildTypeFilter[S, T, U](coll: Exp[Traversable[T]], classS: Class[S], f: FuncExp[S, Traversable[U]], origFmFun: FuncExp[T, Traversable[U]]): Exp[Traversable[U]] = {
+  private def buildTypeFilter[S, T, U](coll: Exp[Traversable[T]], classS: Class[S], f: Fun[S, Traversable[U]], origFmFun: Fun[T, Traversable[U]]): Exp[Traversable[U]] = {
     val res = coll.typeFilterClass(classS).flatMap(f.f)
     //Check that the transformed expression has overall the same type as the original one:
     Util.checkSameTypeAndRet(coll flatMap origFmFun)(res)
   }
 
   private def tryBuildTypeFilter[T, U](coll: Exp[Traversable[T]],
-                                       fmFun: FuncExp[T, Traversable[U]],
+                                       fmFun: Fun[T, Traversable[U]],
                                        e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
     val X = fmFun.x
     //Correct safety condition for this optimization: The variable of fmFun must appear always wrapped in the same
@@ -370,16 +370,16 @@ object OptimizationTransforms {
     containingX.head match {
       case instanceOfNode@IfInstanceOf(X, _) if containingX.forall(_ == instanceOfNode) =>
         if (containingXParent.forall(_ == (instanceOfNode: Exp[Iterable[_]]))) {
-          val v = FuncExp.gensym()
+          val v = Fun.gensym()
           val transformed = fmFun.body.substSubTerm(containingXParent.head, Seq(v))
-          buildTypeFilter(coll, instanceOfNode.classS, FuncExp.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)
+          buildTypeFilter(coll, instanceOfNode.classS, Fun.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)
         } else {
-          val v = FuncExp.gensym()
+          val v = Fun.gensym()
           val transformed = fmFun.body.substSubTerm(instanceOfNode, Some(v))
           //Note: on the result we would really like to drop all the 'Option'-ness, but that's a separate step.
           //Also, if we are in this branch, it means the client code is really using the 'Option'-ness of the value, say
           //via orElse or getOrElse, so we can't drop it.
-          buildTypeFilter(coll, instanceOfNode.classS, FuncExp.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)
+          buildTypeFilter(coll, instanceOfNode.classS, Fun.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)
         }
       case _ =>
         e
@@ -388,12 +388,12 @@ object OptimizationTransforms {
 
   /*
   fmFun match {
-    /*case FuncExpBody(Call1(`optionToIterableId`, _, Call2(`optionMapId`, _, instanceOf@IfInstanceOf(x), f: FuncExp[Any, _]))) =>
+    /*case FuncExpBody(Call1(`optionToIterableId`, _, Call2(`optionMapId`, _, instanceOf@IfInstanceOf(x), f: Fun[Any, _]))) =>
   buildTypeFilter(coll, instanceOf.cS, f)*/
    */
 
   val toTypeFilter: Exp[_] => Exp[_] = {
-    case e @ FlatMap(coll, fmFun: FuncExp[t, u]) =>
+    case e @ FlatMap(coll, fmFun: Fun[t, u]) =>
       tryBuildTypeFilter(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
     case e => e
   }
@@ -412,7 +412,7 @@ object OptimizationTransforms {
   //This optimization does not extend to normal Let bindings as used in FindBugsAnalyses. There we need to produce the usual
   //desugaring of Let - i.e. to use letExp; that's done in letTransformer.
   private def tryRemoveRedundantLet[T, U](coll: Exp[Traversable[T]],
-                                       fmFun: FuncExp[T, Traversable[U]],
+                                       fmFun: Fun[T, Traversable[U]],
                                        e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
     val insideConv = fmFun.body
     // The safety condition for this optimization is two-fold:
@@ -444,20 +444,20 @@ object OptimizationTransforms {
 
 
   val removeRedundantOption: Exp[_] => Exp[_] = {
-    case e @ FlatMap(coll, (fmFun: FuncExp[_, Traversable[u]])) =>
+    case e @ FlatMap(coll, (fmFun: Fun[_, Traversable[u]])) =>
       tryRemoveRedundantLet(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
     case e => e
   }
 
-  private def buildHoistedFilterForFlatMap[T, U, V](coll1: Exp[Traversable[T]], fmFun: FuncExp[T, Traversable[V]],
+  private def buildHoistedFilterForFlatMap[T, U, V](coll1: Exp[Traversable[T]], fmFun: Fun[T, Traversable[V]],
                                                 coll2: Exp[Traversable[U]],
-                                                filterFun: FuncExp[U, Boolean],
-                                                fmFun2: FuncExp[U, Traversable[V]]): Exp[Traversable[V]] = {
+                                                filterFun: Fun[U, Boolean],
+                                                fmFun2: Fun[U, Traversable[V]]): Exp[Traversable[V]] = {
     //Let's show that the source types are correct, in that we can rebuild the original expression:
     import Util.assertType
     assertType[Exp[Traversable[V]]](coll1.flatMap(fmFun.f))
-    assertType[Exp[Traversable[V]]](coll1.flatMap(FuncExp.makefun(coll2.filter(filterFun.f).flatMap(fmFun2.f), fmFun.x).f))
-    val ret: Exp[Traversable[V]] = coll1.withFilter(FuncExp.makefun(filterFun.body, fmFun.x).f) flatMap FuncExp.makefun(stripView(coll2) flatMap fmFun2.f, fmFun.x).f
+    assertType[Exp[Traversable[V]]](coll1.flatMap(Fun.makefun(coll2.filter(filterFun.f).flatMap(fmFun2.f), fmFun.x).f))
+    val ret: Exp[Traversable[V]] = coll1.withFilter(Fun.makefun(filterFun.body, fmFun.x).f) flatMap Fun.makefun(stripView(coll2) flatMap fmFun2.f, fmFun.x).f
     ret
   }
 
@@ -472,19 +472,19 @@ object OptimizationTransforms {
     case e => e
   }
 
-  private def buildMapToFlatMap[T, U](c: Exp[Traversable[T]], f: FuncExp[T, U]): Exp[Traversable[U]] =
-    c flatMap FuncExp.makefun(Seq(f.body), f.x)
+  private def buildMapToFlatMap[T, U](c: Exp[Traversable[T]], f: Fun[T, U]): Exp[Traversable[U]] =
+    c flatMap Fun.makefun(Seq(f.body), f.x)
 
   val mapToFlatMap: Exp[_] => Exp[_] = {
     case MapOp(c, f) =>
       buildMapToFlatMap(c, f)
-    /*case Call2(OptionMapId, _, c: Exp[Option[t]], f: FuncExp[_, u]) =>
-      c flatMap FuncExp.makefun(Some(f.body), f.x)*/
+    /*case Call2(OptionMapId, _, c: Exp[Option[t]], f: Fun[_, u]) =>
+      c flatMap Fun.makefun(Some(f.body), f.x)*/
     case e => e
   }
 
-  private def buildFlatMapToMap[T, U](c: Exp[Traversable[T]], body: Exp[U], f: FuncExp[T, Traversable[U]]): Exp[Traversable[U]] =
-    c map FuncExp.makefun(body, f.x)
+  private def buildFlatMapToMap[T, U](c: Exp[Traversable[T]], body: Exp[U], f: Fun[T, Traversable[U]]): Exp[Traversable[U]] =
+    c map Fun.makefun(body, f.x)
 
   val flatMapToMap: Exp[_] => Exp[_] = {
     case FlatMap(c, f @ FuncExpBody(ExpSeq(Seq(body)))) =>
@@ -504,9 +504,9 @@ object OptimizationTransforms {
 
   val betaReduction: PartialFunction[Exp[_], Exp[_]] = {
     //case a: App[s, t] => a.f(a.t) //causes a warning
-    //To ensure termination, this must only apply if this rule changes behavior, that is, if App contains a FuncExp!
+    //To ensure termination, this must only apply if this rule changes behavior, that is, if App contains a Fun!
     //Otherwise fToFunOps will recreate a new App node.
-    case appNode @ App(fun: FuncExp[_, _], arg)
+    case appNode @ App(fun: Fun[_, _], arg)
       //if ((body findTotFun (_ == fun.x)).length == 1) //Inlining side conditions. Damn, we need to use unrestricted inlining as here, simplify, and then use CSE again,
       //to have a robust solution.
     =>
@@ -514,7 +514,7 @@ object OptimizationTransforms {
       // transformations duplicate terms. Map fusion uses letExp, to allow for a smarter inliner - I hope I was
       // consistent in doing this.
       fun(arg) transform {
-        case fun: FuncExp[_, _] => FuncExp.rename(fun)
+        case fun: Fun[_, _] => Fun.rename(fun)
         case e => e
       }
   }
@@ -556,7 +556,7 @@ object OptimizationTransforms {
     //the result of flatMap to a set.
     case FlatMap(Filter(c0, f @ FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
       //Since x0 = f.x, and fmFun = x1 => B, then [x1 |-> x0]B is (x1 => B) x0, that is fmFun(f.x), and restQuery = x => [x1 |-> x0]B =
-      val restQuery = FuncExp.makefun(fmFun(f.x), p.x)
+      val restQuery = Fun.makefun(fmFun(f.x), p.x)
       //toSet remove any duplicates to preserve semantics; in the expression c exists p, p might be true for more elements of c. When unnesting,
       //we produce c withFilter p, and for each element in the result we apply x1 => B. Instead, with toSet we unify the results after applying
       //filtering. That's unsatisfactory though; we could instead of using toSet on the result, use breakout as CanBuildFrom instance on the last flatMap.
@@ -564,7 +564,7 @@ object OptimizationTransforms {
       //Is duplicate elimination after applying restQuery valid? I guess not: the flatMapped function might just produce an element multiple times.
       //So we produce instead a Set of booleans to do duplicate elimination and then filter with identity!
       //XXX untested.
-      stripView(c0) flatMap FuncExp.makefun((((stripView(c) map p)(collection.breakOut): Exp[Set[Boolean]]) filter identity flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
+      stripView(c0) flatMap Fun.makefun((((stripView(c) map p)(collection.breakOut): Exp[Set[Boolean]]) filter identity flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
     case e => e
   }
 
@@ -581,22 +581,22 @@ object OptimizationTransforms {
      */
     /* A somewhat interesting compile error:
     case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
-      collEp flatMap FuncExp.makefun(letExp(ep)(fy), fxp.x)
+      collEp flatMap Fun.makefun(letExp(ep)(fy), fxp.x)
     results in:
 [error] /Users/pgiarrusso/Documents/Research/Sorgenti/linqonsteroids/src/main/scala/ivm/optimization/Optimization.scala:536: value flatMap is not a member of ivm.expressiontree.Exp[Any]
-[error]       collEp flatMap FuncExp.makefun(letExp(ep)(fy), fxp.x)
+[error]       collEp flatMap Fun.makefun(letExp(ep)(fy), fxp.x)
 [error]              ^
       * However, scalac seems "right": collEp has type Exp[Repr], which apparently erases to Exp[Any] even if a type bound _is_ given.
       * XXX report this as another bug.
       */
     /*case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
-      collEp flatMap FuncExp.makefun(letExp(ep)(fy.f), fxp.x)*/
+      collEp flatMap Fun.makefun(letExp(ep)(fy.f), fxp.x)*/
     case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
-      collEp flatMap FuncExp.makefun(ep flatMap fy, fxp.x).f
-      //collEp flatMap FuncExp.makefun(Seq(ep) map (fy)/*Seq(ep) map fy*/, fxp.x).f
+      collEp flatMap Fun.makefun(ep flatMap fy, fxp.x).f
+      //collEp flatMap Fun.makefun(Seq(ep) map (fy)/*Seq(ep) map fy*/, fxp.x).f
     case Filter(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
-      //collEp filter FuncExp.makefun(letExp(ep)(fy), fxp.x)
-      collEp flatMap FuncExp.makefun(ep filter app(fy), fxp.x)
+      //collEp filter Fun.makefun(letExp(ep)(fy), fxp.x)
+      collEp flatMap Fun.makefun(ep filter app(fy), fxp.x)
     case e => e
   }
 
@@ -608,7 +608,7 @@ object OptimizationTransforms {
    */
   val mergeFilterWithMap: Exp[_] => Exp[_] = {
     case Filter(MapOp(coll, mapFun), pred) => //This case should have higher priority, it seems more useful.
-      coll flatMap FuncExp.makefun(letExp(mapFun.body)(FuncExp.makefun(if_# (pred.body) (Seq(pred.x)) else_# (Seq.empty), pred.x)), mapFun.x)
+      coll flatMap Fun.makefun(letExp(mapFun.body)(Fun.makefun(if_# (pred.body) (Seq(pred.x)) else_# (Seq.empty), pred.x)), mapFun.x)
       //We preserve sharing here with letExp; currently, subsequent stages will do indiscriminate inlining and replicate the map, but
       //the inliner will later be improved.
       //This case, together with inlinng and transformedFilterToFilter, is equivalent to what Tillmann suggested and
@@ -618,9 +618,9 @@ object OptimizationTransforms {
       //This transformation cancels with transformedFilterToFilter + flatMapToMap. Not sure if it's ever useful.
       //It could be useful as a separate stage, if this turns out to be a faster implementation.
       //After this optimization, we need to float the if_# to around the body of mapFun
-      //coll flatMap (FuncExp.makefun(if_# (test)(Seq(pred.x)) else_# {Seq.empty}, pred.x) andThen mapFun)
+      //coll flatMap (Fun.makefun(if_# (test)(Seq(pred.x)) else_# {Seq.empty}, pred.x) andThen mapFun)
       //Let's do this directly:
-      coll flatMap FuncExp.makefun(
+      coll flatMap Fun.makefun(
         if_# (test) {
           Seq(mapFun(pred.x))
         } else_# {
@@ -634,7 +634,7 @@ object OptimizationTransforms {
     //case FlatMap(coll, fmFun @ FuncExpBody(IfThenElse(test, thenBranch @ ExpSeq(Seq(element)), elseBranch @ ExpSeq(Seq())))) =>
       //coll filter
     case FlatMap(coll, fmFun @ FuncExpBody(IfThenElse(test, thenBranch, elseBranch @ ExpSeq(Seq())))) =>
-      coll filter FuncExp.makefun(test, fmFun.x) flatMap FuncExp.makefun(thenBranch, fmFun.x)
+      coll filter Fun.makefun(test, fmFun.x) flatMap Fun.makefun(thenBranch, fmFun.x)
     case e => e
   }
 

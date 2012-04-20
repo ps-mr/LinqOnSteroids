@@ -12,30 +12,30 @@ import collection._
 //I believe that in pattern matching, base will be deduced to have type Exp[Repr] which erases to Exp[Any] because the type bounds are not
 //considered well-enough.
 case class FlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
-                   U, That <: Traversable[U]](base: Exp[Repr with Traversable[T]], f: FuncExp[T, Traversable[U]])
-                            (implicit /*protected[this]*/ val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, Traversable[U]], That, FlatMap[T, Repr, U, That]](base, f) {
+                   U, That <: Traversable[U]](base: Exp[Repr with Traversable[T]], f: Fun[T, Traversable[U]])
+                            (implicit /*protected[this]*/ val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], Fun[T, Traversable[U]], That, FlatMap[T, Repr, U, That]](base, f) {
   override def interpret() = base.interpret() flatMap f.interpret()
-  override def copy(base: Exp[Repr], f: FuncExp[T, Traversable[U]]) = FlatMap[T, Repr, U, That](base, f)
+  override def copy(base: Exp[Repr], f: Fun[T, Traversable[U]]) = FlatMap[T, Repr, U, That](base, f)
 }
 
 case class MapOp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
-                 U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr with Traversable[T]], f: FuncExp[T, U])
-                          (implicit /*protected[this] */val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], FuncExp[T, U], That, MapOp[T, Repr, U, That]](base, f) {
+                 U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr with Traversable[T]], f: Fun[T, U])
+                          (implicit /*protected[this] */val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[Repr], Fun[T, U], That, MapOp[T, Repr, U, That]](base, f) {
   override def interpret() = base.interpret() map f.interpret()
-  override def copy(base: Exp[Repr], f: FuncExp[T, U]) = MapOp[T, Repr, U, That](base, f)
+  override def copy(base: Exp[Repr], f: Fun[T, U]) = MapOp[T, Repr, U, That](base, f)
 }
 
 case class Filter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr with Traversable[T]],
-                                                      f: FuncExp[T, Boolean]) extends Arity2Op[Exp[Repr], FuncExp[T, Boolean], Repr, Filter[T, Repr]](base, f) {
+                                                      f: Fun[T, Boolean]) extends Arity2Op[Exp[Repr], Fun[T, Boolean], Repr, Filter[T, Repr]](base, f) {
   override def interpret() = base.interpret() filter f.interpret()
-  override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = Filter(base, f)
+  override def copy(base: Exp[Repr], f: Fun[T, Boolean]) = Filter(base, f)
  }
 
 case class WithFilter[T, Repr <: TraversableLike[T, Repr]](base: Exp[Repr],
-                                                      f: FuncExp[T, Boolean])
-                                                      extends Arity2Op[Exp[Repr], FuncExp[T, Boolean], TraversableView[T, Repr], WithFilter[T, Repr]](base, f) {
+                                                      f: Fun[T, Boolean])
+                                                      extends Arity2Op[Exp[Repr], Fun[T, Boolean], TraversableView[T, Repr], WithFilter[T, Repr]](base, f) {
   override def interpret() = base.interpret().view filter f.interpret()
-  override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = WithFilter[T, Repr](base, f)
+  override def copy(base: Exp[Repr], f: Fun[T, Boolean]) = WithFilter[T, Repr](base, f)
 }
 
 case class View[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr with Traversable[T] with TraversableLike[T, Repr]]) extends Arity1OpExp[Repr, TraversableView[T, Repr], View[T, Repr]](base) {
@@ -110,7 +110,7 @@ case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](b
   def copy(base: Exp[Repr], f: Exp[D[T] => T]) = TypeFilter2[T, D, Repr, S, That](base, f)
 }
 
-case class TypeCase[Case, +Res](classS: Class[_], guard: FuncExp[Case, Boolean], f: FuncExp[Case, Res]) {
+case class TypeCase[Case, +Res](classS: Class[_], guard: Fun[Case, Boolean], f: Fun[Case, Res]) {
   //The setters for this field use Res in contravariant position, hence it is important to make them private.
   private[this] var _guardInt: Case => Boolean = _
   private[this] var _fInt: Case => Res = _
@@ -133,7 +133,7 @@ case class TypeCaseExp[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, +That /
   override def checkedGenericConstructor: Seq[Exp[_]] => Exp[immutable.Set[Res]] =
     v => TypeCaseExp(
       v.head.asInstanceOf[Exp[Repr]],
-      (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS, guard.asInstanceOf[FuncExp[Any, Boolean]], f.asInstanceOf[FuncExp[Any, Res]])})
+      (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS, guard.asInstanceOf[Fun[Any, Boolean]], f.asInstanceOf[Fun[Any, Res]])})
 
   private def checkF(v: BaseT): Res = {
     for (t: TypeCase[Any, Res] <- cases.asInstanceOf[Seq[TypeCase[Any, Res]]]) {
@@ -153,7 +153,7 @@ case class TypeCaseExp[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, +That /
 
 
 //Note: this class also handles IVM, though in an incomplete way
-case class Forall[T](coll: Exp[Traversable[T]], f: FuncExp[T, Boolean])
+case class Forall[T](coll: Exp[Traversable[T]], f: Fun[T, Boolean])
   extends Arity1OpExp[Traversable[T], Boolean, Forall[T]](coll) with EvtTransformerEl[Traversable[T], Boolean, Traversable[T]]
   with ExpWithCache[Boolean]
 {
@@ -193,19 +193,19 @@ case class GroupBy[T, Repr <: Traversable[T] with TraversableLike[T, Repr], K](b
 
 case class Join[T, Repr <: TraversableLike[T, Repr], S, TKey, TResult, That](colouter: Exp[Repr],
                                                                              colinner: Exp[Traversable[S]],
-                                                                             outerKeySelector: FuncExp[T, TKey],
-                                                                             innerKeySelector: FuncExp[S, TKey],
-                                                                             resultSelector: FuncExp[(T, S), TResult])
+                                                                             outerKeySelector: Fun[T, TKey],
+                                                                             innerKeySelector: Fun[S, TKey],
+                                                                             resultSelector: Fun[(T, S), TResult])
                                                                             (implicit cbf: CanBuildFrom[Repr, TResult, That]) extends
 Arity5Op[Exp[Repr],
   Exp[Traversable[S]],
-  FuncExp[T, TKey], FuncExp[S, TKey], FuncExp[(T, S), TResult],
+  Fun[T, TKey], Fun[S, TKey], Fun[(T, S), TResult],
   That, Join[T, Repr, S, TKey, TResult, That]](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
   override def copy(colouter: Exp[Repr],
                     colinner: Exp[Traversable[S]],
-                    outerKeySelector: FuncExp[T, TKey],
-                    innerKeySelector: FuncExp[S, TKey],
-                    resultSelector: FuncExp[(T, S), TResult]) = Join(colouter, colinner, outerKeySelector, innerKeySelector, resultSelector)
+                    outerKeySelector: Fun[T, TKey],
+                    innerKeySelector: Fun[S, TKey],
+                    resultSelector: Fun[(T, S), TResult]) = Join(colouter, colinner, outerKeySelector, innerKeySelector, resultSelector)
 
   override def interpret() = {
     // naive hash join algorithm

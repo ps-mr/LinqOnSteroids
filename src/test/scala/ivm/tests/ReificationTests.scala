@@ -49,12 +49,12 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test
   def testfreeVars() {
     q.freeVars should be (Set.empty)
-    newMapOp(l,FuncExp( (x: Exp[Int]) => x + Var(58))).freeVars should be (Set(Var(58)))
+    newMapOp(l,Fun( (x: Exp[Int]) => x + Var(58))).freeVars should be (Set(Var(58)))
   }
 
   @Test
   def testReification() {
-    q should equal (newMapOp[Int, Traversable[Int], Int, Traversable[Int]](newWithFilter(l, FuncExp((v2: Exp[Int]) => LEq(v2, 5))),FuncExp((v3: Exp[Int]) => Plus(3, v3))))
+    q should equal (newMapOp[Int, Traversable[Int], Int, Traversable[Int]](newWithFilter(l, Fun((v2: Exp[Int]) => LEq(v2, 5))),Fun((v3: Exp[Int]) => Plus(3, v3))))
     /*println(q.exec())
     println(optimize(q).interpret().exec())
     //val r = l.flatMap( (k) => j.withFilter( (k2 ) => k ==# k2).map( (k2:Exp[Int]) => k+k2))
@@ -78,7 +78,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
   def testAntiJoin() {
     val r = for (k <- l if j forall (k2 => k !=# k2)) yield k
     val rAntiJoin = Optimization.cartProdToAntiJoin(r)
-    //This was problematic because it transforms the newly-built FuncExp nodes into FuncExpInt ones, so we test that it works.
+    //This was problematic because it transforms the newly-built Fun nodes into FuncExpInt ones, so we test that it works.
     val rOpt = optimize(rAntiJoin)
     println(r)
     println(rAntiJoin)

@@ -175,16 +175,16 @@ trait OneRootTraversableMaintainer[SrcMsg, Src <: Traversable[SrcMsg], +Res] ext
 //is entirely optional - it just enables the listener to get a more specific
 //type for the pub param to notify(), if he cares.
 class MapOpMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
-                 U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr], f: FuncExp[T, U])
+                 U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr], f: Fun[T, U])
                          (implicit override val c: CanBuildFrom[Repr, U, That]) extends MapOp[T, Repr, U, That](base, f)
     with MapOpMaintainer[T, U, Exp[Repr]] with OneRootTraversableMaintainer[T, Repr, That]
     with MsgSeqPublisher[That, MapOpMaintainerExp[T, Repr, U, That]] {
   override def fInt = f.interpret()
-  override def copy(base: Exp[Repr], f: FuncExp[T, U]) = new MapOpMaintainerExp[T, Repr, U, That](base, f)
+  override def copy(base: Exp[Repr], f: Fun[T, U]) = new MapOpMaintainerExp[T, Repr, U, That](base, f)
 }
 
 class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
-                 U, That <: Traversable[U]](base: Exp[Repr], f: FuncExp[T, Traversable[U]])
+                 U, That <: Traversable[U]](base: Exp[Repr], f: Fun[T, Traversable[U]])
                          (implicit override val c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
     with FlatMapMaintainer[T, U, Exp[Repr], That] with OneRootTraversableMaintainer[T, Repr, That]
     with MsgSeqPublisher[That, FlatMapMaintainerExp[T, Repr, U, That]] {
@@ -193,13 +193,13 @@ class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
     f(_)
   }
 
-  override def copy(base: Exp[Repr], f: FuncExp[T, Traversable[U]]) = new FlatMapMaintainerExp[T, Repr, U, That](base, f)
+  override def copy(base: Exp[Repr], f: Fun[T, Traversable[U]]) = new FlatMapMaintainerExp[T, Repr, U, That](base, f)
 }
 
-class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: FuncExp[T, Boolean]) extends Filter[T, Repr](base, p)
+class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: Fun[T, Boolean]) extends Filter[T, Repr](base, p)
     with FilterMaintainer[T, Exp[Repr]] with OneRootTraversableMaintainer[T, Repr, Repr] with MsgSeqPublisher[Repr, FilterMaintainerExp[T, Repr]] {
   override def pInt = p.interpret()
-  override def copy(base: Exp[Repr], f: FuncExp[T, Boolean]) = new FilterMaintainerExp[T, Repr](base, f)
+  override def copy(base: Exp[Repr], f: Fun[T, Boolean]) = new FilterMaintainerExp[T, Repr](base, f)
 }
 
 //XXX: where does this belong to? I was talking about materialization of updates (i.e. IncrementalResult -> Force) and

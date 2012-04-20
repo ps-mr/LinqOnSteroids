@@ -4,7 +4,7 @@ package tests
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import org.junit.Test
 
-import expressiontree.{FuncExp, Exp}
+import expressiontree.{Fun, Exp}
 import expressiontree.Lifting._
 import optimization.Optimization
 import collection.mutable.ArrayBuffer

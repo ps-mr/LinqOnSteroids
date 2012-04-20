@@ -10,7 +10,7 @@ import Lifting._
  */
 
 class FuncExpTests extends FunSuite with ShouldMatchers {
-  val f = FuncExp((x: Exp[Int]) => FuncExp((y: Exp[Int]) => x + y))
+  val f = Fun((x: Exp[Int]) => Fun((y: Exp[Int]) => x + y))
   val f1 = f.interpret()(1) //(x = 1, y => x + y)
 
   val expr = (x: Exp[Int]) => asExp(f1)
@@ -23,7 +23,7 @@ class FuncExpTests extends FunSuite with ShouldMatchers {
     f3(10)(2).interpret() should be (3)
   }
 
-  val f2 = FuncExp((z: Exp[Int]) => f1) //Under dynamic scoping, this will just fail.
+  val f2 = Fun((z: Exp[Int]) => f1) //Under dynamic scoping, this will just fail.
 
   test("scoping 3") {
     f2(10)(2).interpret() should be (3)

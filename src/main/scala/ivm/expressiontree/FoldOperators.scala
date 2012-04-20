@@ -28,7 +28,7 @@ trait FoldOperators {
     def copy(a: Exp[Out], b: Exp[In]) = ExpBinOp(a, b, op)
   }
 
-  /*private def convertBinFunInternal[T](f: (Exp[T], Exp[T]) => Exp[T]): Exp[((T, T)) => T] = FuncExp(f.tupled compose Lifting.unliftPair)
+  /*private def convertBinFunInternal[T](f: (Exp[T], Exp[T]) => Exp[T]): Exp[((T, T)) => T] = Fun(f.tupled compose Lifting.unliftPair)
   private def convertBinFun[T](f: (Exp[T], Exp[T]) => Exp[T]): ((T, T)) => T = convertBinFunInternal(f).interpret()*/
 
   //It creates autocompletion disasters!

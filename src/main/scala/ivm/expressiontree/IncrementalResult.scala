@@ -9,7 +9,7 @@ import collection.mutable.HashMap
  */
 
 private[expressiontree] object IncrementalResult {
-  // Given e.g. coll2 = MapOp(coll@IncHashSet(_), FuncExp(...)), coll2 is the child and coll is the parent (here, the root).
+  // Given e.g. coll2 = MapOp(coll@IncHashSet(_), Fun(...)), coll2 is the child and coll is the parent (here, the root).
   // Do not return duplicates!
   def findChildrenOfRoots(child: Exp[_], e: Exp[_]): Set[Exp[_]] = {
     (if (e.isRoot)

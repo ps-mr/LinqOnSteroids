@@ -13,7 +13,7 @@ case class App[T, U](f: Exp[T => U], t: Exp[T]) extends Arity2OpExp[T => U, T, U
 }
 
 abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
-  import FuncExp._
+  import Fun._
   val f: Exp[S] => Exp[T]
 
   def xName = x.name
@@ -40,7 +40,7 @@ abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
   // but these functions will not be equal, hence it is only a potential performance problem.
   // Using gensym() here would still give alpha-equivalence, but hashcodes would
   // not be constant!
-  override def hashCode() = f(FuncExp.varzero).hashCode()
+  override def hashCode() = f(Fun.varzero).hashCode()
 
   // alpha equivalence for functions! (modulo calls to scala functions)
   override def equals(other: Any): Boolean = other match {
@@ -52,12 +52,12 @@ abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
   }
 }
 
-abstract class FuncExp[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S => T] {
+abstract class Fun[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S => T] {
   def interpret(): S => T =
     z => f(Const(z)).interpret()
 
-  def copy[U >: T](t1: Exp[U]): FuncExp[S, U] = FuncExp.makefun(t1, x)
-  override def canEqual(other: Any): Boolean = other.isInstanceOf[FuncExp[_,_]]
+  def copy[U >: T](t1: Exp[U]): Fun[S, U] = Fun.makefun(t1, x)
+  override def canEqual(other: Any): Boolean = other.isInstanceOf[Fun[_,_]]
   //Copied from Arity1OpTrait:
   def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[T]])
 }
@@ -67,17 +67,17 @@ abstract class FuncExp[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T
 
 case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBase[S, Option[T], PartialFunction[S, T]] {
   def interpret(): PartialFunction[S,T] =
-    Function.unlift(FuncExp(f).interpret())
+    Function.unlift(Fun(f).interpret())
 
   def arrowString = "=(pf)=>"
-  def copy[U >: T](t1: Exp[Option[U]]): PartialFuncExp[S, U] = FuncExp.makePartialFun(t1, x)
+  def copy[U >: T](t1: Exp[Option[U]]): PartialFuncExp[S, U] = Fun.makePartialFun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[PartialFuncExp[_,_]]
   //Copied from Arity1OpTrait:
   def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[Option[T]]])
 }
 
-//The higher-order representation is constructed and passed to FuncExp to share code.
-class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends FuncExp[S, T](FuncExp.toHOAS(foasBody, v)) {
+//The higher-order representation is constructed and passed to Fun to share code.
+class FuncExpInt[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends Fun[S, T](Fun.toHOAS(foasBody, v)) {
   override def arrowString = "=>"
 
   //The following two overrides must be either both present or both absent. Without this override, the body would be
@@ -109,7 +109,7 @@ object FuncExpInt {
 }
 
 class FuncExpInt2[S1, S2, T](val foasBody: Exp[T], v1: TypedVar[S1], v2: TypedVar[S2])
-  extends FuncExp[(S1, S2), T](p => foasBody.substSubTerm(v1, Tuple2Proj1(p)).substSubTerm(v2, Tuple2Proj2(p)))
+  extends Fun[(S1, S2), T](p => foasBody.substSubTerm(v1, Tuple2Proj1(p)).substSubTerm(v2, Tuple2Proj2(p)))
 {
   override def arrowString = "=i=>"
   override def interpret() = {
@@ -146,18 +146,18 @@ case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends A
   override def copy(f: Exp[PartialFunction[S, T]], a: Exp[S]) = IsDefinedAt(f, a)
 }
 
-object FuncExp {
+object Fun {
   //Constructs FuncExpInt from HOAS. This also applies normalization-by-evaluation in the process.
   def toFOAS[S, T](funBody: Exp[S] => Exp[T]): FuncExpInt[S, T] = {
-    val v = FuncExp.gensym[S]()
+    val v = Fun.gensym[S]()
     new FuncExpInt(funBody(v), v)
   }
 
   //Force switch to FuncExpInt everywhere with a single line of code :-)
   def apply[S, T](f: Exp[S] => Exp[T]) = toFOAS(f)
-  def unapply(f: FuncExp[_, _]) = Some(f.f)
+  def unapply(f: Fun[_, _]) = Some(f.f)
 
-  def rename[S, T](f: FuncExp[S, T]): FuncExpInt[S, T] = {
+  def rename[S, T](f: Fun[S, T]): FuncExpInt[S, T] = {
     toFOAS(f.f)
   }
 
@@ -169,16 +169,16 @@ object FuncExp {
   val varzero = gensym()
 
   def toHOAS[S, T](openTerm: Exp[T], v: TypedVar[S]): Exp[S] => Exp[T] = x => openTerm.substSubTerm(v, x)
-  //def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = FuncExp(toHOAS(e, v))
-  //def makefun[S, T](e: Exp[T], v: Var): FuncExp[S, T] = new FuncExpInt(e, v)
-  def makefun[S, T](e: Exp[T], v: TypedVar[/*S*/_]): FuncExp[S, T] = new FuncExpInt(e, v)
+  //def makefun[S, T](e: Exp[T], v: Var): Fun[S, T] = Fun(toHOAS(e, v))
+  //def makefun[S, T](e: Exp[T], v: Var): Fun[S, T] = new FuncExpInt(e, v)
+  def makefun[S, T](e: Exp[T], v: TypedVar[/*S*/_]): Fun[S, T] = new FuncExpInt(e, v)
 
   def makePartialFun[S, T](e: Exp[Option[T]], v: TypedVar[S]): PartialFuncExp[S, T] = PartialFuncExp(toHOAS(e, v))
-  def makepairfun[S1, S2, T](e: Exp[T], v1: TypedVar[/*S1*/_], v2: TypedVar[/*S2*/_]): FuncExp[(S1, S2), T] = {
+  def makepairfun[S1, S2, T](e: Exp[T], v1: TypedVar[/*S1*/_], v2: TypedVar[/*S2*/_]): Fun[(S1, S2), T] = {
     //This implementation is correct but slow!
-    //FuncExp(p => e.substSubTerm(v1, Tuple2Proj1(p)).substSubTerm(v2, Tuple2Proj2(p)))
+    //Fun(p => e.substSubTerm(v1, Tuple2Proj1(p)).substSubTerm(v2, Tuple2Proj2(p)))
     //This implementation is correct but limits further optimizations since it uses the opaque fmap
-    /*FuncExp(arg =>
+    /*Fun(arg =>
       App(
         Lifting.fmap(new FuncExpInt[Any, (Any => T)](new FuncExpInt(e, v1), v2))('tupledCurried, x => Function.tupled(Function.uncurried(x))),
         arg))*/

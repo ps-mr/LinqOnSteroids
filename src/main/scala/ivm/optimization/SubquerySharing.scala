@@ -22,9 +22,9 @@ object SubquerySharing {
 
   def residualQuery[T](e: Exp[Traversable[T]], conds: Set[Exp[Boolean]], v: TypedVar[_ /*T*/]): Exp[Traversable[T]] = {
     val residualcond: Exp[Boolean] = conds.fold(Const(true))(And)
-    //Note that withFilter will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
+    //Note that withFilter will ensure to use a fresh variable for the Fun to build, since it builds a Fun
     // instance from the HOAS representation produced.
-    e withFilter FuncExp.makefun[T, Boolean](residualcond, v)
+    e withFilter Fun.makefun[T, Boolean](residualcond, v)
   }
 }
 
@@ -39,7 +39,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   private def groupByShareBody[T, U](c: Exp[Traversable[T]],
                                       fx: Var,
                                       fEqBody: Eq[U], constantEqSide: Exp[U], varEqSide: Exp[U]) = {
-    val groupedBy = c.groupBy[U](FuncExp.makefun[T, U](varEqSide, fx).f)
+    val groupedBy = c.groupBy[U](Fun.makefun[T, U](varEqSide, fx).f)
 
     assertType[Exp[U => Traversable[T]]](groupedBy) //Just for documentation.
     val toLookup = Optimization.normalize(groupedBy)
@@ -79,7 +79,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   //Rewrite (if possible) coll.withFilter(elem => F[elem] ==# k && OtherConds[elem]) to (coll.groupBy(elem => F[elem]))(k).withFilter(x => OtherConds[x]),
   //with F and OtherConds expression contexts and under the condition that coll.groupBy(f) is already available as a precomputed subquery (i.e. an index).
   val groupByShare: Exp[_] => Exp[_] = {
-    case e @ Filter(c: Exp[Traversable[_ /*t*/]], f: FuncExp[t, _ /*Boolean*/]) if c.freeVars == Set.empty =>
+    case e @ Filter(c: Exp[Traversable[_ /*t*/]], f: Fun[t, _ /*Boolean*/]) if c.freeVars == Set.empty =>
       val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
       val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f.x)(_))
       optimized.getOrElse(e)
@@ -97,7 +97,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     def buildTuple[T](allFVSeq: Seq[Var])(x: Exp[T]): Exp[TupleWith[T]]
   }
   case class FoundFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](override val c: Exp[Repr],
-                                                              f: FuncExp[T, Boolean],
+                                                              f: Fun[T, Boolean],
                                                               conds: Set[Exp[Boolean]],
                                                               foundEqs: Set[Equality[_]]) extends FoundNode[T, Repr](c) {
     type OptRes = T
@@ -139,7 +139,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     }
   }
   //case object FoundNothing extends FoundNode
-  //case class FoundFlatMap[T, U](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: FuncExp[T, Traversable[U]], isOption: Boolean = false) extends FoundNode
+  //case class FoundFlatMap[T, U](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: Fun[T, Traversable[U]], isOption: Boolean = false) extends FoundNode
 
   def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = e.findTotFun { case v: Var => fvContains(v); case _ => false }.nonEmpty
 
@@ -147,9 +147,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
                           freeVars: Set[Var] = Set.empty,
                           fvSeq: Seq[Var] = Seq.empty): Seq[(FlatMap[T, Repr, U, That], FoundNode[T, Repr], Seq[Var])] = {
     e.base match {
-      //case Filter(c: Exp[Traversable[T /*t*/]], f: FuncExp[_, _ /*Boolean*/]) =>
+      //case Filter(c: Exp[Traversable[T /*t*/]], f: Fun[_, _ /*Boolean*/]) =>
       case Filter(c, f) =>
-        //case ff @ FoundFilter(_ /*: Exp[Traversable[_ /*t*/]]*/, f: FuncExp[t, _ /*Boolean*/])
+        //case ff @ FoundFilter(_ /*: Exp[Traversable[_ /*t*/]]*/, f: Fun[t, _ /*Boolean*/])
         val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
         val allFreeVars: Set[Var] = freeVars + f.x
         val usesFVars = defUseFVars(allFreeVars) _
@@ -181,14 +181,14 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         Seq((e, FoundTypeCase(t), fvSeq))
       case t: TypeFilter[t, c, d, s] /*TypeFilter(base, f, classS)*/ =>
         t.f match {
-          case f: FuncExp[_, _] if f.body == f.x =>
+          case f: Fun[_, _] if f.body == f.x =>
             //XXX: this builds expression nodes instead of using concrete syntax.
             Seq((e, FoundTypeCase(TypeCaseExp(t.base.asInstanceOf[Exp[Repr /*Traversable[d[t]]*/]],//.typeCase(
               Seq(when[Any].onClass(_ => true, identity, t.classS.asInstanceOf[Class[Any]])))), fvSeq))
             /*
             //XXX: this builds expression nodes instead of using concrete syntax.
             Seq((e, FoundTypeCase(TypeCaseExp(t.base.asInstanceOf[Exp[Repr /*Traversable[d[t]]*/]],
-              Seq(TypeCase[Any, Any](t.classS.asInstanceOf[Class[Any]], FuncExp((_: Any) => true), FuncExp(identity))))), fvSeq))*/
+              Seq(TypeCase[Any, Any](t.classS.asInstanceOf[Class[Any]], Fun((_: Any) => true), Fun(identity))))), fvSeq))*/
             //when[s](identity))))
           case _ => Seq.empty
         }
@@ -202,7 +202,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     require (fvSeq.toSet == freeVars)
 
     val otherRes = e match {
-      case f: FuncExp[_, _] =>
+      case f: Fun[_, _] =>
         lookupIndexableExps(f.body, freeVars + f.x, fvSeq :+ f.x)
       case exp => exp.children flatMap {
         lookupIndexableExps(_, freeVars, fvSeq)
@@ -210,7 +210,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     }
     otherRes ++ (e match {
       case f: FlatMap[t, repr, u, that] =>
-      //case FlatMap(c: Exp[Traversable[t]], _: FuncExp[_ /*t*/, Traversable[u]]) =>
+      //case FlatMap(c: Exp[Traversable[t]], _: Fun[_ /*t*/, Traversable[u]]) =>
         localLookupIndexableExps(f, freeVars, fvSeq)
       case _ => Seq.empty
     })
@@ -231,7 +231,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     //We are removing too many filters, and not keeping track of their bindings :-(.
     val res = indexBaseToLookup transform { //We only want to recognize filtering in the collection branch of FlatMap nodes. Easy!
       e => e match {
-        case FlatMap(Filter(base: Exp[Traversable[_]], f: FuncExp[_, _ /*Boolean*/]), fmFun) =>
+        case FlatMap(Filter(base: Exp[Traversable[_]], f: Fun[_, _ /*Boolean*/]), fmFun) =>
           val alphaRenamed = f.body.substSubTerm(f.x, fmFun.x) //tuplingTransform acts on var from flatMap functions, not filter functions.
           v += tuplingTransform(alphaRenamed.asInstanceOf[Exp[U]], fx).asInstanceOf[Exp[Boolean]] //XXX fix typing here
           OptimizationTransforms.stripView(base) flatMap fmFun
@@ -254,15 +254,15 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     val tries = Seq((indexBaseToLookup, Const(true)), (baseNoFilter, filterCond))
     collectFirst(tries) {
       case (base, cond) =>
-        val groupedBy = base.groupBy[U](FuncExp.makefun[TupleT, U](varEqSideTransf, fx))
+        val groupedBy = base.groupBy[U](Fun.makefun[TupleT, U](varEqSideTransf, fx))
 
         assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
         val toLookup = Optimization.normalize(groupedBy)
         subqueries.get(toLookup) match {
           case Some(t) =>
             println("Found nested index of form " + toLookup)
-            //Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) get constantEqSide flatMap identity withFilter FuncExp.makefun(cond, fx))
-            Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) apply constantEqSide withFilter FuncExp.makefun(cond, fx))
+            //Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) get constantEqSide flatMap identity withFilter Fun.makefun(cond, fx))
+            Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) apply constantEqSide withFilter Fun.makefun(cond, fx))
           case None =>
             println("Found no nested index of form " + toLookup)
             None
@@ -314,11 +314,11 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     //residualQuery is also filter-specific, in this form. TypeCase however has guards.
     val step2Opt = step1Opt.map(e => residualQuery(e, (allConds - eq.orig).map(tuplingTransform(_, newVar)), newVar))
 
-    //Note that here, map/flatMap will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
+    //Note that here, map/flatMap will ensure to use a fresh variable for the Fun to build, since it builds a Fun
     // instance from the HOAS representation produced.
     parentNode match {
       case FlatMap(_, _) =>
-        step2Opt.map(e => e flatMap FuncExp.makefun[TupleT, Traversable[FmT]](
+        step2Opt.map(e => e flatMap Fun.makefun[TupleT, Traversable[FmT]](
           tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[Traversable[FmT]]], newVar), newVar))
     }
   }
@@ -336,7 +336,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     val tries = Seq((indexBaseToLookup, Const(true)), (baseNoFilter, filterCond))
     collectFirst(tries) {
       case (base, cond) =>
-        //val groupedBy = base.groupBy[U](FuncExp.makefun[TupleT, U](varEqSideTransf, fx))
+        //val groupedBy = base.groupBy[U](Fun.makefun[TupleT, U](varEqSideTransf, fx))
         val groupedBy = base.asInstanceOf[Exp[Traversable[(TupleT, Any /*T*/)]]].groupByTupleType2 //XXX hack 2 - use of Any to accept a fixed manifest,
         // instead of classManifest[T] which is unfortunately not available. The use of the manifest however is just a
         // small (and premature?) optimization.
@@ -348,7 +348,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
             println("Found nested type-index of form " + toLookup)
             type TupleTAnd[+T] = (TupleT, T)
             //This map step is wrong, we rely on substitution!
-            Some(asExp(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]]).get[T](clazz) /*map(_._1) */withFilter FuncExp.makefun(cond, fx))
+            Some(asExp(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]]).get[T](clazz) /*map(_._1) */withFilter Fun.makefun(cond, fx))
           case None =>
             println("Found no nested type-index of form " + toLookup)
             None
@@ -390,18 +390,18 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     //residualQuery is also filter-specific, in this form. TypeCase however has guards.
     val step2Opt = step1Opt.map(e => residualQuery(e, (allConds/* - eq.orig*/).map(tuplingTransform(_, newVar)), newVar))
 
-    //Note that here, map/flatMap will ensure to use a fresh variable for the FuncExp to build, since it builds a FuncExp
+    //Note that here, map/flatMap will ensure to use a fresh variable for the Fun to build, since it builds a Fun
     // instance from the HOAS representation produced.
     parentNode match {
       case FlatMap(_, _) =>
-        step2Opt.map(e => e flatMap FuncExp.makefun[(TupleT, FmT), Traversable[FmT]](
+        step2Opt.map(e => e flatMap Fun.makefun[(TupleT, FmT), Traversable[FmT]](
           tuplingTransform(alphaRenamedParentF.asInstanceOf[Exp[Traversable[FmT]]], newVar), newVar))
     }
   }
 
   val groupByShareNested: Exp[_] => Exp[_] =
     {
-      case e: FuncExp[_, _] => e
+      case e: Fun[_, _] => e
       case e =>
         collectFirst(lookupIndexableExps(e)) {
           case ((parentNode: FlatMap[t, repr, u, that/*T, Repr, U, That*/]), fn1: FoundNode[_, _], allFVSeq) =>

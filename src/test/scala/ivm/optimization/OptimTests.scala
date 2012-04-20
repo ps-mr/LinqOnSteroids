@@ -4,7 +4,7 @@ package optimization
 import expressiontree.Lifting._
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import org.junit.Test
-import expressiontree.{Const, Plus, FuncExp, Exp}
+import expressiontree.{Const, Plus, Fun, Exp}
 
 /**
  * User: pgiarrusso

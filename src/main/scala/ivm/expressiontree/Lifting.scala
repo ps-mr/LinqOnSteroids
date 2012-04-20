@@ -35,11 +35,11 @@ trait OptionLifting extends BaseExps {
     def get = fmap(t)('get, _.get)
 
     /*
-    def filter(p: Exp[T] => Exp[Boolean]): Exp[Option[T]] = fmap(t, FuncExp(p))(OptionFilterId, _ filter _) //(t: Exp[Iterable[T]]) withFilter p
+    def filter(p: Exp[T] => Exp[Boolean]): Exp[Option[T]] = fmap(t, Fun(p))(OptionFilterId, _ filter _) //(t: Exp[Iterable[T]]) withFilter p
     //We do not lift Option.withFilter because it returns a different type; we could provide operations
     //for that type as well, but I do not see the point of doing that, especially for a side-effect-free predicate.
     def withFilter(p: Exp[T] => Exp[Boolean]) = filter(p)
-    def map[U](f: Exp[T] => Exp[U]): Exp[Option[U]] = fmap(t, FuncExp(f))(OptionMapId, _ map _) //(t: Exp[Iterable[T]]) map f
+    def map[U](f: Exp[T] => Exp[U]): Exp[Option[U]] = fmap(t, Fun(f))(OptionMapId, _ map _) //(t: Exp[Iterable[T]]) map f
 
     // Finally, we can't provide the two implicit conversions as overloaded version of OptionOps.flatMap - or not directly
     // with Java-style overloading, first because the two overloaded signature:
@@ -154,7 +154,7 @@ object Lifting
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
   {
     val tmp: Exp[Map[K, Repr]] = t.groupBy(f)
-    //tmp.map(v => (v._1, MapOp(v._2, FuncExp(g)))) //This uses MapOp directly, but map could return other nodes
+    //tmp.map(v => (v._1, MapOp(v._2, Fun(g)))) //This uses MapOp directly, but map could return other nodes
     tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(cbf2)))
   }
 
@@ -163,8 +163,8 @@ object Lifting
 
   //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
   def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
-  //The use of _App_ and FuncExp means that t will be evaluated only once.
-  def letExp[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = App(FuncExp(f), t)
+  //The use of _App_ and Fun means that t will be evaluated only once.
+  def letExp[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = App(Fun(f), t)
 
   // Some experimental implicit conversions.
   // With the current Scala compiler, given (f_ )(x), the compiler will try to use implicit conversion on (f _), because

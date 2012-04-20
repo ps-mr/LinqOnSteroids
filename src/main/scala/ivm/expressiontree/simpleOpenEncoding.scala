@@ -111,12 +111,12 @@ trait FunctionOps {
     fmap(t)(id, conv)
 
   //Should we add this?
-  implicit def funcExp[S, T](f: Exp[S] => Exp[T]) = FuncExp(f)
+  implicit def funcExp[S, T](f: Exp[S] => Exp[T]) = Fun(f)
 
   implicit def app[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
     f match {
       //This line should be dropped, but then we'll need to introduce a beta-reducer:
-      case fe: FuncExp[a, b] => fe.f
+      case fe: Fun[a, b] => fe.f
       // KO: Why do we need a beta-reducer? Since we use HOAS this is just Scala function application
       // and already available in App.interpret
       // But it may still make sense to evaluate such applications right away
