@@ -35,7 +35,6 @@
     <orderEntry type="library" scope="TEST" name="org.scalatest_scalatest_2.9.1_1.7.1" level="project" />
     <orderEntry type="library" name="bat-1.6.0.RC1.jar" level="project" />
     <orderEntry type="library" name="junit-4.8.2.jar" level="project" />
-    <orderEntry type="library" name="scalatest-1.6.1.jar" level="project" />
     <orderEntry type="module" module-name="los-sampleapp" exported="" />
   </component>
 </module>
