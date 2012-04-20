@@ -72,7 +72,7 @@ trait TraversableOps {
 
     def view: Exp[TraversableView[T, Repr]] = View(this.t)
 
-    def groupBy[K](f: Exp[T] => Exp[K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr]): Exp[Map[K, Repr]] =
+    def indexBy[K](f: Exp[T] => Exp[K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr]): Exp[Map[K, Repr]] =
       IndexBy(this.t, Fun(f))
 
     def groupBySel[K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](f: Exp[T] => Exp[K], g: Exp[T] => Exp[Rest])(implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =

@@ -71,7 +71,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   } yield (i, j)
 
   @Test def testComplexIndexing() {
-    val l2Idx = l2IdxBase groupBy { _._2 }
+    val l2Idx = l2IdxBase indexBy { _._2 }
     indexingTest(l2, l2Idx){ _(5) map (p => p._1 + p._2) }
   }
 
@@ -104,7 +104,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   } yield (i, j)
 
   @Test def testComplexIndexing3Level_j() {
-    val l3Idx = l3IdxBase_j groupBy { _._2 }
+    val l3Idx = l3IdxBase_j indexBy { _._2 }
     //Here p(0) and p(1) have type Exp[Int] but only by chance. If the index were tuple-based, it'd have type Exp[Seq[(Int, Int)]]. Since the tuple members have the same type,
     //the seq-based index has type Exp[Seq[Seq[Int]]].
     //Exp[Seq[(Int, String)]] would become Exp[Seq[Seq[Any]]], and p(0) would then have type Any.
@@ -114,7 +114,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   }
 
   @Test def testComplexIndexing3Level_k() {
-    val l3Idx = l3IdxBase_k groupBy { _._3 }
+    val l3Idx = l3IdxBase_k indexBy { _._3 }
     indexingTest(l3_k, l3Idx){ _(5) map (p => p._1 + p._2 + p._3) }
   }
 
@@ -142,7 +142,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
 
   @Test def testComplexIndexing3Level_k1_opt() {
-    val l3Idx = l3IdxBase_k1_opt groupBy { _._3 }
+    val l3Idx = l3IdxBase_k1_opt indexBy { _._3 }
     indexingTest(l3_k1_opt, l3Idx){ _(5) map (p => p._1 + p._2 + p._3) }
   }
 
@@ -162,7 +162,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       k <- Let(i + j + 2)
     } yield (i, j, k)
 
-    val l3Idx = l3IdxBase_k_opt groupBy { _._3 }
+    val l3Idx = l3IdxBase_k_opt indexBy { _._3 }
     indexingTest(l3_k_opt, l3Idx){ idx => (idx(5) filter (_._2 ==# 2) map (p => p._1 + p._2 + p._3)) }
   }
 
@@ -173,7 +173,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       k <- Seq(i + j + 2): Exp[Iterable[Int]]
     } yield (i, j, k)
 
-    val l3Idx = l3IdxBase_k_opt groupBy { _._3 }
+    val l3Idx = l3IdxBase_k_opt indexBy { _._3 }
     indexingTest(l3_k_opt, l3Idx){ idx => (idx(5) filter (_._2 ==# 2) map (p => p._1 + p._2 + p._3)) }
   }
 
@@ -192,7 +192,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       k <- asExp(Seq(i + j + 2))
     } yield (i, j, k)
 
-    val l3Idx = l3IdxBase_k_seqlet groupBy { _._3 }
+    val l3Idx = l3IdxBase_k_seqlet indexBy { _._3 }
     indexingTest(l3_k_seqlet, l3Idx){ _(5) map (p => p._1 + p._2 + p._3) }
   }
 
@@ -203,37 +203,37 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       k <- Seq(i + j + 2): Exp[Iterable[Int]]
     } yield (i, j, k)
 
-    val l3Idx = l3IdxBase_k_seqlet groupBy { _._3 }
+    val l3Idx = l3IdxBase_k_seqlet indexBy { _._3 }
     indexingTest(l3_k_seqlet, l3Idx){ _(5) map (p => p._1 + p._2 + p._3) }
   }
 
   @Test def testIndexing() {
-    val index = l.groupBy(p => p._1 + p._2)
+    val index = l.indexBy(p => p._1 + p._2)
     val testquery = l.withFilter(p => p._1 + p._2 ==# 5)
     indexingTest(testquery, index, false) {_(5)}
   }
 
   @Test def testIndexingQueryNorm() {
-    val index = l.groupBy(p => p._1 + p._2)
+    val index = l.indexBy(p => p._1 + p._2)
     val testquery = l.withFilter(p => p._2 + p._1 ==# 5)
     indexingTest(testquery, index, false) {_(5)}
   }
 
   @Test def testIndexingIndexNorm() {
-    val index = l.groupBy(p => p._2 + p._1) //The index should be normalized, test this
+    val index = l.indexBy(p => p._2 + p._1) //The index should be normalized, test this
     val testquery = l.withFilter(p => p._1 + p._2 ==# 5)
     indexingTest(testquery, index, false) {_(5)}
   }
 
   @Test def testCNFconversion() {
-    val index = l.groupBy(p => p._1 + p._2)
+    val index = l.indexBy(p => p._1 + p._2)
     val testquery = l.withFilter(p => p._1 <= 7 && p._1 + p._2 ==# 5)
     indexingTest(testquery, index, false) {_(5)  withFilter (p => p._1 <= 7)}
   }
 
 
   @Test def testRemoveSubquery() {
-    val index = l.groupBy(p => p._1 + p._2)
+    val index = l.indexBy(p => p._1 + p._2)
     Optimization.resetSubqueries()
     Optimization.addIndex(index)
     Optimization.removeIndex(index)

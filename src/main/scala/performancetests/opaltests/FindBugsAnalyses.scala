@@ -553,14 +553,14 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   val methodNameIdx: Exp[Map[String, Seq[(ClassFile, Method)]]] = (for {
     classFile ← classFiles.asSmart
     method ← classFile.methods
-  } yield (classFile, method)).groupBy(_._2.name)
+  } yield (classFile, method)).indexBy(_._2.name)
 
   val excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, Code, ExceptionHandler)]]] = (for {
     classFile ← classFiles.asSmart if classFile.isClassDeclaration
     method ← classFile.methods
     body ← method.body
     exceptionHandler ← body.exceptionHandlers
-  } yield (classFile, method, body, exceptionHandler)) groupBy (_._4.catchType)
+  } yield (classFile, method, body, exceptionHandler)) indexBy (_._4.catchType)
 
   type QueryAnd[+T] = ((ClassFile, Method, Code), T)
   val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
@@ -597,12 +597,12 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     methodNameIdx = (for {
       classFile ← classFiles.asSmart
       method ← classFile.methods
-    } yield (classFile, method)).groupBy(_._2.name)
+    } yield (classFile, method)).indexBy(_._2.name)
 
     val methodNameIdxVal = (for {
       classFile ← classFiles
       method ← classFile.methods
-    } yield (classFile, method)).groupBy(_._2.name)
+    } yield (classFile, method)).indexBy(_._2.name)
 
     val idxBase = for {
       classFile ← classFiles.asSmart if classFile.isClassDeclaration
@@ -610,7 +610,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       body ← method.body
       exceptionHandler ← body.exceptionHandlers
     } yield (classFile, method, body, exceptionHandler)
-    excHandlerTypeIdx = idxBase groupBy (_._4.catchType)
+    excHandlerTypeIdx = idxBase indexBy (_._4.catchType)
     */
 
     */

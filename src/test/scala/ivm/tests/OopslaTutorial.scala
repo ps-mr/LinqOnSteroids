@@ -80,7 +80,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   val idxByTitle = books.groupBy(_.title)
 
   val idxByPublisher =
-    books.asSmart groupBy (_.publisher)
+    books.asSmart indexBy (_.publisher)
 
   val doIndex = true //Disable this to test other optimizations, like unnesting
   if (doIndex)

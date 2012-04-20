@@ -108,7 +108,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, Repr]] =
   {
     Util.assertTypeAndRet[Exp[Map[K, Repr]]] {
-      t.groupBy(f)
+      t.indexBy(f)
     }
   }
 

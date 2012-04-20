@@ -13,7 +13,7 @@ class GroupByTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testGroupBy() {
-    val q = l.groupBy(_ <= 5)
+    val q = l.indexBy(_ <= 5)
     val q1 = q(true)
     q1.interpret() should be (Vector(1,2,3,4,5))
   }

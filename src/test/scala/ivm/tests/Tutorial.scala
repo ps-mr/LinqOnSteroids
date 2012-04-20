@@ -223,7 +223,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     assertType[Exp[Map[Int, Int]]](forced)
     */
 
-    val d7 = c groupBy (ab => ab._2)
+    val d7 = c indexBy (ab => ab._2)
     assertType[Exp[Map[Int, Map[Int, Int]]]](d7)
     showInterp("d7", d7)
 
@@ -246,7 +246,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     showInterp("b1", b1)
     showInterp("b2", b2)
     showInterp("b3", b3)
-    val b4 = a groupBy identity
+    val b4 = a indexBy identity
     assertType[Exp[Map[Int, Traversable[Int]]]](b4)
     showInterp("b4", b4)
     testTraversableView(a)
@@ -264,7 +264,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     showInterp("b1", b1)
     showInterp("b2", b2)
     showInterp("b3", b3)
-    val b4 = a groupBy identity
+    val b4 = a indexBy identity
     assertType[Exp[Map[Int, Set[Int]]]](b4)
     showInterp("b4", b4)
   }

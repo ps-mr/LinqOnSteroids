@@ -39,7 +39,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   private def groupByShareBody[T, U](c: Exp[Traversable[T]],
                                       fx: Var,
                                       fEqBody: Eq[U], constantEqSide: Exp[U], varEqSide: Exp[U]) = {
-    val groupedBy = c.groupBy[U](Fun.makefun[T, U](varEqSide, fx).f)
+    val groupedBy = c.indexBy[U](Fun.makefun[T, U](varEqSide, fx).f)
 
     assertType[Exp[U => Traversable[T]]](groupedBy) //Just for documentation.
     val toLookup = Optimization.normalize(groupedBy)
@@ -76,8 +76,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   //We have to strip View if needed on _both_ sides before performing the match, to increase the chance of a match.
   //This is done here on one side, and on Optimization.addIndex on the other side. Note that only the top-level strip
   //is visible.
-  //Rewrite (if possible) coll.withFilter(elem => F[elem] ==# k && OtherConds[elem]) to (coll.groupBy(elem => F[elem]))(k).withFilter(x => OtherConds[x]),
-  //with F and OtherConds expression contexts and under the condition that coll.groupBy(f) is already available as a precomputed subquery (i.e. an index).
+  //Rewrite (if possible) coll.withFilter(elem => F[elem] ==# k && OtherConds[elem]) to (coll.indexBy(elem => F[elem]))(k).withFilter(x => OtherConds[x]),
+  //with F and OtherConds expression contexts and under the condition that coll.indexBy(f) is already available as a precomputed subquery (i.e. an index).
   val groupByShare: Exp[_] => Exp[_] = {
     case e @ Filter(c: Exp[Traversable[_ /*t*/]], f: Fun[t, _ /*Boolean*/]) if c.freeVars == Set.empty =>
       val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
@@ -254,7 +254,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     val tries = Seq((indexBaseToLookup, Const(true)), (baseNoFilter, filterCond))
     collectFirst(tries) {
       case (base, cond) =>
-        val groupedBy = base.groupBy[U](Fun.makefun[TupleT, U](varEqSideTransf, fx))
+        val groupedBy = base.indexBy[U](Fun.makefun[TupleT, U](varEqSideTransf, fx))
 
         assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
         val toLookup = Optimization.normalize(groupedBy)
@@ -336,7 +336,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     val tries = Seq((indexBaseToLookup, Const(true)), (baseNoFilter, filterCond))
     collectFirst(tries) {
       case (base, cond) =>
-        //val groupedBy = base.groupBy[U](Fun.makefun[TupleT, U](varEqSideTransf, fx))
+        //val groupedBy = base.indexBy[U](Fun.makefun[TupleT, U](varEqSideTransf, fx))
         val groupedBy = base.asInstanceOf[Exp[Traversable[(TupleT, Any /*T*/)]]].groupByTupleType2 //XXX hack 2 - use of Any to accept a fixed manifest,
         // instead of classManifest[T] which is unfortunately not available. The use of the manifest however is just a
         // small (and premature?) optimization.
