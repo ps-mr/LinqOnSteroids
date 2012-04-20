@@ -1,4 +1,5 @@
 #import(ivm.generation.ScalaSigHelpers._)
+#import(scala.tools.scalap.scalax.util.StringUtil)
 #import(tools.scalap.scalax.rules.scalasig.MethodSymbol)<%@
 val classFile: String %>
 <% val className = classFile.split("\\.").last %>
@@ -38,3 +39,35 @@ val classFile: String %>
 <% } %>
   }
 <% i = i+1 } %>
+
+<%
+  if (classSymbol.isCase) {
+    val constructors = getMethodSymbols(classSymbol, _.name == "<init>")
+    val fullClassName = "dbschema." + className
+    i = 0
+    constructors foreach { n =>
+      val wrapperClassName = className + "Exp" + i
+
+
+      //Abstract this away!!
+      //StringUtil.trimStart(sigp.processName(path) + sigp.typeArgString(typeArgs), "<empty>.")
+      val path = StringUtil.cutSubstring(n.path)(".package")
+      val fullClassName2 = StringUtil.cutSubstring(StringUtil.trimStart(sigp.processName(path), "<empty>."))(".this")
+      %> /*${unescape(constructors)}, ${unescape(constructors.map(_.infoType))} */
+
+/*${unescape(fullClassName2)}*/
+
+  case class ${wrapperClassName}${unescape(getTypeParameters(n))}${getParametersAsString(n)}
+    extends Arity${caseClassArity}Op[${getParameterTypesAsString(n, "", "")}, ${className}, ${wrapperClassName}${unescape(getTypeParameters(n))}]${getParameterNamesAsString(n)} with ExpProduct {
+    def copy${getParametersAsString(n)} = ${wrapperClassName}${getParameterNamesAsString(n)}
+    def interpret() = ${fullClassName}${getParameterNamesAsString(n, transform = x => x + ".interpret()")}
+    def metaProductArity = ${caseClassArity}
+    def metaProductElement(n: Int): Exp[Any] = (n: @switch) match {
+#for (pos <- 0 to caseClassArity - 1)
+      case ${pos} => t${pos + 1}
+#end
+    }
+  }
+  def ${className}${getParametersAsString(n)} = ${wrapperClassName}${getParameterNamesAsString(n)}
+<% i += 1 }
+  } %>
