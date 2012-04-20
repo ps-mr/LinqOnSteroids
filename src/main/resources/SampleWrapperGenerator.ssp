@@ -1,12 +1,9 @@
-//XXX: ivm.expressiontree is very much not the right place! Not clear which is the right one
-// (something like de.tud.cs.st.bat.resolved.lifted? Something configured?) PG
-package ivm
-package expressiontree
+package sampleapp
+
+import ivm.expressiontree.{Lifting, ExpSelection, Arity1Op, Exp}
 import Lifting._
 
-import sampleapp._
-
-object BookLifting {<%
+package object squopt {<%
   for(c <- List("Author", "Book", "Result", "MethodRecord")) {
     render("WrappedClassInlined.ssp", Map("classFile" -> ("sampleapp." + c)))
     //Won't work, since String is a purely Java class, hence has no Scala reflection info. We'd need to duplicate what we

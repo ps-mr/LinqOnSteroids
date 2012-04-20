@@ -73,8 +73,8 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
 
-  import BookLifting._
-  import BookLiftingManual._
+  import sampleapp.squopt._
+  import squoptManual._
 
   //But the correct index by title should be:
   val idxByTitle = books.groupBy(_.title)
@@ -187,7 +187,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
 }
 
 
-object BookLiftingManual {
+object squoptManual {
   import annotation.switch
 
   //case class Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int])
