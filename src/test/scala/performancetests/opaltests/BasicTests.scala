@@ -264,7 +264,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       //The pattern-matches used here are unsound:
       val methodsLos1 = for (cf <- queryData;
                              m <- cf.methods;
-                             Code(_,_,instructions,_,_) <- m.attributes;
+                             BATLiftingExperimental.Code(_,_,instructions,_,_) <- m.attributes;
                              INSTANCEOF(_) <- instructions) yield m.name
 
       println(methodsLos1) //Fails because the terms are inadequate

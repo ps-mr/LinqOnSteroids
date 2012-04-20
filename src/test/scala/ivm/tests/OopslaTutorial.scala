@@ -74,7 +74,6 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
 
   import dbschema.squopt._
-  import squoptManual._
 
   //But the correct index by title should be:
   val idxByTitle = books.groupBy(_.title)
@@ -185,23 +184,3 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   // and ExpSelection for them.
   // Possible idea: after all, case classes even implement Product themselves! Might be helpful.
 }
-
-
-object squoptManual {
-  import annotation.switch
-
-  //case class Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int])
-  import dbschema._
-  case class ResultExp(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) extends Arity3Op[Exp[String], Exp[String], Exp[Int], Result, ResultExp](title, authorName, coauthors) with ExpProduct {
-    def copy(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) = ResultExp(title, authorName, coauthors)
-    def interpret() = dbschema.Result(title.interpret(), authorName.interpret(), coauthors.interpret())
-    def metaProductArity = 3
-    def metaProductElement(n: Int): Exp[Any] = (n: @switch) match {
-      case 0 => t1
-      case 1 => t2
-      case 2 => t3
-    }
-  }
-  def Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) = ResultExp(title, authorName, coauthors)
-}
-
