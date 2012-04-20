@@ -12,7 +12,7 @@ import expressiontree.{Const, Plus, Fun, Exp}
  */
 
 class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
-  val x = FuncExp.gensym[Int]()
+  val x = Fun.gensym[Int]()
 
   def testIdempotence[T](e: Exp[T]) = {
     val opt = Optimization.reassociateOps(e)
@@ -128,7 +128,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test
   def testIfInstanceOfAndTypeFilterEq() {
-    val v = FuncExp.gensym[Int]()
+    val v = Fun.gensym[Int]()
     v.ifInstanceOf[Int] should not be v.ifInstanceOf[Long]
     baseCol.typeFilter[Int] should not be (baseCol.typeFilter[Long])
   }

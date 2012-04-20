@@ -52,9 +52,9 @@ class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
                          Filter(
                            Filter(
                              l,
-                             FuncExp((v24245:Exp[Int]) => Eq(Plus(v24245,3),7))),
-                           FuncExp((v24246:Exp[Int]) => Eq(Plus(v24246,8),19))),
-                        FuncExp((v24248:Exp[Int]) => Eq(v24248,19)))
+                             Fun((v24245:Exp[Int]) => Eq(Plus(v24245,3),7))),
+                           Fun((v24246:Exp[Int]) => Eq(Plus(v24246,8),19))),
+                        Fun((v24248:Exp[Int]) => Eq(v24248,19)))
     q2 should equal (desiredResult)
 
     // now merge the filters
@@ -62,7 +62,7 @@ class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
     val q3 = Optimization.mergeFilters(q2)
     val finalResult = newWithFilter(
                              l,
-                             FuncExp((v:Exp[Int]) => And(And(Eq(Plus(v,3),7), Eq(Plus(v,8),19)), Eq(v,19))))
+                             Fun((v:Exp[Int]) => And(And(Eq(Plus(v,3),7), Eq(Plus(v,8),19)), Eq(v,19))))
 
     q3 should equal (finalResult)
   }

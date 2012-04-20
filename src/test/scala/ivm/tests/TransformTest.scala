@@ -19,7 +19,7 @@ trait TransformTestHelper {
   this: JUnitSuite with ShouldMatchersForJUnit =>
   val forceRebuild: Exp[_] => Exp[_] =
     e => e match {
-      case f: FuncExp[_, _] => FuncExp(f.f)
+      case f: Fun[_, _] => Fun(f.f)
       case _ => e
     }
 
@@ -69,7 +69,7 @@ class TransformTest extends JUnitSuite with ShouldMatchersForJUnit with Transfor
 
   //substSubTerm: the replacement can contain the replaced term.
   @Test def testTransformCont() {
-    val x = FuncExp.gensym[(Int, Int)]()
+    val x = Fun.gensym[(Int, Int)]()
     val transf = asExp(x, x) substSubTerm (x, x._1)
     transf should be (asExp(x._1, x._1))
   }
