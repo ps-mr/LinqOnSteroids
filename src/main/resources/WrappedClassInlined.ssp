@@ -43,19 +43,19 @@ val classFile: String %>
 <%
   if (classSymbol.isCase) {
     val constructors = getMethodSymbols(classSymbol, _.name == "<init>")
-    val fullClassName = "dbschema." + className
+
+    //Make the next line part of the template to dump the types of constructors.
+    /*${unescape(constructors)}, ${unescape(constructors.map(_.infoType))} */
+
+    //Abstract this away!!
+    //StringUtil.trimStart(sigp.processName(path) + sigp.typeArgString(typeArgs), "<empty>.")
+    val path = StringUtil.cutSubstring(classSymbol.path)(".package")
+    val fullClassName = StringUtil.trimStart(sigp.processName(path), "<empty>.")
+
     i = 0
     constructors foreach { n =>
       val wrapperClassName = className + "Exp" + i
-
-
-      //Abstract this away!!
-      //StringUtil.trimStart(sigp.processName(path) + sigp.typeArgString(typeArgs), "<empty>.")
-      val path = StringUtil.cutSubstring(n.path)(".package")
-      val fullClassName2 = StringUtil.cutSubstring(StringUtil.trimStart(sigp.processName(path), "<empty>."))(".this")
-      %> /*${unescape(constructors)}, ${unescape(constructors.map(_.infoType))} */
-
-/*${unescape(fullClassName2)}*/
+      %>
 
   case class ${wrapperClassName}${unescape(getTypeParameters(n))}${getParametersAsString(n)}
     extends Arity${caseClassArity}Op[${getParameterTypesAsString(n, "", "")}, ${className}, ${wrapperClassName}${unescape(getTypeParameters(n))}]${getParameterNamesAsString(n)} with ExpProduct {
