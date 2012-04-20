@@ -76,7 +76,7 @@ object BATLiftingExperimental {
 
 object OpalTestData {
   def getTestData = {
-    val file = new File("lib/scalatest-1.6.1.jar")
+    val file = new File("src/test/resources/scalatest-1.6.1.jar")
     val zipfile = new ZipFile(file)
     val zipentries = zipfile.entries().filter( (file) => !(file.isDirectory()) && file.getName().endsWith(".class"))
     enumerationAsScalaIterator(zipentries)
