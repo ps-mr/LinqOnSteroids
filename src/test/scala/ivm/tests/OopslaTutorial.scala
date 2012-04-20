@@ -178,11 +178,9 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
       processedRecordsQueryOptRes should be (processedQueryExpectedOptimRes)
   }
 
-  //A query like processedRecordsQuery cannot really be optimized without unnesting! After that we need inlining,
-  // which we have, and only then the delta-reduction rule for tuples can kick in.
-  // If instead we use Result, we need delta-reduction to work on Result; Result needs to implement ExpProduct, and the
-  // selectors need to implement ExpSelection; I guess for the latter I'd need to manually alter the generated code a
-  // bit (for now), but it is surely possible to recognize case classes (deployed software does it) and add ExpProduct
-  // and ExpSelection for them.
-  // Possible idea: after all, case classes even implement Product themselves! Might be helpful.
+  // To optimize processedRecordsQuery, we need query unnesting, inlining, and only then the delta-reduction rule for case classes can kick in.
+  // To this end, ResultExp needs to implement ExpProduct, and the
+  // selectors need to implement ExpSelection.
+  // Possible idea: after all, case classes even implement Product themselves, hence one might maybe reuse the lifting of tuples;
+  // probably that would work when case classes will implement ProductX.
 }
