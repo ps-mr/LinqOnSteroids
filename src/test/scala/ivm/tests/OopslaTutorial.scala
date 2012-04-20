@@ -14,11 +14,11 @@ import Lifting._
 
 //New example, discussed with Christian.
 
-import sampleapp._
+import dbschema._
 class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   //Having the import here does not work; we later import BookLiftingManual which shadows the original objects,
   //
-  //import sampleapp._
+  //import dbschema._
   val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "Pearson Education", Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
   val recordsOld = for {
     book <- books
@@ -73,7 +73,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
 
-  import sampleapp.squopt._
+  import dbschema.squopt._
   import squoptManual._
 
   //But the correct index by title should be:
@@ -191,10 +191,10 @@ object squoptManual {
   import annotation.switch
 
   //case class Result(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int])
-  import sampleapp._
+  import dbschema._
   case class ResultExp(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) extends Arity3Op[Exp[String], Exp[String], Exp[Int], Result, ResultExp](title, authorName, coauthors) with ExpProduct {
     def copy(title: Exp[String], authorName: Exp[String], coauthors: Exp[Int]) = ResultExp(title, authorName, coauthors)
-    def interpret() = sampleapp.Result(title.interpret(), authorName.interpret(), coauthors.interpret())
+    def interpret() = dbschema.Result(title.interpret(), authorName.interpret(), coauthors.interpret())
     def metaProductArity = 3
     def metaProductElement(n: Int): Exp[Any] = (n: @switch) match {
       case 0 => t1
