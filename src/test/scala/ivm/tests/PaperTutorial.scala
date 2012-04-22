@@ -14,29 +14,20 @@ import Lifting._
 
 //New example, discussed with Christian.
 
+//Import most definitions from Figure 1 - Definition of the schema and of content
 import dbschema._
 class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
-  //Having the import here does not work; we later import BookLiftingManual which shadows the original objects,
-  //
-  //import dbschema._
+  //Rest of Figure 1 - Definition of the schema and of content
   val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "Pearson Education", Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
-  val recordsOld = for {
-    book <- books
-    if book.publisher == "ACM"
-    author <- book.authors
-  } yield (book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
-  val processedRecordsOld = for {
-    record <- recordsOld
-    if record._1.startsWith("Compilers")
-  } yield (record._1, record._2)
-
+  //Figure 2 - Query on schema in Fig. 1
   val records = for {
     book <- books
     if book.publisher == "Pearson Education"
     author <- book.authors
   } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
+  //Figure 3 - Further processing of the query in Fig. 2
   def titleFilter(records: Set[Result], keyword: String): Set[(String, String)] = for {
     record <- records
     if record.title.contains(keyword)
@@ -44,6 +35,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   val processedRecords = titleFilter(records, "Principles")
 
+  //Figure 4. Hand-optimized composition of Fig. 2 and 3
   def titleFilterHandOpt1(books: Set[Book], publisher: String, keyword: String) = for {
     book <- books
     if book.publisher == publisher
@@ -52,6 +44,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   } yield (book.title, author.firstName + " " + author.lastName)
   val processedRecordsOpt1 = titleFilterHandOpt1(books, "Pearson Education", "Principles")
 
+  //Figure 5. Hoisting the filtering step of Fig. 4
   def titleFilterHandOpt2(books: Set[Book], publisher: String, keyword: String) =
     for {
       book <- books
@@ -61,6 +54,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
     } yield (book.title, author.firstName + " " + author.lastName)
   val processedRecordsOpt2 = titleFilterHandOpt2(books, "Pearson Educationrson Education", "Principles")
 
+  //Figure 8. Desugaring of code in Fig. 2.
   val recordsDesugared = books.withFilter(book =>
     book.publisher == "Pearson Education").flatMap(book =>
     book.authors.map(author =>
@@ -68,11 +62,11 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   test("recordsDesugared should be records") {
     recordsDesugared should be (records)
-    recordsOld should not be (records)
   }
 
   val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
 
+  //Figure 6. Reified query in SQUOPT
   import dbschema.squopt._
 
   //But the correct index by title should be:
@@ -177,10 +171,4 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
     if (!doIndex)
       processedRecordsQueryOptRes should be (processedQueryExpectedOptimRes)
   }
-
-  // To optimize processedRecordsQuery, we need query unnesting, inlining, and only then the delta-reduction rule for case classes can kick in.
-  // To this end, ResultExp needs to implement ExpProduct, and the
-  // selectors need to implement ExpSelection.
-  // Possible idea: after all, case classes even implement Product themselves, hence one might maybe reuse the lifting of tuples;
-  // probably that would work when case classes will implement ProductX.
 }
