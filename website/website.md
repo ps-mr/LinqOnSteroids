@@ -45,14 +45,14 @@ This project benefited from code and ideas of many different people:
 
 # Releases
 
-- 0.2 - 2012-04-22 - [.tar.gz](tarballs/squopt-v0.2.tar.gz)
+- 0.2 - 2012-04-22 - [.tar.gz](SQuOpt/tarballs/squopt-v0.2.tar.gz)
     - Renames and refactorings to match the paper.
     - Updated the evaluation code (`COVARIANT_EQUALS`,
       `RUN_FINALIZERS_ON_EXIT` were modified slightly to match FindBugs)
     - Updated PaperTutorial and resynced with the paper
     - Fixed a few bugs.
     - Less type annotations are needed in the optimizer.
-- 0.1 - 2012-04-09 - [.tar.gz](tarballs/squopt-v0.1.tar.gz)
+- 0.1 - 2012-04-09 - [.tar.gz](SQuOpt/tarballs/squopt-v0.1.tar.gz)
     - First release
 
 Note: User documentation is currently missing.
@@ -66,7 +66,7 @@ The code is located in class `performancetests.opaltests.FindBugsAnalyses`.
 
 We provide the raw data collected, together with the script used to produce the
 tables included in the paper, based on R and runnable on Unix systems such as
-Mac OS X and probably Linux. [Here](tarballs/evaluation-v0.2.tar.gz) they are.
+Mac OS X and probably Linux. [Here](SQuOpt/tarballs/evaluation-v0.2.tar.gz) they are.
 
-For those interested only in the resulting graphs, [here](EvalRed-paper.pdf) are
-the results shown in the paper, while [here](EvalRed-new.pdf) are the new ones.
+For those interested only in the resulting graphs, [here](SQuOpt/EvalRed-paper.pdf) are
+the results shown in the paper, while [here](SQuOpt/EvalRed-new.pdf) are the new ones.
