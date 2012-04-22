@@ -59,6 +59,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
     book.authors.map(author =>
       Result(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
 
+  //Test for Fig. 8
   test("recordsDesugared should be records") {
     recordsDesugared should be (records)
   }
@@ -93,6 +94,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   //But the correct index by title should be:
   val idxByTitle = books.groupBy(_.title)
 
+  //From Section 3.3
   val idxByPublisher =
     books.asSmart indexBy (_.publisher)
 
