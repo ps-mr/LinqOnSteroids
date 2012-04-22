@@ -15,14 +15,36 @@ import Lifting._
 class TransformationCombinators {
   //implicit val m: Monoid[PartialFunction[Exp[_], Exp[_]]]
   type Transformer = PartialFunction[Exp[_], Exp[_]]
+  abstract class Transformer2 extends PartialFunction[Exp[_], Exp[_]] {
+    def &(q: => (Exp[_] => Exp[_])) = {
+      //Transformer2 {}
+      lazy val q0 = q
+      //this andThen q0 //Eta-expansion should be applied _here_
+      Transformer2 { case in if isDefinedAt(in) => q0(this(in)) }
+    }
+    /*def |(q: => Transformer2) = {
+      //Transformer2 {}
+      lazy val q0 = q
+      this orElse q0 //Eta-expansion should be applied _here_
+    }*/
+  }
+  def Transformer2(f: Transformer) = new Transformer2 {
+    def apply(in: Exp[_]) = f(in)
+    def isDefinedAt(x: Exp[_]) = f.isDefinedAt(x)
+  }
+
   //This is the shortest way of writing identity.
   val emptyTransform: Transformer = {case e => e}
 
+  val emptyTransform2: Transformer2 = Transformer2(emptyTransform)
+  def kleeneStar2(f: => Transformer2): Exp[_] => Exp[_] =
+    f & kleeneStar2(f) orElse emptyTransform
+
   def kleeneStar(f: Transformer): Exp[_] => Exp[_] = {
-    //def resultFun(exp: Exp[_]): Exp[_] = (f andThen resultFun orElse emptyTransform)(exp)
-    //resultFun _
-    def resultFun: Exp[_] => Exp[_] = (f andThen resultFun orElse emptyTransform)
-    resultFun
+    def resultFun(exp: Exp[_]): Exp[_] = (f andThen resultFun orElse emptyTransform)(exp)
+    resultFun _
+    //def resultFun: Exp[_] => Exp[_] = (f andThen resultFun orElse emptyTransform)
+    //resultFun
   }
   /*
   //Ideal definition, maybe - this should at least work, if not very efficiently because of the lack of sharing:
@@ -32,9 +54,10 @@ class TransformationCombinators {
 }
 
 object TransformationCombinators extends TransformationCombinators /*with App*/ {
-  import OptimizationTransforms.{deltaReductionTuple,betaReduction}
+  import OptimizationTransforms.{deltaReductionTuple, betaReduction}
 
-  def betaDeltaReducer2 = kleeneStar(deltaReductionTuple orElse betaReduction)
+  //def betaDeltaReducer2 = kleeneStar(deltaReductionTuple orElse betaReduction)
+  def betaDeltaReducer2 = kleeneStar2(Transformer2 { deltaReductionTuple orElse betaReduction })
   def applyFun[A, B] = {
     //\x f -> f x
     Fun((x: Exp[A]) => Fun((f: Exp[A => B]) => f(x)))
