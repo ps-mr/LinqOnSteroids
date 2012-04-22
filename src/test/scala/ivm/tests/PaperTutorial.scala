@@ -69,16 +69,6 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   //Figure 6. Reified query in SQUOPT
   import dbschema.squopt._
 
-  //But the correct index by title should be:
-  val idxByTitle = books.groupBy(_.title)
-
-  val idxByPublisher =
-    books.asSmart indexBy (_.publisher)
-
-  val doIndex = true //Disable this to test other optimizations, like unnesting
-  if (doIndex)
-    Optimization.addIndex(idxByPublisher)
-
   val recordsQuery = for {
    book <- books.asSmart
    if book.publisher ==# "Pearson Education"
@@ -99,6 +89,16 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
       //converted to Set[AnyRef]).
       asExp(Set(author.firstName + " " + author.lastName)),
       book.authors.size - 1)
+
+  //But the correct index by title should be:
+  val idxByTitle = books.groupBy(_.title)
+
+  val idxByPublisher =
+    books.asSmart indexBy (_.publisher)
+
+  val doIndex = true //Disable this to test other optimizations, like unnesting, instead of indexing
+  if (doIndex)
+    Optimization.addIndex(idxByPublisher)
 
   test("same results") {
     showExp(recordsQuery, "recordsQuery")
