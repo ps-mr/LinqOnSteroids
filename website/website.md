@@ -45,7 +45,7 @@ This project benefitted from code and ideas of many different people:
 
 # Releases
 
-- 0.2 - 2012-04-22
+- 0.2 - 2012-04-22 - [.tar.gz](tarballs/squopt-v0.2.tar.gz) - 5.1M
     - Renames and refactorings to match the paper.
     - Updated the evaluation code (`COVARIANT_EQUALS`,
       `RUN_FINALIZERS_ON_EXIT` were modified slightly to match FindBugs)
@@ -53,7 +53,7 @@ This project benefitted from code and ideas of many different people:
     - Fixed a few bugs.
     - The code generator now also generates constructors.
     - Less type annotations are needed in the optimizer.
-- 0.1 - 2012-04-09
+- 0.1 - 2012-04-09 - [.tar.gz](tarballs/squopt-v0.1.tar.gz) - 5.1M
     - First release
 
 Note: User documentation is currently lacking.
