@@ -19,9 +19,16 @@ class TransformationCombinators {
   val emptyTransform: Transformer = {case e => e}
 
   def kleeneStar(f: Transformer): Exp[_] => Exp[_] = {
-    def resultFun(exp: Exp[_]): Exp[_] = (f andThen resultFun orElse emptyTransform)(exp)
-    resultFun _
+    //def resultFun(exp: Exp[_]): Exp[_] = (f andThen resultFun orElse emptyTransform)(exp)
+    //resultFun _
+    def resultFun: Exp[_] => Exp[_] = (f andThen resultFun orElse emptyTransform)
+    resultFun
   }
+  /*
+  //Ideal definition, maybe - this should at least work, if not very efficiently because of the lack of sharing:
+  def kleeneStar(f: => Transformer): Exp[_] => Exp[_] =
+    f andThen kleeneStar(f) orElse emptyTransform
+  */
 }
 
 object TransformationCombinators extends TransformationCombinators /*with App*/ {
