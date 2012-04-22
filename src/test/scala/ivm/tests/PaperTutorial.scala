@@ -3,9 +3,8 @@ package tests
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-import expressiontree._
 import optimization.Optimization
-import Lifting._
+import expressiontree.Util
 
 /**
  * User: pgiarrusso
@@ -15,7 +14,7 @@ import Lifting._
 //New example, discussed with Christian.
 
 //Import most definitions from Figure 1 - Definition of the schema and of content
-import dbschema._
+import dbschema.{squopt => _, _}
 class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   //Rest of Figure 1 - Definition of the schema and of content
   val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "Pearson Education", Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
@@ -67,6 +66,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
 
   //Figure 6. Reified query in SQUOPT
+  import squopt._
   import dbschema.squopt._
 
   val recordsQuery = for {
@@ -158,6 +158,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
+  import expressiontree.Fun
 
   val processedRecordsQueryOptFun = Fun((kw: Exp[String]) => titleFilterQuery2(recordsQuery, kw)).optimize
   Util.assertType[Exp[String => Set[(String, String)]]](processedRecordsQueryOptFun)
