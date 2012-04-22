@@ -67,3 +67,6 @@ The code is located in class `performancetests.opaltests.FindBugsAnalyses`.
 We provide the raw data collected, together with the script used to produce the
 tables included in the paper, based on R and runnable on Unix systems such as
 Mac OS X and probably Linux. [Here](tarballs/evaluation-v0.2.tar.gz) they are.
+
+For those interested only in the resulting graphs, [here](EvalRed-paper.pdf) are
+the results shown in the paper, while [here](EvalRed-new.pdf) are the new ones.
