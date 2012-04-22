@@ -160,7 +160,6 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
-  import expressiontree.Fun
 
   val processedRecordsQueryOptFun = Fun((kw: Exp[String]) => titleFilterQuery2(recordsQuery, kw)).optimize
   Util.assertType[Exp[String => Set[(String, String)]]](processedRecordsQueryOptFun)
