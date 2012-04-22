@@ -18,17 +18,16 @@ class TransformationCombinators {
   //This is the shortest way of writing identity.
   val emptyTransform: Transformer = {case e => e}
 
-  def kleeneStar(f: Transformer)(exp: Exp[_]): Exp[_] = {
+  def kleeneStar(f: Transformer): Exp[_] => Exp[_] = {
     def resultFun(exp: Exp[_]): Exp[_] = (f andThen resultFun orElse emptyTransform)(exp)
-    resultFun(exp)
+    resultFun _
   }
 }
 
 object TransformationCombinators extends TransformationCombinators /*with App*/ {
   import OptimizationTransforms.{deltaReductionTuple,betaReduction}
 
-  //def betaDeltaReducer2(exp: Exp[_]): Exp[_] = kleeneStar(deltaReductionTuple orElse betaReduction)(exp)
-  def betaDeltaReducer2 = kleeneStar(deltaReductionTuple orElse betaReduction) _
+  def betaDeltaReducer2 = kleeneStar(deltaReductionTuple orElse betaReduction)
   def applyFun[A, B] = {
     //\x f -> f x
     Fun((x: Exp[A]) => Fun((f: Exp[A => B]) => f(x)))
