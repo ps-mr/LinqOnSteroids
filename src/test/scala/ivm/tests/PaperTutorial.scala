@@ -123,12 +123,14 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
       recordsQueryOpt should be (indexedQuery)
   }
 
-  def titleFilterQuery(records: Exp[Set[Result]], keyword: String): Exp[Set[(String, String)]] = for {
+  //Figure 7. SQUOPT version of Fig. 3
+  def titleFilterQuery(records: Exp[Set[Result]], keyword: Exp[String]): Exp[Set[(String, String)]] = for {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
 
   val processedRecordsQuery = titleFilterQuery(recordsQuery, "Principles")
+  //Figure 7 end. The result is checked below.
 
   //We lift the hand-optimized version to verify that the optimizer produces the same code.
   def titleFilterHandOpt2Query(books: Exp[Set[Book]], publisher: String, keyword: String): Exp[Set[(String, String)]] =
@@ -150,27 +152,18 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
       processedRecordsQueryOpt should be (processedQueryExpectedOptimRes)
   }
 
-  //XXX do we actually need to change the type of keyword? Can't we just use Exp[String] like in the paper?
-  //Optimize the query before specifying the keyword to lookup.
-  //We first modify the type of titleFilterQuery, in particular the type of its `keyword` parameter.
-  //Before, `keyword` had type String instead of Exp[String], because the code worked
-  //either way.
-  //For this example, instead, keyword must have type Exp[String], like in the paper.
-  def titleFilterQuery2(records: Exp[Set[Result]], keyword: Exp[String]): Exp[Set[(String, String)]] = for {
-    record <- records
-    if record.title.contains(keyword)
-  } yield (record.title, record.authorName)
+  //As shown at the end of Sec. 3.2, optimize the query before specifying the keyword to lookup.
+  val lookupFunction = Fun((keyword: Exp[String]) => titleFilterQuery(recordsQuery, keyword)).optimize
+  Util.assertType[Exp[String => Set[(String, String)]]](lookupFunction)
+  val processedRecordsQueryOptRes = lookupFunction("Principles")
 
-  val processedRecordsQueryOptFun = Fun((kw: Exp[String]) => titleFilterQuery2(recordsQuery, kw)).optimize
-  Util.assertType[Exp[String => Set[(String, String)]]](processedRecordsQueryOptFun)
-  //XXX In the paper this is lookupFunction.
-  val processedRecordsQueryOptRes = processedRecordsQueryOptFun("Principles")
-
+  //... and test that it works:
   test("processedRecords should have the same results as the lifted function version") {
     processedRecordsQueryOptRes.interpret() should be (processedRecords)
     showExp(processedRecordsQueryOptRes, "processedRecordsQueryOptRes")
     processedRecordsQueryOptRes.interpret() should be (processedRecords)
     if (!doIndex)
       processedRecordsQueryOptRes should be (processedQueryExpectedOptimRes)
+    //if doIndex, the expression tree will have another form.
   }
 }
