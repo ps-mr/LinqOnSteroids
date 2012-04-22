@@ -22,3 +22,8 @@ libraryDependencies += "org.fusesource.scalate" % "scalate-core" % "1.5.3"
 //addSbtPlugin("com.mojolly.scalate" %% "xsbt-scalate-generator" % "0.1.1")
 
 libraryDependencies += "org.scala-lang" % "scalap" % "2.9.1"
+
+//Support for sbt-idea.
+resolvers += "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
+
+addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.0.0")
