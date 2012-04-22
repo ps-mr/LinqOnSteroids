@@ -15,7 +15,7 @@ import Lifting._
 //New example, discussed with Christian.
 
 import dbschema._
-class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
+class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   //Having the import here does not work; we later import BookLiftingManual which shadows the original objects,
   //
   //import dbschema._
