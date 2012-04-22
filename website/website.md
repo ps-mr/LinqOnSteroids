@@ -34,7 +34,7 @@ We provide two source releases:
 <!--the elaboration scripts and statistics-->
 
 # Credits
-This project benefitted from code and ideas of many different people:
+This project benefited from code and ideas of many different people:
 
 - Paolo G. Giarrusso (project leader)
 - Klaus Ostermann
