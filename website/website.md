@@ -40,7 +40,7 @@ This project benefited from code and ideas of many different people:
 - Klaus Ostermann
 - Michael Eichberg
 - Tillmann Rendel
-- Christian Kaestner
+- Christian Kästner
 - Katharina Haselhorst
 
 # Releases
@@ -61,7 +61,8 @@ Note: User documentation is currently missing.
 Examples from our paper are implemented and tested in class `ivm.tests.PaperTutorial`.
 
 # Evaluation
-The evaluation included in the paper was done on release 0.1.
+The evaluation included in the paper was done on release 0.1; the new release
+gives similar results.
 The code is located in class `performancetests.opaltests.FindBugsAnalyses`.
 
 We provide the raw data collected, together with the script used to produce the
