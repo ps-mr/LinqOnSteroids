@@ -1,0 +1,4 @@
+Parser combinators on transformations.
+The idea seems to work quite well. It's weird the relation between andThen and ~ (sequencing). In fact, ~ is a special case of function concatenation.
+Parser t = Input -> ParseResult t = {more or less} Input -> (Option t, Input).
+Now, ~ runs the second parser on the result of the first. If we consider a Parser as a function Input -> m Input, where m is a writer monad where the state is a suitable monoid (producing tuples), we can say that ~ is just the same as function composition, only in a suitable monad (in fact, it's a special case of (>=>)).
