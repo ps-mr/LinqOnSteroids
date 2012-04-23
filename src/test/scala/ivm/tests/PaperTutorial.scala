@@ -3,9 +3,8 @@ package tests
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
-import expressiontree._
 import optimization.Optimization
-import Lifting._
+import expressiontree.Util
 
 /**
  * User: pgiarrusso
@@ -14,29 +13,20 @@ import Lifting._
 
 //New example, discussed with Christian.
 
-import dbschema._
-class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
-  //Having the import here does not work; we later import BookLiftingManual which shadows the original objects,
-  //
-  //import dbschema._
+//Import most definitions from Figure 1 - Definition of the schema and of content
+import dbschema.{squopt => _, _}
+class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
+  //Rest of Figure 1 - Definition of the schema and of content
   val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "Pearson Education", Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
-  val recordsOld = for {
-    book <- books
-    if book.publisher == "ACM"
-    author <- book.authors
-  } yield (book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
-  val processedRecordsOld = for {
-    record <- recordsOld
-    if record._1.startsWith("Compilers")
-  } yield (record._1, record._2)
-
+  //Figure 2 - Query on schema in Fig. 1
   val records = for {
     book <- books
     if book.publisher == "Pearson Education"
     author <- book.authors
   } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
+  //Figure 3 - Further processing of the query in Fig. 2
   def titleFilter(records: Set[Result], keyword: String): Set[(String, String)] = for {
     record <- records
     if record.title.contains(keyword)
@@ -44,6 +34,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   val processedRecords = titleFilter(records, "Principles")
 
+  //Figure 4. Hand-optimized composition of Fig. 2 and 3
   def titleFilterHandOpt1(books: Set[Book], publisher: String, keyword: String) = for {
     book <- books
     if book.publisher == publisher
@@ -52,6 +43,7 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
   } yield (book.title, author.firstName + " " + author.lastName)
   val processedRecordsOpt1 = titleFilterHandOpt1(books, "Pearson Education", "Principles")
 
+  //Figure 5. Hoisting the filtering step of Fig. 4
   def titleFilterHandOpt2(books: Set[Book], publisher: String, keyword: String) =
     for {
       book <- books
@@ -61,29 +53,22 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
     } yield (book.title, author.firstName + " " + author.lastName)
   val processedRecordsOpt2 = titleFilterHandOpt2(books, "Pearson Educationrson Education", "Principles")
 
+  //Figure 8. Desugaring of code in Fig. 2.
   val recordsDesugared = books.withFilter(book =>
     book.publisher == "Pearson Education").flatMap(book =>
     book.authors.map(author =>
       Result(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
 
+  //Test for Fig. 8
   test("recordsDesugared should be records") {
     recordsDesugared should be (records)
-    recordsOld should not be (records)
   }
 
   val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
 
+  //Figure 6. Reified query in SQUOPT
+  import squopt._
   import dbschema.squopt._
-
-  //But the correct index by title should be:
-  val idxByTitle = books.groupBy(_.title)
-
-  val idxByPublisher =
-    books.asSmart indexBy (_.publisher)
-
-  val doIndex = true //Disable this to test other optimizations, like unnesting
-  if (doIndex)
-    Optimization.addIndex(idxByPublisher)
 
   val recordsQuery = for {
    book <- books.asSmart
@@ -106,6 +91,17 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
       asExp(Set(author.firstName + " " + author.lastName)),
       book.authors.size - 1)
 
+  //But the correct index by title should be:
+  val idxByTitle = books.groupBy(_.title)
+
+  //From Section 3.3
+  val idxByPublisher =
+    books.asSmart indexBy (_.publisher)
+
+  val doIndex = true //Disable this to test other optimizations, like unnesting, instead of indexing
+  if (doIndex)
+    Optimization.addIndex(idxByPublisher)
+
   test("same results") {
     showExp(recordsQuery, "recordsQuery")
     recordsQuery.interpret() should be (records)
@@ -127,12 +123,14 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
       recordsQueryOpt should be (indexedQuery)
   }
 
-  def titleFilterQuery(records: Exp[Set[Result]], keyword: String): Exp[Set[(String, String)]] = for {
+  //Figure 7. SQUOPT version of Fig. 3
+  def titleFilterQuery(records: Exp[Set[Result]], keyword: Exp[String]): Exp[Set[(String, String)]] = for {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
 
   val processedRecordsQuery = titleFilterQuery(recordsQuery, "Principles")
+  //Figure 7 end. The result is checked below.
 
   //We lift the hand-optimized version to verify that the optimizer produces the same code.
   def titleFilterHandOpt2Query(books: Exp[Set[Book]], publisher: String, keyword: String): Exp[Set[(String, String)]] =
@@ -154,33 +152,18 @@ class OopslaTutorial extends FunSuite with ShouldMatchers with TestUtil {
       processedRecordsQueryOpt should be (processedQueryExpectedOptimRes)
   }
 
-  //XXX do we actually need to change the type of keyword? Can't we just use Exp[String] like in the paper?
-  //Optimize the query before specifying the keyword to lookup.
-  //We first modify the type of titleFilterQuery, in particular the type of its `keyword` parameter.
-  //Before, `keyword` had type String instead of Exp[String], because the code worked
-  //either way.
-  //For this example, instead, keyword must have type Exp[String], like in the paper.
-  def titleFilterQuery2(records: Exp[Set[Result]], keyword: Exp[String]): Exp[Set[(String, String)]] = for {
-    record <- records
-    if record.title.contains(keyword)
-  } yield (record.title, record.authorName)
+  //As shown at the end of Sec. 3.2, optimize the query before specifying the keyword to lookup.
+  val lookupFunction = Fun((keyword: Exp[String]) => titleFilterQuery(recordsQuery, keyword)).optimize
+  Util.assertType[Exp[String => Set[(String, String)]]](lookupFunction)
+  val processedRecordsQueryOptRes = lookupFunction("Principles")
 
-  val processedRecordsQueryOptFun = Fun((kw: Exp[String]) => titleFilterQuery2(recordsQuery, kw)).optimize
-  Util.assertType[Exp[String => Set[(String, String)]]](processedRecordsQueryOptFun)
-  //XXX In the paper this is lookupFunction.
-  val processedRecordsQueryOptRes = processedRecordsQueryOptFun("Principles")
-
+  //... and test that it works:
   test("processedRecords should have the same results as the lifted function version") {
     processedRecordsQueryOptRes.interpret() should be (processedRecords)
     showExp(processedRecordsQueryOptRes, "processedRecordsQueryOptRes")
     processedRecordsQueryOptRes.interpret() should be (processedRecords)
     if (!doIndex)
       processedRecordsQueryOptRes should be (processedQueryExpectedOptimRes)
+    //if doIndex, the expression tree will have another form.
   }
-
-  // To optimize processedRecordsQuery, we need query unnesting, inlining, and only then the delta-reduction rule for case classes can kick in.
-  // To this end, ResultExp needs to implement ExpProduct, and the
-  // selectors need to implement ExpSelection.
-  // Possible idea: after all, case classes even implement Product themselves, hence one might maybe reuse the lifting of tuples;
-  // probably that would work when case classes will implement ProductX.
 }
