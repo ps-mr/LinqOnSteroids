@@ -1,6 +1,6 @@
 # Code examples
 An example of the optimization abilities of the framework is available in
-src/test/scala/ivm/tests/PaperTutorial.scala. When run as a test, it verifies
+`src/test/scala/ivm/tests/PaperTutorial.scala`. When run as a test, it verifies
 that the optimizer on the given query produces the same code as one gets by
 manual optimization.
 
