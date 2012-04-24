@@ -23,13 +23,16 @@ class TransformationCombinatorsScalaz[M[_], T](implicit plus: Plus[M], monad: Mo
       lazy val q0 = q
       //this &&& q andThen (plus.plus[T] _).tupled //This code does not work. plus.plus takes a by-name parameter,
       //while the other function expect a non-by-name parameter. To fix this problem, we'd need to write:
+      /*
       Transformer {
         this &&& (a => () => q(a)) andThen ((a: M[T], b: () => M[T]) => plus.plus[T](a, b())).tupled
       }
-      //Transformer { in => plus.plus(this(in), q0(in)) }
+      */
+      Transformer { in => plus.plus(this(in), q0(in)) }
     }
     def * = rep(this)
   }
+
   def Transformer(f: => TransformerFun) = {
     lazy val f0 = f
     new Transformer {
