@@ -12,7 +12,7 @@ import Scalaz._
  * Date: 20/4/2012
  */
 
-class TransformationCombinatorsScalaz[M[_]: Plus: Monad, T] {
+class TransformationCombinatorsScalaz[M[_], T](implicit plus: Plus[M], monad: Monad[M]) {
   type TransformerFun = T => M[T]
   abstract class Transformer extends TransformerFun {
     def &(q: => Transformer): Transformer = {
@@ -21,7 +21,7 @@ class TransformationCombinatorsScalaz[M[_]: Plus: Monad, T] {
     }
     def |(q: => Transformer): Transformer = {
       lazy val q0 = q
-      Transformer { in => implicitly[Plus[M]].plus(this(in), q0(in)) }
+      Transformer { in => plus.plus(this(in), q0(in)) }
     }
 
   }
@@ -29,7 +29,7 @@ class TransformationCombinatorsScalaz[M[_]: Plus: Monad, T] {
     def apply(in: T) = f(in)
   }
 
-  val emptyTransform: Transformer = Transformer { implicitly[Monad[M]].pure(_) }
+  val emptyTransform: Transformer = Transformer { monad.pure(_) }
   def kleeneStar(f: => Transformer): Transformer =
     f & kleeneStar(f) | emptyTransform
 }
