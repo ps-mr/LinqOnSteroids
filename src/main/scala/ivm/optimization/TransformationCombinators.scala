@@ -23,15 +23,22 @@ class TransformationCombinatorsScalaz[M[_], T](implicit plus: Plus[M], monad: Mo
       lazy val q0 = q
       Transformer { in => plus.plus(this(in), q0(in)) }
     }
-
+    def * = rep(this)
   }
   def Transformer(f: TransformerFun) = new Transformer {
     def apply(in: T) = f(in)
   }
 
   val emptyTransform: Transformer = Transformer { monad.pure(_) }
+  //This method is not at all tail-recursive...
   def kleeneStar(f: => Transformer): Transformer =
     f & kleeneStar(f) | emptyTransform
+
+  //...hence "tie the knot" explicitly. TODO: test that this is actually beneficial.
+  def rep(f: => Transformer): Transformer = {
+    def resultFun: Transformer = Transformer { f & resultFun | emptyTransform }
+    resultFun
+  }
 }
 
 class TransformationCombinators {
@@ -104,6 +111,13 @@ object TransformationCombinators extends TransformationCombinators /*with App*/ 
 
   //def betaDeltaReducer2 = kleeneStar(deltaReductionTuple orElse betaReduction)
   def betaDeltaReducer2 = kleeneStar2(Transformer2 { deltaReductionTuple orElse betaReduction })
+
+  object Foo extends TransformationCombinatorsScalaz[Option, Exp[_]]
+  def betaDeltaReducer3 = {
+    import Foo._
+    Function.unlift(Transformer {(deltaReductionTuple orElse betaReduction).lift} *)
+  }
+
   def applyFun[A, B] = {
     //\x f -> f x
     Fun((x: Exp[A]) => Fun((f: Exp[A => B]) => f(x)))
@@ -127,6 +141,8 @@ object TransformationCombinators extends TransformationCombinators /*with App*/ 
       println("Term:" + term)
       println(betaDeltaReducer2(term))
       println("Beta-reduced term:" + term.transform(betaDeltaReducer2))
+      println(betaDeltaReducer3(term))
+      println("Beta-reduced term - with Scalaz:" + term.transform(betaDeltaReducer3))
       println()
     }
   }
