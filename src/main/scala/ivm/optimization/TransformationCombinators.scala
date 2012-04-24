@@ -1,18 +1,64 @@
 package ivm
 package optimization
 
-import expressiontree.{Lifting, App, Fun, ExpProduct, ExpSelection, Exp}
+import expressiontree.{Lifting, Fun, Exp}
 import Lifting._
 
-//import scalaz._
-
+import scalaz._
+import Scalaz._
 
 /**
  * User: pgiarrusso
  * Date: 20/4/2012
  */
 
+class TransformationCombinatorsScalaz[M[_]: Plus: Monad, T] {
+  type TransformerFun = T => M[T]
+  abstract class Transformer extends TransformerFun {
+    def &(q: => Transformer): Transformer = {
+      lazy val q0 = q
+      Transformer { kleisli(this) >=> q0 }
+    }
+    def |(q: => Transformer): Transformer = {
+      lazy val q0 = q
+      Transformer { in => implicitly[Plus[M]].plus(this(in), q0(in)) }
+    }
+
+  }
+  def Transformer(f: TransformerFun) = new Transformer {
+    def apply(in: T) = f(in)
+  }
+
+  val emptyTransform: Transformer = Transformer { implicitly[Monad[M]].pure(_) }
+  def kleeneStar(f: => Transformer): Transformer =
+    f & kleeneStar(f) | emptyTransform
+}
+
 class TransformationCombinators {
+  type TransformerOpt = Exp[_] => Option[Exp[_]]
+  abstract class Transformer3 extends TransformerOpt {
+    def &(q: => TransformerOpt): TransformerOpt = {
+      lazy val q0 = q
+      Transformer3 { kleisli(this) >=> q0 }
+    }
+    def |(q: => TransformerOpt): TransformerOpt = {
+      lazy val q0 = q
+      Transformer3 { in => this(in) orElse q0(in) }
+    }
+  }
+  def Transformer3(f: TransformerOpt) = new Transformer3 {
+    def apply(in: Exp[_]) = f(in)
+  }
+
+  def test(f: TransformerOpt) = kleisli(f)
+  def compose(f: TransformerOpt, g: TransformerOpt) = kleisli(f) >=> g
+  implicitly[Monad[Option]]
+  implicitly[Monoid[Endo[Exp[_]]]](Monoid.monoid(Semigroup.EndoSemigroup, Zero.EndoZero))
+  Category.KleisliCategory[Option] //Now we need to convert this to a monoid. Actually we don't - we only want to
+  // abstract on suitable Kleisli categories of Monads.
+
+  //implicitly[C]
+  //implicitly[Endo[Exp[_]]]
   //implicit val m: Monoid[PartialFunction[Exp[_], Exp[_]]]
   type Transformer = PartialFunction[Exp[_], Exp[_]]
   abstract class Transformer2 extends PartialFunction[Exp[_], Exp[_]] {
