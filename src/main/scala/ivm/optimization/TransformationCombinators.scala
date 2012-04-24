@@ -14,10 +14,13 @@ import Scalaz._
 
 class TransformationCombinatorsScalaz[M[_], T](implicit plus: Plus[M], monad: Monad[M]) {
   type TransformerFun = T => M[T]
+  // This implicit conversion makes crazy Scalaz methods (like >=>) available on TransformerFun.
+  implicit val toKeisli: TransformerFun => Kleisli[M, T, T] = kleisli
+
   abstract class Transformer extends TransformerFun {
     def &(q: => Transformer): Transformer = {
       lazy val q0 = q
-      Transformer { kleisli(this) >=> q0 }
+      Transformer { this >=> q0 }
     }
     def |(q: => Transformer): Transformer = {
       lazy val q0 = q
