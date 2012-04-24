@@ -17,7 +17,7 @@ class TransformationCombinatorsScalaz[M[_], T](implicit plus: Plus[M], monad: Mo
   abstract class Transformer extends TransformerFun {
     def &(q: => Transformer): Transformer = {
       lazy val q0 = q
-      Transformer { in => kleisli(this) >=> q0 apply in } //This eta-expansion is needed.
+      Transformer { kleisli(this) >=> q0 }
     }
     def |(q: => Transformer): Transformer = {
       lazy val q0 = q
@@ -25,8 +25,11 @@ class TransformationCombinatorsScalaz[M[_], T](implicit plus: Plus[M], monad: Mo
     }
     def * = rep(this)
   }
-  def Transformer(f: TransformerFun) = new Transformer {
-    def apply(in: T) = f(in)
+  def Transformer(f: => TransformerFun) = {
+    lazy val f0 = f
+    new Transformer {
+      def apply(in: T) = f0(in)
+    }
   }
 
   val emptyTransform: Transformer = Transformer { monad.pure(_) }
