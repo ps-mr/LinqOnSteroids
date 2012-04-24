@@ -139,10 +139,12 @@ object TransformationCombinators extends TransformationCombinators /*with App*/ 
   def main(args: Array[String]) {
     for (term <- Seq(applyIdFun, applyIdFunMoreComplex)) {
       println("Term:" + term)
-      println(betaDeltaReducer2(term))
-      println("Beta-reduced term:" + term.transform(betaDeltaReducer2))
-      println(betaDeltaReducer3(term))
-      println("Beta-reduced term - with Scalaz:" + term.transform(betaDeltaReducer3))
+      val opt1 = term.transform(betaDeltaReducer2)
+      println("Beta-reduced term:" + opt1)
+      assert(opt1 == Fun[Int, Int](x => x))
+      val opt2 = term.transform(betaDeltaReducer3)
+      println("Beta-reduced term - with Scalaz:" + opt2)
+      assert(opt2 == opt1)
       println()
     }
   }
