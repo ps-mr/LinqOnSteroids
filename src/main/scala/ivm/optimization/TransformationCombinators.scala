@@ -22,7 +22,7 @@ class TransformationCombinatorsScalaz[M[_], T](implicit plus: Plus[M], monad: Mo
     //XXX: this definition of map is very different from Parser combinator's map or ^^ operator.
     def map(q: => T => T): Transformer = {
       lazy val q0 = q
-      Transformer { this map q0 }
+      Transformer { kleisli(this) map q0 }
     }
 
     //To implement ^^, we need to change the used monad.
