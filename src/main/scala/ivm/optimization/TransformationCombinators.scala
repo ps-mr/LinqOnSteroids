@@ -16,7 +16,7 @@ import Scalaz._
 class TransformationCombinatorsScalaz[T] {
   type TransformerFun[M[_]] = T => M[T]
   // This implicit conversion makes crazy Scalaz methods (like >=>) available on TransformerFun.
-  implicit def toKeisli[M[_]: Monad](f: TransformerFun[M]): Kleisli[M, T, T] = kleisli(f)
+  implicit def toKeisli[M[_]](f: TransformerFun[M]): Kleisli[M, T, T] = kleisli(f)
 
   abstract class Transformer[M[_]] extends TransformerFun[M] {
     //XXX: this definition of map is very different from Parser combinator's map or ^^ operator.
@@ -27,7 +27,7 @@ class TransformationCombinatorsScalaz[T] {
 
     //To implement ^^, we need to change the used monad.
     def compose[N[_]](f: M[T] => N[T]): Transformer[N] = Transformer { this compose f }
-    def &(q: => Transformer[M])(implicit m: Monad[M]): Transformer[M] = {
+    def &(q: => Transformer[M])(implicit m: Bind[M]): Transformer[M] = {
       lazy val q0 = q
       Transformer { this >=> q0 }
     }
