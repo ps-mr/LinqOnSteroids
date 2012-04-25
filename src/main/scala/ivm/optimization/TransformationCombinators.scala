@@ -13,14 +13,14 @@ import Scalaz._
  */
 
 //TODO: For M[_] = Option, add overloads for PartialFunctions.
-class TransformationCombinatorsScalaz[M[_], T](implicit plus: Plus[M], monad: Monad[M]) {
+class TransformationCombinatorsScalaz[M2[_], T](implicit plus: Plus[M2], monad: Monad[M2]) {
   type TransformerFun[M[_]] = T => M[T]
   // This implicit conversion makes crazy Scalaz methods (like >=>) available on TransformerFun.
   implicit def toKeisli[M[_]: Monad](f: TransformerFun[M]): Kleisli[M, T, T] = kleisli(f)
 
-  abstract class Transformer extends TransformerFun[M] {
+  abstract class Transformer[M[_]] extends TransformerFun[M] {
     //XXX: this definition of map is very different from Parser combinator's map or ^^ operator.
-    def map(q: => T => T): Transformer = {
+    def map(q: => T => T)(implicit m: Functor[M]): Transformer[M] = {
       lazy val q0 = q
       Transformer { kleisli(this) map q0 }
     }
@@ -29,32 +29,32 @@ class TransformationCombinatorsScalaz[M[_], T](implicit plus: Plus[M], monad: Mo
     //XXX: However, the used monad M is a free variable in Transformer, not a parameter. Hence we cannot build a
     // Transformer here
     def compose[N[_]](f: M[T] => N[T]): Kleisli[N, T, T] = this compose f
-    def &(q: => Transformer): Transformer = {
+    def &(q: => Transformer[M])(implicit m: Monad[M]): Transformer[M] = {
       lazy val q0 = q
       Transformer { this >=> q0 }
     }
-    def |(q: => Transformer)(implicit plus: Plus[M]): Transformer = {
+    def |(q: => Transformer[M])(implicit plus: Plus[M]): Transformer[M] = {
       lazy val q0 = q
       Transformer { in => plus.plus(this(in), q0(in)) }
     }
-    def * = rep(this)
+    def *(implicit m: Monad[M], p: Plus[M]) = rep(this)
   }
 
-  def Transformer(f: => TransformerFun[M]) = {
+  def Transformer[M[_]](f: => TransformerFun[M]) = {
     lazy val f0 = f
-    new Transformer {
+    new Transformer[M] {
       def apply(in: T) = f0(in)
     }
   }
 
-  val emptyTransform: Transformer = Transformer { monad.pure(_) }
+  def emptyTransform[M[_]](implicit m: Monad[M]): Transformer[M] = Transformer[M] { m.pure(_) }
   //This method is not at all tail-recursive...
-  def kleeneStar(f: => Transformer): Transformer =
+  def kleeneStar[M[_]: Monad: Plus](f: => Transformer[M]): Transformer[M] =
     f & kleeneStar(f) | emptyTransform
 
   //...hence "tie the knot" explicitly. TODO: test that this is actually beneficial.
-  def rep(f: => Transformer): Transformer = {
-    def resultFun: Transformer = Transformer { f & resultFun | emptyTransform }
+  def rep[M[_]: Monad: Plus](f: => Transformer[M]): Transformer[M] = {
+    def resultFun: Transformer[M] = Transformer { f & resultFun | emptyTransform }
     resultFun
   }
 }
