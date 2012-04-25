@@ -47,7 +47,7 @@ class TransformationCombinatorsScalaz[T] {
     }
   }
 
-  def emptyTransform[M[_]](implicit m: Monad[M]): Transformer[M] = Transformer[M] { m.pure(_) }
+  def emptyTransform[M[_]](implicit m: Pure[M]): Transformer[M] = Transformer[M] { m.pure(_) }
   //This method is not at all tail-recursive...
   def kleeneStar[M[_]: Monad: Plus](f: => Transformer[M]): Transformer[M] =
     f & kleeneStar(f) | emptyTransform
