@@ -12,12 +12,23 @@ import Scalaz._
  * Date: 20/4/2012
  */
 
+//TODO: For M[_] = Option, add overloads for PartialFunctions.
 class TransformationCombinatorsScalaz[M[_], T](implicit plus: Plus[M], monad: Monad[M]) {
   type TransformerFun = T => M[T]
   // This implicit conversion makes crazy Scalaz methods (like >=>) available on TransformerFun.
   implicit val toKeisli: TransformerFun => Kleisli[M, T, T] = kleisli
 
   abstract class Transformer extends TransformerFun {
+    //XXX: this definition of map is very different from Parser combinator's map or ^^ operator.
+    def map(q: => T => T): Transformer = {
+      lazy val q0 = q
+      Transformer { this map q0 }
+    }
+
+    //To implement ^^, we need to change the used monad.
+    //XXX: However, the used monad M is a free variable in Transformer, not a parameter. Hence we cannot build a
+    // Transformer here
+    def compose[N[_]](f: M[T] => N[T]): Kleisli[N, T, T] = this compose f
     def &(q: => Transformer): Transformer = {
       lazy val q0 = q
       Transformer { this >=> q0 }
