@@ -13,7 +13,7 @@ import Scalaz._
  */
 
 //TODO: For M[_] = Option, add overloads for PartialFunctions.
-class TransformationCombinatorsScalaz[M2[_], T](implicit plus: Plus[M2], monad: Monad[M2]) {
+class TransformationCombinatorsScalaz[T] {
   type TransformerFun[M[_]] = T => M[T]
   // This implicit conversion makes crazy Scalaz methods (like >=>) available on TransformerFun.
   implicit def toKeisli[M[_]: Monad](f: TransformerFun[M]): Kleisli[M, T, T] = kleisli(f)
@@ -130,7 +130,7 @@ object TransformationCombinators extends TransformationCombinators /*with App*/ 
   //def betaDeltaReducer2 = kleeneStar(deltaReductionTuple orElse betaReduction)
   def betaDeltaReducer2 = kleeneStar2(Transformer2 { deltaReductionTuple orElse betaReduction })
 
-  object Foo extends TransformationCombinatorsScalaz[Option, Exp[_]]
+  object Foo extends TransformationCombinatorsScalaz[Exp[_]]
   def betaDeltaReducer3 = {
     import Foo._
     Function.unlift(Transformer {(deltaReductionTuple orElse betaReduction).lift} *)
