@@ -26,9 +26,7 @@ class TransformationCombinatorsScalaz[T] {
     }
 
     //To implement ^^, we need to change the used monad.
-    //XXX: However, the used monad M is a free variable in Transformer, not a parameter. Hence we cannot build a
-    // Transformer here
-    def compose[N[_]](f: M[T] => N[T]): Kleisli[N, T, T] = this compose f
+    def compose[N[_]](f: M[T] => N[T]): Transformer[N] = Transformer { this compose f }
     def &(q: => Transformer[M])(implicit m: Monad[M]): Transformer[M] = {
       lazy val q0 = q
       Transformer { this >=> q0 }
