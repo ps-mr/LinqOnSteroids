@@ -57,6 +57,18 @@ class TransformationCombinatorsScalaz[T] {
   }
 }
 
+class ParserCombinatorFromTransformerCombinator[T] extends TransformationCombinatorsScalaz[T] {
+  //XXX Simplify
+  //Note that we pass just a functor to super.Transformer, not a monad. This would be however a writer monad if U
+  //were a monoid. OTOH, parser combinators work without requiring an actual monad - sequencing in parser combinators
+  //relies on a non-associative pairing operation.
+  abstract class Transformer[U] extends super.Transformer[({type l[a] = (a, U)})#l] {
+    //We need to emulate virtual classes - here we get super.Transformer as the result type. See the emulation of virtual
+    // classes in the Scala implementation of views.
+    def ^^[V](f: U => V): ParserCombinatorFromTransformerCombinator.super.Transformer[({type l[a] = (a, V)})#l] = super.compose[({type l[a] = (a, V)})#l] {(_: (T, U)/* ({type l[a] = (a, U)})#l[T]*/) map f}
+  }
+}
+
 class TransformationCombinators {
   type TransformerOpt = Exp[_] => Option[Exp[_]]
   abstract class Transformer3 extends TransformerOpt {
