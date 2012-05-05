@@ -1,4 +1,4 @@
-% SQuOpt project page
+% SQuOpt - The Scala Query Optimizer
 % Paolo G. Giarrusso
 % 2012-04-20
 # Introduction
@@ -28,9 +28,12 @@ We provide two source releases:
 - the current source release (0.2 from 2012-04-22), which corresponds more closely to the code
   presented in the paper (with mostly cosmetic changes and some bugfixes).
 
+In addition, we provide:
+
 - the evaluation data from our paper submission, including the raw dataset and scripts to regenerate the graphics and the tables.
-- updated evaluation results from version 0.2, showing essentially the same
-  results.
+- the version of FindBugs we compared our results with.
+- updated evaluation results from version 0.2, which lead to essentially the same
+  conclusions.
 <!--the elaboration scripts and statistics-->
 
 # Credits
@@ -42,6 +45,11 @@ This project benefited from code and ideas of many different people:
 - Tillmann Rendel
 - Christian Kästner
 - Katharina Haselhorst
+
+# News
+- 2012-04-26: added FindBugs source code and some details on reproducing the
+  evaluation
+- 2012-04-23: website online
 
 # Releases
 
@@ -71,3 +79,39 @@ Mac OS X and probably Linux. [Here](SQuOpt/tarballs/evaluation-v0.2.tar.gz) they
 
 For those interested only in the resulting graphs, [here](SQuOpt/EvalRed-paper.pdf) are
 the results shown in the paper, while [here](SQuOpt/EvalRed-new.pdf) are the new ones.
+
+In our evaluation, we compare our source code analyses with a reference
+implementation, namely FindBugs. We altered its source code to disable unrelated
+analyses, and provide [the altered code](https://github.com/ps-mr/FindBugsBenchmark).
+
+To ensure reproducibility, we plan to simplify and document the exact steps needed to
+reproduce our results.
+
+For the determined impatient, here is the current procedure, which will probably
+have a few rough edges and is still untested.
+
+- select a idle and sufficiently powerful machine with a *x operating system -
+the evaluation takes currently 1 day and was run on a Linux machine; the
+statistics were computed on a Mac OS X machine. The scripts _should_ work
+(with minor changes) on any *x system with the needed software.
+- download both our source release, our evaluation code, and
+[R](http://www.r-project.org/).
+- choose the test data to use - we provide a test harness to run the evaluation on
+ScalaTest, that is `profileLos.sh`, or on the JDK, that is `profileLosJDK.sh`.
+- To reproduce the original evaluation, you need to use the JDK.
+    - Download the version which was installed on our machine from
+http://rpmfind.net/linux/RPM/centos/updates/6.2/x86_64/Packages/java-1.6.0-openjdk-1.6.0.0-1.43.1.10.6.el6_2.x86_64.html
+and extract it, using for instance `rpm2cpio` (we plan to simplify this step).
+    - Adjust `profileLosJDK.sh` to find the copy of `classes.jar` from the extracted
+  package.
+- Run the chosen test harness. You might need to comment out any invocations to
+  `git`; the software assumes to be run on a `git` working copy.
+- After the end, move and rename the resulting `LOSTestLog-JDK.csv` or
+`LOSTestLog-ScalaTest.csv` as `LOSTestLog-JDK-new-eval.csv` 
+inside `squoptEval-v0.2` (the folder of the extracted evaluation).
+- In the same directory, run `make newgraph`, which will save the reproduced
+evaluation results by overwriting `EvalRed-new.pdf`.
+
+# Contacts
+For any question or suggestion, feel free to contact me, Paolo G. Giarrusso, at
+pgiarrusso (at) informatik !dot! uni-marburg !dot! de.
