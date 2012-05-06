@@ -90,6 +90,36 @@ object FindBugsAnalyses {
 }
 
 class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
+  def methods() = {
+    import BATLifting._
+    for {
+      classFile ← classFiles.asSmart
+      method ← classFile.methods
+    } yield (classFile, method)
+  }
+
+  def methodBodies() = {
+    import BATLifting._
+    //import dbschema._ //{squopt => _, _}
+    import dbschema.squopt._
+    for {
+      classFile ← classFiles.asSmart
+      method ← classFile.methods
+      body ← method.body
+    } yield MethodRecord(classFile, method, body)
+  }
+
+  def methodBodiesModular() = {
+    import BATLifting._
+    import dbschema.squopt._
+    for {
+      cfM <- methods()
+      classFile <- Let(cfM._1)
+      method ← Let(cfM._2)
+      body <- method.body
+    } yield MethodRecord(classFile, method, body) //MethodRecord(cfM._1, cfM._2, body)
+  }
+
   //def this() = this(Seq("lib/scalatest-1.6.1.jar"))
   def this() = this(Seq("src/test/resources/Bugs.zip"))
 
