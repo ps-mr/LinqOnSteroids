@@ -790,6 +790,7 @@ object Optimization {
       reassociateOps(betaDeltaReducer(
         mergeMaps(exp))))
 
+  //TODO: rewrite using function composition
   private def optimizeBase[T](exp: Exp[T]): Exp[T] =
   handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
     mergeFilters( //Merge filters again after indexing, since it introduces new filters.
