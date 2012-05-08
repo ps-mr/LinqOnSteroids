@@ -236,20 +236,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   def analyzeExplicitGC() {
     val NoArgNoRetMethodDesc = MethodDescriptor(Seq(), VoidType)
 
-    // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
-    benchQueryComplete("GC_CALL"){ // FB: "DM_GC") {
-      (for {
-        classFile ← classFiles
-        method ← classFile.methods
-        body ← method.body.toList
-        instruction ← body.instructions
-        if (instruction match {
-          case INVOKESTATIC(ObjectType("java/lang/System"), "gc", NoArgNoRetMethodDesc) |
-               INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", NoArgNoRetMethodDesc) ⇒ true
-          case _ ⇒ false
-        })
-      } yield (classFile, method, instruction)).toSet
-    } {
+    val queryBase = {
       import BATLifting._
       import InstructionLifting._
       (for {
@@ -263,6 +250,54 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
             instr.declaringClass ==# ObjectType("java/lang/Runtime") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity))
       } yield (classFile, method, instruction)).toSet
     }
+    // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
+    benchQueryComplete("GC_CALL"){ // FB: "DM_GC") {
+      (for {
+        classFile ← classFiles
+        method ← classFile.methods
+        body ← method.body.toList
+        instruction ← body.instructions
+        if (instruction match {
+          case INVOKESTATIC(ObjectType("java/lang/System"), "gc", NoArgNoRetMethodDesc) |
+               INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", NoArgNoRetMethodDesc) ⇒ true
+          case _ ⇒ false
+        })
+      } yield (classFile, method, instruction)).toSet
+    } (queryBase)
+    val query = {
+      import BATLifting._
+      import InstructionLifting._
+      import dbschema.squopt._
+      (for {
+        methodAndBody <- methodBodies() //methodAndBody <- methodBodiesModular()
+        instruction <- methodAndBody.body.instructions.typeCase(
+          when[INVOKESTATIC](instr =>
+            instr.declaringClass ==# ObjectType("java/lang/System") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity),
+          when[INVOKEVIRTUAL](instr =>
+            instr.declaringClass ==# ObjectType("java/lang/Runtime") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity))
+      } yield (methodAndBody.classFile, methodAndBody.method, instruction)).toSet
+    }
+    showExpNoVal(query, "modular version of query")
+    val optQuery = query.optimize
+    showExpNoVal(optQuery, "modular version of query - optimized")
+    optQuery should be (queryBase.optimize)
+    val query2 = {
+      import BATLifting._
+      import InstructionLifting._
+      import dbschema.squopt._
+      (for {
+        methodAndBody <- methodBodiesModular()
+        instruction <- methodAndBody.body.instructions.typeCase(
+          when[INVOKESTATIC](instr =>
+            instr.declaringClass ==# ObjectType("java/lang/System") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity),
+          when[INVOKEVIRTUAL](instr =>
+            instr.declaringClass ==# ObjectType("java/lang/Runtime") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity))
+      } yield (methodAndBody.classFile, methodAndBody.method, instruction)).toSet
+    }
+    showExpNoVal(query2, "more modular version of query")
+    val optQuery2 = query2.optimize
+    showExpNoVal(optQuery2, "more modular version of query - optimized")
+    optQuery2 should be (optQuery)
   }
 
   //XXX: for the native version, FI_PUBLIC_SHOULD_BE_PROTECTED is faster; for the LoS version, FI_PUBLIC_SHOULD_BE_PROTECTED-2 is faster.
