@@ -492,6 +492,15 @@ object OptimizationTransforms {
     case e => e
   }
 
+  def subst[S, T](fun: Fun[S, T])(arg: Exp[S]) = {
+    //See TAPL page 75 - we need this transformation whenever we might duplicate terms. XXX check if other
+    // transformations duplicate terms. Map fusion uses letExp, to allow for a smarter inliner - I hope I was
+    // consistent in doing this.
+    fun(arg) transform {
+      case fun: Fun[_, _] => Fun.rename(fun)
+      case e => e
+    }
+  }
   val letTransformer: Exp[_] => Exp[_] = {
     case FlatMap(ExpSeq(Seq(v)), f) => letExp(v)(f)
     case e => e
@@ -510,13 +519,7 @@ object OptimizationTransforms {
       //if ((body findTotFun (_ == fun.x)).length == 1) //Inlining side conditions. Damn, we need to use unrestricted inlining as here, simplify, and then use CSE again,
       //to have a robust solution.
     =>
-      //See TAPL page 75 - we need this transformation whenever we might duplicate terms. XXX check if other
-      // transformations duplicate terms. Map fusion uses letExp, to allow for a smarter inliner - I hope I was
-      // consistent in doing this.
-      fun(arg) transform {
-        case fun: Fun[_, _] => Fun.rename(fun)
-        case e => e
-      }
+      subst(fun)(arg)
   }
 
    //This is the shortest way of writing identity.
