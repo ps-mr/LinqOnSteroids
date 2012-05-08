@@ -492,6 +492,13 @@ object OptimizationTransforms {
     case e => e
   }
 
+  def isTrivial(v: Exp[_]): Boolean = v match {
+    case ExpSelection(_, _, e) => isTrivial(e)
+    case e: ExpProduct with Exp[_] => e.children forall isTrivial
+    case _: TypedVar[_] => true
+    case _ => false
+  }
+
   def subst[S, T](fun: Fun[S, T])(arg: Exp[S]) = {
     //See TAPL page 75 - we need this transformation whenever we might duplicate terms. XXX check if other
     // transformations duplicate terms. Map fusion uses letExp, to allow for a smarter inliner - I hope I was
@@ -501,6 +508,14 @@ object OptimizationTransforms {
       case e => e
     }
   }
+
+  //XXX: also reduce lets where the variable is only used once. Papers on the GHC inliner explain how to do this and why
+  //a linear type system is needed for that.
+  val letTransformerTrivial: Exp[_] => Exp[_] = {
+    case FlatMap(ExpSeq(Seq(v)), f) if isTrivial(v) => subst(f)(v)
+    case e => e
+  }
+
   val letTransformer: Exp[_] => Exp[_] = {
     case FlatMap(ExpSeq(Seq(v)), f) => letExp(v)(f)
     case e => e
@@ -739,6 +754,8 @@ object Optimization {
 
   def filterToWithFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.filterToWithFilter)
 
+  def letTransformerTrivial[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformerTrivial)
+
   def letTransformer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformer)
 
   //This should be called after any sort of inlining, including for instance map fusion.
@@ -783,8 +800,9 @@ object Optimization {
                   handleFilters(
                     optimizeCartProdToJoin(
                       removeRedundantOption(toTypeFilter(
-                        flatMapToMap(sizeToEmpty(generalUnnesting(mapToFlatMap(
-                          removeIdentityMaps(betaDeltaReducer(exp))))))))))))))))))))))) //the call to reducer is to test.
+                      //generalUnnesting, in practice, can produce the equivalent of let statements. Hence it makes sense to desugar them _after_ (at least the trivial ones).
+                        flatMapToMap(sizeToEmpty(letTransformerTrivial(generalUnnesting(mapToFlatMap(
+                          removeIdentityMaps(betaDeltaReducer(exp)))))))))))))))))))))))) //the call to reducer is to test.
 
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
