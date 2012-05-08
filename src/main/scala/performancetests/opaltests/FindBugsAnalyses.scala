@@ -138,10 +138,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   val classHierarchy = (new ClassHierarchy {} /: classFiles)(_ + _)
 
   println("Number of class files: " + classFiles.length)
-  println("Numer of methods: " + (for {
-      classFile ← classFiles
-      method ← classFile.methods
-    } yield (classFile, method)).size)
+  println("Numer of methods: " + methods().interpret().size)
 
   // The following code is meant to show how easy it is to write analyses;
   // it is not meant to demonstrate how to write such analyses in an efficient
