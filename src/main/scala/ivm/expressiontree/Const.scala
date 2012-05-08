@@ -18,7 +18,8 @@ case class Const[T](x: T) extends Arity0Exp[T] {
     val shortened =
       if (s.length() > 100) {
         val begin = s take 100
-        begin + "..." + ")" * (begin.count('(' == ) - begin.count(')' == ))
+        val quoteCloser = if (begin.contains('"')) "\"" else if (begin.contains('\'')) "'" else ""
+        begin + "..." + quoteCloser + ")" * (begin.count('(' == ) - begin.count(')' == ))
       }
       else
         s
