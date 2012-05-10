@@ -64,7 +64,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
   // down a tiny insignificant bit.
   def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
                                                    (expected: => Traversable[T])
-                                                   (query: => Exp[Coll])
+                                                   (query: => Exp[Coll], altQueries: Exp[Coll]*)
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
     val (expectedRes, timeScala) =
       if (!onlyOptimized)
@@ -83,5 +83,25 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
     }
     println("\tViolations: " + res.size)
     res
+
+    for ((altQuery, i) <- altQueries.zipWithIndex) {
+      //This code also measures performance of the optimized query, and does not check that the optimized query is the same as the other optimized query :-(.
+      benchInterpret[T, Traversable[T]]("%s Los - Alternative %d" format (msg, i), altQuery, timeScala)
+    }
+      /*
+      showExpNoVal(altQuery
+      altQuery.optimize
+      val benchMarkInternal(msg2, altQuery, timeScala)
+      should be (res)
+
+    showExpNoVal(query, "modular version of query")
+    val optQuery = query.optimize
+    showExpNoVal(optQuery, "modular version of query - optimized")
+    optQuery should be (queryBase.optimize)
+    //val query2 =
+    showExpNoVal(query2, "more modular version of query")
+    val optQuery2 = query2.optimize
+    showExpNoVal(optQuery2, "more modular version of query - optimized")
+    optQuery2 should be (optQuery)*/
   }
 }
