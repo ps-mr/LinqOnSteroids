@@ -16,8 +16,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
   this: ShouldMatchers =>
 
   def onlyOptimized = false
-  //If we're running only the optimized version, we might as well run it only once.
-  override def debugBench = onlyOptimized
+  //If we're running only the optimized version, we only run it only once.
+  override def debugBench = super.debugBench || onlyOptimized
 
   private def benchInterpret[T, Coll <: Traversable[T]](msg: String,
                                                 v: Exp[Coll with Traversable[T]],
