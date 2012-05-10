@@ -68,7 +68,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
     val (expectedRes, timeScala) =
       if (!onlyOptimized)
-        benchMarkInternal(msg)(expected)
+        benchMarkInternal(msg) { expected }
       else
         (null, -1.0)
     //Those versions don't work - bug https://issues.scala-lang.org/browse/SI-5642.
