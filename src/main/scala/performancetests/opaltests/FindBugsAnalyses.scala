@@ -599,7 +599,7 @@ Call1('TraversableLike$toSet,
     }
   }
 
-  test("NotCloenable") {
+  test("NotCloneable") {
     analyzeCloneButNotCloneable()
   }
   def analyzeCloneButNotCloneable() {
