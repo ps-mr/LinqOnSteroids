@@ -1,6 +1,6 @@
 import java.io.FileWriter
 import scalariform.formatter.preferences._
-import de.johoop.findbugs4sbt.FindBugs._
+//import de.johoop.findbugs4sbt.FindBugs._
 import com.typesafe.startscript.StartScriptPlugin
 
 name := "LinqOnSteroids"
@@ -49,7 +49,7 @@ ScalariformKeys.preferences := FormattingPreferences().
   setPreference(AlignParameters, true)
 
 //Add support for FindBugs
-seq(findbugsSettings : _*)
+//seq(findbugsSettings : _*)
 
 // define the statements initially evaluated when entering 'console', 'console-quick', or 'console-project'
 initialCommands := """
