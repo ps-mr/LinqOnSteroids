@@ -2,7 +2,7 @@ resolvers += Classpaths.typesafeResolver
 
 addSbtPlugin("com.typesafe.sbtscalariform" % "sbtscalariform" % "0.3.1")
 
-addSbtPlugin("de.johoop" % "findbugs4sbt" % "1.1.6")
+//addSbtPlugin("de.johoop" % "findbugs4sbt" % "1.1.6")
 
 libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.6.1"
 
