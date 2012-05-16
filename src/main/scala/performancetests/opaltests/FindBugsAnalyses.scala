@@ -90,7 +90,15 @@ object FindBugsAnalyses {
 }
 
 class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
-  def methods() = {
+  def methodsNative() = {
+    import BATLifting._
+    for {
+      classFile ← classFiles
+      method ← classFile.methods
+    } yield (classFile, method)
+  }
+
+  def methodsSQuOpt() = {
     import BATLifting._
     for {
       classFile ← classFiles.asSmart
@@ -98,7 +106,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } yield (classFile, method)
   }
 
-  def methodBodies() = {
+  def methodBodiesSQuOpt() = {
     import BATLifting._
     //import dbschema._ //{squopt => _, _}
     import dbschema.squopt._
@@ -109,11 +117,19 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } yield MethodRecord(classFile, method, body)
   }
 
-  def methodBodiesModular() = {
+  def methodBodiesModularNative() = {
+    import dbschema._
+    for {
+      (classFile, method) <- methodsNative()
+      body <- method.body
+    } yield MethodRecord(classFile, method, body) //MethodRecord(cfM._1, cfM._2, body)
+  }
+
+  def methodBodiesModularSQuOpt() = {
     import BATLifting._
     import dbschema.squopt._
     for {
-      cfM <- methods()
+      cfM <- methodsSQuOpt()
       classFile <- Let(cfM._1)
       method ← Let(cfM._2)
       body <- method.body
@@ -138,7 +154,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   val classHierarchy = (new ClassHierarchy {} /: classFiles)(_ + _)
 
   println("Number of class files: " + classFiles.length)
-  println("Numer of methods: " + methods().interpret().size)
+  println("Numer of methods: " + methodsSQuOpt().interpret().size)
 
   // The following code is meant to show how easy it is to write analyses;
   // it is not meant to demonstrate how to write such analyses in an efficient
@@ -237,7 +253,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     val NoArgNoRetMethodDesc = MethodDescriptor(Seq(), VoidType)
 
     // FINDBUGS: Dm: Explicit garbage collection; extremely dubious except in benchmarking code (DM_GC)
-    benchQueryComplete("GC_CALL"){ // FB: "DM_GC") {
+    benchQueryComplete("GC_CALL")({ // FB: "DM_GC") {
       (for {
         classFile ← classFiles
         method ← classFile.methods
@@ -249,7 +265,17 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
           case _ ⇒ false
         })
       } yield (classFile, method, instruction)).toSet
-    } ({
+    }, {
+      (for {
+        methodAndBody <- methodBodiesModularNative()
+        instruction ← methodAndBody.body.instructions
+        if (instruction match {
+          case INVOKESTATIC(ObjectType("java/lang/System"), "gc", NoArgNoRetMethodDesc) |
+               INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", NoArgNoRetMethodDesc) ⇒ true
+          case _ ⇒ false
+        })
+      } yield (methodAndBody.classFile, methodAndBody.method, instruction)).toSet
+    }) ({
       import BATLifting._
       import InstructionLifting._
       (for {
@@ -267,7 +293,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import InstructionLifting._
       import dbschema.squopt._
       (for {
-        methodAndBody <- methodBodies()
+        methodAndBody <- methodBodiesSQuOpt()
         instruction <- methodAndBody.body.instructions.typeCase(
           when[INVOKESTATIC](instr =>
             instr.declaringClass ==# ObjectType("java/lang/System") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity),
@@ -279,7 +305,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import InstructionLifting._
       import dbschema.squopt._
       (for {
-        methodAndBody <- methodBodiesModular()
+        methodAndBody <- methodBodiesModularSQuOpt()
         instruction <- methodAndBody.body.instructions.typeCase(
           when[INVOKESTATIC](instr =>
             instr.declaringClass ==# ObjectType("java/lang/System") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity),
@@ -307,7 +333,7 @@ Call1('TraversableLike$toSet,
     v452 => MapNode(
       TypeCaseExp(Code_instructions2(MethodRecord_body2(v452)),WrappedArray(TypeCase(class de.tud.cs.st.bat.resolved.INVOKESTATIC,v453 => And(And(Eq(Call1('declaringClass, v453),Const(ObjectType(className="java/lang/System"))),Eq(Call1('name, v453),Const("gc"))),Eq(Call1('methodDescriptor, v453),Const(MethodDescriptor(List(),VoidType)))),v454 => v454), TypeCase(class de.tud.cs.st.bat.resolved.INVOKEVIRTUAL,v455 => And(And(Eq(Call1('declaringClass, v455),Const(ObjectType(className="java/lang/Runtime"))),Eq(Call1('name, v455),Const("gc"))),Eq(Call1('methodDescriptor, v455),Const(MethodDescriptor(List(),VoidType)))),v456 => v456))),
   v457 => LiftTuple3(MethodRecord_classFile0(v452),MethodRecord_method1(v452),v457))))
-  //The modularized version which uses methodBodiesModular is even worse.
+  //The modularized version which uses methodBodiesModularSQuOpt is even worse.
   //Modularized & optimized
 Call1('TraversableLike$toSet, FlatMap(ConstByIdentity(List(ClassFile(0,50,33,ObjectType(className="bugs/SuperA"),Some(ObjectType(className="java/lang/Obje..."))))),v449 => FlatMap(ClassFile_methods7(v449),v448 => FlatMap(Call1('Option_option2Iterable, Method_body12(v448)),v447 => App(v501 => MapNode(TypeCaseExp(Code_instructions2(MethodRecord_body2(v501)),ArrayBuffer(TypeCase(class de.tud.cs.st.bat.resolved.INVOKESTATIC,v437 => And(And(Eq(Call1('declaringClass, v437),Const(ObjectType(className="java/lang/System"))),Eq(Call1('name, v437),Const("gc"))),Eq(Call1('methodDescriptor, v437),Const(MethodDescriptor(List(),VoidType)))),v438 => v438), TypeCase(class de.tud.cs.st.bat.resolved.INVOKEVIRTUAL,v439 => And(And(Eq(Call1('declaringClass, v439),Const(ObjectType(className="java/lang/Runtime"))),Eq(Call1('name, v439),Const("gc"))),Eq(Call1('methodDescriptor, v439),Const(MethodDescriptor(List(),VoidType)))),v440 => v440))),v500 => LiftTuple3(MethodRecord_classFile0(v501),MethodRecord_method1(v501),v500)),MethodRecordExp0(v449,v448,v447))))))
 Call1('TraversableLike$toSet, FlatMap(ConstByIdentity(List(ClassFile(0,50,33,ObjectType(className="bugs/SuperA"),Some(ObjectType(className="java/lang/Obje..."))))),v449 => FlatMap(ClassFile_methods7(v449),v448 => FlatMap(Call1('Option_option2Iterable, Method_body12(v448)),v447 => App(v501 => MapNode(TypeCaseExp(Code_instructions2(MethodRecord_body2(v501)),ArrayBuffer(TypeCase(class de.tud.cs.st.bat.resolved.INVOKESTATIC,v437 => And(And(Eq(Call1('declaringClass, v437),Const(ObjectType(className="java/lang/System"))),Eq(Call1('name, v437),Const("gc"))),Eq(Call1('methodDescriptor, v437),Const(MethodDescriptor(List(),VoidType)))),v438 => v438), TypeCase(class de.tud.cs.st.bat.resolved.INVOKEVIRTUAL,v439 => And(And(Eq(Call1('declaringClass, v439),Const(ObjectType(className="java/lang/Runtime"))),Eq(Call1('name, v439),Const("gc"))),Eq(Call1('methodDescriptor, v439),Const(MethodDescriptor(List(),VoidType)))),v440 => v440))),v500 => LiftTuple3(MethodRecord_classFile0(v501),MethodRecord_method1(v501),v500)),MethodRecordExp0(v449,v448,v447))))))
