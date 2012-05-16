@@ -49,15 +49,10 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
                                                 v: Exp[Coll with Traversable[T]],
                                                 timeScala: Double)(implicit f: Forceable[T, Coll]): Traversable[T] =
   {
-    val (res, time) =
-      if (!onlyOptimized)
-        doRun(msg, v)
-      else
-        (null, -1.0)
-    val msgExtra = " - after optimization"
     val (optimized, optimizationTime) = benchOptimize(msg, v)
-    val (resOpt, timeOpt) = doRun(msg + msgExtra, optimized)
+    val (resOpt, timeOpt) = doRun(msg + " - after optimization", optimized)
     if (!onlyOptimized) {
+      val (res, time) = doRun(msg, v)
       //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
       // list.flatMap(listEl => set(listEl))
       //returns results in non-deterministic order.
