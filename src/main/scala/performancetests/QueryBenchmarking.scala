@@ -19,27 +19,43 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
   //If we're running only the optimized version, we only run it only once.
   override def debugBench = super.debugBench || onlyOptimized
 
+  private def doRun[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll]) = {
+    if (!onlyOptimized)
+      showExpNoVal(v, msg)
+    benchMarkInternal(msg)(v.expResult().force)
+  }
+
+  private def benchOptimize[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]]) = {
+    if (!onlyOptimized)
+      Optimization.optimize(v) //do it once for the logs!
+    Optimization.pushEnableDebugLog(false)
+    val (optimized, optimizationTime) = benchMarkInternal(msg + " Optimization")(Optimization.optimize(v))
+    Optimization.popEnableDebugLog()
+    (optimized, optimizationTime)
+  }
+
+  private def compare(time: Double, timeOpt: Double, optimizationTime: Double, timeScala: Double) = {
+    def report(label: String, speedup: Double) {
+      val delta = 1 - speedup
+      val lessOrMore = if (delta > 0) "less" else "MORE"
+      println("Speedup ratio by this optimization compared to %s: %f (i.e. %f%% %s)" format (label, speedup, math.abs(delta) * 100, lessOrMore))
+    }
+    report("base embedded version", timeOpt / time)
+    report("native Scala version", timeOpt / timeScala)
+    report("native Scala version, counting optimization time", (timeOpt + optimizationTime) / timeScala)
+  }
+
   private def benchInterpret[T, Coll <: Traversable[T]](msg: String,
                                                 v: Exp[Coll with Traversable[T]],
                                                 timeScala: Double)(implicit f: Forceable[T, Coll]): Traversable[T] =
   {
-    def doRun(msg: String, v: Exp[Coll]) = {
-      if (!onlyOptimized)
-        showExpNoVal(v, msg)
-      benchMarkInternal(msg)(v.expResult().force)
-    }
-
     val (res, time) =
       if (!onlyOptimized)
         doRun(msg, v)
       else
         (null, -1.0)
     val msgExtra = " - after optimization"
-    if (!onlyOptimized)
-      Optimization.optimize(v) //do it once for the logs!
-    Optimization.pushEnableDebugLog(false)
-    val (optimized, optimizationTime) = benchMarkInternal(msg + " Optimization")(Optimization.optimize(v))
-    Optimization.popEnableDebugLog()
+    val (optimized, optimizationTime) = benchOptimize(msg, v)
     val (resOpt, timeOpt) = doRun(msg + msgExtra, optimized)
     if (!onlyOptimized) {
       //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
@@ -47,14 +63,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
       //returns results in non-deterministic order.
       resOpt should be (res) //keep this and alter queries instead.
 
-      def report(label: String, speedup: Double) {
-        val delta = 1 - speedup
-        val lessOrMore = if (delta > 0) "less" else "MORE"
-        println("Speedup ratio by this optimization compared to %s: %f (i.e. %f%% %s)" format (label, speedup, math.abs(delta) * 100, lessOrMore))
-      }
-      report("base embedded version", timeOpt / time)
-      report("native Scala version", timeOpt / timeScala)
-      report("native Scala version, counting optimization time", (timeOpt + optimizationTime) / timeScala)
+      compare(time, timeOpt, optimizationTime, timeScala)
     }
     resOpt
   }
