@@ -60,6 +60,7 @@ trait Benchmarking {
     //Why not call this println()? Because overloading is not supported in local definitions (SLS §6.11).
     def newLine() = if (!silent) Console.err.println()
 
+    val benchmarkingBegin = System.nanoTime()
     if (usedNames(name))
       println("WARNING: benchmark name %s already used" format name)
     else
@@ -137,6 +138,8 @@ trait Benchmarking {
     }
     rawDataLogWriter.flush()
 
+    val benchmarkingEnd = System.nanoTime()
+    println("Benchmarking required %d ms" format (benchmarkingEnd - benchmarkingBegin) / (1000 * 1000))
     (ret, avgMs)
   }
 
