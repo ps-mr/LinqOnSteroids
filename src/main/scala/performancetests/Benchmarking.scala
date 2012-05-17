@@ -5,30 +5,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.io.{PrintWriter, FileWriter, BufferedWriter}
 
-object Benchmarking {
-  val debugBench = false
-
-  class VarianceCalc {
-    var sum: Double = 0
-    var sumSq: Double = 0
-    var count = 0
-    def update(sample: Double) {
-      count += 1
-      sum += sample
-      sumSq += sample * sample
-    }
-    def avg = sum / count
-    def variance = {
-      val t = avg
-      sumSq / count - t * t
-    }
-  }
-  private val testDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance.getTime)
-  private val logPath = "LOSTestLog.csv"
-  private val logWriter = new PrintWriter(new BufferedWriter(new FileWriter(logPath, true)))
-  private var usedNames = Set[String]()
-}
-
 trait Benchmarking {
   import Benchmarking._
 
@@ -145,4 +121,28 @@ trait Benchmarking {
     println()
   }
   */
+}
+
+object Benchmarking {
+  val debugBench = false
+
+  class VarianceCalc {
+    var sum: Double = 0
+    var sumSq: Double = 0
+    var count = 0
+    def update(sample: Double) {
+      count += 1
+      sum += sample
+      sumSq += sample * sample
+    }
+    def avg = sum / count
+    def variance = {
+      val t = avg
+      sumSq / count - t * t
+    }
+  }
+  private val testDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance.getTime)
+  private val logPath = "LOSTestLog.csv"
+  private val logWriter = new PrintWriter(new BufferedWriter(new FileWriter(logPath, true)))
+  private var usedNames = Set[String]()
 }
