@@ -18,11 +18,11 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "1.7.1"// % "test"
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 
-//scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes")
+scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes")
 
-scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes", "-optimise")
+scalacOptions += "-optimise"
 
-//scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes", "-optimise", "-Yinline")
+//scalacOptions += "-Yinline"
 
 //addCompilerPlugin("org.scala-tools.sxr" %% "sxr" % "0.2.8-SNAPSHOT")
 
