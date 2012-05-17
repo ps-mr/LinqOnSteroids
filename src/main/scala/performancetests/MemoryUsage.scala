@@ -43,7 +43,7 @@ object MemoryUsage {
    * Measures the amount of memory that is used as a side-effect
    * of executing the given method.
    */
-  def apply[T](mu: Long ⇒ Unit)(f: ⇒ T): T = {
+  def apply[T](f: ⇒ T): (T, Long) = {
     val memoryMXBean = ManagementFactory.getMemoryMXBean
 
     System.gc()
@@ -53,7 +53,12 @@ object MemoryUsage {
 
     System.gc()
     val usedAfter = memoryMXBean.getHeapMemoryUsage.getUsed
-    mu(usedAfter - usedBefore)
+    (res, usedAfter - usedBefore)
+  }
+
+  def applyOldInterf[T](mu: Long ⇒ Unit)(f: ⇒ T): T = {
+    val (res, delta) = apply(f)
+    mu(delta)
     res
   }
 }
