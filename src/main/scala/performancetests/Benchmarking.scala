@@ -1,9 +1,6 @@
 package performancetests
 
-import ivm._
-import expressiontree.Exp
-import optimization._
-import Optimization._
+import ivm.GitVersion
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.io.{PrintWriter, FileWriter, BufferedWriter}
@@ -139,6 +136,7 @@ trait Benchmarking {
     benchMark(name, execLoops, warmUpLoops, sampleLoops, false)(toBench)
     */
 
+  /*
   def printRes[T](v: Exp[T]) {
     println("v:\t\t" + v)
     println("optimize(v):\t" + optimize(v))
@@ -146,5 +144,5 @@ trait Benchmarking {
     //println("optimize(v).interpret():\t" + optimize(v).interpret())
     println()
   }
-
+  */
 }
