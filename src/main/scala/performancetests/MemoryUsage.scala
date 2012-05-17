@@ -39,20 +39,22 @@ import java.lang.management.ManagementFactory
  * @author Michael Eichberg
  */
 object MemoryUsage {
+  val memoryMXBean = ManagementFactory.getMemoryMXBean
+
+  def snapshotUsedMemory() = {
+    System.gc()
+    memoryMXBean.getHeapMemoryUsage.getUsed
+  }
   /**
    * Measures the amount of memory that is used as a side-effect
    * of executing the given method.
    */
   def apply[T](f: ⇒ T): (T, Long) = {
-    val memoryMXBean = ManagementFactory.getMemoryMXBean
-
-    System.gc()
-    val usedBefore = memoryMXBean.getHeapMemoryUsage.getUsed
+    val usedBefore = snapshotUsedMemory()
 
     val res = f
 
-    System.gc()
-    val usedAfter = memoryMXBean.getHeapMemoryUsage.getUsed
+    val usedAfter = snapshotUsedMemory()
     (res, usedAfter - usedBefore)
   }
 
