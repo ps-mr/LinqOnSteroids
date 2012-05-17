@@ -10,8 +10,10 @@ trait Benchmarking {
   import Benchmarking._
 
   val execLoops = 1
-  val warmUpLoops = 100
+  val warmUpLoops = 100 //Deprecated, used only by my old methodology.
   val sampleLoops = 50
+
+  val maxLoops = 1000
 
   //val maxCov = 0.10
   val maxCov = 0.02
@@ -96,9 +98,9 @@ trait Benchmarking {
     val stats = new VarianceCalc(sampleLoops)
     val values = ArrayBuffer[Long]()
 
-    val maxLoops = if (myMethodology) sampleLoops else warmUpLoops //XXX: warmUpLoops is not the right name.
+    val maxLoops_ = if (myMethodology) sampleLoops else maxLoops
     var i = 0
-    while (i < maxLoops && (myMethodology || stats.cov > maxCov)) {
+    while (i < maxLoops_ && (myMethodology || stats.cov > maxCov)) {
       val before = System.nanoTime()
       for (j <- 1 to execLoops)
         ret = toBench
