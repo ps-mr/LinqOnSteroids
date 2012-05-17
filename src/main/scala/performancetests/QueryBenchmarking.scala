@@ -120,12 +120,14 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         val altMsg = "%s Los - Alternative %d" format (msg, i)
         //Benchmark optimization time
         val (altOptimized, altOptimizationTime) = benchOptimize(altMsg, altQuery)
-        //Check that we get the same result
-        altOptimized should be (optimized)
         //Check that the query produces the same result, and how much slower it is
         val (resAlt, timeAlt) = doRun(altMsg, altQuery: Exp[Traversable[T]])
+        //Check that we get the same result
         resAlt should be (resOpt)
         reportTimeRatio("base embedded version - Alternative %d" format i, timeOpt / timeAlt)
+        //Check that we get the same query
+        altOptimized should be (optimized)
+
         //This code also measures performance of the optimized query, and does not check that the optimized query is the same as the other optimized query :-(.
         //benchInterpret[T, Traversable[T]]("%s Los - Alternative %d" format (msg, i), altQuery, timeScala)
       }
