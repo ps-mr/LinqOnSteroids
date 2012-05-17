@@ -45,7 +45,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
   private def reportTimeRatio(label: String, speedup: Double) {
     val delta = 1 - speedup
     val lessOrMore = if (delta > 0) "less" else "MORE"
-    println("Speedup ratio by this optimization compared to %s: %f (i.e. %f%% %s)" format (label, speedup, math.abs(delta) * 100, lessOrMore))
+    //All callers supply the slowdown ratio, so invert it to get the speedup ratio.
+    println("Speedup ratio by this optimization compared to %s: %f (i.e. %f%% %s)" format (label, 1 / speedup, math.abs(delta) * 100, lessOrMore))
   }
   private def compare(time: Double, timeOpt: Double, optimizationTime: Double, timeScala: Double) = {
     reportTimeRatio("base embedded version", timeOpt / time)
