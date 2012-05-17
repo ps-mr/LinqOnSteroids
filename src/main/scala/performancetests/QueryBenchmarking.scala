@@ -101,17 +101,50 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
     //val builtQuery: Exp[Traversable[T]] = Query[T, Coll](toQuery(query))
     //works:
     val builtQuery: Exp[Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query(query))
-    val res = benchInterpret("%s Los" format msg, builtQuery, timeScala)
-    if (!onlyOptimized) {
-      res should be (expectedRes)
-    }
-    println("\tViolations: " + res.size)
-    res
 
-    for ((altQuery, i) <- altQueries.zipWithIndex) {
-      //This code also measures performance of the optimized query, and does not check that the optimized query is the same as the other optimized query :-(.
-      benchInterpret[T, Traversable[T]]("%s Los - Alternative %d" format (msg, i), altQuery, timeScala)
+    //val res = benchInterpret("%s Los" format msg, builtQuery, timeScala)
+    val losMsg = "%s Los" format msg
+    val (optimized, optimizationTime) = benchOptimize(losMsg, builtQuery)
+    val (resOpt, timeOpt) = doRun(losMsg + " - after optimization", optimized)
+    if (!onlyOptimized) {
+      val (res, time) = doRun(losMsg, builtQuery)
+      //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
+      // list.flatMap(listEl => set(listEl))
+      //returns results in non-deterministic order.
+      resOpt should be (res) //keep this and alter queries instead.
+
+      compare(time, timeOpt, optimizationTime, timeScala)
     }
+
+    if (!onlyOptimized) {
+      resOpt should be (expectedRes)
+    }
+    println("\tViolations: " + resOpt.size)
+
+    if (!onlyOptimized) {
+      for ((altQuery, i) <- altQueries.zipWithIndex) {
+        val altMsg = "%s Los - Alternative %d" format (msg, i)
+        //Benchmark optimization time
+        val (altOptimized, altOptimizationTime) = benchOptimize(altMsg, altQuery)
+        //Check that we get the same result
+        altOptimized should be (optimized)
+        //Check that the query produces the same result, and how much slower it is
+        val (resAlt, timeAlt) = doRun(altMsg, altQuery: Exp[Traversable[T]])
+        resAlt should be (resOpt)
+        reportTimeRatio("base embedded version - Alternative %d" format i, timeOpt / timeAlt)
+        //This code also measures performance of the optimized query, and does not check that the optimized query is the same as the other optimized query :-(.
+        //benchInterpret[T, Traversable[T]]("%s Los - Alternative %d" format (msg, i), altQuery, timeScala)
+      }
+      val (altNativeRes, timeAltScala) =
+        benchMarkInternal(msg) { altExpected }
+      if (altNativeRes != null) {
+        altNativeRes should be (resOpt)
+        reportTimeRatio("native Scala version - Alternative (modularized)", timeOpt / timeAltScala)
+        reportTimeRatio("native Scala version - Alternative (modularized), counting optimization time", (timeOpt + optimizationTime) / timeAltScala)
+      }
+    }
+    resOpt
+
       /*
       showExpNoVal(altQuery
       altQuery.optimize
