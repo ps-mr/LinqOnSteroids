@@ -136,8 +136,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         benchMarkInternal(msg + msgNativeAltExtra) { altExpected }
       if (altNativeRes != null) {
         altNativeRes should be (resOpt)
-        reportTimeRatio("native Scala version - Alternative (modularized)", timeOpt / timeAltScala)
-        reportTimeRatio("native Scala version - Alternative (modularized), counting optimization time", (timeOpt + optimizationTime) / timeAltScala)
+        reportTimeRatio("native Scala version %s" format msgNativeAltExtra, timeOpt / timeAltScala)
+        reportTimeRatio("native Scala version %s, counting optimization time" format msgNativeAltExtra, (timeOpt + optimizationTime) / timeAltScala)
       }
     }
     println("\tViolations: " + resOpt.size)
