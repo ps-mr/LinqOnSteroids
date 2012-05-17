@@ -31,6 +31,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 package performancetests
+import java.lang.management.ManagementFactory
 
 /**
  * Methods related to the measuring of an application's memory performance.
@@ -43,13 +44,16 @@ object MemoryUsage {
    * of executing the given method.
    */
   def apply[T](mu: Long ⇒ Unit)(f: ⇒ T): T = {
-    val memoryMXBean = java.lang.management.ManagementFactory.getMemoryMXBean
+    val memoryMXBean = ManagementFactory.getMemoryMXBean
+
     System.gc()
     val usedBefore = memoryMXBean.getHeapMemoryUsage.getUsed
-    val r = f
+
+    val res = f
+
     System.gc()
     val usedAfter = memoryMXBean.getHeapMemoryUsage.getUsed
     mu(usedAfter - usedBefore)
-    r
+    res
   }
 }
