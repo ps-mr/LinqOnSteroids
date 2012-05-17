@@ -16,7 +16,7 @@ trait Benchmarking {
   val maxLoops = 1000
 
   //val maxCov = 0.10
-  val maxCov = 0.02
+  val maxCov = if (debugBench) 1.0 else 0.02
   val myMethodology = false
   val printAllData = false
   val callGC = false
