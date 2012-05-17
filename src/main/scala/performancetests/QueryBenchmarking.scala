@@ -90,11 +90,6 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
                                                    (expected: => Traversable[T], altExpected: => Traversable[T] = null /* Tried using OptParam here with */)
                                                    (query: => Exp[Coll], altQueries: Exp[Coll]*)
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
-    val (expectedRes, timeScala) =
-      if (!onlyOptimized)
-        benchMarkInternal(msg) { expected }
-      else
-        (null, -1.0)
     //Those versions don't work - bug https://issues.scala-lang.org/browse/SI-5642.
     //val builtQuery: Exp[Coll with Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query[T, Coll](query))
     //val builtQuery: Exp[Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query[T, Coll](query))
@@ -107,6 +102,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
     val (optimized, optimizationTime) = benchOptimize(losMsg, builtQuery)
     val (resOpt, timeOpt) = doRun(losMsg + " - after optimization", optimized)
     if (!onlyOptimized) {
+      val (expectedRes, timeScala) =
+        benchMarkInternal(msg) { expected }
       val (res, time) = doRun(losMsg, builtQuery)
       //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
       // list.flatMap(listEl => set(listEl))
