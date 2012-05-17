@@ -29,18 +29,18 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
       benchMarkInternal(msg)(v.expResult().force)
     }
 
-    val (res, time, _) =
+    val (res, time) =
       if (!onlyOptimized)
         doRun(msg, v)
       else
-        (null, -1.0, 0L)
+        (null, -1.0)
     val msgExtra = " - after optimization"
     if (!onlyOptimized)
       Optimization.optimize(v) //do it once for the logs!
     Optimization.pushEnableDebugLog(false)
-    val (optimized, optimizationTime, _) = benchMarkInternal(msg + " Optimization")(Optimization.optimize(v))
+    val (optimized, optimizationTime) = benchMarkInternal(msg + " Optimization")(Optimization.optimize(v))
     Optimization.popEnableDebugLog()
-    val (resOpt, timeOpt, _) = doRun(msg + msgExtra, optimized)
+    val (resOpt, timeOpt) = doRun(msg + msgExtra, optimized)
     if (!onlyOptimized) {
       //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
       // list.flatMap(listEl => set(listEl))
@@ -66,11 +66,11 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
                                                    (expected: => Traversable[T])
                                                    (query: => Exp[Coll])
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
-    val (expectedRes, timeScala, _) =
+    val (expectedRes, timeScala) =
       if (!onlyOptimized)
         benchMarkInternal(msg)(expected)
       else
-        (null, -1.0, 0)
+        (null, -1.0)
     //Those versions don't work - bug https://issues.scala-lang.org/browse/SI-5642.
     //val builtQuery: Exp[Coll with Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query[T, Coll](query))
     //val builtQuery: Exp[Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query[T, Coll](query))
