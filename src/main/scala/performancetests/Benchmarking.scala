@@ -131,7 +131,7 @@ trait Benchmarking {
 
     if (verbose) {
       if (hasConsoleOutput)
-        print(">>> Name = %s, time = " format name)
+        print(">>> Name = %s, needed iterations = %d, time = " format (name, stats.iterations))
       println("(%.3f +- %.3f (stdErr = %.3f)) ms; relative std.dev. %.3f, std.err. %.3f; extra memory consumption = %d" format (avgMs, devStdMs, stdErrMs, devStdMs / avgMs, stdErrMs / avgMs,usedMemory))
     }
     //Format output for Jenkins' Measurement Plot plugin - https://wiki.jenkins-ci.org/display/JENKINS/Measurement+Plots+Plugin
