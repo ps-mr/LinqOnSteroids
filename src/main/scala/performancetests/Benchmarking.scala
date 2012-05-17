@@ -19,6 +19,7 @@ trait Benchmarking {
   val maxCov = 0.02
   val myMethodology = false
   val printAllData = false
+  val callGC = false
 
   //Import and re-export to inheritors.
   def debugBench = Benchmarking.debugBench
@@ -108,7 +109,7 @@ trait Benchmarking {
       //print("%d;" format timeD)
       stats.update(timeD)
       values += timeD
-      if (!debugBench)
+      if (callGC && !debugBench)
         System.gc()
       i += 1
     }
