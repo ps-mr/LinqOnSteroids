@@ -227,6 +227,6 @@ object Benchmarking {
   private val logPath = "LOSTestLog.csv"
   private val logWriter = new PrintWriter(new BufferedWriter(new FileWriter(logPath, true)))
   private val rawDataLogPath = "LOSTestLog.csv"
-  private val rawDataLogWriter = new PrintWriter(new BufferedWriter(new FileWriter(logPath, true)))
+  private val rawDataLogWriter = new PrintWriter(new BufferedWriter(new FileWriter(rawDataLogPath, true)))
   private var usedNames = Set[String]()
 }
