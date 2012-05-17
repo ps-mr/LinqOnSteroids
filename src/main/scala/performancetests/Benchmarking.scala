@@ -103,7 +103,7 @@ trait Benchmarking {
     val stats = new VarianceCalc
     for (i <- 1 to sampleLoops) {
       val before = System.nanoTime()
-      for (i <- 1 to execLoops)
+      for (j <- 1 to execLoops)
         ret = toBench
       stats.update((System.nanoTime() - before) / execLoops)
       if (!debugBench)
