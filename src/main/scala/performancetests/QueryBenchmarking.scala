@@ -42,15 +42,15 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
     (optimized, optimizationTime)
   }
 
+  private def reportTimeRatio(label: String, speedup: Double) {
+    val delta = 1 - speedup
+    val lessOrMore = if (delta > 0) "less" else "MORE"
+    println("Speedup ratio by this optimization compared to %s: %f (i.e. %f%% %s)" format (label, speedup, math.abs(delta) * 100, lessOrMore))
+  }
   private def compare(time: Double, timeOpt: Double, optimizationTime: Double, timeScala: Double) = {
-    def report(label: String, speedup: Double) {
-      val delta = 1 - speedup
-      val lessOrMore = if (delta > 0) "less" else "MORE"
-      println("Speedup ratio by this optimization compared to %s: %f (i.e. %f%% %s)" format (label, speedup, math.abs(delta) * 100, lessOrMore))
-    }
-    report("base embedded version", timeOpt / time)
-    report("native Scala version", timeOpt / timeScala)
-    report("native Scala version, counting optimization time", (timeOpt + optimizationTime) / timeScala)
+    reportTimeRatio("base embedded version", timeOpt / time)
+    reportTimeRatio("native Scala version", timeOpt / timeScala)
+    reportTimeRatio("native Scala version, counting optimization time", (timeOpt + optimizationTime) / timeScala)
   }
 
   private def benchInterpret[T, Coll <: Traversable[T]](msg: String,
