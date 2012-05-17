@@ -131,8 +131,9 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         //This code also measures performance of the optimized query, and does not check that the optimized query is the same as the other optimized query :-(.
         //benchInterpret[T, Traversable[T]]("%s Los - Alternative %d" format (msg, i), altQuery, timeScala)
       }
+      val msgNativeAltExtra = "- Alternative (modularized)"
       val (altNativeRes, timeAltScala) =
-        benchMarkInternal(msg) { altExpected }
+        benchMarkInternal(msg + msgNativeAltExtra) { altExpected }
       if (altNativeRes != null) {
         altNativeRes should be (resOpt)
         reportTimeRatio("native Scala version - Alternative (modularized)", timeOpt / timeAltScala)
