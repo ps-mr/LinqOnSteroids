@@ -101,7 +101,7 @@ trait Benchmarking {
 
     val maxLoops_ = if (myMethodology) sampleLoops else maxLoops
     var i = 0
-    while (i < maxLoops_ && (myMethodology || stats.cov > maxCov)) {
+    do {
       val before = System.nanoTime()
       for (j <- 1 to execLoops)
         ret = toBench
@@ -112,7 +112,7 @@ trait Benchmarking {
       if (callGC && !debugBench)
         System.gc()
       i += 1
-    }
+    } while (i < maxLoops_ && (myMethodology || stats.cov > maxCov))
     if (!hasConsoleOutput)
       print(" ended benchmarking, name = %s, needed iterations = %d, time = " format (name, stats.iterations))
     val avgMs = stats.avg / math.pow(10,6)
