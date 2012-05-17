@@ -57,7 +57,7 @@ trait Benchmarking {
    * @return the value returned by toBench
    */
   def benchMarkInternal[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
-               (toBench: => T): (T, Double, Int) = {
+               (toBench: => T): (T, Double, Long) = {
     def print(x: Any) = if (!silent) Console.err.print(x)
     def println(x: Any) = if (!silent) Console.err.println(x)
     //Why not call this println()? Because overloading is not supported in local definitions (SLS §6.11).
