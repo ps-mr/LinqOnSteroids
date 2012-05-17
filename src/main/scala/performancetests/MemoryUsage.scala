@@ -44,10 +44,10 @@ object MemoryUsage {
    */
   def apply[T](mu: Long ⇒ Unit)(f: ⇒ T): T = {
     val memoryMXBean = java.lang.management.ManagementFactory.getMemoryMXBean
-    memoryMXBean.gc()
+    System.gc()
     val usedBefore = memoryMXBean.getHeapMemoryUsage.getUsed
     val r = f
-    memoryMXBean.gc()
+    System.gc()
     val usedAfter = memoryMXBean.getHeapMemoryUsage.getUsed
     mu(usedAfter - usedBefore)
     r
