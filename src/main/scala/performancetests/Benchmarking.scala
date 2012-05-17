@@ -76,7 +76,7 @@ trait Benchmarking {
       print(">>> Name = %s" format name)
       if (myMethodology)
         print(", starting warmup...")
-      println("")
+      newLine()
     }
     //Use Console.err instead of println and flush here.
     //Console.flush()
