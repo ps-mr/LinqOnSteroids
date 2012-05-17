@@ -57,7 +57,7 @@ trait Benchmarking {
    * @return the value returned by toBench
    */
   def benchMarkInternal[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
-               (toBench: => T): (T, Double) = {
+               (toBench: => T): (T, Double, Int) = {
     def print(x: Any) = if (!silent) Console.err.print(x)
     def println(x: Any) = if (!silent) Console.err.println(x)
     //Why not call this println()? Because overloading is not supported in local definitions (SLS §6.11).
@@ -84,8 +84,11 @@ trait Benchmarking {
     if (myMethodology)
       for (i <- 1 to warmUpLoops)
         toBench
-    if (!debugBench)
-      System.gc()
+    val memoryBefore =
+      if (!debugBench)
+        MemoryUsage.gcAndSnapshotUsedMemory()
+      else
+        0
 
     if (hasConsoleOutput)
       newLine()
@@ -113,6 +116,12 @@ trait Benchmarking {
         System.gc()
       i += 1
     } while (i < maxLoops_ && (myMethodology || stats.cov > maxCov))
+    val usedMemory =
+      (if (!debugBench)
+        MemoryUsage.gcAndSnapshotUsedMemory()
+      else
+        0) - memoryBefore
+
     if (!hasConsoleOutput)
       print(" ended benchmarking, name = %s, needed iterations = %d, time = " format (name, stats.iterations))
     val avgMs = stats.avg / math.pow(10,6)
@@ -123,7 +132,7 @@ trait Benchmarking {
     if (verbose) {
       if (hasConsoleOutput)
         print(">>> Name = %s, time = " format name)
-      println("(%.3f +- %.3f (stdErr = %.3f)) ms; relative std.dev. %.3f, std.err. %.3f" format (avgMs, devStdMs, stdErrMs, devStdMs / avgMs, stdErrMs / avgMs))
+      println("(%.3f +- %.3f (stdErr = %.3f)) ms; relative std.dev. %.3f, std.err. %.3f; extra memory consumption = %d" format (avgMs, devStdMs, stdErrMs, devStdMs / avgMs, stdErrMs / avgMs,usedMemory))
     }
     //Format output for Jenkins' Measurement Plot plugin - https://wiki.jenkins-ci.org/display/JENKINS/Measurement+Plots+Plugin
     //println(<measurement><name>{name}</name><value>{avgMs}</value></measurement>) //Remove, that Jenkins plugin does not work.
@@ -143,7 +152,7 @@ trait Benchmarking {
 
     val benchmarkingEnd = System.nanoTime()
     println("Benchmarking required %d ms" format (benchmarkingEnd - benchmarkingBegin) / (1000 * 1000))
-    (ret, avgMs)
+    (ret, avgMs, memoryBefore)
   }
 
   /*

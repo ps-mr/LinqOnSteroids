@@ -41,7 +41,11 @@ import java.lang.management.ManagementFactory
 object MemoryUsage {
   val memoryMXBean = ManagementFactory.getMemoryMXBean
 
-  def snapshotUsedMemory() = {
+  /**
+   * Performs a GC and returns the used memory.
+   * @return Used memory in bytes.
+   */
+  def gcAndSnapshotUsedMemory() = {
     System.gc()
     memoryMXBean.getHeapMemoryUsage.getUsed
   }
@@ -50,11 +54,11 @@ object MemoryUsage {
    * of executing the given method.
    */
   def apply[T](f: ⇒ T): (T, Long) = {
-    val usedBefore = snapshotUsedMemory()
+    val usedBefore = gcAndSnapshotUsedMemory()
 
     val res = f
 
-    val usedAfter = snapshotUsedMemory()
+    val usedAfter = gcAndSnapshotUsedMemory()
     (res, usedAfter - usedBefore)
   }
 
