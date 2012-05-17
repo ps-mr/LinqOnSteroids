@@ -91,7 +91,6 @@ object FindBugsAnalyses {
 
 class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
   def methodsNative() = {
-    import BATLifting._
     for {
       classFile ← classFiles
       method ← classFile.methods
@@ -206,8 +205,49 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
     }*/
+    def getPrivateFields(classFile: ClassFile) = (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet //XXX toSet is unneeded, field names are unique.
+    def usedPrivateFields(classFile: ClassFile, declaringClass: ObjectType) = for {
+        method ← classFile.methods
+        body ← method.body.toList
+        instruction ← body.instructions
+        usedPrivateField ← instruction match {
+          case GETFIELD(`declaringClass`, name, _) ⇒ Some(name)
+          case GETSTATIC(`declaringClass`, name, _) ⇒ Some(name)
+          case _ ⇒ None
+        }
+      } yield usedPrivateField //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+    def getPrivateFieldsLos(classFile: Exp[ClassFile]) = {
+      import BATLifting._
+      (for (field ← classFile.fields if field.isPrivate) yield field.name).toSet  //XXX toSet is unneeded, field names are unique.
+    }
+    def usedPrivateFieldsLos(classFile: Exp[ClassFile], declaringClass: Exp[ObjectType]) = {
+      import BATLifting._
+      import InstructionLifting._
+      for {
+        instructions ← Let(for { //This requires unnesting on a Let... will the optimizer manage? I suspect not, simply because the Let is there.
+          //However, it should inline the Let early because the bound variable is used only once.
+          method ← classFile.methods
+          body ← method.body
+          instruction ← body.instructions
+        } yield instruction)
+        name <- instructions.typeCase(
+          when[GETFIELD](asGETFIELD => asGETFIELD.declaringClass ==# declaringClass, _.name),
+          when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass ==# declaringClass, _.name))
+      } yield name
+      /*(for {
+        method ← classFile.methods
+        body ← method.body.toList
+        instruction ← body.instructions
+        usedPrivateField ← instruction match {
+          case GETFIELD(`declaringClass`, name, _) ⇒ Some(name)
+          case GETSTATIC(`declaringClass`, name, _) ⇒ Some(name)
+          case _ ⇒ None
+        }
+      } yield usedPrivateField)*/
+    } //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
 
-    benchQueryComplete("UNUSED_PRIVATE_FIELD"){ // FB: "UUF_UNUSED_FIELD") { // However, we only focus on private fields.
+
+    benchQueryComplete("UNUSED_PRIVATE_FIELD")({ // FB: "UUF_UNUSED_FIELD") { // However, we only focus on private fields.
       for {
         classFile ← classFiles if !classFile.isInterfaceDeclaration
         declaringClass = classFile.thisClass
@@ -225,7 +265,16 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         } yield usedPrivateField) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
-    } {
+    }, {
+      for {
+        classFile ← classFiles if !classFile.isInterfaceDeclaration
+        declaringClass = classFile.thisClass
+        privateFields = getPrivateFields(classFile)
+        //Note that this could even allow unnesting - should we try to have this unnested?
+        unusedPrivateFields = privateFields -- usedPrivateFields(classFile, declaringClass)
+        if unusedPrivateFields.size > 0
+      } yield (classFile, privateFields)
+    })({
       import BATLifting._
       import InstructionLifting._
       for {
@@ -243,7 +292,17 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
-    }
+    }, {
+      import BATLifting._
+      for {
+        classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration
+        declaringClass ← Let(classFile.thisClass)
+        privateFields ← Let(getPrivateFieldsLos(classFile))
+        usedPrivateFields ← Let(usedPrivateFieldsLos(classFile, declaringClass))
+        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, privateFields)
+    })
   }
 
   test("ExplicitGC") {
