@@ -16,9 +16,19 @@
 (define (project t) (shift k (buildApp k t)))
 ; I would offer a binding of reset as inject, but it seems non-trivial since reset is not a function but a macro.
 
+; Try this in Scala with plus1 having @cps in the type.
+;(define b (reset (plus1 (project (buildConst 4)))))
 (define b (reset (+ 1 (project (buildConst 4)))))
 ; Try evaluating 
 (define c (reset (+ (project (buildConst 2)) (project (buildConst 4)))))
 (evalApp b)
 (evalApp c)
 (evalApp (evalApp c))
+;+ :: Int -> (Int -> Int)
+;(apply + (project (
+; A -> B |-> A -> M B
+; transform (A -> B) |-> FuncCall[A, transform B]
+; A -> B -> C
+;c :: FuncCall[Int, FuncCall[Int, Int]]
+; FuncCall[(Int, Int), Int]
+;FuncCall[A, B] = buildApp (A -> B) A
