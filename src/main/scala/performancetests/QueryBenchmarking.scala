@@ -101,14 +101,16 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
     val losMsg = "%s Los" format msg
     val (optimized, optimizationTime) = benchOptimize(losMsg, builtQuery)
     val (resOpt, timeOpt) = doRun(losMsg + " - after optimization", optimized)
+
     if (!onlyOptimized) {
       val (expectedRes, timeScala) =
         benchMarkInternal(msg) { expected }
       val (res, time) = doRun(losMsg, builtQuery)
       //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
       // list.flatMap(listEl => set(listEl))
-      //returns results in non-deterministic order.
-      resOpt should be (res) //keep this and alter queries instead.
+      //returns results in non-deterministic order (which is arguably a Scala bug).
+      //Alter queries instead: if they are non-deterministic they should return a set.
+      resOpt should be (res)
 
       compare(time, timeOpt, optimizationTime, timeScala)
 
