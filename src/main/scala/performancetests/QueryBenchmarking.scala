@@ -75,6 +75,17 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
   // just always have them, i.e. always check dynamically whether forcing is needed, for all LoS queries, slowing them
   // down a tiny insignificant bit.
   //XXX unused parameter: altExpected
+  /**
+   *
+   * @param msg
+   * @param expected
+   * @param altExpected Optional by-name parameter, which shall never evaluate to null
+   * @param query
+   * @param altQueries
+   * @tparam T
+   * @tparam Coll
+   * @return
+   */
   def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
                                                    (expected: => Traversable[T], altExpected: => Traversable[T] = null /* Tried using OptParam here with */)
                                                    (query: => Exp[Coll], altQueries: Exp[Coll]*)
