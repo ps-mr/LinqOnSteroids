@@ -13,6 +13,9 @@ import ivm.collections.TypeMapping
  * Note: this code is not allowed to create expression nodes through their constructors, as with {@see Optimization}.
  * The subqueries map should be called the "precomputed query repository", and is a generalization of a repository of
  * indexes.
+ * Limitation/performance bug: indexing assumes that the expression to lift is surrounded by FlatMap, because Map is
+ * normalized before to FlatMap; however, it could also be surrounded by another filter, if it is not a filter itself
+ * (TypeCaseExp).
  */
 object SubquerySharing {
   /*private*/ def println(msg: Any) {
