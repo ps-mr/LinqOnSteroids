@@ -110,11 +110,11 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
       // list.flatMap(listEl => set(listEl))
       //returns results in non-deterministic order (which is arguably a Scala bug).
       //Alter queries instead: if they are non-deterministic they should return a set.
-      resOpt should be (res)
 
       compare(time, timeOpt, optimizationTime, timeScala)
 
-      resOpt should be (expectedRes)
+      resOpt should be (res)
+      res should be (expectedRes)
 
       for ((altQuery, i) <- altQueries.zipWithIndex) {
         val altMsg = "%s Los - Alternative %d" format (msg, i)
