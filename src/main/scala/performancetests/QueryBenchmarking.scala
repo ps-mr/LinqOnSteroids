@@ -114,14 +114,9 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
       resOpt should be (res) //keep this and alter queries instead.
 
       compare(time, timeOpt, optimizationTime, timeScala)
-    }
 
-    if (!onlyOptimized) {
       resOpt should be (expectedRes)
-    }
-    println("\tViolations: " + resOpt.size)
 
-    if (!onlyOptimized) {
       for ((altQuery, i) <- altQueries.zipWithIndex) {
         val altMsg = "%s Los - Alternative %d" format (msg, i)
         //Benchmark optimization time
@@ -143,6 +138,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         reportTimeRatio("native Scala version - Alternative (modularized), counting optimization time", (timeOpt + optimizationTime) / timeAltScala)
       }
     }
+    println("\tViolations: " + resOpt.size)
+
     resOpt
 
       /*
