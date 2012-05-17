@@ -62,6 +62,12 @@ trait Benchmarking {
     def println(x: Any) = if (!silent) Console.err.println(x)
     //Why not call this println()? Because overloading is not supported in local definitions (SLS §6.11).
     def newLine() = if (!silent) Console.err.println()
+    def gcAndSnapshotUsedMemory() =
+      if (!debugBench)
+        MemoryUsage.gcAndSnapshotUsedMemory() //This call is expensive because it invokes GC - on my machine it takes 240 ms.
+      else
+        0
+
 
     val benchmarkingBegin = System.nanoTime()
     if (usedNames(name))
@@ -84,11 +90,7 @@ trait Benchmarking {
     if (myMethodology)
       for (i <- 1 to warmUpLoops)
         toBench
-    val memoryBefore =
-      if (!debugBench)
-        MemoryUsage.gcAndSnapshotUsedMemory()
-      else
-        0
+    val memoryBefore = gcAndSnapshotUsedMemory()
 
     if (hasConsoleOutput)
       newLine()
@@ -116,11 +118,7 @@ trait Benchmarking {
         System.gc()
       i += 1
     } while (i < maxLoops_ && (myMethodology || stats.cov > maxCov))
-    val usedMemory =
-      (if (!debugBench)
-        MemoryUsage.gcAndSnapshotUsedMemory()
-      else
-        0) - memoryBefore
+    val usedMemory = gcAndSnapshotUsedMemory() - memoryBefore
 
     if (!hasConsoleOutput)
       print(" ended benchmarking, name = %s, needed iterations = %d, time = " format (name, stats.iterations))
