@@ -12,7 +12,15 @@ import org.scalatest.matchers.ShouldMatchers
  * Date: 27/1/2012
  */
 
-trait QueryBenchmarking extends TestUtil with Benchmarking {
+trait OptParamSupport {
+  //Does not work, report bug
+  trait OptParam[+T]
+  case object NoParam extends OptParam[Nothing]
+  case class SomeParam[+T](t: T) extends OptParam[T]
+  implicit def toSomeParam[T](t: T) = SomeParam(t)
+}
+
+trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport {
   this: ShouldMatchers =>
 
   def onlyOptimized = false
@@ -68,7 +76,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking {
   // down a tiny insignificant bit.
   //XXX unused parameter: altExpected
   def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
-                                                   (expected: => Traversable[T], altExpected: Traversable[T]*)
+                                                   (expected: => Traversable[T], altExpected: => Traversable[T] = null /* Tried using OptParam here with */)
                                                    (query: => Exp[Coll], altQueries: Exp[Coll]*)
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
     val (expectedRes, timeScala) =
