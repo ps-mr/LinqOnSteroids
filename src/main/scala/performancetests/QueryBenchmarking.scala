@@ -117,17 +117,19 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
       resOpt should be (resLos)
       resLos should be (expectedRes)
 
-      for ((altQuery, i) <- altQueries.zipWithIndex) {
+      val optimizedQueries = for {
+        (altQuery, i) <- altQueries.zipWithIndex
         val altMsg = "%s Los - Alternative %d" format (msg, i)
         //Benchmark optimization time
-        val (altOptimized, altOptimizationTime) = benchOptimize(altMsg, altQuery)
+        val (altOptimized, _ /*altOptimizationTime*/) = benchOptimize(altMsg, altQuery)
+      } yield (altMsg, altOptimized, altQuery, i)
+
+      for ((altMsg, altOptimized, altQuery, i) <- optimizedQueries) {
         //Check that the query produces the same result, and how much slower it is
         val (resAlt, timeAlt) = doRun(altMsg, altQuery: Exp[Traversable[T]])
         //Check that we get the same result
         resAlt should be (resOpt)
         reportTimeRatio("base embedded version - Alternative %d" format i, timeOpt / timeAlt)
-        //Check that we get the same query
-        altOptimized should be (optimized)
 
         //This code also measures performance of the optimized query, and does not check that the optimized query is the same as the other optimized query :-(.
         //benchInterpret[T, Traversable[T]]("%s Los - Alternative %d" format (msg, i), altQuery, timeScala)
@@ -139,6 +141,11 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         altNativeRes should be (resOpt)
         reportTimeRatio("native Scala version%s" format msgNativeAltExtra, timeOpt / timeAltScala)
         reportTimeRatio("native Scala version%s, counting optimization time" format msgNativeAltExtra, (timeOpt + optimizationTime) / timeAltScala)
+      }
+
+      for ((_, altOptimized, _, i) <- optimizedQueries) {
+        //Check that we get the same query by optimizing modularized queries and non-modularized ones - I expect failures here.
+        altOptimized should be (optimized)
       }
     }
     println("\tViolations: " + resOpt.size)
