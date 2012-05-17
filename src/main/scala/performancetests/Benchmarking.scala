@@ -94,16 +94,39 @@ trait Benchmarking {
     //val stats = if (myMethodology) new VarianceCalcMyMethodology else new VarianceCalc(sampleLoops)
     val stats = new VarianceCalc(sampleLoops)
     val values = ArrayBuffer[Long]()
-    for (i <- 1 to sampleLoops) {
-      val before = System.nanoTime()
-      for (j <- 1 to execLoops)
-        ret = toBench
-      val timeD = (System.nanoTime() - before) / execLoops
-      //print("%d;" format timeD)
-      stats.update(timeD)
-      values += timeD
-      if (!debugBench)
-        System.gc()
+    //for (i <- 1 to sampleLoops) {
+    if (myMethodology) {
+      var i = 0
+      while (i < sampleLoops) {
+        //START COPY-N-PASTE
+        val before = System.nanoTime()
+        for (j <- 1 to execLoops)
+          ret = toBench
+        val timeD = (System.nanoTime() - before) / execLoops
+        //print("%d;" format timeD)
+        stats.update(timeD)
+        values += timeD
+        if (!debugBench)
+          System.gc()
+        //END COPY-N-PASTE
+        i += 1
+      }
+    } else {
+      var i = 0
+      while (stats.cov > maxCov && i < warmUpLoops) {
+        //START COPY-N-PASTE
+        val before = System.nanoTime()
+        for (j <- 1 to execLoops)
+          ret = toBench
+        val timeD = (System.nanoTime() - before) / execLoops
+        //print("%d;" format timeD)
+        stats.update(timeD)
+        values += timeD
+        if (!debugBench)
+          System.gc()
+        //END COPY-N-PASTE
+        i += 1
+      }
     }
     if (!hasConsoleOutput)
       print(" ended benchmarking, name = %s, needed iterations = %d, time = " format (name, stats.iterations))
