@@ -126,7 +126,7 @@ trait Benchmarking {
       println("(%.3f +- %.3f (stdErr = %.3f)) ms; relative std.dev. %.3f, std.err. %.3f" format (avgMs, devStdMs, stdErrMs, devStdMs / avgMs, stdErrMs / avgMs))
     }
     //Format output for Jenkins' Measurement Plot plugin - https://wiki.jenkins-ci.org/display/JENKINS/Measurement+Plots+Plugin
-    println(<measurement><name>{name}</name><value>{avgMs}</value></measurement>) //Remove, that Jenkins plugin does not work.
+    //println(<measurement><name>{name}</name><value>{avgMs}</value></measurement>) //Remove, that Jenkins plugin does not work.
 
     //Current log.
     logWriter.println("%s;%s;%s;%f;%f;%f" format (GitVersion.version, testDate, name.replace(';', '_'), avgMs, devStdMs, stdErrMs))
