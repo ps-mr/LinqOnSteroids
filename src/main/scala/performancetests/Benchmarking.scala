@@ -135,8 +135,9 @@ trait Benchmarking {
     //Format output for Jenkins' Measurement Plot plugin - https://wiki.jenkins-ci.org/display/JENKINS/Measurement+Plots+Plugin
     //println(<measurement><name>{name}</name><value>{avgMs}</value></measurement>) //Remove, that Jenkins plugin does not work.
 
+    val nameToPrint = name.replace(';', '_')
     //Current log.
-    logWriter.println("%s;%s;%s;%f;%f;%f" format (GitVersion.version, testDate, name.replace(';', '_'), avgMs, devStdMs, stdErrMs))
+    logWriter.println("%s;%s;%s;%f;%f;%f" format (GitVersion.version, testDate, nameToPrint, avgMs, devStdMs, stdErrMs))
     logWriter.flush()
     //Detailed log.
     //Format output for R
