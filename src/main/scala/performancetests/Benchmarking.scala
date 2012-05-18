@@ -16,7 +16,7 @@ trait Benchmarking {
   val maxLoops = 1000
 
   //val maxCov = 0.10
-  val maxCov = if (debugBench) 1.0 else 0.02
+  val maxCov = 0.02
   val myMethodology = false
   val printAllData = false
   val callGC = false
@@ -117,7 +117,8 @@ trait Benchmarking {
       if (callGC && !debugBench)
         System.gc()
       i += 1
-    } while (i < maxLoops_ && (myMethodology || stats.cov > maxCov))
+      //If debugBench, we never want to reiterate a benchmark.
+    } while (!debugBench && i < maxLoops_ && (myMethodology || stats.cov > maxCov))
     val usedMemory = gcAndSnapshotUsedMemory() - memoryBefore
 
     if (!hasConsoleOutput)
