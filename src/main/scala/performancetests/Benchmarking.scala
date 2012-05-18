@@ -118,7 +118,7 @@ trait Benchmarking {
         System.gc()
       i += 1
       //If debugBench, we never want to reiterate a benchmark.
-    } while (!debugBench && i < maxLoops_ && (myMethodology || stats.cov > maxCov))
+    } while (!debugBench && i < maxLoops_ && (myMethodology || stats.cov > maxCov || i < 10))
     val usedMemory = gcAndSnapshotUsedMemory() - memoryBefore
 
     if (!hasConsoleOutput)
