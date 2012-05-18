@@ -16,7 +16,7 @@ trait Benchmarking {
   val maxLoops = 1000
 
   //val maxCov = 0.10
-  val maxCov = if (debugBench) 1.0 else 0.02
+  val maxCov = 0.02
   val myMethodology = false
   val printAllData = false
   val callGC = false
@@ -117,7 +117,8 @@ trait Benchmarking {
       if (callGC && !debugBench)
         System.gc()
       i += 1
-    } while (i < maxLoops_ && (myMethodology || stats.cov > maxCov))
+      //If debugBench, we never want to reiterate a benchmark.
+    } while (!debugBench && i < maxLoops_ && (myMethodology || stats.cov > maxCov || i < 10))
     val usedMemory = gcAndSnapshotUsedMemory() - memoryBefore
 
     if (!hasConsoleOutput)
@@ -130,21 +131,19 @@ trait Benchmarking {
     if (verbose) {
       if (hasConsoleOutput)
         print(">>> Name = %s, needed iterations = %d, time = " format (name, stats.iterations))
-      println("(%.3f +- %.3f (stdErr = %.3f)) ms; relative std.dev. %.3f, std.err. %.3f; extra memory consumption = %d bytes" format (avgMs, devStdMs, stdErrMs, devStdMs / avgMs, stdErrMs / avgMs,usedMemory))
+      println("(%.3f +- %.3f (stdErr = %.3f)) ms; relative std.dev. %.3f, std.err. %.3f; extra memory consumption = %d bytes" format (avgMs, devStdMs, stdErrMs, devStdMs / avgMs, stdErrMs / avgMs, usedMemory))
     }
     //Format output for Jenkins' Measurement Plot plugin - https://wiki.jenkins-ci.org/display/JENKINS/Measurement+Plots+Plugin
     //println(<measurement><name>{name}</name><value>{avgMs}</value></measurement>) //Remove, that Jenkins plugin does not work.
 
+    val nameToPrint = name.replace(';', '_')
     //Current log.
-    logWriter.println("%s;%s;%s;%f;%f;%f" format (GitVersion.version, testDate, name.replace(';', '_'), avgMs, devStdMs, stdErrMs))
+    logWriter.println("%s;%s;%s;%f;%f;%f" format (GitVersion.version, testDate, nameToPrint, avgMs, devStdMs, stdErrMs))
     logWriter.flush()
     //Detailed log.
     //Format output for R
-    if (printAllData)
-      rawDataLogWriter.println("%s;%s;%s" format (GitVersion.version, testDate, name.replace(';', '_')))
     for (v <- if (printAllData) values else stats.buf) {
-      rawDataLogWriter.println("%s;%s;%s" format (GitVersion.version, testDate, v))
-      //Move name back in
+      rawDataLogWriter.println("%s;%s;%s;%d" format (GitVersion.version, testDate, nameToPrint, v))
     }
     rawDataLogWriter.flush()
 
@@ -189,20 +188,25 @@ object Benchmarking {
       sumSq / count - t * t
     }
 
-    def update(sample: Double)
+    def update(sample: Long)
+    protected[this] def updateSumsForNewSample(sample: Long) {
+      sum += sample
+      sumSq += sample.asInstanceOf[Double] * sample
+    }
+
     def cov =
       math.sqrt(variance) / avg
   }
 
-  class VarianceCalc(samples: Int) extends IVarianceCalc {
-    val buf = ArrayBuffer.fill(samples)(0.0)
+  class VarianceCalc(nSamples: Int) extends IVarianceCalc {
+    val buf = ArrayBuffer.fill(nSamples)(0L)
     var idx = 0
     var iterations = 0
 
     //var count = 0
-    def count = samples
+    def count = nSamples
 
-    def update(sample: Double) {
+    def update(sample: Long) {
       iterations += 1
 
       //Safe to do this
@@ -211,23 +215,21 @@ object Benchmarking {
 
       buf(idx) = sample
 
-      sum += sample
-      sumSq += sample * sample
+      updateSumsForNewSample(sample)
 
-      idx = (idx + 1) % samples
+      idx = (idx + 1) % nSamples
     }
     override def cov =
-      if (iterations < samples) 1 else super.cov
+      if (iterations < nSamples) 1 else super.cov
   }
 
   class VarianceCalcMyMethodology extends IVarianceCalc {
     var count = 0
     def iterations = count
 
-    def update(sample: Double) {
+    def update(sample: Long) {
       count += 1
-      sum += sample
-      sumSq += sample * sample
+      updateSumsForNewSample(sample)
     }
   }
 
