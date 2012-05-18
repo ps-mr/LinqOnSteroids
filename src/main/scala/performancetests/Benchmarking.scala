@@ -190,6 +190,11 @@ object Benchmarking {
     }
 
     def update(sample: Long)
+    protected[this] def updateSumsForNewSample(sample: Long) {
+      sum += sample
+      sumSq += sample.asInstanceOf[Double] * sample
+    }
+
     def cov =
       math.sqrt(variance) / avg
   }
@@ -211,8 +216,7 @@ object Benchmarking {
 
       buf(idx) = sample
 
-      sum += sample
-      sumSq += sample.asInstanceOf[Double] * sample
+      updateSumsForNewSample(sample)
 
       idx = (idx + 1) % nSamples
     }
@@ -226,8 +230,7 @@ object Benchmarking {
 
     def update(sample: Long) {
       count += 1
-      sum += sample
-      sumSq += sample.asInstanceOf[Double] * sample
+      updateSumsForNewSample(sample)
     }
   }
 
