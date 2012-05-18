@@ -189,20 +189,20 @@ object Benchmarking {
       sumSq / count - t * t
     }
 
-    def update(sample: Double)
+    def update(sample: Long)
     def cov =
       math.sqrt(variance) / avg
   }
 
-  class VarianceCalc(samples: Int) extends IVarianceCalc {
-    val buf = ArrayBuffer.fill(samples)(0.0)
+  class VarianceCalc(nSamples: Int) extends IVarianceCalc {
+    val buf = ArrayBuffer.fill(nSamples)(0L)
     var idx = 0
     var iterations = 0
 
     //var count = 0
-    def count = samples
+    def count = nSamples
 
-    def update(sample: Double) {
+    def update(sample: Long) {
       iterations += 1
 
       //Safe to do this
@@ -212,22 +212,22 @@ object Benchmarking {
       buf(idx) = sample
 
       sum += sample
-      sumSq += sample * sample
+      sumSq += sample.asInstanceOf[Double] * sample
 
-      idx = (idx + 1) % samples
+      idx = (idx + 1) % nSamples
     }
     override def cov =
-      if (iterations < samples) 1 else super.cov
+      if (iterations < nSamples) 1 else super.cov
   }
 
   class VarianceCalcMyMethodology extends IVarianceCalc {
     var count = 0
     def iterations = count
 
-    def update(sample: Double) {
+    def update(sample: Long) {
       count += 1
       sum += sample
-      sumSq += sample * sample
+      sumSq += sample.asInstanceOf[Double] * sample
     }
   }
 
