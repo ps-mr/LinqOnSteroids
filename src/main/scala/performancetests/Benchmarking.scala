@@ -234,7 +234,7 @@ object Benchmarking {
   private val testDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance.getTime)
   private val logPath = "LOSTestLog.csv"
   private val logWriter = new PrintWriter(new BufferedWriter(new FileWriter(logPath, true)))
-  private val rawDataLogPath = "LOSTestLog.csv"
+  private val rawDataLogPath = "LOSTestLog-raw.csv"
   private val rawDataLogWriter = new PrintWriter(new BufferedWriter(new FileWriter(rawDataLogPath, true)))
   private var usedNames = Set[String]()
 }

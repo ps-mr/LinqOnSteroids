@@ -9,3 +9,5 @@ for ((i=0; i < $nIters; i++)); do
 done
 cat LOSTestLog.csv >> LOSTestLog-JDK.csv
 rm -f LOSTestLog.csv
+cat LOSTestLog-raw.csv >> LOSTestLog-JDK-raw.csv
+rm -f LOSTestLog-raw.csv
