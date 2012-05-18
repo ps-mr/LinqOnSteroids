@@ -142,7 +142,7 @@ trait Benchmarking {
     //Detailed log.
     //Format output for R
     for (v <- if (printAllData) values else stats.buf) {
-      rawDataLogWriter.println("%s;%s;%s;%s" format (GitVersion.version, testDate, nameToPrint, v))
+      rawDataLogWriter.println("%s;%s;%s;%d" format (GitVersion.version, testDate, nameToPrint, v))
     }
     rawDataLogWriter.flush()
 
