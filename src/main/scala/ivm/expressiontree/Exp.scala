@@ -41,6 +41,7 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
     val newself = genericConstructor(transformedChilds)
     transformer(newself).asInstanceOf[Exp[T]]
   }
+  //This could use as interface some Foldable-like stuff (or Haskell's Traversable, IIRC).
   /*private[ivm]*/ def treeMap[S](mapper: (Exp[_], Seq[S]) => S): S = {
     val mappedChilds = for (c <- children) yield c.treeMap(mapper)
     mapper(this, mappedChilds)
