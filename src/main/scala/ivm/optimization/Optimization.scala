@@ -516,6 +516,56 @@ object OptimizationTransforms {
     case e => e
   }
 
+  //Bug-triggering variant of the code below.
+  /*@tailrec private def usesArgAtMostOnce[S, T](f: Fun[S, T], v: Exp[_]): Boolean = {
+    f match {
+      case FuncExpBody(FlatMap(ExpSeq(Seq(v2)), g)) if !v2.isOrContains(v) =>
+        usesArgAtMostOnce(g, v)
+      case FuncExpBody(FlatMap(baseUsingV, g)) =>
+        val occurrences = baseUsingV.findTotFun(_ == v)
+        occurrences.length == 1 //gives spurious error
+        //false
+      case _ => false
+    }
+  }*/
+
+  /*
+   * Inlining: if you bind something and then use it immediately (1), it's used only once; the same if there are in between only other bindings, i.e. iterations over single-element sequences (try to make this into a complete criterion). Example:
+for {
+a <- Let(…)
+b <- f(a)
+…
+}
+In other words: FlatMap(Seq(a), x => FlatMap(f(a), g)) and combinations with Filter instead of FlatMap.
+Let's assume that our binding of interest is bound in the head of a comprehension - otherwise it might be used more than once, but only
+once per bound value. So let's consider
+FlatMap(a, x => f(x)).
+We want to characterize the subterms of f which are only evaluated once; in addition, we need that our variable appears in only one of them.
+Theorem: if and only if a variable bound in a for-comprehension (using only FlatMap) is used at most once, then and only then it is used either in the
+   */
+  private def usesArgAtMostOnce[S, T](f: Fun[S, T]): Boolean = usesArgAtMostOnce(f, f.x)
+
+  //Problem here: this assumes that the variable does not appear under explicit lambdas
+  @tailrec private def usesArgAtMostOnce(f: Fun[_, _], v: Exp[_]): Boolean = {
+    f match {
+      case FuncExpBody(FlatMap(ExpSeq(Seq(v2)), g)) if !v2.isOrContains(v) =>
+        usesArgAtMostOnce(g, v)
+      case FuncExpBody(FlatMap(baseUsingV, g)) =>
+        //Let's assume that unnesting has already happened, hence all functions we find are just function definitions and not nested FlatMaps to further differentiate.
+        baseUsingV.findTotFun(_ == v).length == 1 && // length < 1 was considered before.
+          !g.isOrContains(v) &&
+          (baseUsingV.find {
+            case f: Fun[_, _] => true
+          } forall (!_.isOrContains(v)))
+      case _ => false //XXX add corresponding cases for Filter. Or add a common pattern-matcher encompassing both FlatMap and Filter, or more in general all available binding constructs!
+    }
+  }
+
+  private val letTransformerUsedAtMostOnce: Exp[_] => Exp[_] = {
+    case FlatMap(ExpSeq(Seq(v)), f) if usesArgAtMostOnce(f) => subst(f)(v)
+    case e => e
+  }
+
   val letTransformer: Exp[_] => Exp[_] = {
     case FlatMap(ExpSeq(Seq(v)), f) => letExp(v)(f)
     case e => e
