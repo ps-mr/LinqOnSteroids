@@ -32,6 +32,18 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   import java.{lang => jl}
   val seenTypesEx: Set[Class[_]] = Set(classOf[jl.Integer], classOf[Null], classOf[AnyRef], classOf[String], classOf[File], classOf[jl.Long], classOf[FileChannel])
 
+  object Binding {
+    def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _])] = e match {
+      case FlatMap(base, f) => Some((base, f))
+      case Filter(base, f) => Some((base, f))
+      case _ => None
+    }
+  }
+  def testBinding(e: Exp[_]) = e match {
+    case Binding(base, f) => base
+    case _ => e
+  }
+
   test("check subtype relationship") {
     import TypeHierarchyUtils._
     val rel = benchMark("subtype relationship")(computeSubTypeRel[Void](seenTypesEx))
