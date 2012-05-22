@@ -7,22 +7,7 @@ import Numeric.Implicits._
 import annotation.tailrec
 import collection.mutable.Stack
 import collection.TraversableLike
-
-//Pattern-matchers for simplifying writing patterns
-object FuncExpBody {
-  def unapply[S, T](f: Fun[S, T]): Option[Exp[T]] = Some(f.body)
-}
-
-object FuncExpBodyUntyped {
-  def unapply(f: Fun[_, _]): Option[Exp[_]] = Some(f.body)
-}
-
-object FuncExpIdentity {
-  def unapply[S, T](f: Fun[S, T]): Boolean = f.body == f.x
-}
-
-//Pattern match to connect two conditions
-object & { def unapply[A](a: A) = Some(a, a) }
+import OptimizationUtil._
 
 /*
  * Note: it is crucial that optimization do not build expression nodes through their constructors, as they are not part

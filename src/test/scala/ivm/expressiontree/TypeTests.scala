@@ -32,20 +32,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   import java.{lang => jl}
   val seenTypesEx: Set[Class[_]] = Set(classOf[jl.Integer], classOf[Null], classOf[AnyRef], classOf[String], classOf[File], classOf[jl.Long], classOf[FileChannel])
 
-  object BaseBinding {
-    def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _])] = e match {
-      case FlatMap(base, f) => Some((base, f))
-      case Filter(base, f) => Some((base, f))
-      case _ => None
-    }
-  }
-  object Binding {
-    def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _])] =
-      BaseBinding.unapply(e) orElse (e match {
-        case MapNode(base, f) => Some((base, f))
-        case _ => None
-      })
-  }
+  import optimization.OptimizationUtil._
+
   def testBaseBinding[T](e: Exp[T]) = e match {
     case BaseBinding(base, f) => true
     case _ => false
