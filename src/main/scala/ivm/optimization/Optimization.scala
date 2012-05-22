@@ -555,7 +555,7 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
   }
 
   //This allows to inline definitions if they are used at most once.
-  private val letTransformerUsedAtMostOnce: Exp[_] => Exp[_] = {
+  private[optimization] val letTransformerUsedAtMostOnce: Exp[_] => Exp[_] = {
     case FlatMap(ExpSeq(Seq(exp1)), f) if usesArgAtMostOnce(f) => subst(f)(exp1)
     case e => e
   }
@@ -802,6 +802,8 @@ object Optimization {
 
   def letTransformerTrivial[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformerTrivial)
 
+  def letTransformerUsedAtMostOnce[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformerUsedAtMostOnce)
+
   def letTransformer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformer)
 
   //This should be called after any sort of inlining, including for instance map fusion.
@@ -836,6 +838,8 @@ object Optimization {
       reassociateOps(betaDeltaReducer(
         mergeMaps(exp))))
 
+  def basicInlining[T](exp: Exp[T]): Exp[T] = letTransformerUsedAtMostOnce(letTransformerTrivial(exp))
+
   //TODO: rewrite using function composition
   private def optimizeBase[T](exp: Exp[T]): Exp[T] =
   handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
@@ -848,7 +852,7 @@ object Optimization {
                     optimizeCartProdToJoin(
                       removeRedundantOption(toTypeFilter(
                       //generalUnnesting, in practice, can produce the equivalent of let statements. Hence it makes sense to desugar them _after_ (at least the trivial ones).
-                        flatMapToMap(sizeToEmpty(letTransformerTrivial(generalUnnesting(mapToFlatMap(
+                        flatMapToMap(sizeToEmpty(basicInlining(generalUnnesting(mapToFlatMap(
                           removeIdentityMaps(betaDeltaReducer(exp)))))))))))))))))))))))) //the call to reducer is to test.
 
   //The result of letTransformer is not understood by the index optimizer.
