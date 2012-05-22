@@ -3,16 +3,10 @@ package optimization
 
 import expressiontree._
 import Lifting._
-import Numeric.Implicits._
-import annotation.tailrec
 import collection.mutable.Stack
-import collection.TraversableLike
-import OptimizationUtil._
-
+import scala.collection.mutable.Map
 
 object Optimization {
-  import scala.collection.mutable.Map
-
   val subqueries: Map[Exp[_], Any] = Map.empty
 
   def resetSubqueries() = subqueries.clear()

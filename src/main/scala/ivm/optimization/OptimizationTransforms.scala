@@ -5,8 +5,6 @@ import expressiontree._
 import Lifting._
 import Numeric.Implicits._
 import annotation.tailrec
-import collection.mutable.Stack
-import collection.TraversableLike
 import OptimizationUtil._
 
 /*
