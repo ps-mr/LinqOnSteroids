@@ -43,11 +43,6 @@ trait LiftingConvs extends ConversionDisabler {
   class WithAsSmartCollection[T](t: T) {
     def asSmart(implicit conv: T => Exp[T]) = conv(t)
   }
-
-  implicit def withOptimize[T](t: Exp[T]) = new WithOptimize(t)
-  class WithOptimize[T](t: Exp[T]) {
-    def optimize = Optimization.optimize(t)
-  }
 }
 
 trait ConversionDisabler2 extends LiftingConvs {
