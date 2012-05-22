@@ -534,9 +534,14 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
   @tailrec private def usesArgAtMostOnce(f: Fun[_, _], v: Exp[_]): Boolean = {
     f match {
       case FuncExpBody(FlatMap(ExpSeq(Seq(v2)), g)) if !v2.isOrContains(v) =>
+        //This allows to inline id1 in cases like:
+        //v <- Let(exp1)
+        //id2 <- Let(exp2) //id1 not free in exp2, that is, !v2.isOrContains(v)
+        //id3 <- Let(exp3) //id1 free in exp3
         usesArgAtMostOnce(g, v)
       case FuncExpBody(FlatMap(baseUsingV, g)) =>
-        //Let's assume that unnesting has already happened, hence all functions we find are just function definitions and not nested FlatMaps to further differentiate.
+        //Let's assume that unnesting has already happened, hence all functions we find are just function definitions and not nested FlatMaps to further analyze.
+        //Since functions might be applied multiple times, we just make sure that nested function definitions do not refer to g.
         baseUsingV.findTotFun(_ == v).length == 1 && // length < 1 was considered before.
           !g.isOrContains(v) &&
           (baseUsingV.find {
@@ -546,11 +551,14 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
     }
   }
 
+  //This allows to inline definitions if they are used at most once.
   private val letTransformerUsedAtMostOnce: Exp[_] => Exp[_] = {
     case FlatMap(ExpSeq(Seq(v)), f) if usesArgAtMostOnce(f) => subst(f)(v)
     case e => e
   }
 
+  //This is used only at the end, to convert the remaining Let()s into function applications; they are however
+  //_not_ beta-reduced, so that computation is not duplicated.
   val letTransformer: Exp[_] => Exp[_] = {
     case FlatMap(ExpSeq(Seq(v)), f) => letExp(v)(f)
     case e => e
