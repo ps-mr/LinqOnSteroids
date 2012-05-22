@@ -32,13 +32,23 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   import java.{lang => jl}
   val seenTypesEx: Set[Class[_]] = Set(classOf[jl.Integer], classOf[Null], classOf[AnyRef], classOf[String], classOf[File], classOf[jl.Long], classOf[FileChannel])
 
-  object Binding {
+  object BaseBinding {
     def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _])] = e match {
       case FlatMap(base, f) => Some((base, f))
       case Filter(base, f) => Some((base, f))
-      case MapNode(base, f) => Some((base, f))
       case _ => None
     }
+  }
+  object Binding {
+    def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _])] =
+      BaseBinding.unapply(e) orElse (e match {
+        case MapNode(base, f) => Some((base, f))
+        case _ => None
+      })
+  }
+  def testBaseBinding[T](e: Exp[T]) = e match {
+    case BaseBinding(base, f) => true
+    case _ => false
   }
   def testBinding(e: Exp[_]) = e match {
     case Binding(base, f) => true
@@ -50,11 +60,19 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   }
   test("pattern matching") {
     import squopt._
-    testBinding(seenTypesEx.asSmart flatMap (x => Seq(x))) should be (true)
-    testBinding2(seenTypesEx.asSmart flatMap (x => Seq(x))) should be (true)
+    val exp1 = seenTypesEx.asSmart flatMap (x => Seq(x))
+    testBinding(exp1) should be (true)
+    testBaseBinding(exp1) should be (true)
+    testBinding2(exp1) should be (true)
+    val expFilter = seenTypesEx.asSmart filter (x => false)
+    testBinding(expFilter) should be (true)
+    testBaseBinding(expFilter) should be (true)
     //testBinding(seenTypesEx.asSmart map (x => Seq(x))) should be (false) //doesn't compile
-    testBinding2(seenTypesEx.asSmart map (x => Seq(x))) should be (true) //compiles!
-    testBinding2(asExp(1) + 1) should be (false)
+    val exp2 = seenTypesEx.asSmart map (x => Seq(x))
+    testBinding(exp2) should be (true) //compiles?
+    testBinding2(exp2) should be (true) //compiles!
+    testBaseBinding(exp2) should be (false)
+    testBinding(asExp(1) + 1) should be (false)
   }
 
   test("check subtype relationship") {
