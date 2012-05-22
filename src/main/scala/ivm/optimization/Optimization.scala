@@ -531,29 +531,32 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
   private def usesArgAtMostOnce[S, T](f: Fun[S, T]): Boolean = usesArgAtMostOnce(f, f.x)
 
   //Problem here: this assumes that the variable does not appear under explicit lambdas
-  @tailrec private def usesArgAtMostOnce(f: Fun[_, _], v: Exp[_]): Boolean = {
+  @tailrec private def usesArgAtMostOnce(f: Fun[_, _], v1: Exp[_]): Boolean = {
     f match {
-      case FuncExpBody(FlatMap(ExpSeq(Seq(v2)), g)) if !v2.isOrContains(v) =>
+      case FuncExpBody(FlatMap(ExpSeq(Seq(exp2)), g)) if !exp2.isOrContains(v1) =>
         //This allows to inline id1 in cases like:
-        //v <- Let(exp1)
-        //id2 <- Let(exp2) //id1 not free in exp2, that is, !v2.isOrContains(v)
-        //id3 <- Let(exp3) //id1 free in exp3
-        usesArgAtMostOnce(g, v)
+        //v1 <- Let(exp1)
+        //v2 <- Let(exp2) //v1 not free in exp2, that is, !v2.isOrContains(v1)
+        //v3 <- Let(exp3) //v1 free in exp3, but not used any more; or v1 not free in exp3 but free in exp4; and so on.
+        //v4 <- Let(exp4)
+        //Note that it is crucial that all bindings act on single-element collections; we check that by looking for when this is statically known, i.e. we look for ExpSeq(Seq(_)), but we might want to extend that to
+        //Const(seq) if seq has "at runtime" just one element.
+        usesArgAtMostOnce(g, v1)
       case FuncExpBody(FlatMap(baseUsingV, g)) =>
         //Let's assume that unnesting has already happened, hence all functions we find are just function definitions and not nested FlatMaps to further analyze.
         //Since functions might be applied multiple times, we just make sure that nested function definitions do not refer to g.
-        baseUsingV.findTotFun(_ == v).length == 1 && // length < 1 was considered before.
-          !g.isOrContains(v) &&
+        baseUsingV.findTotFun(_ == v1).length == 1 && // length < 1 was considered before.
+          !g.isOrContains(v1) &&
           (baseUsingV.find {
             case f: Fun[_, _] => true
-          } forall (!_.isOrContains(v)))
+          } forall (!_.isOrContains(v1)))
       case _ => false //XXX add corresponding cases for Filter. Or add a common pattern-matcher encompassing both FlatMap and Filter, or more in general all available binding constructs!
     }
   }
 
   //This allows to inline definitions if they are used at most once.
   private val letTransformerUsedAtMostOnce: Exp[_] => Exp[_] = {
-    case FlatMap(ExpSeq(Seq(v)), f) if usesArgAtMostOnce(f) => subst(f)(v)
+    case FlatMap(ExpSeq(Seq(exp1)), f) if usesArgAtMostOnce(f) => subst(f)(exp1)
     case e => e
   }
 
