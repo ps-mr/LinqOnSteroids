@@ -1,7 +1,6 @@
 package ivm.expressiontree
 
 import collection.mutable
-import ivm.optimization.Optimization
 
 /**
  * Here I show yet another encoding of expression trees, where methods
