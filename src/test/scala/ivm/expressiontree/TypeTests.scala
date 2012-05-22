@@ -36,12 +36,25 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _])] = e match {
       case FlatMap(base, f) => Some((base, f))
       case Filter(base, f) => Some((base, f))
+      case MapNode(base, f) => Some((base, f))
       case _ => None
     }
   }
   def testBinding(e: Exp[_]) = e match {
-    case Binding(base, f) => base
-    case _ => e
+    case Binding(base, f) => true
+    case _ => false
+  }
+  def testBinding2[T](e: Exp[T]) = e match {
+    case Binding(base, f) => true
+    case _ => false
+  }
+  test("pattern matching") {
+    import squopt._
+    testBinding(seenTypesEx.asSmart flatMap (x => Seq(x))) should be (true)
+    testBinding2(seenTypesEx.asSmart flatMap (x => Seq(x))) should be (true)
+    //testBinding(seenTypesEx.asSmart map (x => Seq(x))) should be (false) //doesn't compile
+    testBinding2(seenTypesEx.asSmart map (x => Seq(x))) should be (true) //compiles!
+    testBinding2(asExp(1) + 1) should be (false)
   }
 
   test("check subtype relationship") {
