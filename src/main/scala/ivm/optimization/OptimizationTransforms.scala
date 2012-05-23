@@ -25,14 +25,14 @@ object OptimizationTransforms {
                                              moFun: Fun[S, TResult], fmFun: Fun[T, Traversable[TResult]],
                                              wfFun: Fun[S, Boolean], origExp: Exp[Traversable[TResult]]): Exp[Traversable[TResult]] /*Join[T, S, TKey, TResult]*/ = {
     if (lhs.isOrContains(fmFun.x) && rhs.isOrContains(wfFun.x)) {
-    stripView(fmColl).join(
-      stripView(wfColl))(
-      Fun.makefun[T, TKey](lhs, fmFun.x).f,
-      Fun.makefun[S, TKey](rhs, wfFun.x).f,
-      Fun.makepairfun[T, S, TResult](
-        moFun.body,
-        fmFun.x,
-        moFun.x).f)
+      stripView(fmColl).join(
+        stripView(wfColl))(
+        Fun.makefun[T, TKey](lhs, fmFun.x).f,
+        Fun.makefun[S, TKey](rhs, wfFun.x).f,
+        Fun.makepairfun[T, S, TResult](
+          moFun.body,
+          fmFun.x,
+          moFun.x).f)
     } else {
       //The two key extractors are executed for each element of the respective collection; if either of them is constant,
       //a join becomes just a loop with a higher constant factor - hence skip the optimization.
