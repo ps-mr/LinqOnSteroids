@@ -530,6 +530,12 @@ We want to characterize the subterms of f which are only evaluated once; in addi
 Theorem: if and only if a variable bound in a for-comprehension (using only FlatMap) is used at most once, then and only then it is used either in the
    */
 
+  private def usesArgAtMostOnceNotUnderLambda(exp: Exp[_], v1: Exp[_]): Boolean =
+    exp.findTotFun(_ == v1).length <= 1 &&
+      (exp.find {
+        case f: Fun[_, _] => true
+      } forall (!_.isOrContains(v1)))
+
   //Problem here: this assumes that the variable does not appear under explicit lambdas
   @tailrec private def usesArgAtMostOnce(f: Fun[_, _], v1: Exp[_]): Boolean = {
     f match {
@@ -545,11 +551,8 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
       case FuncExpBody(FlatMap(baseUsingV, g)) =>
         //Let's assume that unnesting has already happened, hence all functions we find are just function definitions and not nested FlatMaps to further analyze.
         //Since functions might be applied multiple times, we just make sure that nested function definitions do not refer to g.
-        baseUsingV.findTotFun(_ == v1).length == 1 && // length < 1 was considered before.
-          !g.isOrContains(v1) &&
-          (baseUsingV.find {
-            case f: Fun[_, _] => true
-          } forall (!_.isOrContains(v1)))
+        !g.isOrContains(v1) &&
+          usesArgAtMostOnceNotUnderLambda(baseUsingV, v1)
       case _ => false //XXX add corresponding cases for Filter. Or add a common pattern-matcher encompassing both FlatMap and Filter, or more in general all available binding constructs!
     }
   }
