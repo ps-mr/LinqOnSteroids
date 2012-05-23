@@ -299,16 +299,16 @@ object OptimizationTransforms {
   val constantFolding: Exp[_] => Exp[_] = {
     case f: Fun[_, _] => f
     case e =>
-    //XXX: avoid constant-folding for nullary expressions - if they are not Const nodes, there must be a good reason!
-    //For instance, this catches Var, ConstByIdentity, but also incremental collections.
-    //But there might be other classes where constant-folding is a bad idea. Keep that in mind.
-    if (e.children.nonEmpty && e.children.forall(_ match {
-      case Const(_) => true
-      case _ => false
-    }))
-      Const(e.interpret())
-    else
-      e
+      //XXX: avoid constant-folding for nullary expressions - if they are not Const nodes, there must be a good reason!
+      //For instance, this catches Var, ConstByIdentity, but also incremental collections.
+      //But there might be other classes where constant-folding is a bad idea. Keep that in mind.
+      if (e.children.nonEmpty && e.children.forall(_ match {
+        case Const(_) => true
+        case _ => false
+      }))
+        Const(e.interpret())
+      else
+        e
   }
 
   val mergeFilters: Exp[_] => Exp[_] = {
