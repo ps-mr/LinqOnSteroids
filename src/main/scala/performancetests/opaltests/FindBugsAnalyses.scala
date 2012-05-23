@@ -44,6 +44,7 @@ import analyses._
 import reader.Java6Framework
 
 import expressiontree.{CollectionUtils, Exp, Lifting, BATLifting, Util}
+import expressiontree._ //We import this just for being able to resolve identifiers in code dumps.
 import Lifting._
 import Util.ExtraImplicits._
 import org.scalatest.{FunSuite, BeforeAndAfterAll}
@@ -176,6 +177,51 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield (classFile, field)
     }
   }
+
+  /*
+  //actual:
+  FlatMap(
+    Filter(
+      ConstByIdentity(List(ClassFile(0,50,33,ObjectType(className="bugs/SuperA"),Some(ObjectType(className="java/lang/Obje..."))))),
+      v110 => Not(ClassFile_isInterfaceDeclaration14(v110))),
+    v111 => App(
+      v544 => MapNode(
+        Filter(
+          ExpSeq(List(Diff(v544,
+            App(
+              v543 =>
+                TypeCaseExp(v543,
+                  ArrayBuffer(
+                    TypeCase(class de.tud.cs.st.bat.resolved.GETFIELD,
+                      v462 => Eq(Call1('declaringClass, v462),ClassFile_thisClass3(v111)),v463 => Call1('name, v463)),
+                    TypeCase(class de.tud.cs.st.bat.resolved.GETSTATIC,
+                      v464 => Eq(Call1('declaringClass, v464),ClassFile_thisClass3(v111)),v465 => Call1('name, v465)))),
+              FlatMap(ClassFile_methods7(v111),v461 => FlatMap(Call1('Option_option2Iterable, Method_body12(v461)),v460 => Code_instructions2(v460))))
+            ))),
+          v467 => Not(IsEmpty(v467))),
+        v542 => LiftTuple2(v111,v544)),
+      Call1('TraversableLike$toSet, MapNode(Filter(ClassFile_fields6(v111),v447 => ClassMember_isPrivate2(v447)),v541 => Field_name1(v541)))))
+  //expected:
+  FlatMap(
+    Filter(
+      ConstByIdentity(List(ClassFile(0,50,33,ObjectType(className="bugs/SuperA"),Some(ObjectType(className="java/lang/Obje..."))))),
+      v128 => Not(ClassFile_isInterfaceDeclaration14(v128))),
+    v129 => App(
+      v344 => MapNode(
+        Filter(
+          ExpSeq(List(Diff(v344,
+            TypeCaseExp(
+              FlatMap(ClassFile_methods7(v129),v266 => FlatMap(Call1('Option_option2Iterable, Method_body12(v266)),v265 => Code_instructions2(v265))),
+              ArrayBuffer(
+                TypeCase(class de.tud.cs.st.bat.resolved.GETFIELD,
+                  v267 => Eq(Call1('declaringClass, v267),ClassFile_thisClass3(v129)),v268 => Call1('name, v268)),
+                TypeCase(class de.tud.cs.st.bat.resolved.GETSTATIC,
+                  v269 => Eq(Call1('declaringClass, v269),ClassFile_thisClass3(v129)),v270 => Call1('name, v270))))
+            ))),
+        v271 => Not(IsEmpty(v271))),
+      v343 => LiftTuple2(v129,v344)),
+    Call1('TraversableLike$toSet, MapNode(Filter(ClassFile_fields6(v129),v263 => ClassMember_isPrivate2(v263)),v342 => Field_name1(v342)))))
+  */
 
   test("UnusedFields") {
     analyzeUnusedFields()
