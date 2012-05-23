@@ -296,7 +296,9 @@ object OptimizationTransforms {
    * Notice that constant-folding on one level produces a new constant which might enable constant folding on the
    * next level, and this is handled automatically since the visit is bottom-up.
    */
-  val constantFolding: Exp[_] => Exp[_] = e =>
+  val constantFolding: Exp[_] => Exp[_] = {
+    case f: Fun[_, _] => f
+    case e =>
     //XXX: avoid constant-folding for nullary expressions - if they are not Const nodes, there must be a good reason!
     //For instance, this catches Var, ConstByIdentity, but also incremental collections.
     //But there might be other classes where constant-folding is a bad idea. Keep that in mind.
@@ -307,6 +309,7 @@ object OptimizationTransforms {
       Const(e.interpret())
     else
       e
+  }
 
   val mergeFilters: Exp[_] => Exp[_] = {
     case e@Filter(col, f) =>
