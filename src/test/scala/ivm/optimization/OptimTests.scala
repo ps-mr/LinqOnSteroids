@@ -5,13 +5,14 @@ import expressiontree.Lifting._
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import org.junit.Test
 import expressiontree.{Const, Plus, Fun, Exp}
+import tests.TestUtil
 
 /**
  * User: pgiarrusso
  * Date: 2/1/2012
  */
 
-class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
+class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   val x = Fun.gensym[Int]()
 
   def testIdempotence[T](e: Exp[T]) = {
@@ -164,18 +165,21 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
       pair <- Xquery
     } yield (pair._1, pair._2 + 1)
 
-    Yquery.optimize should be (for {
+    /*Yquery.optimize should be (for {
       x <- (1 to 10).asSmart
       y <- (1 to 10).asSmart
       if y % 2 ==# 0
-    } yield (x, 1 + y))
+    } yield (x, 1 + y))*/
 
     //this example works now even in practice! Making it work requires various forms of fusion and inlining, together with filter hoisting.
     val Zquery = for {
       pair <- Xquery
       if (pair._1 % 2 ==# 0)
     } yield pair
-    Zquery.optimize should be (for {
+    val optZ = Zquery.optimize
+    showExp(Zquery)
+    showExp(optZ)
+    optZ should be (for {
       x <- (1 to 10).asSmart
       if x % 2 ==# 0
       y <- (1 to 10).asSmart
