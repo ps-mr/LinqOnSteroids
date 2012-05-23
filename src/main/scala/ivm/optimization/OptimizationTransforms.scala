@@ -548,12 +548,14 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
         //Note that it is crucial that all bindings act on single-element collections; we check that by looking for when this is statically known, i.e. we look for ExpSeq(Seq(_)), but we might want to extend that to
         //Const(seq) if seq has "at runtime" just one element.
         usesArgAtMostOnce(g, v1)
+/*
       case FuncExpBody(Binding(baseUsingV, g)) =>
-        //Let's assume that unnesting has already happened, hence all functions we find are just function definitions and not nested FlatMaps to further analyze.
-        //Since functions might be applied multiple times, we just make sure that nested function definitions do not refer to g.
         !g.isOrContains(v1) &&
           usesArgAtMostOnceNotUnderLambda(baseUsingV, v1)
+*/
       case FuncExpBody(baseUsingV) =>
+        //Let's assume that unnesting has already happened, hence all functions we find are just function definitions and not nested FlatMaps to further analyze.
+        //Since functions might be applied multiple times, we just make sure that nested function definitions do not refer to g.
         usesArgAtMostOnceNotUnderLambda(baseUsingV, v1)
       case _ => false //XXX add corresponding cases for Filter. Or add a common pattern-matcher encompassing both FlatMap and Filter, or more in general all available binding constructs!
     }
