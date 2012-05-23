@@ -529,7 +529,6 @@ FlatMap(a, x => f(x)).
 We want to characterize the subterms of f which are only evaluated once; in addition, we need that our variable appears in only one of them.
 Theorem: if and only if a variable bound in a for-comprehension (using only FlatMap) is used at most once, then and only then it is used either in the
    */
-  private def usesArgAtMostOnce[S, T](f: Fun[S, T]): Boolean = usesArgAtMostOnce(f, f.x)
 
   //Problem here: this assumes that the variable does not appear under explicit lambdas
   @tailrec private def usesArgAtMostOnce(f: Fun[_, _], v1: Exp[_]): Boolean = {
@@ -554,6 +553,8 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
       case _ => false //XXX add corresponding cases for Filter. Or add a common pattern-matcher encompassing both FlatMap and Filter, or more in general all available binding constructs!
     }
   }
+
+  private def usesArgAtMostOnce[S, T](f: Fun[S, T]): Boolean = usesArgAtMostOnce(f, f.x)
 
   //This allows to inline definitions if they are used at most once.
   private[optimization] val letTransformerUsedAtMostOnce: Exp[_] => Exp[_] = {
