@@ -539,7 +539,7 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
   //Problem here: this assumes that the variable does not appear under explicit lambdas
   @tailrec private def usesArgAtMostOnce(f: Fun[_, _], v1: Exp[_]): Boolean = {
     f match {
-      case FuncExpBody(FlatMap(ExpSeq(Seq(exp2)), g)) if !exp2.isOrContains(v1) =>
+      case FuncExpBody(Binding(ExpSeq(Seq(exp2)), g)) if !exp2.isOrContains(v1) =>
         //This allows to inline id1 in cases like:
         //v1 <- Let(exp1)
         //v2 <- Let(exp2) //v1 not free in exp2, that is, !v2.isOrContains(v1)
@@ -548,7 +548,7 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
         //Note that it is crucial that all bindings act on single-element collections; we check that by looking for when this is statically known, i.e. we look for ExpSeq(Seq(_)), but we might want to extend that to
         //Const(seq) if seq has "at runtime" just one element.
         usesArgAtMostOnce(g, v1)
-      case FuncExpBody(FlatMap(baseUsingV, g)) =>
+      case FuncExpBody(Binding(baseUsingV, g)) =>
         //Let's assume that unnesting has already happened, hence all functions we find are just function definitions and not nested FlatMaps to further analyze.
         //Since functions might be applied multiple times, we just make sure that nested function definitions do not refer to g.
         !g.isOrContains(v1) &&
