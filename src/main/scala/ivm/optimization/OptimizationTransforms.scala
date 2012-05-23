@@ -289,6 +289,25 @@ object OptimizationTransforms {
     case e => e
   }
 
+  /*
+   * Thanks for the idea to Tillmann Rendel - this optimization was one of his insightful side remarks.
+   * His actual comment was that this optimization (which he assumed to be done) introduces the possibility of
+   * non-termination if interpret() is ever non-terminating.
+   * Notice that constant-folding on one level produces a new constant which might enable constant folding on the
+   * next level, and this is handled automatically since the visit is bottom-up.
+   */
+  val constantFolding: Exp[_] => Exp[_] = e =>
+    //XXX: avoid constant-folding for nullary expressions - if they are not Const nodes, there must be a good reason!
+    //For instance, this catches Var, ConstByIdentity, but also incremental collections.
+    //But there might be other classes where constant-folding is a bad idea. Keep that in mind.
+    if (e.children.nonEmpty && e.children.forall(_ match {
+      case Const(_) => true
+      case _ => false
+    }))
+      Const(e.interpret())
+    else
+      e
+
   val mergeFilters: Exp[_] => Exp[_] = {
     case e@Filter(col, f) =>
       stripViewUntyped(col) match {
