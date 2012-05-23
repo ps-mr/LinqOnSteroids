@@ -164,11 +164,11 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit {
       pair <- Xquery
     } yield (pair._1, pair._2 + 1)
 
-    Yquery.optimize should be (for {
+    Yquery.optimize should be ((for {
       x <- (1 to 10).asSmart
       y <- (1 to 10).asSmart
       if y % 2 ==# 0
-    } yield (x, 1 + y))
+    } yield (x, 1 + y)).optimize)
 
     //this example works now even in practice! Making it work requires various forms of fusion and inlining, together with filter hoisting.
     val Zquery = for {
