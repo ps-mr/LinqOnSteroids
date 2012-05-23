@@ -23,7 +23,8 @@ object OptimizationTransforms {
                                              wfColl: Exp[Traversable[S]],
                                              lhs: Exp[TKey], rhs: Exp[TKey],
                                              moFun: Fun[S, TResult], fmFun: Fun[T, Traversable[TResult]],
-                                             wfFun: Fun[S, Boolean]): Exp[Traversable[TResult]] /*Join[T, S, TKey, TResult]*/ = {
+                                             wfFun: Fun[S, Boolean], origExp: Exp[Traversable[TResult]]): Exp[Traversable[TResult]] /*Join[T, S, TKey, TResult]*/ = {
+    if (lhs.isOrContains(fmFun.x) && rhs.isOrContains(wfFun.x)) {
     stripView(fmColl).join(
       stripView(wfColl))(
       Fun.makefun[T, TKey](lhs, fmFun.x).f,
@@ -32,6 +33,11 @@ object OptimizationTransforms {
         moFun.body,
         fmFun.x,
         moFun.x).f)
+    } else {
+      //The two key extractors are executed for each element of the respective collection; if either of them is constant,
+      //a join becomes just a loop with a higher constant factor - hence skip the optimization.
+      origExp
+    }
   }
 
   /*
@@ -49,9 +55,9 @@ object OptimizationTransforms {
       if !filterColl.isOrContains(fmFun.x)
     =>
       if (!(lhs.isOrContains(filterFun.x)) && !(rhs.isOrContains(fmFun.x)))
-        buildJoin(fmColl, filterColl, lhs, rhs, moFun, fmFun, filterFun)
+        buildJoin(fmColl, filterColl, lhs, rhs, moFun, fmFun, filterFun, e)
       else if (!(rhs.isOrContains(filterFun.x)) && !(lhs.isOrContains(fmFun.x)))
-        buildJoin(fmColl, filterColl, rhs, lhs, moFun, fmFun, filterFun)
+        buildJoin(fmColl, filterColl, rhs, lhs, moFun, fmFun, filterFun, e)
       else
         e
     case e => e
