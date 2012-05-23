@@ -559,6 +559,9 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
     }
   }
 
+  //Cannot be written as default argument - this is a dependent default argument, and it can't be part of the same
+  //parameter list; using a separate parameter list with only a default argument means that the caller must provide
+  // a second parameter list, possibly empty - producing call syntaxes like "usesArgAtMostOnce(f)()".
   private def usesArgAtMostOnce[S, T](f: Fun[S, T]): Boolean = usesArgAtMostOnce(f, f.x)
 
   //This allows to inline definitions if they are used at most once.
