@@ -21,7 +21,7 @@
   </div>
   <div id='mainbody'>
     <div class='heading'>
-      <h2>$title$ - $author$</h2>
+      <h1>$title$&mdash;$author$</h1>
     </div>
 
     <ul class="navbar">
