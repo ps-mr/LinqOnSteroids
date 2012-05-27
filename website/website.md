@@ -1,4 +1,4 @@
-% SQuOpt - The Scala Query Optimizer
+% SQuOpt---The Scala Query Optimizer
 % Paolo G. Giarrusso
 % 2012-04-20
 # Introduction
@@ -53,14 +53,14 @@ This project benefited from code and ideas of many different people:
 
 # Releases
 
-- 0.2 - 2012-04-22 - [.tar.gz](SQuOpt/tarballs/squopt-v0.2.tar.gz)
+- 0.2 --- 2012-04-22 --- [.tar.gz](SQuOpt/tarballs/squopt-v0.2.tar.gz)
     - Renames and refactorings to match the paper.
     - Updated the evaluation code (`COVARIANT_EQUALS`,
       `RUN_FINALIZERS_ON_EXIT` were modified slightly to match FindBugs)
     - Updated PaperTutorial and resynced with the paper
     - Fixed a few bugs.
     - Less type annotations are needed in the optimizer.
-- 0.1 - 2012-04-09 - [.tar.gz](SQuOpt/tarballs/squopt-v0.1.tar.gz)
+- 0.1 --- 2012-04-09 --- [.tar.gz](SQuOpt/tarballs/squopt-v0.1.tar.gz)
     - First release
 
 Note: User documentation is currently missing.
@@ -96,11 +96,10 @@ statistics were computed on a Mac OS X machine. The scripts _should_ work
 (with minor changes) on any *x system with the needed software.
 - download both our source release, our evaluation code, and
 [R](http://www.r-project.org/).
-- choose the test data to use - we provide a test harness to run the evaluation on
+- choose the test data to use---we provide a test harness to run the evaluation on
 ScalaTest, that is `profileLos.sh`, or on the JDK, that is `profileLosJDK.sh`.
 - To reproduce the original evaluation, you need to use the JDK.
-    - Download the version which was installed on our machine from
-http://rpmfind.net/linux/RPM/centos/updates/6.2/x86_64/Packages/java-1.6.0-openjdk-1.6.0.0-1.43.1.10.6.el6_2.x86_64.html
+    - Download the [version which was installed on our machine][JDKLink]
 and extract it, using for instance `rpm2cpio` (we plan to simplify this step).
     - Adjust `profileLosJDK.sh` to find the copy of `classes.jar` from the extracted
   package.
@@ -115,3 +114,5 @@ evaluation results by overwriting `EvalRed-new.pdf`.
 # Contacts
 For any question or suggestion, feel free to contact me, Paolo G. Giarrusso, at
 pgiarrusso (at) informatik !dot! uni-marburg !dot! de.
+
+[JDKLink]: http://rpmfind.net/linux/RPM/centos/updates/6.2/x86_64/Packages/java-1.6.0-openjdk-1.6.0.0-1.43.1.10.6.el6_2.x86_64.html

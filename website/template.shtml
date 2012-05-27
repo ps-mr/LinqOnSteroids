@@ -15,20 +15,21 @@
     <span>
       You are here:
       <a href=''>Home</a>
-      -&gt;
+      &ndash;&gt;
       $title$
     </span>
   </div>
   <div id='mainbody'>
     <div class='heading'>
-      <h2>$title$ - $author$</h2>
+      <h1>$title$&mdash;$author$</h1>
     </div>
 
     <ul class="navbar">
-      <!--<li><a href="SQuOpt/#news"># News</a></li>-->
-      <!--<li><a href="vm/#links"># Related links</a></li>-->
-      <li><a href="">^ Back to home page</a></li>
-      <li><a href="#contact">^ # Contacts</a></li>
+      <!--<li><a href="SQuOpt/#news">News #</a></li>-->
+      <!--<li><a href="vm/#links">Related links #</a></li>-->
+      <li><a href="">Back to home page ^</a></li>
+      <li class="separator"></li>
+      <li><a href="#contact">Contacts ^#</a></li>
       <!--<li><a href="#personal">Personal interests</a></li>
       <li><a href="#projects">Selected past projects</a></li>
       <li><a href="#research">Research interests</a></li>

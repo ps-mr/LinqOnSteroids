@@ -1,1 +1,1 @@
-pandoc --template=template.shtml website.md > index.shtml
+pandoc --template=template.shtml website.md -S "$@" > index.shtml
