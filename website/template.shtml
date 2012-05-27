@@ -25,10 +25,11 @@
     </div>
 
     <ul class="navbar">
-      <!--<li><a href="SQuOpt/#news"># News</a></li>-->
-      <!--<li><a href="vm/#links"># Related links</a></li>-->
-      <li><a href="">^ Back to home page</a></li>
-      <li><a href="#contact">^ # Contacts</a></li>
+      <!--<li><a href="SQuOpt/#news">News #</a></li>-->
+      <!--<li><a href="vm/#links">Related links #</a></li>-->
+      <li><a href="">Back to home page ^</a></li>
+      <li class="separator"></li>
+      <li><a href="#contact">Contacts ^#</a></li>
       <!--<li><a href="#personal">Personal interests</a></li>
       <li><a href="#projects">Selected past projects</a></li>
       <li><a href="#research">Research interests</a></li>
