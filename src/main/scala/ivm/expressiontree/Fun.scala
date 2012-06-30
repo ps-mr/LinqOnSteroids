@@ -154,7 +154,8 @@ object Fun {
   }
 
   //Force switch to FunInterp everywhere with a single line of code :-)
-  def apply[S, T](f: Exp[S] => Exp[T]) = toFOAS(f)
+  //XXX: We should hide the use of FunInterp, but a few clients use this detail; FunInterp.x has a more precise type.
+  def apply[S, T](f: Exp[S] => Exp[T]): FunInterp[S, T] = toFOAS(f)
   def unapply(f: Fun[_, _]) = Some(f.f)
 
   def rename[S, T](f: Fun[S, T]): FunInterp[S, T] = {
