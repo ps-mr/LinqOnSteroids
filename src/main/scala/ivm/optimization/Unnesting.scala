@@ -45,7 +45,6 @@ trait Unnesting {
       //A problem, in both cases, is that the result of this transformation looks slower than the original query.
       //Is duplicate elimination after applying restQuery valid? I guess not: the flatMapped function might just produce an element multiple times.
       //So we produce instead a Set of booleans to do duplicate elimination and then filter with identity!
-      //XXX untested.
         stripView(c0) flatMap Fun.makefun((((stripView(c) map p)(collection.breakOut): Exp[Set[Boolean]]) filter identity flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
       }
     case e => e

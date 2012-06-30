@@ -159,7 +159,7 @@ object Optimization {
       compose mergeFilters[T] compose hoistFilter[T]
       compose splitFilters[T] compose simplifyConditions[T]
       compose basicInlining[T]
-      compose existsUnnester[T] //To fix
+      compose existsUnnester[T] //To fix?
       compose generalUnnesting[T]
       compose mapToFlatMap[T]
       compose removeIdentityMaps[T]
