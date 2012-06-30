@@ -107,11 +107,11 @@ object OptimizationTransforms {
     case e => e
   }
 
-  //Move constants on the left-side of a boolean connective.
+  //Move constants on the right-side of a boolean connective.
   private val reassociateBoolOps: Exp[_] => Exp[_] = {
-    case And(l, r@Const(_)) =>
+    case And(l@Const(_), r) =>
       r && l
-    case Or(l, r@Const(_)) =>
+    case Or(l@Const(_), r) =>
       r || l
     case e => e
   }
@@ -120,10 +120,10 @@ object OptimizationTransforms {
   //The code could be optimized to save repeated matches on And and Or in the different functions, but that seems premature.
   val simplifyConditions: Exp[_] => Exp[_] =
     reassociateBoolOps andThen {
-      case And(Const(true), x) => x
-      case And(c@Const(false), x) => c
-      case Or(Const(false), x) => x
-      case Or(c@Const(true), x) => c
+      case And(x, Const(true)) => x
+      case And(x, c@Const(false)) => c
+      case Or(x, Const(false)) => x
+      case Or(x, c@Const(true)) => c
       case Not(Not(c)) => c
       case e => e
     }
