@@ -47,6 +47,8 @@ object Optimization {
 
   def mergeFilters[T](exp: Exp[T]): Exp[T] = mergeViews(exp.transform(OptimizationTransforms.mergeFilters))
 
+  def splitFilters[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.splitFilters)
+
   def removeTrivialFilters[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.removeTrivialFilters)
 
   def simplifyConditions[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.simplifyConditions)

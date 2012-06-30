@@ -325,6 +325,22 @@ object OptimizationTransforms {
         e
   }
 
+  //reversed list of conds
+  private def collectCondsReversed(exp: Exp[Boolean]): Seq[Exp[Boolean]] =
+    exp match {
+      case And(a, b) => b +: collectCondsReversed(a)
+      case _ => Seq(exp)
+    }
+  private def collectConds(exp: Exp[Boolean]): Seq[Exp[Boolean]] = collectCondsReversed(exp).reverse
+
+  //Split multiple filters anded together.
+  val splitFilters: Exp[_] => Exp[_] = {
+    case Filter(coll: Exp[Traversable[Any]], f @ FuncExpBody(And(_, _))) =>
+      collectConds(f.body).foldRight[Exp[Traversable[Any]]](coll)((cond, coll) => coll filter Fun.makefun(cond, f.x))
+      //coll filter Fun.makefun(a, f.x) filter Fun.makefun(b, f.x)
+    case e => e
+  }
+
   val mergeFilters: Exp[_] => Exp[_] = {
     case e@Filter(col, f) =>
       stripViewUntyped(col) match {
