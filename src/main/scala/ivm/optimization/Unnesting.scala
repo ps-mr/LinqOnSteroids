@@ -57,11 +57,11 @@ trait Unnesting {
     /*case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
       collEp flatMap Fun.makefun(letExp(ep)(fy.f), fxp.x)*/
     case FlatMap(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e)) =>
-      collEp flatMap Fun.makefun(generalUnnesting(ep flatMap fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x).f
+      collEp flatMap Fun.makefun(generalUnnesting(ep flatMap fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
     //collEp flatMap Fun.makefun(Seq(ep) map (fy)/*Seq(ep) map fy*/, fxp.x).f
     case Filter(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e)) =>
       //collEp filter Fun.makefun(letExp(ep)(fy), fxp.x)
-      collEp flatMap Fun.makefun(generalUnnesting(ep filter app(fy)).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
+      collEp flatMap Fun.makefun(generalUnnesting(ep filter fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
     case e => e
   }
 }
