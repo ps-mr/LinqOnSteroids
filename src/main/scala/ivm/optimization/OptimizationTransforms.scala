@@ -3,7 +3,7 @@ package optimization
 
 import expressiontree._
 import Lifting._
-import Numeric.Implicits._
+//import Numeric.Implicits._
 import annotation.tailrec
 import OptimizationUtil._
 
@@ -791,13 +791,4 @@ case MapNode(Filter(coll, pred @ FuncExpBody(test)), mapFun) =>
     case e@Eq(x, y) => Eq(Exp.min(x, y), Exp.max(x, y))
     case e => e
   }
-
-  /*private[optimization]*/ private[ivm] def stripView[T](coll: Exp[Traversable[T]]) = stripViewUntyped(coll)
-
-  //This type is incorrect whenever T is a view type. Be careful!
-  private[optimization] def stripViewUntyped[T](coll: Exp[T]): Exp[T] =
-    coll match {
-      case View(coll2) => coll2.asInstanceOf[Exp[T]]
-      case _ => coll
-    }
 }

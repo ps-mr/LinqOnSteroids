@@ -84,7 +84,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   val groupByShare: Exp[_] => Exp[_] = {
     case e @ Filter(c: Exp[Traversable[_ /*t*/]], f: Fun[t, _ /*Boolean*/]) if c.freeVars == Set.empty =>
       val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
-      val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationTransforms.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f.x)(_))
+      val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationUtil.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f.x)(_))
       optimized.getOrElse(e)
     case e => e
   }
@@ -237,7 +237,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         case FlatMap(Filter(base: Exp[Traversable[_]], f: Fun[_, _ /*Boolean*/]), fmFun) =>
           val alphaRenamed = f.body.substSubTerm(f.x, fmFun.x) //tuplingTransform acts on var from flatMap functions, not filter functions.
           v += tuplingTransform(alphaRenamed.asInstanceOf[Exp[U]], fx).asInstanceOf[Exp[Boolean]] //XXX fix typing here
-          OptimizationTransforms.stripView(base) flatMap fmFun
+          OptimizationUtil.stripView(base) flatMap fmFun
         case _ => e
       }
     }
@@ -410,7 +410,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
           case ((parentNode: FlatMap[t, repr, u, that/*T, Repr, U, That*/]), fn1: FoundNode[_, _], allFVSeq) =>
             val fn = fn1.asInstanceOf[FoundNode[t, repr]]
             //buildTuple produces an open term, because vars in allFVSeq are not bound...
-            val indexQuery = OptimizationTransforms.stripView(fn.c) map fn.buildTuple(allFVSeq)
+            val indexQuery = OptimizationUtil.stripView(fn.c) map fn.buildTuple(allFVSeq)
             //... but here we replace parentNode with the open term we just constructed, so that vars in allFVSeq are
             //now bound. Note: e might well be an open term - we don't check it explicitly anywhere, even if we should.
             //However, index lookup is going to fail when open terms are passed - the query repository contains only

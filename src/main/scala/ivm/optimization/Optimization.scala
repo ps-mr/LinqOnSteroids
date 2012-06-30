@@ -11,7 +11,7 @@ object Optimization {
 
   def resetSubqueries() = subqueries.clear()
   def addIndex[T](_query: UnconvertedExp[Exp[T]], res: Option[T] = None) {
-    val query = OptimizationTransforms.stripViewUntyped(_query.v)
+    val query = OptimizationUtil.stripViewUntyped(_query.v)
     val optquery = optimizeIdx(query)
     val intQuery = res match {
       case Some(v) => v
