@@ -78,6 +78,8 @@ object Optimization {
   //This should be called after any sort of inlining, including for instance map fusion.
   def betaDeltaReducer[T](exp: Exp[T]): Exp[T] = constantFolding(exp.transform(OptimizationTransforms.betaDeltaReducer))
 
+  def existsRenester[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.existsRenester)
+
   //Unsafe yet, hence not used!
   def existsUnnester[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.existsUnnester)
 
@@ -148,9 +150,12 @@ object Optimization {
   }
   def isDebugLogEnabled = enableDebugLogStack.head
 
+  // Order in the end: first recognize operator, and only after that try fusion between different operators, since it
+  // obscures structures to recognize.
   private def newOptimize[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
   // downcasting exp to Exp[Nothing].
     (handleNewMaps[T] _ compose flatMapToMap[T]
+      compose existsRenester[T]
       compose mergeFilters[T] compose hoistFilter[T]
       compose splitFilters[T] compose simplifyConditions[T]
       compose basicInlining[T]
