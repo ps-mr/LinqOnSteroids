@@ -11,7 +11,6 @@ import OptimizationUtil._
  */
 
 trait Fusion {
-  //Same problem also when fusing map and flatMap (which we don't do yet).
   private def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: Fun[T, U], g: Fun[U, V]): Exp[Traversable[V]] =
     coll.map(x => letExp(f(x))(g))
 
@@ -20,8 +19,6 @@ trait Fusion {
 
   /*private def buildMergedFlatMap[T, U, V](coll: Exp[Traversable[T]], f: Fun[T, U], g: Fun[U, Traversable[V]]) =
     coll flatMap (x => letExp(f(x))(g))*/
-
-  //Now we'd like a non-work-duplicating inliner. We'd need a linear type system as in GHC's inliner.
 
   val mergeMaps: Exp[_] => Exp[_] = {
     case MapNode(MapNode(coll, f), g) =>

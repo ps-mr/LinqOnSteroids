@@ -8,6 +8,9 @@ import OptimizationUtil._
 import Subst.subst
 
 /**
+ * This code should implement non-work-duplicating inliner.
+ * We don't use the linear type system used by GHC's inliner; from the papers about it I gathered a simpler
+ * sufficient condition, which is in general very restrictive but fine for our purposes.
  * User: pgiarrusso
  * Date: 30/6/2012
  */
