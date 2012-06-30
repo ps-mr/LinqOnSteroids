@@ -17,7 +17,7 @@ import OptimizationUtil._
  */
 
 //XXX: make transform require a function of type Exp[T] to Exp[T]!
-object OptimizationTransforms extends NumericOptimTransforms with SimplificationsOptimTransforms {
+object OptimizationTransforms extends NumericOptimTransforms with SimplificationsOptimTransforms with Inlining {
   private def buildJoin[T, S, TKey, TResult](fmColl: Exp[Traversable[T]],
                                              wfColl: Exp[Traversable[S]],
                                              lhs: Exp[TKey], rhs: Exp[TKey],
