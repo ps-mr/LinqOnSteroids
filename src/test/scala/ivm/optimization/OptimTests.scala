@@ -270,9 +270,11 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   @Test def renestExists1() {
     val compr = for { x <- Set(1, 2, 3, 4) asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
     testRenestingExists(compr)
+    testRenestingExists3(compr)
   }
   @Test def renestExists2() {
-    val compr2 = for { x <- Seq(1, 2, 3, 4) asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
-    testRenestingExists2(compr2)
+    val compr = for { x <- Seq(1, 2, 3, 4) asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
+    testRenestingExists2(compr)
+    testRenestingExists3(compr)
   }
 }
