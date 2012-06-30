@@ -11,6 +11,12 @@ import OptimizationUtil._
  */
 
 trait Unnesting {
+  val resimpl: Exp[_] => Exp[_] = {
+    case IsEmpty(FlatMap(coll, f @ FuncExpBody(Filter(coll2, FuncExpIdentity())))) =>
+      (coll flatMap Fun.makefun(coll2, f.x)).isEmpty
+    case e => e
+  }
+
   val existsUnnester2: Exp[_] => Exp[_] = {
     case FlatMap(Filter(c0, f@FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
       val restQuery = Fun.makefun(fmFun(f.x), p.x)

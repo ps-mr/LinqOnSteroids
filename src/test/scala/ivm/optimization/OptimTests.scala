@@ -6,6 +6,7 @@ import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import org.junit.Test
 import expressiontree.{Const, Plus, Fun, Exp}
 import tests.TestUtil
+import collection.generic.CanBuildFrom
 
 /**
  * User: pgiarrusso
@@ -185,5 +186,93 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
       y <- (1 to 10).asSmart
       if y % 2 ==# 0
     } yield (x, y))
+  }
+  /*{
+    Filter(
+      ConstByIdentity(List(1, 2, 3)...),
+      v112 => Not(IsEmpty(
+        FlatMap(
+          ConstByIdentity(Vector(1, 2, 3)...),
+          v116 =>
+            Filter(ExpSeq(List(Eq(Times(Const(2),v116),v112))),v115 => v115)
+      ))))
+  }*/
+
+  import expressiontree._
+  import OptimizationUtil._
+
+  def isCbfCommutative[From, Elem, To](cbf: CanBuildFrom[From, Elem, To]) = {
+    val cbfStaticResult = cbf.apply()
+    cbfStaticResult.isInstanceOf[collection.Set[_]]
+  }
+
+  def isCbfIdempotent[From, Elem, To](cbf: CanBuildFrom[From, Elem, To]) = {
+    val cbfStaticResult = cbf.apply()
+    cbfStaticResult.isInstanceOf[collection.Set[_]] || cbfStaticResult.isInstanceOf[collection.Map[_, _]]
+  }
+
+  //Finally, correct unnesting.
+  val existsUnnester3Val: Exp[_] => Exp[_] = {
+    case fm @ FlatMap(Filter(c0, f@FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
+      //val restQuery = Fun.makefun(fmFun(f.x), p.x)
+      val restQuery = Fun[Any, Traversable[Any]](x => fmFun(f.x))
+      if (isCbfIdempotent(fm.c))
+        //Use the standard rule to unnest exists into a set comprehension
+      //stripView(c0) flatMap Fun.makefun((stripView(c) filter p flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
+        stripView(c0) flatMap Fun.makefun(stripView(c) filter p flatMap restQuery, f.x)
+      else
+      //Use an original rule to unnest exists into a non-idempotent comprehension while still doing the needed duplicate
+      //elimination
+      //breakOut is used to fuse manually the mapping step with toSet. This fusion should be automated!!!
+      //Also, we should make somehow sure that breakOut steps are preserved - they currently aren't!
+        stripView(c0) flatMap Fun.makefun((((stripView(c) map p)(collection.breakOut): Exp[Set[Boolean]]) filter identity flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
+    case e => e
+  }
+
+  def existsUnnester2[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.existsUnnester2)
+  def existsUnnester3[T](exp: Exp[T]): Exp[T] = exp.transform(existsUnnester3Val)
+  def resimpl[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.resimpl)
+
+  def testRenestingExists[T](e: Exp[T]) {
+    import Optimization._
+    val e1 = mapToFlatMap(e)
+    existsRenester(existsUnnester2(e1)) should be (e1)
+  }
+
+  def testRenestingExists2[T](e: Exp[T]) {
+    import Optimization._
+    val e1 = mapToFlatMap(removeIdentityMaps(e))
+    println(e1)
+    val unnested = existsUnnester(e1)
+    println(unnested)
+    unnested.interpret() should be (e1.interpret())
+    val e2 = existsRenester(mapToFlatMap(unnested))
+    println(e2)
+    val e3 = generalUnnesting(e2)
+    val e4 = resimpl(e3)
+    e4 should be (e1)
+  }
+
+  def testRenestingExists3[T](e: Exp[T]) {
+    import Optimization._
+    val e1 = mapToFlatMap(removeIdentityMaps(e))
+    println(e1)
+    val unnested = existsUnnester3(e1)
+    println(unnested)
+    unnested.interpret() should be (e1.interpret())
+    val e2 = existsRenester(mapToFlatMap(unnested))
+    println(e2)
+    val e3 = generalUnnesting(e2)
+    val e4 = resimpl(e3)
+    e4 should be (e1)
+  }
+
+  @Test def renestExists1() {
+    val compr = for { x <- Set(1, 2, 3, 4) asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
+    testRenestingExists(compr)
+  }
+  @Test def renestExists2() {
+    val compr2 = for { x <- Seq(1, 2, 3, 4) asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
+    testRenestingExists2(compr2)
   }
 }
