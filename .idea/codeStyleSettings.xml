@@ -18,7 +18,6 @@
         <option name="LINE_SEPARATOR" value="&#10;" />
         <option name="KEEP_FIRST_COLUMN_COMMENT" value="false" />
         <ScalaCodeStyleSettings>
-          <option name="ADD_UNAMBIGIOUS_IMPORTS_ON_THE_FLY" value="true" />
           <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="100000" />
           <option name="IMPORTS_MEMBERS_USING_UNDERSCORE" value="false" />
         </ScalaCodeStyleSettings>
