@@ -3,7 +3,6 @@ package optimization
 
 import expressiontree._
 import Lifting._
-import annotation.tailrec
 import OptimizationUtil._
 
 /*

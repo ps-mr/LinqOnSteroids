@@ -3,8 +3,6 @@ package optimization
 
 import expressiontree._
 import Lifting._
-import annotation.tailrec
-import OptimizationUtil._
 
 import Numeric.Implicits._
 
