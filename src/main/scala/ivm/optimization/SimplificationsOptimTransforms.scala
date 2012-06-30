@@ -13,6 +13,12 @@ import Subst.subst
  */
 
 trait SimplificationsOptimTransforms {
+  val simplifyForceView: Exp[_] => Exp[_] = {
+    case View(Force(coll)) => coll
+    case Force(View(coll)) => coll
+    case e => e
+  }
+
   val removeTrivialFilters: Exp[_] => Exp[_] = {
     case Filter(coll, FuncExpBody(Const(true))) =>
       stripViewUntyped(coll)
@@ -96,6 +102,12 @@ trait SimplificationsOptimTransforms {
     case FlatMap(ExpSeq(Seq(v)), f) => letExp(v)(f)
     case e => e
   }
+
+  /*val betaReduction: Exp[_] => Exp[_] = {
+    case a: App[t, u] => a.f(a.t)
+    case ExpSelection(arity, selected, e: ExpProduct) => e.metaProductElement(selected - 1)
+    case e => e
+  }*/
 
   val deltaReductionTuple: PartialFunction[Exp[_], Exp[_]] = {
     case ExpSelection(arity, selected, e: ExpProduct) =>
