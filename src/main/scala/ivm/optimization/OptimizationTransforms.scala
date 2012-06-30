@@ -303,11 +303,14 @@ object OptimizationTransforms {
    * next level, and this is handled automatically since the visit is bottom-up.
    */
   val constantFolding: Exp[_] => Exp[_] = {
+    //Exclude from optimization Fun nodes: they can't be replaced by equivalent Const nodes containing opaque functions,
+    //because that removes information, and because many parent nodes require specifically Fun nodes. Any other node
+    //type T <: Exp[U] can be replaced by an equivalent instance of Exp[U].
     case f: Fun[_, _] => f
     case e =>
-      //XXX: avoid constant-folding for nullary expressions - if they are not Const nodes, there must be a good reason!
+      //Avoid constant-folding for nullary expressions - if they are not Const nodes, there must be a good reason!
       //For instance, this catches Var, ConstByIdentity, but also incremental collections.
-      //But there might be other classes where constant-folding is a bad idea. Keep that in mind.
+      //XXX: there might be other classes where constant-folding is a bad idea. Keep that in mind.
       if (e.children.nonEmpty && e.children.forall(_ match {
         case Const(_) => true
         case _ => false
