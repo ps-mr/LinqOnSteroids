@@ -152,10 +152,14 @@ object Optimization {
 
   // Order in the end: first recognize operator, and only after that try fusion between different operators, since it
   // obscures structures to recognize.
-  private def newOptimize[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
+  private def newOptimizePhysical[T](exp: Exp[T]): Exp[T] =
+    (existsRenester[T] _)(exp)
+  //cartProdToAntiJoin(optimizeCartProdToJoin(
+  def newOptimize[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
   // downcasting exp to Exp[Nothing].
-    (handleNewMaps[T] _ compose flatMapToMap[T]
+    (handleNewMaps[T] _ compose flatMapToMap[T] compose ((x: Exp[T]) => /*transformedFilterToFilter*/(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(x)))))
       compose existsRenester[T]
+      compose betaDeltaReducer[T]
       compose mergeFilters[T] compose hoistFilter[T]
       compose splitFilters[T] compose simplifyConditions[T]
       compose basicInlining[T]

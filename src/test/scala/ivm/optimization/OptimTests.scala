@@ -177,9 +177,10 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
       pair <- Xquery
       if (pair._1 % 2 ==# 0)
     } yield pair
-    val optZ = Zquery.optimize
-    showExp(Zquery)
-    showExp(optZ)
+    //val optZ = Zquery.optimize
+    val optZ = Optimization.newOptimize(Zquery)
+    showExp(Zquery, "Zquery")
+    showExp(optZ, "optZ")
     optZ should be (for {
       x <- (1 to 10).asSmart
       if x % 2 ==# 0
