@@ -331,7 +331,7 @@ object OptimizationTransforms {
       case And(a, b) => b +: collectCondsReversed(a)
       case _ => Seq(exp)
     }
-  private def collectConds(exp: Exp[Boolean]): Seq[Exp[Boolean]] = collectCondsReversed(exp).reverse
+  private def collectConds = collectCondsReversed _ andThen (_ reverse)
 
   //Split multiple filters anded together.
   val splitFilters: Exp[_] => Exp[_] = {
