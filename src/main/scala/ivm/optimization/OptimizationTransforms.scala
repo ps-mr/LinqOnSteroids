@@ -34,7 +34,7 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
     case e => e
   }
 
-  private def buildHoistedFilterForFlatMap[T, U, V](coll1: Exp[Traversable[T]], fmFun: Fun[T, Traversable[V]],
+  private def buildHoistedFilter[T, U, V](coll1: Exp[Traversable[T]], fmFun: Fun[T, Traversable[V]],
                                                     coll2: Exp[Traversable[U]],
                                                     filterFun: Fun[U, Boolean],
                                                     fmFun2: Fun[U, Traversable[V]]): Exp[Traversable[V]] = {
@@ -53,7 +53,7 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
   val hoistFilter: Exp[_] => Exp[_] = {
     case FlatMap(coll1, fmFun@FuncExpBody(FlatMap(Filter(coll2, filterFun), fmFun2)))
       if !filterFun.body.isOrContains(filterFun.x) =>
-      buildHoistedFilterForFlatMap(coll1, fmFun, coll2, filterFun, fmFun2)
+      buildHoistedFilter(coll1, fmFun, coll2, filterFun, fmFun2)
     case e => e
   }
 
