@@ -107,12 +107,17 @@ object OptimizationTransforms {
     case e => e
   }
 
-  //Move constants on the right-side of a boolean connective.
+  //Move constants on the right-side of a boolean connective. Also, move nested connectives of the same type to the
+  //left: since these operators are left-associative, that's the natural order.
   private val reassociateBoolOps: Exp[_] => Exp[_] = {
     case And(l@Const(_), r) =>
       r && l
+    case And(l, r@And(ra, rb)) =>
+      (l && ra) && rb
     case Or(l@Const(_), r) =>
       r || l
+    case Or(l, r@Or(ra, rb)) =>
+      (l || ra) || rb
     case e => e
   }
 
