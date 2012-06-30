@@ -1,6 +1,7 @@
-package ivm.optimization
+package ivm
+package optimization
 
-import ivm.expressiontree._
+import expressiontree._
 
 
 /**
