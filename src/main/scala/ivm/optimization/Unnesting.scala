@@ -56,12 +56,24 @@ trait Unnesting {
     //Subexpressions are already optimized, but subexpressions we build are not. In particular, if ep is a FlatMap node, when we invoke flatMap/filter on ep the result might require further unnesting.
     /*case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
       collEp flatMap Fun.makefun(letExp(ep)(fy.f), fxp.x)*/
+    case BaseBindingWithT(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e), kind) =>
+      collEp flatMap
+        Fun.makefun(generalUnnesting(
+          // XXX: Maybe I should use Either in the result of BaseBindingWithT to avoid the need for this inelegant switch
+          // and the casts
+          kind match {
+            case FlatMapId => ep flatMap fy.asInstanceOf[Fun[Any, Traversable[Any]]]
+            case FilterId => ep filter fy.asInstanceOf[Fun[Any, Boolean]]
+            case _ => throw new RuntimeException
+          }).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
+    /*
     case FlatMap(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e)) =>
       collEp flatMap Fun.makefun(generalUnnesting(ep flatMap fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
     //collEp flatMap Fun.makefun(Seq(ep) map (fy)/*Seq(ep) map fy*/, fxp.x).f
     case Filter(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e)) =>
       //collEp filter Fun.makefun(letExp(ep)(fy), fxp.x)
       collEp flatMap Fun.makefun(generalUnnesting(ep filter fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
+     */
     case e => e
   }
 }

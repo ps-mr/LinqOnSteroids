@@ -41,6 +41,24 @@ object OptimizationUtil {
       })
   }
 
+  val FlatMapId = 0
+  val FilterId = 1
+  val MapNodeId = 2
+
+  object BaseBindingWithT {
+    def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _], Int)] = e match {
+      case FlatMap(base, f) => Some((base, f, FlatMapId))
+      case Filter(base, f) => Some((base, f, FilterId))
+      case _ => None
+    }
+  }
+  object BindingWithT {
+    def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _], Int)] =
+      BaseBindingWithT.unapply(e) orElse (e match {
+        case MapNode(base, f) => Some((base, f, MapNodeId))
+        case _ => None
+      })
+  }
   /*private[optimization]*/ private[ivm] def stripView[T](coll: Exp[Traversable[T]]) = stripViewUntyped(coll)
 
   //This type is incorrect whenever T is a view type. Be careful!
