@@ -19,7 +19,8 @@ trait Unnesting {
 
   val existsUnnester2: Exp[_] => Exp[_] = {
     case FlatMap(Filter(c0, f@FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
-      val restQuery = Fun.makefun(fmFun(f.x), p.x)
+      //val restQuery = Fun.makefun(fmFun(f.x), p.x)
+      val restQuery = Fun[Any, Traversable[Any]](x => fmFun(f.x))
       stripView(c0) flatMap Fun.makefun((stripView(c) filter p flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
     case e => e
   }
@@ -32,9 +33,11 @@ trait Unnesting {
     //the result of flatMap to a set.
     case FlatMap(Filter(c0, f@FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
       //Since x0 = f.x, and fmFun = x1 => B, then [x1 |-> x0]B is (x1 => B) x0, that is fmFun(f.x), and restQuery = x => [x1 |-> x0]B =
-      val restQuery = Fun.makefun(fmFun(f.x), p.x) //Hmm, this is a bit of a hack. The scope of p.x does not extend over f.x.
+      //val restQuery = Fun.makefun(fmFun(f.x), p.x) //Hmm, this is a bit of a hack. The scope of p.x does not extend over f.x.
       //Hence, that code might as well use a fresh variable. In fact, that's a function which ignores its argument -
-      //const fmFun(f.x).
+      //const fmFun(f.x). Hence:
+      val restQuery = Fun[Any, Traversable[Any]](x => fmFun(f.x))
+
       Util.checkSameTypeAndRet {
         //What about this simpler variant?
         stripView(c0) flatMap Fun.makefun((stripView(c) filter p flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
