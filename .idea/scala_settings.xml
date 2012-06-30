@@ -9,7 +9,6 @@
         <option value="scala.collection.mutable._" />
       </array>
     </option>
-    <option name="showArgumentsToByNameParams" value="true" />
   </component>
 </project>
 
