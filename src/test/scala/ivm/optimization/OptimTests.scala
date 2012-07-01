@@ -203,14 +203,14 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
 
   def resimpl[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.resimpl)
 
-  def testRenestingExists[T](e: Exp[T]) {
+  def testRenestingExistsForSets[T](e: Exp[T]) {
     import Optimization._
     val e1 = mapToFlatMap(e) //XXX: mapToFlatMap preserves the Set-ness of the expression, by preserving the
     // CanBuildFrom, but that's an exception.
     existsRenester(existsUnnester(e1)) should be (e1)
   }
 
-  def testRenestingExists3[T](e: Exp[T]) {
+  def testRenestingExistsGeneric[T](e: Exp[T]) {
     import Optimization._
     val e1 = mapToFlatMap(removeIdentityMaps(e))
     println(e1)
@@ -226,11 +226,11 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
 
   @Test def renestExists1() {
     val compr = for { x <- Set(1, 2, 3, 4) asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
-    testRenestingExists(compr)
-    testRenestingExists3(compr)
+    testRenestingExistsForSets(compr)
+    testRenestingExistsGeneric(compr)
   }
   @Test def renestExists2() {
     val compr = for { x <- Seq(1, 2, 3, 4) asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
-    testRenestingExists3(compr)
+    testRenestingExistsGeneric(compr)
   }
 }
