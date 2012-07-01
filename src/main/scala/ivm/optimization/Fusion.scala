@@ -128,4 +128,9 @@ case MapNode(Filter(coll, pred @ FuncExpBody(test)), mapFun) =>
       coll filter Fun.makefun(test, fmFun.x) flatMap Fun.makefun(thenBranch, fmFun.x)
     case e => e
   }
+  val filterToTransformedFilter: Exp[_] => Exp[_] = {
+    case Filter(coll, pred) =>
+      coll flatMap (x => if_# (pred(x)) { Seq(x) } else_# { Seq.empty })
+    case e => e
+  }
 }

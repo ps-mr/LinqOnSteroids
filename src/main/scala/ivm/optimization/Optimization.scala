@@ -39,6 +39,8 @@ object Optimization {
 
   def mergeMaps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeMaps)
 
+  def mergeFlatMaps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeFlatMaps)
+
   def mergeViews[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeViews)
 
   def sizeToEmpty[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.sizeToEmpty)
@@ -90,6 +92,8 @@ object Optimization {
   def mergeFilterWithMap[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeFilterWithMap)
 
   def transformedFilterToFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.transformedFilterToFilter)
+
+  def filterToTransformedFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.filterToTransformedFilter)
 
   def constantFolding[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.constantFolding)
 
@@ -157,7 +161,8 @@ object Optimization {
   //cartProdToAntiJoin(optimizeCartProdToJoin(
   def newOptimize[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
   // downcasting exp to Exp[Nothing].
-    (handleNewMaps[T] _ compose flatMapToMap[T] compose ((x: Exp[T]) => /*transformedFilterToFilter*/(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(x)))))
+    (handleNewMaps[T] _ compose flatMapToMap[T] //compose ((x: Exp[T]) => /*transformedFilterToFilter*/(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(x)))))
+      compose transformedFilterToFilter[T] compose mergeFlatMaps[T] compose mergeMaps[T] compose flatMapToMap[T] compose betaDeltaReducer[T] compose filterToTransformedFilter[T]
       compose existsRenester[T]
       compose betaDeltaReducer[T]
       compose mergeFilters[T] compose hoistFilter[T]
