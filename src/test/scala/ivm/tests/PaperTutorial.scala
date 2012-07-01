@@ -67,7 +67,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   val idxByAuthor = records.groupBy(_.authorName) //Index books by author - the index by title is a bit more boring, but not so much actually!
 
   //Figure 6. Reified query in SQUOPT
-  import squopt._
+  import squopt.imports._
   import dbschema.squopt._
 
   val recordsQuery = for {

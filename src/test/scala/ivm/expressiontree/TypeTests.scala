@@ -47,7 +47,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     case _ => false
   }
   test("pattern matching") {
-    import squopt._
+    import squopt.imports._
     val exp1 = seenTypesEx.asSmart flatMap (x => Seq(x))
     testBinding(exp1) should be (true)
     testBaseBinding(exp1) should be (true)

@@ -1,8 +1,11 @@
+package squopt
+
 import ivm._
 import expressiontree.LiftingTrait
 import optimization.Optimization
 
-package object squopt extends LiftingTrait {
+/*package object squopt*/
+object imports extends LiftingTrait {
   type Exp[+T] = expressiontree.Exp[T]
   def Fun[S, T](f: Exp[S] => Exp[T]) = expressiontree.Fun[S, T](f)
 

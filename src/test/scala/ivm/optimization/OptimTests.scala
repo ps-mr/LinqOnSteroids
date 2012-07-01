@@ -1,7 +1,7 @@
 package ivm
 package optimization
 
-import squopt._
+import squopt.imports._
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import org.junit.Test
 import expressiontree.{Const, Plus, Fun, Exp}
