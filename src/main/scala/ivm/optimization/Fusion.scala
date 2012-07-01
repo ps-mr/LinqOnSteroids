@@ -17,9 +17,6 @@ trait Fusion {
   //coll.map(f.f andThen g.f) //Old implementation, equivalent to inlining f(x) in the body of g. This might duplicate work!
   //coll.map(g.f andThen f.f) //Here the typechecker can reject this line.
 
-  /*private def buildMergedFlatMap[T, U, V](coll: Exp[Traversable[T]], f: Fun[T, U], g: Fun[U, Traversable[V]]) =
-    coll flatMap (x => letExp(f(x))(g))*/
-
   val mergeMaps: Exp[_] => Exp[_] = {
     case MapNode(MapNode(coll, f), g) =>
       //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
@@ -32,9 +29,13 @@ trait Fusion {
     case e => e
   }
 
+  private def buildMergedFlatMap1[T, U, V](coll: Exp[Traversable[T]], f: Fun[T, U], g: Fun[U, Traversable[V]]) =
+    coll flatMap (x => letExp(f(x))(g))
+
   val mergeFlatMaps: Exp[_] => Exp[_] = {
     case FlatMap(MapNode(coll, f), g) =>
-      mergeFlatMaps(coll flatMap (x => letExp(f(x))(g)))
+      //mergeFlatMaps(coll flatMap (x => letExp(f(x))(g)))
+      mergeFlatMaps(buildMergedFlatMap1(coll, f, g))
     case MapNode(FlatMap(coll, f), g) =>
       mergeFlatMaps(coll flatMap (x => letExp(f(x))(_ map g)))
     case e => e
