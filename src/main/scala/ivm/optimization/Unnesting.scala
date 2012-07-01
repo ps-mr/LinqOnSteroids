@@ -29,54 +29,34 @@ trait Unnesting {
   }
 
   //Finally, correct unnesting.
-  val existsUnnester3: Exp[_] => Exp[_] = {
-    case fm @ FlatMap(Filter(c0, f@FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
-      //val restQuery = Fun.makefun(fmFun(f.x), p.x)
-      val restQuery = Fun[Any, Traversable[Any]](x => fmFun(f.x))
-      if (isCbfIdempotent(fm.c)) {
-        //Use the standard rule to unnest exists into a set comprehension
-        stripView(c0) flatMap Fun.makefun(stripView(c) filter p flatMap restQuery, f.x)
-      } else {
-        //Use an original rule to unnest exists into a non-idempotent comprehension while still doing the needed duplicate
-        //elimination
-        //breakOut is used to fuse manually the mapping step with toSet. This fusion should be automated!!!
-        //Also, we should make somehow sure that breakOut steps are preserved - they currently aren't!
-        stripView(c0) flatMap Fun.makefun((((stripView(c) map p)(collection.breakOut): Exp[Set[Boolean]]) filter identity flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
-      }
-    case e => e
-  }
-
-  val existsUnnester2: Exp[_] => Exp[_] = {
-    case FlatMap(Filter(c0, f@FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
-      //val restQuery = Fun.makefun(fmFun(f.x), p.x)
-      val restQuery = Fun[Any, Traversable[Any]](x => fmFun(f.x))
-      stripView(c0) flatMap Fun.makefun((stripView(c) filter p flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
-    case e => e
-  }
-
   val existsUnnester: Exp[_] => Exp[_] = {
     //Rule N9 page 474 in Optimizing Object Queries Using an Effective Calculus, Fegaras and Maier, 2000:
     //c0 withFilter (x0 => c exists (x => p(x))) flatMap (x1 => B [not free in x]) |=> c0 flatMap (x0 => c withFilter (x => p(x)) flatMap restQuery)
     //where restQuery = x => [x1 |-> x0]B
     //However, that's only valid if the return value of the expression is an idempotent monoid, as stated there. We can workaround that by converting
     //the result of flatMap to a set.
-    case FlatMap(Filter(c0, f@FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
+    case fm @ FlatMap(Filter(c0, f@FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
       //Since x0 = f.x, and fmFun = x1 => B, then [x1 |-> x0]B is (x1 => B) x0, that is fmFun(f.x), and restQuery = x => [x1 |-> x0]B =
       //val restQuery = Fun.makefun(fmFun(f.x), p.x) //Hmm, this is a bit of a hack. The scope of p.x does not extend over f.x.
       //Hence, that code might as well use a fresh variable. In fact, that's a function which ignores its argument -
       //const fmFun(f.x). Hence:
       val restQuery = Fun[Any, Traversable[Any]](x => fmFun(f.x))
 
-      Util.checkSameTypeAndRet {
-        //What about this simpler variant?
-        stripView(c0) flatMap Fun.makefun((stripView(c) filter p flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
-      } {
-      //toSet remove any duplicates to preserve semantics; in the expression c exists p, p might be true for more elements of c. When unnesting,
-      //we produce c withFilter p, and for each element in the result we apply x1 => B. Instead, with toSet we unify the results after applying
-      //filtering. That's unsatisfactory though; we could instead of using toSet on the result, use breakout as CanBuildFrom instance on the last flatMap.
-      //A problem, in both cases, is that the result of this transformation looks slower than the original query.
-      //Is duplicate elimination after applying restQuery valid? I guess not: the flatMapped function might just produce an element multiple times.
-      //So we produce instead a Set of booleans to do duplicate elimination and then filter with identity!
+      if (isCbfIdempotent(fm.c)) {
+        //Use the standard rule to unnest exists into an idempotent comprehension
+        stripView(c0) flatMap Fun.makefun(stripView(c) filter p flatMap restQuery, f.x)
+      } else {
+        //Use an original rule to unnest exists into a non-idempotent comprehension while still doing the needed duplicate
+        //elimination
+        //breakOut is used to fuse manually the mapping step with toSet. XXX: This fusion should be automated!!!
+        //XXX: Also, we should make somehow sure that breakOut steps are preserved - they currently aren't!
+
+        //toSet remove any duplicates to preserve semantics; in the expression c exists p, p might be true for more elements of c. When unnesting,
+        //we produce c withFilter p, and for each element in the result we apply x1 => B. Instead, with toSet we unify the results after applying
+        //filtering. That's unsatisfactory though; we could instead of using toSet on the result, use breakout as CanBuildFrom instance on the last flatMap.
+        //A problem, in both cases, is that the result of this transformation looks slower than the original query.
+        //Is duplicate elimination after applying restQuery valid? I guess not: the flatMapped function might just produce an element multiple times.
+        //So we produce instead a Set of booleans to do duplicate elimination and then filter with identity!
         stripView(c0) flatMap Fun.makefun((((stripView(c) map p)(collection.breakOut): Exp[Set[Boolean]]) filter identity flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
       }
     case e => e

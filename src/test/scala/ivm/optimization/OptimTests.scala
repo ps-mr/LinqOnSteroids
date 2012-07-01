@@ -200,16 +200,13 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   }*/
 
   import expressiontree._
-  import OptimizationUtil._
 
-  def existsUnnester2[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.existsUnnester2)
-  def existsUnnester3[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.existsUnnester3)
   def resimpl[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.resimpl)
 
   def testRenestingExists[T](e: Exp[T]) {
     import Optimization._
     val e1 = mapToFlatMap(e)
-    existsRenester(existsUnnester2(e1)) should be (e1)
+    existsRenester(existsUnnester(e1)) should be (e1)
   }
 
   def testRenestingExists2[T](e: Exp[T]) {
@@ -230,7 +227,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     import Optimization._
     val e1 = mapToFlatMap(removeIdentityMaps(e))
     println(e1)
-    val unnested = existsUnnester3(e1)
+    val unnested = existsUnnester(e1)
     println(unnested)
     unnested.interpret() should be (e1.interpret())
     val e2 = existsRenester(mapToFlatMap(unnested))
