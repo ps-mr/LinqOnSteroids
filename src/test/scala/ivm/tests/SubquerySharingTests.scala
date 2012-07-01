@@ -52,7 +52,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
         shareSubqueriesOpt(query)
     Optimization.removeIndex(idx)
 
-    optQuery should be (expectedOptQuery)
+    optQuery should be (Optimization constantFolding expectedOptQuery)
     //We assumed that if optQuery == expectedOptQuery, then optQuery.interpret() == expectedOptQuery.interpret() == query.interpret()
     //but manifests could be different!
     optQuery.interpret() should be (expectedOptQuery.interpret())
