@@ -36,8 +36,9 @@ trait Fusion {
     case FlatMap(MapNode(coll, f), g) =>
       //mergeFlatMaps(coll flatMap (x => letExp(f(x))(g)))
       mergeFlatMaps(buildMergedFlatMap1(coll, f, g))
-    case MapNode(FlatMap(coll, f), g) =>
-      mergeFlatMaps(coll flatMap (x => letExp(f(x))(_ map g)))
+      //XXX is the case below useful? Never tested. It's probably better to see what shortcut fusion would do instead.
+    /*case MapNode(FlatMap(coll, f), g) =>
+      mergeFlatMaps(coll flatMap (x => letExp(f(x))(_ map g)))*/
     case e => e
   }
 
