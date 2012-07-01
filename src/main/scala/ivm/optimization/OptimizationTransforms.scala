@@ -5,6 +5,7 @@ import expressiontree._
 import Lifting._
 import OptimizationUtil._
 import collection.generic.CanBuildFrom
+import collection.TraversableLike
 
 /*
  * Note: it is crucial that optimization do not build expression nodes through their constructors, as they are not part
@@ -58,7 +59,9 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
     case e => e
   }
 
-  private def buildMapToFlatMap[T, U](c: Exp[Traversable[T]], f: Fun[T, U], cbf: CanBuildFrom[Traversable[T], U, Traversable[U]]): Exp[Traversable[U]] =
+  private def
+  buildMapToFlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]]
+  (c: Exp[Repr], f: Fun[T, U], cbf: CanBuildFrom[Repr, U, That]): Exp[That] =
     (c flatMap Fun.makefun(Seq(f.body), f.x))(cbf)
 
   val mapToFlatMap: Exp[_] => Exp[_] = {
