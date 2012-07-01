@@ -59,7 +59,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   @Test
   def basicQueries() {
     //Let us define a special collection for our purposes.
-    val coll = Array.range(1, 10).asSmartCollection
+    val coll = Array.range(1, 10).asSmart
     //Now, we can define queries on it
     val coll2 = for (c <- coll) yield c + 1
     showExp(coll2, "map with for-comprehension syntax")

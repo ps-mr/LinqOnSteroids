@@ -95,7 +95,7 @@ trait ExpSugar extends ConversionDisabler2 {
   implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
 
   class ArrayWithAsSmartCollection[T](t: Array[T]) {
-    def asSmartCollection = t: Exp[Seq[T]]
+    def asSmart = t: Exp[Seq[T]]
   }
   implicit def toArrayPimper[T](t: Array[T]) = new ArrayWithAsSmartCollection(t)
   //Either we use ArrayWithAsSmartCollection, or we create an implicit conversion from Exp[Array[T]] to TraverableOps[T] by adding the final cast to TraversableOps[T] here.
