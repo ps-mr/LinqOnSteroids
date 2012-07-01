@@ -210,20 +210,6 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     existsRenester(existsUnnester(e1)) should be (e1)
   }
 
-  def testRenestingExists2[T](e: Exp[T]) {
-    import Optimization._
-    val e1 = mapToFlatMap(removeIdentityMaps(e))
-    println(e1)
-    val unnested = existsUnnester(e1)
-    println(unnested)
-    unnested.interpret() should be (e1.interpret())
-    val e2 = existsRenester(mapToFlatMap(unnested))
-    println(e2)
-    val e3 = generalUnnesting(e2)
-    val e4 = resimpl(e3)
-    e4 should be (e1)
-  }
-
   def testRenestingExists3[T](e: Exp[T]) {
     import Optimization._
     val e1 = mapToFlatMap(removeIdentityMaps(e))
@@ -245,7 +231,6 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   }
   @Test def renestExists2() {
     val compr = for { x <- Seq(1, 2, 3, 4) asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
-    testRenestingExists2(compr)
     testRenestingExists3(compr)
   }
 }
