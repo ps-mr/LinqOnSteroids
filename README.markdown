@@ -10,13 +10,15 @@ To compile this project, you can use SBT.
 ## Using SBT
 The project uses SBT 0.11.2 - you need to install that or a later version of SBT; a pre-installed SBT 0.7.x will not work.
 
-1) To install SBT, follow instructions on this page:
+1. To install SBT, follow instructions on this page:
+  
   <https://github.com/harrah/xsbt/wiki/Getting-Started-Setup>
+  
   Modify the SBT setup to use up to 2G of RAM by adding `-Xmx2048M` to the `java`
   command line. Otherwise, compilation might be slower or run out of memory.
-2) After installing SBT, cd into this folder and launch `sbt`. It will find the build instructions in `build.sbt`. During the first execution SBT will auto-download various dependencies needed for itself (including the Scala compiler).
-3) Then, at the SBT prompt, give the `package` command (simply `package` followed by newline) to compile and package the library as a JAR file under the `target` folder. Compilation will require around 5-10 minutes on a recent machine.
-4) You can similarly run commands such as `compile` (for compilation), `test:compile` (which also compiles tests) and `test` (which additionally _runs_ the tests - they include performance tests and take some time). I usually run tests using IntelliJ IDEA to specify which one I am interested in, even if I do not use it for compilation.
+2. After installing SBT, cd into this folder and launch `sbt`. It will find the build instructions in `build.sbt`. During the first execution SBT will auto-download various dependencies needed for itself (including the Scala compiler).
+3. Then, at the SBT prompt, give the `package` command (simply `package` followed by newline) to compile and package the library as a JAR file under the `target` folder. Compilation will require around 5-10 minutes on a recent machine.
+4. You can similarly run commands such as `compile` (for compilation), `test:compile` (which also compiles tests) and `test` (which additionally _runs_ the tests - they include performance tests and take some time). I usually run tests using IntelliJ IDEA to specify which one I am interested in, even if I do not use it for compilation.
 In particular, tests in the `performancetests` package take considerable time.
 
 Note: this project incorporates `lib/bat-1.6.0.RC1.jar`, a compiled snapshot of
