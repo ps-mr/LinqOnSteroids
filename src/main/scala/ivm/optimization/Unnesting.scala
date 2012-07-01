@@ -18,14 +18,16 @@ trait Unnesting {
     case e => e
   }
 
+  private def cbfStaticResult[From, Elem, To](cbf: CanBuildFrom[From, Elem, To]): To =
+    cbf.apply().result()
+
   def isCbfCommutative[From, Elem, To](cbf: CanBuildFrom[From, Elem, To]) = {
-    val cbfStaticResult = cbf.apply()
-    cbfStaticResult.isInstanceOf[collection.Set[_]]
+    cbfStaticResult(cbf).isInstanceOf[collection.Set[_]]
   }
 
   def isCbfIdempotent[From, Elem, To](cbf: CanBuildFrom[From, Elem, To]) = {
-    val cbfStaticResult = cbf.apply()
-    cbfStaticResult.isInstanceOf[collection.Set[_]] || cbfStaticResult.isInstanceOf[collection.Map[_, _]]
+    val cbfRes = cbfStaticResult(cbf)
+    cbfRes.isInstanceOf[collection.Set[_]] || cbfRes.isInstanceOf[collection.Map[_, _]]
   }
 
   //Finally, correct unnesting.
