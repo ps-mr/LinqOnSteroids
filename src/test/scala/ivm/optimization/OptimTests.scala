@@ -205,7 +205,8 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
 
   def testRenestingExists[T](e: Exp[T]) {
     import Optimization._
-    val e1 = mapToFlatMap(e)
+    val e1 = mapToFlatMap(e) //XXX: mapToFlatMap preserves the Set-ness of the expression, by preserving the
+    // CanBuildFrom, but that's an exception.
     existsRenester(existsUnnester(e1)) should be (e1)
   }
 

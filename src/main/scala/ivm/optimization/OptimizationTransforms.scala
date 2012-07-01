@@ -4,6 +4,7 @@ package optimization
 import expressiontree._
 import Lifting._
 import OptimizationUtil._
+import collection.generic.CanBuildFrom
 
 /*
  * Note: it is crucial that optimization do not build expression nodes through their constructors, as they are not part
@@ -57,12 +58,12 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
     case e => e
   }
 
-  private def buildMapToFlatMap[T, U](c: Exp[Traversable[T]], f: Fun[T, U]): Exp[Traversable[U]] =
-    c flatMap Fun.makefun(Seq(f.body), f.x)
+  private def buildMapToFlatMap[T, U](c: Exp[Traversable[T]], f: Fun[T, U], cbf: CanBuildFrom[Traversable[T], U, Traversable[U]]): Exp[Traversable[U]] =
+    (c flatMap Fun.makefun(Seq(f.body), f.x))(cbf)
 
   val mapToFlatMap: Exp[_] => Exp[_] = {
-    case MapNode(c, f) =>
-      buildMapToFlatMap(c, f)
+    case m @ MapNode(c, f) =>
+      buildMapToFlatMap(c, f, m.c)
     /*case Call2(OptionMapId, _, c: Exp[Option[t]], f: Fun[_, u]) =>
       c flatMap Fun.makefun(Some(f.body), f.x)*/
     case e => e
