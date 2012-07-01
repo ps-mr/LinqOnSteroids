@@ -165,7 +165,7 @@ object Optimization {
 
   private def filterFusion[T](exp: Exp[T]): Exp[T] =
     (newHandleFilters[T] _
-      compose transformedFilterToFilter[T] compose basicInlining[T]
+      compose transformedFilterToFilter[T] compose betaDeltaReducer[T] compose basicInlining[T]
       compose mapToFlatMap[T] compose mergeFlatMaps[T] compose mergeMaps[T] compose flatMapToMap[T]
       compose betaDeltaReducer[T] compose filterToTransformedFilter[T])(exp)
 
