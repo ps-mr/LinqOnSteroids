@@ -469,7 +469,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       val evaluatedtypeindex = benchMark("los6 Seq-index (less manually optimized) creation"){ typeIdx.interpret() }
       Optimization.addIndex(typeIdx, Some(evaluatedtypeindex))
 
-      val methodsLos6 = asExp(evaluatedtypeindex).get[INSTANCEOF].map(_._1._2.name).toSet
+      val methodsLos6 = asExp(evaluatedtypeindex.get[INSTANCEOF]).map(_._1._2.name).toSet
 
       Optimization.optimize(methodsLos5Seq) should be (methodsLos6)
 
