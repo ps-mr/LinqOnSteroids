@@ -159,18 +159,24 @@ object Optimization {
   private def newOptimizePhysical[T](exp: Exp[T]): Exp[T] =
     (existsRenester[T] _)(exp)
   //cartProdToAntiJoin(optimizeCartProdToJoin(
+  private def newHandleFilters[T](exp: Exp[T]): Exp[T] =
+    (mergeFilters[T] _ compose hoistFilter[T]
+      compose splitFilters[T] compose simplifyConditions[T])(exp)
+
   def newOptimize[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
   // downcasting exp to Exp[Nothing].
     (handleNewMaps[T] _ compose flatMapToMap[T] //compose ((x: Exp[T]) => /*transformedFilterToFilter*/(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(x)))))
-      compose transformedFilterToFilter[T] compose mergeFlatMaps[T] compose mergeMaps[T] compose flatMapToMap[T] compose betaDeltaReducer[T] compose filterToTransformedFilter[T]
+      compose newHandleFilters[T]
+      compose transformedFilterToFilter[T] compose basicInlining[T]
+      compose mapToFlatMap[T] compose mergeFlatMaps[T] compose mergeMaps[T] compose flatMapToMap[T]
+      compose betaDeltaReducer[T] compose filterToTransformedFilter[T]
       compose existsRenester[T]
       compose betaDeltaReducer[T]
-      compose mergeFilters[T] compose hoistFilter[T]
-      compose splitFilters[T] compose simplifyConditions[T]
-      compose basicInlining[T]
-      compose existsUnnester[T] //To fix?
-      compose generalUnnesting[T]
-      compose mapToFlatMap[T]
-      compose removeIdentityMaps[T]
+      compose newHandleFilters[T] //3s
+      compose basicInlining[T] //5-7s
+      compose existsUnnester[T] //To fix? //6s
+      compose generalUnnesting[T] //11s
+      compose mapToFlatMap[T] //12-18s
+      compose removeIdentityMaps[T] //40s
       compose betaDeltaReducer[T])(exp)
 }
