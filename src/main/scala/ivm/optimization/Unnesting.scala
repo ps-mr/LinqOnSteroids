@@ -4,6 +4,7 @@ package optimization
 import expressiontree._
 import Lifting._
 import OptimizationUtil._
+import collection.generic.CanBuildFrom
 
 /**
  * User: pgiarrusso
@@ -14,6 +15,34 @@ trait Unnesting {
   val resimpl: Exp[_] => Exp[_] = {
     case IsEmpty(FlatMap(coll, f @ FuncExpBody(Filter(coll2, FuncExpIdentity())))) =>
       (coll flatMap Fun.makefun(coll2, f.x)).isEmpty
+    case e => e
+  }
+
+  def isCbfCommutative[From, Elem, To](cbf: CanBuildFrom[From, Elem, To]) = {
+    val cbfStaticResult = cbf.apply()
+    cbfStaticResult.isInstanceOf[collection.Set[_]]
+  }
+
+  def isCbfIdempotent[From, Elem, To](cbf: CanBuildFrom[From, Elem, To]) = {
+    val cbfStaticResult = cbf.apply()
+    cbfStaticResult.isInstanceOf[collection.Set[_]] || cbfStaticResult.isInstanceOf[collection.Map[_, _]]
+  }
+
+  //Finally, correct unnesting.
+  val existsUnnester3: Exp[_] => Exp[_] = {
+    case fm @ FlatMap(Filter(c0, f@FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
+      //val restQuery = Fun.makefun(fmFun(f.x), p.x)
+      val restQuery = Fun[Any, Traversable[Any]](x => fmFun(f.x))
+      if (isCbfIdempotent(fm.c))
+      //Use the standard rule to unnest exists into a set comprehension
+      //stripView(c0) flatMap Fun.makefun((stripView(c) filter p flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
+        stripView(c0) flatMap Fun.makefun(stripView(c) filter p flatMap restQuery, f.x)
+      else
+      //Use an original rule to unnest exists into a non-idempotent comprehension while still doing the needed duplicate
+      //elimination
+      //breakOut is used to fuse manually the mapping step with toSet. This fusion should be automated!!!
+      //Also, we should make somehow sure that breakOut steps are preserved - they currently aren't!
+        stripView(c0) flatMap Fun.makefun((((stripView(c) map p)(collection.breakOut): Exp[Set[Boolean]]) filter identity flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
     case e => e
   }
 
