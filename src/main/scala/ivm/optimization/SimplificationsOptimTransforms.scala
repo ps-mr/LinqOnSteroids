@@ -83,13 +83,6 @@ trait SimplificationsOptimTransforms {
     //type T <: Exp[U] can be replaced by an equivalent instance of Exp[U].
     case f: Fun[_, _] => f
     case e =>
-      def wrapConst[T]: T => Exp[T] = {
-        case t: Traversable[u] =>
-          //asExp(t) //This will call pureColl(t)
-          pureColl[u, Traversable[u]](t).asInstanceOf[Exp[T]]
-        case e =>
-          asExp(e)
-      }
       //Avoid constant-folding for nullary expressions - if they are not Const nodes, there must be a good reason!
       //For instance, this catches Var, ConstByIdentity, but also incremental collections.
       //XXX: there might be other classes where constant-folding is a bad idea. Keep that in mind.
@@ -97,7 +90,7 @@ trait SimplificationsOptimTransforms {
         case Const(_) => true
         case _ => false
       }))
-        wrapConst(e.interpret())
+        Const(e.interpret())
       else
         e
   }
