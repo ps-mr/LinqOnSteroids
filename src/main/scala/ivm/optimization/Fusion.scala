@@ -34,12 +34,8 @@ trait Fusion {
 
   val mergeFlatMaps: Exp[_] => Exp[_] = {
     case FlatMap(MapNode(coll, f), g) =>
-      //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
-      //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
       mergeFlatMaps(coll flatMap (x => letExp(f(x))(g)))
     case MapNode(FlatMap(coll, f), g) =>
-      //mergeMaps(coll.map(f2.f andThen f1.f))  //This line passes the typechecker happily, even if wrong. Hence let's
-      //exploit parametricity, write a generic function which can be typechecked, and call it with Any, Any, Any:
       mergeFlatMaps(coll flatMap (x => letExp(f(x))(_ map g)))
     case e => e
   }
