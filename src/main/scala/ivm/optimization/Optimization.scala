@@ -163,13 +163,16 @@ object Optimization {
     (mergeFilters[T] _ compose hoistFilter[T]
       compose splitFilters[T] compose simplifyConditions[T])(exp)
 
+  private def filterFusion[T](exp: Exp[T]): Exp[T] =
+    (newHandleFilters[T] _
+      compose transformedFilterToFilter[T] compose basicInlining[T]
+      compose mapToFlatMap[T] compose mergeFlatMaps[T] compose mergeMaps[T] compose flatMapToMap[T]
+      compose betaDeltaReducer[T] compose filterToTransformedFilter[T])(exp)
+
   def newOptimize[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
   // downcasting exp to Exp[Nothing].
     (handleNewMaps[T] _ compose flatMapToMap[T] //compose ((x: Exp[T]) => /*transformedFilterToFilter*/(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(x)))))
-      compose newHandleFilters[T]
-      compose transformedFilterToFilter[T] compose basicInlining[T]
-      compose mapToFlatMap[T] compose mergeFlatMaps[T] compose mergeMaps[T] compose flatMapToMap[T]
-      compose betaDeltaReducer[T] compose filterToTransformedFilter[T]
+      compose filterFusion[T]
       compose existsRenester[T]
       compose betaDeltaReducer[T]
       compose newHandleFilters[T] //3s
