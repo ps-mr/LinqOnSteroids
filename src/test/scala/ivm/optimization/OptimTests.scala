@@ -201,8 +201,6 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
 
   import expressiontree._
 
-  def resimpl[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.resimpl)
-
   def testRenestingExistsForSets[T](e: Exp[T]) {
     import Optimization._
     val e1 = mapToFlatMap(e) //XXX: mapToFlatMap preserves the Set-ness of the expression, by preserving the
@@ -220,7 +218,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     val e2 = existsRenester(mapToFlatMap(unnested))
     println(e2)
     val e3 = generalUnnesting(e2)
-    val e4 = resimpl(e3)
+    val e4 = resimplFilterIdentity(e3)
     e4 should be (e1)
   }
 

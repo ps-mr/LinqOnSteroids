@@ -84,6 +84,8 @@ object Optimization {
 
   def existsUnnester[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.existsUnnester)
 
+  def resimplFilterIdentity[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.resimplFilterIdentity)
+
   def generalUnnesting[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.generalUnnesting)
 
   def simplifyForceView[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.simplifyForceView)
@@ -155,8 +157,8 @@ object Optimization {
 
   // Order in the end: first recognize operator, and only after that try fusion between different operators, since it
   // obscures structures to recognize.
-  private def newOptimizePhysical[T](exp: Exp[T]): Exp[T] =
-    (existsRenester[T] _)(exp)
+  private def physicalOptimize[T](exp: Exp[T]): Exp[T] =
+    (resimplFilterIdentity[T] _ compose existsRenester[T])(exp)
   //cartProdToAntiJoin(optimizeCartProdToJoin(
   private def newHandleFilters[T](exp: Exp[T]): Exp[T] =
     (mergeFilters[T] _ compose hoistFilter[T]
@@ -172,7 +174,7 @@ object Optimization {
   // downcasting exp to Exp[Nothing].
     (handleNewMaps[T] _ compose flatMapToMap[T] //compose ((x: Exp[T]) => /*transformedFilterToFilter*/(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(x)))))
       compose filterFusion[T]
-      compose existsRenester[T]
+      compose physicalOptimize[T]
       compose betaDeltaReducer[T]
       compose newHandleFilters[T] //3s
       compose basicInlining[T] //5-7s

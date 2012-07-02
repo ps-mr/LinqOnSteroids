@@ -13,7 +13,8 @@ import collection.generic.CanBuildFrom
  */
 
 trait Unnesting {
-  val resimpl: Exp[_] => Exp[_] = {
+  //This simplification cleans up after existsUnnester and existsRenester.
+  val resimplFilterIdentity: Exp[_] => Exp[_] = {
     case IsEmpty(FlatMap(coll, f @ FuncExpBody(Filter(coll2, FuncExpIdentity())))) =>
       (coll flatMap Fun.makefun(coll2, f.x)).isEmpty
     case e => e
