@@ -167,11 +167,13 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
       pair <- Xquery
     } yield (pair._1, pair._2 + 1)
 
-    Yquery.optimize should be ((for {
+    val expected = (for {
       x <- (1 to 10).asSmart
       y <- (1 to 10).asSmart
       if y % 2 ==# 0
-    } yield (x, 1 + y)).optimize)
+    } yield (x, 1 + y)).optimize
+    Optimization.newOptimize(Yquery) should be (expected)
+    Yquery.optimize should be (expected)
   }
 
   @Test
