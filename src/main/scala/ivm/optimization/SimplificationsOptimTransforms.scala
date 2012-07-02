@@ -26,7 +26,7 @@ trait SimplificationsOptimTransforms {
 
   //Move constants on the right-side of a boolean connective. Also, move nested connectives of the same type to the
   //left: since these operators are left-associative, that's the natural order.
-  private val reassociateBoolOps: Exp[_] => Exp[_] = {
+  val reassociateBoolOps: Exp[_] => Exp[_] = {
     case And(l@Const(_), r) =>
       r && l
     case And(l, r@And(ra, rb)) =>

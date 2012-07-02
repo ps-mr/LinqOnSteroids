@@ -90,7 +90,7 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
   private def usesArgAtMostOnce[S, T](f: Fun[S, T]): Boolean = usesArgAtMostOnce(f, f.x)
 
   //This allows to inline definitions if they are used at most once.
-  private[optimization] val letTransformerUsedAtMostOnce: Exp[_] => Exp[_] = {
+  val letTransformerUsedAtMostOnce: Exp[_] => Exp[_] = {
     case FlatMap(ExpSeq(Seq(exp1)), f) if usesArgAtMostOnce(f) => subst(f)(exp1)
     // XXX: The following case is also a valid optimization, but I expect code to which it applies to never be created,
     // for now (say by inlining Lets). Hence for now disable it. Reenable later.

@@ -59,10 +59,10 @@ object OptimizationUtil {
         case _ => None
       })
   }
-  /*private[optimization]*/ private[ivm] def stripView[T](coll: Exp[Traversable[T]]) = stripViewUntyped(coll)
+  def stripView[T](coll: Exp[Traversable[T]]) = stripViewUntyped(coll)
 
   //This type is incorrect whenever T is a view type. Be careful!
-  private[optimization] def stripViewUntyped[T](coll: Exp[T]): Exp[T] =
+  def stripViewUntyped[T](coll: Exp[T]): Exp[T] =
     coll match {
       case View(coll2) => coll2.asInstanceOf[Exp[T]]
       case _ => coll
