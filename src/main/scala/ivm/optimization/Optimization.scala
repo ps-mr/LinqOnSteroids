@@ -82,7 +82,6 @@ object Optimization {
 
   def existsRenester[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.existsRenester)
 
-  //Unsafe yet, hence not used!
   def existsUnnester[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.existsUnnester)
 
   def generalUnnesting[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.generalUnnesting)
@@ -177,7 +176,7 @@ object Optimization {
       compose betaDeltaReducer[T]
       compose newHandleFilters[T] //3s
       compose basicInlining[T] //5-7s
-      compose existsUnnester[T] //To fix? //6s
+      compose existsUnnester[T] //6s
       compose generalUnnesting[T] //11s
       compose mapToFlatMap[T] //12-18s
       compose removeIdentityMaps[T] //40s

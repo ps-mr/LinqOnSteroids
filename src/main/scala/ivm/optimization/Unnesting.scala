@@ -88,13 +88,6 @@ trait Unnesting {
   val existsRenester: Exp[_] => Exp[_] = {
     case e @ FlatMap(coll, f@FuncExpBody(FlatMap(Filter(coll2, p), f2))) if !f2.body.isOrContains(f2.x) =>
       rebuildExists(coll, coll2, p, f, f2)
-    //case e @ FlatMap(coll, f) if varNotFreeInResult(f.body, f.x) =>
-      //e
-    //case FlatMap(xs, fx @ FuncExpBody()) =>
-    /*case FlatMap(coll, f@FuncExpBody(FlatMap(coll2, f2))) if !f2.isOrContains(f.x) =>
-      coll filter Fun.makefun(!coll2.isEmpty, f.x)
-        //flatMap
-      coll*/
     case e => e
   }
 
