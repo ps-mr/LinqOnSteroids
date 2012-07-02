@@ -140,9 +140,9 @@ trait SimplificationsOptimTransforms {
   // Remember that Scala parser combinators are applicative parsers (i.e. Applicative and Alternative). Also note that
   // Alternative is described as "A monoid on applicative functors". Which nowadays is even obvious to me, oh my God!
   // Are my transformers an instance of the same structure?
-  //Note: there's a reason parser combinators take their arguments by value; partial function combinators don't, hence we
+  //Note: there's a reason parser combinators take their arguments by name; partial function combinators don't, hence we
   //suffer a lot
-  //Note: recursive vals don't work - a recursive definition like this requires def.
+  //Note: recursive vals don't work and cause NullPointerExceptions - a recursive definition like this requires def.
   //val betaDeltaReducer: Exp[_] => Exp[_] = (deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse {case e => e} //that's the shortest way of writing identity.
   //This recursive def does not work either - upon a call it tries to unfold itself.
   //def betaDeltaReducer: Exp[_] => Exp[_] = (deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse {case e => e} //that's the shortest way of writing identity.
