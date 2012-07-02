@@ -78,24 +78,12 @@ trait Unnesting {
     case e => e
   }
 
-  /*private def varNotFreeInResult[T](e: Exp[T], v: Var): Boolean = {
-    def varNotFreeInResultRec(e: Exp[T]): Boolean =  e match {
-      case Filter(base, f) => varNotFreeInResultRec(base)
-      case Binding(base, f) => varNotFreeInResultRec(base) && varNotFreeInResultRec(f.body)
-      case _ => !e.isOrContains(v)
-    }
-    varNotFreeInResultRec(e)
-  }*/
-
   private def rebuildExists[T, U, V](coll: Exp[Traversable[T]],
                                   coll2: Exp[Traversable[U]],
                                   p: Fun[U, Boolean],
                                   f: Fun[T, Traversable[V]],
-                                  f2: Fun[U, Traversable[V]]): Exp[Traversable[V]] = {
-    //coll filter Fun.makefun(!(coll2 filter p).isEmpty, f.x) flatMap f2
-    //coll filter Fun.makefun(coll2 exists p, f.x) flatMap f2
+                                  f2: Fun[U, Traversable[V]]): Exp[Traversable[V]] =
     coll filter Fun.makefun(coll2 exists p, f.x) flatMap Fun.makefun(f2.body, f.x)
-  }
 
   //This is useful, because exists has a more efficient execution strategy than the nested iteration: exists can stop
   //as soon as the existence witness is found.
