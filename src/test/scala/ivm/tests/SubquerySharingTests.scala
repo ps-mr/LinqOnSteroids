@@ -49,7 +49,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       if (fullOptim)
         Optimization.optimize(query)
       else
-        shareSubqueriesOpt(query)
+        Optimization constantFolding shareSubqueriesOpt(query)
     Optimization.removeIndex(idx)
 
     optQuery should be (Optimization constantFolding expectedOptQuery)
