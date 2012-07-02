@@ -105,13 +105,11 @@ trait Unnesting {
     case e => e
   }
 
-  //XXX: an extra safety condition is that we must reject a nested collection with stronger algebraic laws;
+  //A safety condition is that we must reject a nested collection with stronger algebraic laws;
   //in the monoid comprehension calculus this is required for an expression to be _syntactically_ valid, but here it is
   //not.
-  //For instance, this code would unnest a subquery creating a set (hence performing duplicate elimination) nested into
+  //For instance, one should not unnest a subquery creating a set (hence performing duplicate elimination) nested into
   //a query creating a list.
-  //Use isCbfCommutative() and isCbfIdempotent() to implement this check.
-
   val generalUnnesting: Exp[_] => Exp[_] = {
     /*
      * v = E' map (x' => e')
@@ -119,7 +117,8 @@ trait Unnesting {
      * v filter (y => p) |-> ...
      */
     /*
-    //The well-formedness check is only needed for FlatMap - hence it looks harder to share code.
+    //The safety condition can (and must) be checked only for FlatMap - hence it looks harder to share code between the
+    //two branches below, like this:
     case BaseBindingWithT(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e), kind) =>
       collEp flatMap
         Fun.makefun(generalUnnesting(
