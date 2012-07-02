@@ -4,6 +4,7 @@ package optimization
 import expressiontree._
 import Lifting._
 import OptimizationUtil._
+import BetterPartialOrdering._
 import collection.generic.CanBuildFrom
 
 /**
@@ -30,6 +31,18 @@ trait Unnesting {
     cbfRes.isInstanceOf[collection.Set[_]] || cbfRes.isInstanceOf[collection.Map[_, _]]
   }
 
+  /*
+   * This ordering expresses the ordering between monoids described by Fegaras and Maier (2001) in
+   * "Optimizing Object Queries Using an Effective Calculus", Sec. 2.3.
+   * It can be used to reject non-well-defined expressions such as someSet.toList, where the order of the result is
+   * undefined, and to avoid query unnesting when it would change the query semantics - for instance, unnesting a
+   * subquery producing a set into a query producing a list would remove a duplicate elimination step.
+   */
+  private implicit def cbfOrdering[From, Elem, To]: PartialOrderingExt[CanBuildFrom[From, Elem, To]] = { /*Ordering[CanBuildFrom[_, _, _]]*/
+    def flagsFrom(cbf: CanBuildFrom[From, Elem, To]): (Boolean, Boolean) =
+      (isCbfCommutative(cbf), isCbfIdempotent(cbf))
+    PartialOrderingExt[(Boolean, Boolean)].on(flagsFrom)
+  }
   //Finally, correct unnesting.
   val existsUnnester: Exp[_] => Exp[_] = {
     //Rule N9 page 474 in Optimizing Object Queries Using an Effective Calculus, Fegaras and Maier, 2000:
@@ -96,6 +109,8 @@ trait Unnesting {
   //not.
   //For instance, this code would unnest a subquery creating a set (hence performing duplicate elimination) nested into
   //a query creating a list.
+  //Use isCbfCommutative() and isCbfIdempotent() to implement this check.
+
   val generalUnnesting: Exp[_] => Exp[_] = {
     /*
      * v = E' map (x' => e')
@@ -116,6 +131,8 @@ trait Unnesting {
     //Subexpressions are already optimized, but subexpressions we build are not. In particular, if ep is a FlatMap node, when we invoke flatMap/filter on ep the result might require further unnesting.
     /*case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
       collEp flatMap Fun.makefun(letExp(ep)(fy.f), fxp.x)*/
+    /*
+    //The well-formedness check is only needed for FlatMap - hence it looks harder to share code.
     case BaseBindingWithT(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e), kind) =>
       collEp flatMap
         Fun.makefun(generalUnnesting(
@@ -126,14 +143,14 @@ trait Unnesting {
             case FilterId => ep filter fy.asInstanceOf[Fun[Any, Boolean]]
             case _ => throw new RuntimeException
           }).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
-    /*
-    case FlatMap(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e)) =>
+          */
+    case outer @ FlatMap(inner @ FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e))
+      if { import PartialOrderingExt.Implicits._; inner.c < outer.c } =>
       collEp flatMap Fun.makefun(generalUnnesting(ep flatMap fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
     //collEp flatMap Fun.makefun(Seq(ep) map (fy)/*Seq(ep) map fy*/, fxp.x).f
     case Filter(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e)) =>
       //collEp filter Fun.makefun(letExp(ep)(fy), fxp.x)
       collEp flatMap Fun.makefun(generalUnnesting(ep filter fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
-     */
     case e => e
   }
 }
