@@ -128,10 +128,6 @@ trait Unnesting {
       * However, scalac seems "right": collEp has type Exp[Repr], which apparently erases to Exp[Any] even if a type bound _is_ given.
       * XXX report this as another bug.
       */
-    //Why and when do we call generalUnnesting again?
-    //Subexpressions are already optimized, but subexpressions we build are not. In particular, if ep is a FlatMap node, when we invoke flatMap/filter on ep the result might require further unnesting.
-    /*case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
-      collEp flatMap Fun.makefun(letExp(ep)(fy.f), fxp.x)*/
     /*
     //The well-formedness check is only needed for FlatMap - hence it looks harder to share code.
     case BaseBindingWithT(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e), kind) =>
@@ -147,6 +143,9 @@ trait Unnesting {
           */
     case outer @ FlatMap(inner @ FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e))
       if { import PartialOrderingExt.Implicits._; inner.c < outer.c } =>
+      //Why and when do we call generalUnnesting again?
+      //Subexpressions are already optimized, but subexpressions we build are not. In particular, if ep is a FlatMap node, when we invoke flatMap/filter on ep the result might require further unnesting.
+      /*collEp flatMap Fun.makefun(letExp(ep)(fy.f), fxp.x)*/
       collEp flatMap Fun.makefun(generalUnnesting(ep flatMap fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
     //collEp flatMap Fun.makefun(Seq(ep) map (fy)/*Seq(ep) map fy*/, fxp.x).f
     case Filter(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e)) =>
