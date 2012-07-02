@@ -43,26 +43,6 @@ trait Unnesting {
       (isCbfCommutative(cbf), isCbfIdempotent(cbf))
     PartialOrderingExt[(Boolean, Boolean)].on(flagsFrom)
   }
-  /*implicit def cbfOrdering =
-    new PartialOrdering[CanBuildFrom[_, _, _]] {
-      override def lteq(cbf1: CanBuildFrom[_, _, _],
-                  cbf2: CanBuildFrom[_, _, _]) = {
-        def implies(a: Boolean, b: Boolean) = !a || b
-        implies(isCbfCommutative(cbf1), isCbfCommutative(cbf2)) &&
-          implies(isCbfIdempotent(cbf1), isCbfIdempotent(cbf2))
-      }
-      override def tryCompare(x: CanBuildFrom[_, _, _], y: CanBuildFrom[_, _, _]): Option[Int] = {
-        if (x == y) Some(0)
-        else {
-          val xF = flagsFrom(x)
-          val yF = flagsFrom(y)
-          if (lteq(x, y)) Some(-1)
-          else if (lteq(y, x)) Some(1)
-          else None
-        }
-      }
-    }*/
-
   //Finally, correct unnesting.
   val existsUnnester: Exp[_] => Exp[_] = {
     //Rule N9 page 474 in Optimizing Object Queries Using an Effective Calculus, Fegaras and Maier, 2000:
