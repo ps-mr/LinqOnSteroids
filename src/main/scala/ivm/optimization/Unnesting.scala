@@ -120,7 +120,7 @@ trait Unnesting {
           }).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
           */
     case outer @ FlatMap(inner @ FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e))
-      if { import PartialOrderingExt.Implicits._; inner.c < outer.c } =>
+      if { import PartialOrderingExt.Implicits._; inner.c <= outer.c } =>
       //Why and when do we call generalUnnesting again?
       //Subexpressions are already optimized, but subexpressions we build are not. In particular, if ep is a FlatMap node, when we invoke flatMap/filter on ep the result might require further unnesting.
       /*collEp flatMap Fun.makefun(letExp(ep)(fy.f), fxp.x)*/
