@@ -220,6 +220,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     val e3 = generalUnnesting(e2)
     val e4 = resimplFilterIdentity(e3)
     e4 should be (e1)
+    newOptimize(e4) should be (reassociateOps(e1))
   }
 
   @Test def renestExists1() {
