@@ -118,16 +118,6 @@ trait Unnesting {
      * v flatMap (y => e) |-> E ' flatMap (x' => letExp(e')(y => e))
      * v filter (y => p) |-> ...
      */
-    /* A somewhat interesting compile error:
-    case FlatMap(FlatMap(collEp, fxp @ FuncExpBody(ep)), fy @ FuncExpBody(e)) =>
-      collEp flatMap Fun.makefun(letExp(ep)(fy), fxp.x)
-    results in:
-[error] /Users/pgiarrusso/Documents/Research/Sorgenti/linqonsteroids/src/main/scala/ivm/optimization/Optimization.scala:536: value flatMap is not a member of ivm.expressiontree.Exp[Any]
-[error]       collEp flatMap Fun.makefun(letExp(ep)(fy), fxp.x)
-[error]              ^
-      * However, scalac seems "right": collEp has type Exp[Repr], which apparently erases to Exp[Any] even if a type bound _is_ given.
-      * XXX report this as another bug.
-      */
     /*
     //The well-formedness check is only needed for FlatMap - hence it looks harder to share code.
     case BaseBindingWithT(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e), kind) =>
