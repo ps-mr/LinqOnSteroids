@@ -65,6 +65,7 @@ trait Unnesting {
         //elimination
         //breakOut is used to fuse manually the mapping step with toSet. XXX: This fusion should be automated!!!
         //XXX: Also, we should make somehow sure that breakOut steps are preserved - they currently aren't!
+        //XXX: Hence, better have an explicit toSet step for now, and rewrite such steps using breakOut in a final processing step.
 
         //toSet remove any duplicates to preserve semantics; in the expression c exists p, p might be true for more elements of c. When unnesting,
         //we produce c withFilter p, and for each element in the result we apply x1 => B. Instead, with toSet we unify the results after applying
