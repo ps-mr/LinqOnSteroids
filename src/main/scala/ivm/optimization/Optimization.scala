@@ -119,11 +119,11 @@ object Optimization {
   def basicInlining[T](exp: Exp[T]): Exp[T] = letTransformerUsedAtMostOnce(letTransformerTrivial(exp))
 
   //TODO: rewrite using function composition
-  private def optimizeBase[T](exp: Exp[T]): Exp[T] =
+  private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
   handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
     mergeFilters( //Merge filters again after indexing, since it introduces new filters.
       simplifyFilters(
-        shareSubqueries(mapToFlatMap(
+        (if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(mapToFlatMap(
           handleNewMaps(
                 cartProdToAntiJoin(
                   handleFilters(
@@ -136,8 +136,8 @@ object Optimization {
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
   //subquery sharing.
-  private def optimizeIdx[T](exp: Exp[T]): Exp[T] =
-    flatMapToMap(optimizeBase(exp))
+  def optimizeIdx[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
+    flatMapToMap(optimizeBase(exp, idxLookup))
 
   //After letTransformer (an inliner), we can reduce redexes which arised; let's not do that, to avoid inlining
   // let definitions introduced by the user.

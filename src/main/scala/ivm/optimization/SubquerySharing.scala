@@ -41,7 +41,13 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
   private def normalizeBeforeLookup[T](exp: Exp[T]): Exp[T] = {
     import Optimization._
-    flatMapToMap(letTransformerUsedAtMostOnce(mapToFlatMap(normalize(exp))))
+    // XXX Probably one could just do the processing steps done after index lookup + the ones
+    // needed on the introduced constructs, which are however listed below in the commented out version (essentially,
+    // inlining through letTransformerUsedAtMostOnce). For every other optimization opt, we know it was already done on the
+    // query on which index lookup was started, and since we don't introduce opportunities for optimization opt, it won't
+    // trigger.
+    optimizeIdx(normalize(exp), idxLookup = false)
+    //flatMapToMap(letTransformerUsedAtMostOnce(mapToFlatMap(normalize(exp))))
   }
 
   val directsubqueryShare: Exp[_] => Exp[_] =
