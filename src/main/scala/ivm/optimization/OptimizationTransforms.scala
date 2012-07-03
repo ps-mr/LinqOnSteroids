@@ -19,7 +19,8 @@ import collection.TraversableLike
 
 //XXX: make transform require a function of type Exp[T] to Exp[T]!
 object OptimizationTransforms extends NumericOptimTransforms with SimplificationsOptimTransforms with
-  Inlining with FoldPhysicalOperators with Unnesting with Fusion with TypeFilterOptim {
+  Inlining with FoldPhysicalOperators with Unnesting with Fusion with TypeFilterOptim
+{
   //reversed list of conds
   private def collectCondsReversed(exp: Exp[Boolean]): Seq[Exp[Boolean]] =
     exp match {
@@ -32,7 +33,6 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
   val splitFilters: Exp[_] => Exp[_] = {
     case Filter(coll: Exp[Traversable[Any]], f @ FuncExpBody(And(_, _))) =>
       collectConds(f.body).foldRight[Exp[Traversable[Any]]](coll)((cond, coll) => coll filter Fun.makefun(cond, f.x))
-      //coll filter Fun.makefun(a, f.x) filter Fun.makefun(b, f.x)
     case e => e
   }
 
@@ -67,8 +67,6 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
   val mapToFlatMap: Exp[_] => Exp[_] = {
     case m @ MapNode(c, f) =>
       buildMapToFlatMap(c, f, m.c)
-    /*case Call2(OptionMapId, _, c: Exp[Option[t]], f: Fun[_, u]) =>
-      c flatMap Fun.makefun(Some(f.body), f.x)*/
     case e => e
   }
 

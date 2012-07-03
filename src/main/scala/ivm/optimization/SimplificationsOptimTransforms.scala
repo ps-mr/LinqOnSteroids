@@ -57,20 +57,6 @@ trait SimplificationsOptimTransforms {
   }
 
   /*
-  private def removeIdentityMaps[T](e: Exp[T]): Exp[T] =
-    e match {
-      //Alternative 1 - a cast is required:
-      case MapNode(col: Exp[_ /*T*/], FuncExpIdentity()) =>
-        col.asInstanceOf[Exp[T]]
-      //Alternative 2 - causes a warning, but works and is more elegant:
-      case MapNode(col: Exp[T], FuncExpIdentity()) =>
-        col
-      //Possibility 2 is what is used in the Scala-virtualized tutorial.
-      case e => e
-    }
-  */
-
-  /*
    * Thanks for the idea to Tillmann Rendel - this optimization was one of his insightful side remarks.
    * His actual comment was that this optimization (which he assumed to be done) introduces the possibility of
    * non-termination if interpret() is ever non-terminating.
@@ -102,19 +88,12 @@ trait SimplificationsOptimTransforms {
     case e => e
   }
 
-  /*val betaReduction: Exp[_] => Exp[_] = {
-    case a: App[t, u] => a.f(a.t)
-    case ExpSelection(arity, selected, e: ExpProduct) => e.metaProductElement(selected - 1)
-    case e => e
-  }*/
-
   val deltaReductionTuple: PartialFunction[Exp[_], Exp[_]] = {
     case ExpSelection(arity, selected, e: ExpProduct) =>
       e.metaProductElement(selected - 1)
   }
 
   val betaReduction: PartialFunction[Exp[_], Exp[_]] = {
-    //case a: App[s, t] => a.f(a.t) //causes a warning
     //To ensure termination, this must only apply if this rule changes behavior, that is, if App contains a Fun!
     //Otherwise fToFunOps will recreate a new App node.
     case appNode@App(fun: Fun[_, _], arg)

@@ -30,19 +30,6 @@ trait Inlining {
     case e => e
   }
 
-  //Bug-triggering variant of Inlining.usesArgAtMostOnce
-  /*@tailrec private def usesArgAtMostOnce[S, T](f: Fun[S, T], v: Exp[_]): Boolean = {
-    f match {
-      case FuncExpBody(FlatMap(ExpSeq(Seq(v2)), g)) if !v2.isOrContains(v) =>
-        usesArgAtMostOnce(g, v)
-      case FuncExpBody(FlatMap(baseUsingV, g)) =>
-        val occurrences = baseUsingV.findTotFun(_ == v)
-        occurrences.length == 1 //gives spurious error
-        //false
-      case _ => false
-    }
-  }*/
-
   /*
    * Inlining: if you bind something and then use it immediately (1), it's used only once; the same if there are in between only other bindings, i.e. iterations over single-element sequences (try to make this into a complete criterion). Example:
 for {

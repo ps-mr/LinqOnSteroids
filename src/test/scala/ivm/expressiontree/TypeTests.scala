@@ -143,7 +143,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     }
   }
 
-  import optimization.OptimizationTransforms.Transformer
+  import optimization.TransformationExperiments.Transformer
 
   //Let's try to express map fusion, which transforms
   // c map f map g into c map (f andThen g)

@@ -123,11 +123,8 @@ trait Unnesting {
       if { import PartialOrderingExt.Implicits._; inner.c <= outer.c } =>
       //Why and when do we call generalUnnesting again?
       //Subexpressions are already optimized, but subexpressions we build are not. In particular, if ep is a FlatMap node, when we invoke flatMap/filter on ep the result might require further unnesting.
-      /*collEp flatMap Fun.makefun(letExp(ep)(fy.f), fxp.x)*/
       collEp flatMap Fun.makefun(generalUnnesting(ep flatMap fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
-    //collEp flatMap Fun.makefun(Seq(ep) map (fy)/*Seq(ep) map fy*/, fxp.x).f
     case Filter(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e)) =>
-      //collEp filter Fun.makefun(letExp(ep)(fy), fxp.x)
       collEp flatMap Fun.makefun(generalUnnesting(ep filter fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
     case e => e
   }
