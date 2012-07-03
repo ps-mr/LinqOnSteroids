@@ -30,7 +30,7 @@ trait Inlining {
     case e => e
   }
 
-  //Bug-triggering variant of the code below.
+  //Bug-triggering variant of Inlining.usesArgAtMostOnce
   /*@tailrec private def usesArgAtMostOnce[S, T](f: Fun[S, T], v: Exp[_]): Boolean = {
     f match {
       case FuncExpBody(FlatMap(ExpSeq(Seq(v2)), g)) if !v2.isOrContains(v) =>
