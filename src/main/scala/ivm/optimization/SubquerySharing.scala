@@ -33,8 +33,19 @@ object SubquerySharing {
 
 class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
   import SubquerySharing._
+
+  // To perform index lookup, we need to put both indexes and original queries in normal form-and it should be the
+  // _same_ normal form. And every rule for algebraic optimization can be considered as a normalization rule;
+  // this point of view is even correct if the rules are confluent.
+  // XXX: The code below does some hacking going in that direction.
+
+  private def normalizeBeforeLookup[T](exp: Exp[T]): Exp[T] = {
+    import Optimization._
+    flatMapToMap(letTransformerUsedAtMostOnce(mapToFlatMap(normalize(exp))))
+  }
+
   val directsubqueryShare: Exp[_] => Exp[_] =
-    e => subqueries.get(Optimization.normalize(e)) match {
+    e => subqueries.get(normalizeBeforeLookup(e)) match {
       case Some(t) => asExp(new ConstByIdentity(t)) //this gives the right behavior but is a hack
       case None => e
     }
@@ -45,7 +56,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
     val groupedBy = c.indexBy[U](Fun.makefun[T, U](varEqSide, fx).f)
 
     assertType[Exp[U => Traversable[T]]](groupedBy) //Just for documentation.
-    val toLookup = Optimization.normalize(groupedBy)
+    val toLookup = normalizeBeforeLookup(groupedBy)
     subqueries.get(toLookup) match {
       //Note: x flatMap identity, on x: Option[Seq[T]], implements monadic join. We could also use x getOrElse Traversable.empty.
       //In both cases, the type of the resulting expression becomes Traversable, which might lead to the result having the wrong dynamic type.
@@ -260,7 +271,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         val groupedBy = base.indexBy[U](Fun.makefun[TupleT, U](varEqSideTransf, fx))
 
         assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
-        val toLookup = Optimization.normalize(groupedBy)
+        val toLookup = normalizeBeforeLookup(groupedBy)
         subqueries.get(toLookup) match {
           case Some(t) =>
             println("Found nested index of form " + toLookup)
@@ -345,7 +356,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
         // small (and premature?) optimization.
 
         //assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
-        val toLookup = Optimization.normalize(groupedBy)
+        val toLookup = normalizeBeforeLookup(groupedBy)
         subqueries.get(toLookup) match {
           case Some(t) =>
             println("Found nested type-index of form " + toLookup)
