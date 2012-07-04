@@ -137,17 +137,24 @@ object Optimization {
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
   //subquery sharing.
-  def optimizeIdx[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] = {
-    val res = flatMapToMap(optimizeBase(exp, idxLookup))
-
-    if (Benchmarking.debugBench && idxLookup) {
-      val reOptim = optimizeIdx(res, idxLookup = false)
-      if (res != reOptim)
-        Console.err.println("optimizeIdx not idempotent on original query %s, optim. query %s, reoptimized query %s"
-          format (exp, res, reOptim))
+  def optimizeIdx[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
+    checkIdempotent(exp, idxLookup, "optimizeIdx") {
+      optimizeIdx(_, idxLookup = false)
+    } {
+      flatMapToMap(optimizeBase(exp, idxLookup))
     }
 
-    res
+  //Check that optim(exp) == exp, but only if we are in debugging mode (flag Benchmarking.debugBench) and
+  //if we are not recursively executing this check (flag doCheck)
+  private def checkIdempotent[T](orig: Exp[T], doCheck: Boolean, name: String)(optim: Exp[T] => Exp[T])(exp: Exp[T]): Exp[T] = {
+    if (Benchmarking.debugBench && doCheck) {
+      val reOptim = optim(exp)
+      if (exp != reOptim)
+        Console.err.println("%s not idempotent on original query %s, optim. query %s, reoptimized query %s"
+          format (name, orig, exp, reOptim))
+    }
+
+    exp
   }
 
   //After letTransformer (an inliner), we can reduce redexes which arised; let's not do that, to avoid inlining
