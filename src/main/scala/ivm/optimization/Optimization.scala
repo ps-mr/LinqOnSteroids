@@ -5,6 +5,7 @@ import expressiontree._
 import Lifting._
 import collection.mutable.Stack
 import scala.collection.mutable.Map
+import performancetests.Benchmarking
 
 object Optimization {
   val subqueries: Map[Exp[_], Any] = Map.empty
@@ -136,8 +137,18 @@ object Optimization {
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
   //subquery sharing.
-  def optimizeIdx[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
-    flatMapToMap(optimizeBase(exp, idxLookup))
+  def optimizeIdx[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] = {
+    val res = flatMapToMap(optimizeBase(exp, idxLookup))
+
+    if (Benchmarking.debugBench && idxLookup) {
+      val reOptim = optimizeIdx(res, idxLookup = false)
+      if (res != reOptim)
+        Console.err.println("optimizeIdx not idempotent on original query %s, optim. query %s, reoptimized query %s"
+          format (exp, res, reOptim))
+    }
+
+    res
+  }
 
   //After letTransformer (an inliner), we can reduce redexes which arised; let's not do that, to avoid inlining
   // let definitions introduced by the user.
