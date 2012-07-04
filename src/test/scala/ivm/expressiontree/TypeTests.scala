@@ -145,16 +145,39 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
 
   import optimization.TransformationExperiments.Transformer
 
+
   //Let's try to express map fusion, which transforms
-  // c map f map g into c map (f andThen g)
+  //  c map f map g
+  //into
+  // c map (f andThen g)
+  val mergeMapsSimplified = new Transformer {
+    def apply[T](e: Exp[T]) = e match {
+      case m: MapNode[t, repr, u, that] => //T = that
+        Util.assertType[Exp[repr]](m.base)
+        val ret1 = (m.base map m.f)(m.c) //This code typechecks
+        Util.assertType[Exp[that]](ret1)
+        Util.assertType[Exp[T]](ret1)
+
+        m.base match {
+          case m2: MapNode[t2, repr2, u2, that2] =>
+            //((m2.base map m2.f)(m2.c) map m.f)(m.c) //doesn't work
+            expToTraversableLikeOps[t, repr](m2.base.map(m2.f)(m2.c)).map(m.f)(m.c) //works
+          case _ => e
+        }
+      case _ => e
+    }
+  }
+
+  //Below a more cluttered version, containing more experiments.
   val mergeMaps = new Transformer {
     //import optimization.&
     def apply[T](e: Exp[T]) = e match {
       //case (m: MapNode[t, repr, u, that]) & MapNode(c, base) => //doesn't refine the type of c and base.
       case m: MapNode[t, repr, u, that] => //T = that
-        //m.base.map(m.f)(m.c)
         Util.assertType[Exp[repr]](m.base)
         val ret1 = (m.base map m.f)(m.c)
+        Util.assertType[Exp[that]](ret1)
+        Util.assertType[Exp[T]](ret1)
 
         m.base match {
           case m2: MapNode[t2, repr2, u2, that2] =>
