@@ -119,20 +119,25 @@ object Optimization {
 
   def basicInlining[T](exp: Exp[T]): Exp[T] = letTransformerUsedAtMostOnce(letTransformerTrivial(exp))
 
+  private def preIndexing[T](exp: Exp[T]): Exp[T] =
+    mapToFlatMap(
+      handleNewMaps(
+        cartProdToAntiJoin(
+          handleFilters(
+            optimizeCartProdToJoin(
+              removeRedundantOption(toTypeFilter(
+                //generalUnnesting, in practice, can produce the equivalent of let statements. Hence it makes sense to desugar them _after_ (at least the trivial ones).
+                flatMapToMap(sizeToEmpty(basicInlining(generalUnnesting(mapToFlatMap(
+                  removeIdentityMaps(betaDeltaReducer(exp))))))))))))))
+
+  private def postIndexing[T](exp: Exp[T]): Exp[T] =
+    handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
+      mergeFilters( //Merge filters again after indexing, since it introduces new filters.
+        simplifyFilters(exp)))))))))
+
   //TODO: rewrite using function composition
   private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
-  handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
-    mergeFilters( //Merge filters again after indexing, since it introduces new filters.
-      simplifyFilters(
-        (if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(mapToFlatMap(
-          handleNewMaps(
-                cartProdToAntiJoin(
-                  handleFilters(
-                    optimizeCartProdToJoin(
-                      removeRedundantOption(toTypeFilter(
-                      //generalUnnesting, in practice, can produce the equivalent of let statements. Hence it makes sense to desugar them _after_ (at least the trivial ones).
-                        flatMapToMap(sizeToEmpty(basicInlining(generalUnnesting(mapToFlatMap(
-                          removeIdentityMaps(betaDeltaReducer(exp)))))))))))))))))))))))) //the call to reducer is to test.
+    postIndexing((if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(preIndexing(exp))) //the call to reducer is to test.
 
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
