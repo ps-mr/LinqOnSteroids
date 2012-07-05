@@ -12,6 +12,7 @@ import Subst.subst
  */
 
 trait SimplificationsOptimTransforms {
+  this: Inlining =>
   val simplifyForceView: Exp[_] => Exp[_] = {
     case View(Force(coll)) => coll
     case Force(View(coll)) => coll
@@ -96,7 +97,7 @@ trait SimplificationsOptimTransforms {
   val betaReduction: PartialFunction[Exp[_], Exp[_]] = {
     //To ensure termination, this must only apply if this rule changes behavior, that is, if App contains a Fun!
     //Otherwise fToFunOps will recreate a new App node.
-    case appNode@App(fun: Fun[_, _], arg)
+    case appNode@App(fun: Fun[_, _], arg) if isTrivial(arg) || usesArgAtMostOnce(fun)
       //if ((body findTotFun (_ == fun.x)).length == 1) //Inlining side conditions. Damn, we need to use unrestricted inlining as here, simplify, and then use CSE again,
       //to have a robust solution.
     =>

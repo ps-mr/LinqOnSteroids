@@ -164,6 +164,8 @@ object Optimization {
 
   //After letTransformer (an inliner), we can reduce redexes which arised; let's not do that, to avoid inlining
   // let definitions introduced by the user.
+  //XXX: problem. The reasoning described above means that this optimizer is not idempotent, since we transform
+  //stuff into App nodes which we beta-reduce only in a second call to the optimizer.
   def optimize[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
     checkIdempotent(exp, idxLookup, "optimize") {
       optimize(_, idxLookup = false)
