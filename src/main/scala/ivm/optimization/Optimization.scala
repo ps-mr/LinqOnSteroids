@@ -121,16 +121,17 @@ object Optimization {
 
   def basicInlining[T](exp: Exp[T]): Exp[T] = letTransformerUsedAtMostOnce(letTransformerTrivial(exp))
 
-  private def preIndexing[T](exp: Exp[T]): Exp[T] =
-    mapToFlatMap(
+  private def preIndexingOld[T](exp: Exp[T]): Exp[T] =
       handleNewMaps(
         cartProdToAntiJoin(
           handleFilters(
             optimizeCartProdToJoin(
-              removeRedundantOption(toTypeFilter(
+              flatMapToMap(removeRedundantOption(toTypeFilter(
                 //generalUnnesting, in practice, can produce the equivalent of let statements. Hence it makes sense to desugar them _after_ (at least the trivial ones).
-                flatMapToMap(sizeToEmpty(basicInlining(generalUnnesting(mapToFlatMap(
-                  removeIdentityMaps(betaDeltaReducer(exp))))))))))))))
+                sizeToEmpty(basicInlining(generalUnnesting(mapToFlatMap(
+                  removeIdentityMaps(betaDeltaReducer(exp)))))))))))))
+
+  private def preIndexing[T](exp: Exp[T]): Exp[T] = newOptimize(exp)
 
   private def postIndexing[T](exp: Exp[T]): Exp[T] =
     handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
@@ -139,7 +140,7 @@ object Optimization {
 
   //TODO: rewrite using function composition
   private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
-    postIndexing((if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(preIndexing(exp))) //the call to reducer is to test.
+    postIndexing((if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(mapToFlatMap(preIndexing(exp)))) //the call to reducer is to test.
 
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
@@ -188,13 +189,15 @@ object Optimization {
 
   // Order in the end: first recognize operator, and only after that try fusion between different operators, since it
   // obscures structures to recognize.
+  // Requires result of mapToFlatMap, produces result of flatMapToMap
   private def physicalOptimize[T](exp: Exp[T]): Exp[T] =
-    (resimplFilterIdentity[T] _ compose existsRenester[T])(exp)
+    (cartProdToAntiJoin[T] _ compose optimizeCartProdToJoin[T] compose flatMapToMap[T] compose resimplFilterIdentity[T] compose existsRenester[T])(exp)
   //cartProdToAntiJoin(optimizeCartProdToJoin(
   private def newHandleFilters[T](exp: Exp[T]): Exp[T] =
     (mergeFilters[T] _ compose hoistFilter[T]
       compose splitFilters[T] compose simplifyConditions[T])(exp)
 
+  //Accepts either normal form
   private def filterFusion[T](exp: Exp[T]): Exp[T] =
     (newHandleFilters[T] _
       compose transformedFilterToFilter[T] compose betaDeltaReducer[T] compose basicInlining[T]
@@ -205,11 +208,12 @@ object Optimization {
   // downcasting exp to Exp[Nothing].
     (handleNewMaps[T] _ compose flatMapToMap[T] //compose ((x: Exp[T]) => /*transformedFilterToFilter*/(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(x)))))
       compose filterFusion[T]
-      compose physicalOptimize[T]
+      compose physicalOptimize[T] //returns result of flatMapToMap
       compose betaDeltaReducer[T]
       compose newHandleFilters[T] //3s
       compose basicInlining[T] //5-7s
       compose existsUnnester[T] //6s
+      compose removeRedundantOption[T] compose toTypeFilter[T] compose sizeToEmpty[T]
       compose generalUnnesting[T] //11s
       compose mapToFlatMap[T] //12-18s
       compose removeIdentityMaps[T] //40s
