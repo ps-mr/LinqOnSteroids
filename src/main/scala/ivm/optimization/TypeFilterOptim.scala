@@ -25,8 +25,8 @@ trait TypeFilterOptim {
     //IfInstanceOf node (with the same type manifest...)
     val containingXParent = fmFun.body.findTotFun(_.children.flatMap(_.children).contains(X))
     val containingX = fmFun.body.findTotFun(_.children.contains(X))
-    containingX.head match {
-      case instanceOfNode@IfInstanceOf(X, _) if containingX.forall(_ == instanceOfNode) =>
+    containingX.headOption match {
+      case Some(instanceOfNode@IfInstanceOf(X, _)) if containingX.forall(_ == instanceOfNode) =>
         if (containingXParent.forall(_ == (instanceOfNode: Exp[Iterable[_]]))) {
           val v = Fun.gensym()
           val transformed = fmFun.body.substSubTerm(containingXParent.head, Seq(v))
@@ -92,8 +92,8 @@ trait TypeFilterOptim {
       }
 
     val containingX = insideConv.findTotFun(_.children.contains(X))
-    containingX.head match {
-      case letNode@ExpSeq(Seq(X)) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
+    containingX.headOption match {
+      case Some(letNode@ExpSeq(Seq(X))) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
         insideConv.substSubTerm(letNode, coll)
       case _ =>
         e
