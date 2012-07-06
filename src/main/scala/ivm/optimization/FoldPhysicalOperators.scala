@@ -79,6 +79,7 @@ trait FoldPhysicalOperators {
 
   val cartProdToAntiJoin: Exp[_] => Exp[_] = {
     case e@Filter(filteredColl,
+    //XXX: doesn't work, add unit test - Forall nodes are just not generated.
     filterFun@FuncExpBody(Forall(forallColl, forallFun@FuncExpBody(Not(Eq(lhs, rhs))))))
       //case FlatMap(fmColl,
       //fmFun @ FuncExpBody(MapNode(Filter(filterColl, filterFun @ FuncExpBody(Not(Eq(lhs, rhs)))), moFun)))

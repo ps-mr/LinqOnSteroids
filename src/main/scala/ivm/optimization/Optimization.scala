@@ -8,6 +8,8 @@ import scala.collection.mutable.Map
 import performancetests.Benchmarking
 
 object Optimization {
+  //Should the two normal forms (after flatMapToMap and after mapToFlatMap) be distinguished by different types?
+
   val subqueries: Map[Exp[_], Any] = Map.empty
 
   def resetSubqueries() = subqueries.clear()
