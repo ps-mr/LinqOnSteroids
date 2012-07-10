@@ -84,4 +84,14 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
     //case App(f: Fun[_, _], exp1) if usesArgAtMostOnce(f) => subst(f)(exp1)
     case e => e
   }
+
+  //XXX to test
+  //This implements rules from "How to Comprehend Queries Functionally", page 14, rules (12a, b).
+  val constantFoldSequences: Exp[_] => Exp[_] = {
+    case FlatMap(ExpSeq(seq), f) =>
+      //Rewrite this as a sequence of expressions.
+      (seq map (x => asExp(Seq(x)) flatMap f)).  //map is at the meta-level, flatMap at the object level.
+      //(seq map (letExp(_)(f))).
+        fold[Exp[Traversable[Any]]] (Seq.empty) (_ ++ _)
+  }
 }
