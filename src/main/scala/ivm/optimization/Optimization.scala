@@ -158,7 +158,7 @@ object Optimization {
     if (Benchmarking.debugBench && doCheck) {
       val reOptim = optim(exp)
       if (exp != reOptim)
-        Console.err.println("%s not idempotent on original query %s, optim. query %s, reoptimized query %s"
+        Console.err.println("%s not idempotent.\nOriginal query:\n>>>>> %s\nOptim. query:\n>>>>> %s\nReoptimized query:\n>>>>> %s"
           format (name, orig, exp, reOptim))
     }
 
