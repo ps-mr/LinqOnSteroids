@@ -13,6 +13,20 @@ import Subst.subst
 
 trait SimplificationsOptimTransforms {
   this: Inlining =>
+  val ifSimplify: Exp[_] => Exp[_] = {
+    case IfThenElse(x @ Var(_), thenBranch, elseBranch) if (thenBranch isOrContains x) || (elseBranch isOrContains x) =>
+      val thenBranchSub = thenBranch substSubTerm (x, true)
+      val elseBranchSub = elseBranch substSubTerm (x, false)
+      if_#(x) { thenBranchSub } else_# { elseBranchSub }
+    case e => e
+  }
+
+  //Valid but unneeded
+  val foldRedundantIf: Exp[_] => Exp[_] = {
+    case IfThenElse(x, Const(true), Const(false)) => x
+    case e => e
+  }
+
   val simplifyForceView: Exp[_] => Exp[_] = {
     case View(Force(coll)) => coll
     case Force(View(coll)) => coll

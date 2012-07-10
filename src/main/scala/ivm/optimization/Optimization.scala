@@ -121,6 +121,8 @@ object Optimization {
 
   def basicInlining[T](exp: Exp[T]): Exp[T] = letTransformerUsedAtMostOnce(letTransformerTrivial(exp))
 
+  def ifSimplify[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.ifSimplify)
+
   private def preIndexingOld[T](exp: Exp[T]): Exp[T] =
       handleNewMaps(
         cartProdToAntiJoin(
@@ -202,7 +204,7 @@ object Optimization {
     (newHandleFilters[T] _
       compose transformedFilterToFilter[T] compose betaDeltaReducer[T] compose basicInlining[T]
       compose mapToFlatMap[T] compose mergeFlatMaps[T] compose mergeMaps[T] compose flatMapToMap[T]
-      compose betaDeltaReducer[T] compose filterToTransformedFilter[T])(exp)
+      compose betaDeltaReducer[T] compose ifSimplify[T] compose filterToTransformedFilter[T])(exp)
 
   def newOptimize[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
   // downcasting exp to Exp[Nothing].

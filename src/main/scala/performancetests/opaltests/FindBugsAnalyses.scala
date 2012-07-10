@@ -223,6 +223,22 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     Call1('TraversableLike$toSet, MapNode(Filter(ClassFile_fields6(v129),v263 => ClassMember_isPrivate2(v263)),v342 => Field_name1(v342)))))
   */
 
+  /*2012-07-06 18:12
+  FlatMap(Filter(
+    ConstByIdentity(List(ClassFile(0,50,33,ObjectType(className="bugs/SuperA"),Some(ObjectType(className="java/lang/Obje..."))))),
+    v3784 => Not(ClassFile_isInterfaceDeclaration14(v3784))),
+    v3728 => MapNode(Filter(
+      ExpSeq(List(Call1('TraversableLike$toSet, MapNode(Filter(ClassFile_fields6(v3728),v3786 => ClassMember_isPrivate2(v3786)),v4084 => Field_name1(v4084))))),
+      v3790 => Not(IsEmpty(
+        Filter(
+          ExpSeq(List(Diff(v3790,
+          TypeCaseExp(FlatMap(ClassFile_methods7(v3728),
+            v3765 => FlatMap(Call1('Option_option2Iterable, Method_body12(v3765)),v3764 => Code_instructions2(v3764))),
+            ArrayBuffer(
+              TypeCase(class de.tud.cs.st.bat.resolved.GETFIELD,v3766 => Eq(Call1('declaringClass, v3766),ClassFile_thisClass3(v3728)),v3767 => Call1('name, v3767)),
+              TypeCase(class de.tud.cs.st.bat.resolved.GETSTATIC,v3768 => Eq(Call1('declaringClass, v3768),ClassFile_thisClass3(v3728)),v3769 => Call1('name, v3769))))))),
+          v3788 => Not(IsEmpty(v3788)))))),
+  v4085 => LiftTuple2(v3728,v4085)))*/
   test("UnusedFields") {
     analyzeUnusedFields()
   }
@@ -549,6 +565,34 @@ Call1('TraversableLike$toSet,
       } yield superclass // there can be at most one method
     }
   }
+
+  /*
+  //2012-07-06 18:12 - optim results, idempotence problem.
+  //optim:
+  FlatMap(Filter(ConstByIdentity(List(ClassFile(0,50,33,ObjectType(className="bugs/SuperA"),Some(ObjectType(className="java/lang/Obje..."))))),
+    v9334 => ClassFile_isClassDeclaration12(v9334)),
+    v9316 => MapNode(Filter(ClassFile_methods7(v9316),
+
+      v9340 => Not(IsEmpty(Filter(Call1('Option_option2Iterable, Method_body12(v9340)),
+        v9338 =>
+
+          Not(IsEmpty(Filter(Code_exceptionHandlers3(v9338),
+          v9336 => Eq(ExceptionHandler_catchType3(v9336),
+            Const(ObjectType(className="java/lang/IllegalMonitorStateException")))))))))),
+      v9521 => LiftTuple2(v9316,v9521)))
+  //reoptim:
+  FlatMap(Filter(ConstByIdentity(List(ClassFile(0,50,33,ObjectType(className="bugs/SuperA"),Some(ObjectType(className="java/lang/Obje..."))))),
+    v9539 => ClassFile_isClassDeclaration12(v9539)),
+    v9316 => MapNode(Filter(ClassFile_methods7(v9316),
+
+      v9543 => Not(IsEmpty(FlatMap(Call1('Option_option2Iterable, Method_body12(v9543)),
+        v9536 => App(v9537 => IfThenElse(v9537,ExpSeq(List(v9537)),ExpSeq(List())),
+
+          Not(IsEmpty(Filter(Code_exceptionHandlers3(v9536),
+            v9541 => Eq(ExceptionHandler_catchType3(v9541),
+              Const(ObjectType(className="java/lang/IllegalMonitorStateException"))))))))))),
+      v9554 => LiftTuple2(v9316,v9554)))
+      */
 
   test("CatchIllegalMonitorStateException") {
     analyzeCatchIllegalMonitorStateException()
