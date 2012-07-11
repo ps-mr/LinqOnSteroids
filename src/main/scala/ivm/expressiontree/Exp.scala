@@ -77,6 +77,7 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
     }
     treeMap(mapper)
   }
+  def toCode: String = ""
 
   //Methods for the clients of the library, rather than for the implementations.
   //They simply produce the appropriate expression tree nodes.

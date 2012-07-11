@@ -7,9 +7,10 @@ import actors.threadpool.AtomicInteger
 // encodings of the STLC (simply typed lambda calculus).
 //Having explicit App nodes for application can be useful to represent application instead of computing it,
 //since computing it means inlining and can replicate terms.
-case class App[T, U](f: Exp[T => U], t: Exp[T]) extends Arity2OpExp[T => U, T, U, App[T, U]](f, t) {
+case class App[T, U](f: Exp[T => U], t: Exp[T]) extends Arity2OpExp[T => U, T, U, App[T, U]](f, t) with InfixPrinting {
   def interpret() = f.interpret()(t.interpret())
   override def copy(f: Exp[T => U], t: Exp[T]) = App(f, t)
+  def operator = "apply"
 }
 
 abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
@@ -74,6 +75,7 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
   override def canEqual(other: Any): Boolean = other.isInstanceOf[PartialFuncExp[_,_]]
   //Copied from Arity1OpTrait:
   def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[Option[T]]])
+  override def toCode = "Function.unlift(%s)" format (Fun(f).toCode)
 }
 
 //The higher-order representation is constructed and passed to Fun to share code.
@@ -102,6 +104,7 @@ class FunInterp[S, T](val foasBody: Exp[T], v: TypedVar[S]) extends Fun[S, T](Fu
     }
     */
   }
+  override def toCode = "%s => %s" format (v.toCode, body.toCode)
 }
 
 object FunInterp {
@@ -124,6 +127,7 @@ class FunInterp2[S1, S2, T](val foasBody: Exp[T], v1: TypedVar[S1], v2: TypedVar
     }
     interpFun
   }
+  override def toCode = "(%s, %s) => %s" format (v1.toCode, v2.toCode, body.toCode)
 }
 
 class ScalaThreadLocal[T](v: => T) extends ThreadLocal[T] {

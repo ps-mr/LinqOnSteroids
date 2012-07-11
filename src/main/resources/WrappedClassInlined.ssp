@@ -27,11 +27,12 @@ val classFile: String %>
      if (n.isCaseAccessor)
        caseClassSelectorIdx += 1
 %>
-  case class ${wName}${unescape(getTypeParameters(n))}(t: Exp[${className}]${paramsDef}) extends Arity${arity}Op[Exp[${className}]${getParameterTypesAsString(n, ",", "")},${getResultType(n, false)},${wName}${getTypeArgs(n)}](t${paramTypes})<%
+  case class ${wName}${unescape(getTypeParameters(n))}(t: Exp[${className}]${paramsDef}) extends Arity${arity}Op[Exp[${className}]${getParameterTypesAsString(n, ",", "")},${getResultType(n, false)},${wName}${getTypeArgs(n)}](t${paramTypes}) with InfixPrinting<%
   if (n.isCaseAccessor) {
     %> with ExpSelection[${className}]<%
   } %> {
     def interpret() = t.interpret().${n.name}${getParameterNamesAsString(n, transform = x => x + ".interpret()")}
+    def operator = "${n.name}"
     def copy(t: Exp[${className}]${paramsDef}) = new ${wName}(t${paramsToPass})<%
       if (n.isCaseAccessor) {%>
 
@@ -58,9 +59,10 @@ val classFile: String %>
       %>
 
   case class ${wrapperClassName}${unescape(getTypeParameters(n))}${getParametersAsString(n)}
-    extends Arity${caseClassArity}Op[${getParameterTypesAsString(n, "", "")}, ${className}, ${wrapperClassName}${unescape(getTypeParameters(n))}]${getParameterNamesAsString(n)} with ExpProduct {
+    extends Arity${caseClassArity}Op[${getParameterTypesAsString(n, "", "")}, ${className}, ${wrapperClassName}${unescape(getTypeParameters(n))}]${getParameterNamesAsString(n)} with ExpProduct with PrefixPrinting {
     def copy${getParametersAsString(n)} = ${wrapperClassName}${getParameterNamesAsString(n)}
     def interpret() = ${fullClassName}${getParameterNamesAsString(n, transform = x => x + ".interpret()")}
+    def prefix = "${fullClassName}"
     def metaProductArity = ${caseClassArity}
     def metaProductElement(n: Int): Exp[Any] = (n: @switch) match {
 #for (pos <- 0 to caseClassArity - 1)

@@ -1,7 +1,8 @@
 package ivm.expressiontree
 
-case class Eq[/*@specialized(Int, Boolean, Double)*/ T](t1: Exp[T], t2: Exp[T]) extends Arity2OpSymmExp[T, Boolean, Eq[T]] {
+case class Eq[/*@specialized(Int, Boolean, Double)*/ T](t1: Exp[T], t2: Exp[T]) extends Arity2OpSymmExp[T, Boolean, Eq[T]] with InfixPrinting {
   def copy(x: Exp[T], y: Exp[T]) = Eq(x, y)
+  def operator = "=="
   def interpret() = {
     val v1 = t1.interpret()
     val v2 = t2.interpret()

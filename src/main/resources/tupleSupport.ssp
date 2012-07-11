@@ -69,9 +69,10 @@ abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDeclOv
 /////////////////////////////////////////
 
 case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparams}) => Res, ${paramsDeclOverride})
-    extends Arity${arity}OpExp[${tparams}, Res, Call${arity}[${tparams}, Res]](${params}) with Call[Res] {
+    extends Arity${arity}OpExp[${tparams}, Res, Call${arity}[${tparams}, Res]](${params}) with Call[Res] with InfixPrinting {
   def copy(${paramsDecl}) = new Call${arity}(id, callfunc, ${params})
   def interpret() = callfunc(${interpretParams})
+  def operator = id.name
 }
 
 #end <%-- //We close and reopen the loop because there are no unary tuples. --%>
@@ -82,22 +83,24 @@ case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparam
 // SUPPORT FOR TUPLES OF ARITY ${arity} //
 //////////////////////////////////////////
 
-case class LiftTuple${arity}[${tparams}](${paramsDeclOverride}) extends Arity${arity}OpExp[${tparams}, (${tparams}), LiftTuple${arity}[${tparams}]](${params}) with ExpProduct {
+case class LiftTuple${arity}[${tparams}](${paramsDeclOverride}) extends Arity${arity}OpExp[${tparams}, (${tparams}), LiftTuple${arity}[${tparams}]](${params}) with ExpProduct with PrefixPrinting {
   def copy(${paramsDecl}) = LiftTuple${arity}(${params})
   def interpret() = (${interpretParams})
   def metaProductArity: Int = ${arity}
   def metaProductElement(n: Int): Exp[Any] = (n: @switch) match {
     ${baseParLoop(arity)(i => "case %d => %s%d" format (i - 1, argPfx, i), "\n    ")}
   }
+  def prefix = ""
 }
 
 #for (i <- 1 to arity)
 case class Tuple${arity}Proj${i}[${tparams}](p: Exp[(${tparams})]) extends Arity1OpExp[(${tparams}), A${i}, Tuple${arity}Proj${i}[${tparams}]](p) with
-  ExpSelection[(${tparams})]
+  ExpSelection[(${tparams})] with InfixPrinting
 {
   val body: (Int, Int, Exp[(${tparams})]) = (${arity}, ${i}, p)
   def copy(p: Exp[(${tparams})]) = Tuple${arity}Proj${i}(p)
   def interpret() = p.interpret()._${i}
+  def operator = "_${i}"
 }
 #end
 

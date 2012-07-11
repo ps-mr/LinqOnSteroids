@@ -2,6 +2,7 @@ package ivm.expressiontree
 
 case class Const[T](x: T) extends Arity0Exp[T] {
   override def interpret() = x
+  override def toCode = x.toString //XXX: This sucks in a _lot_ of ways. Barely good for testing.
   override def toString = {
     val s =
       x match {

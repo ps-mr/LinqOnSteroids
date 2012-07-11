@@ -69,7 +69,7 @@ trait OptionLifting extends BaseExps {
 
   //Note: even though ExpOption does not directly contain Exp nodes, it contains them indirectly, and they also need to be
   //transformed.
-  case class ExpOption[T](e: Option[Exp[T]]) extends Exp[Option[T]] {
+  case class ExpOption[T](e: Option[Exp[T]]) extends Exp[Option[T]] with PrefixPrinting {
     override def children = e.toSeq
     override def nodeArity = e.size
     override protected def checkedGenericConstructor: Seq[Exp[_]] => Exp[Option[T]] = {
@@ -81,6 +81,10 @@ trait OptionLifting extends BaseExps {
         ExpOption(Some(e.asInstanceOf[Exp[T]]))
     }
     override def interpret() = e.map(_.interpret())
+    def prefix = e match {
+      case Some(_) => "Some"
+      case _ => "None"
+    }
   }
   implicit def OptionExp2ExpOption[T](e: Option[Exp[T]]): Exp[Option[T]] = ExpOption(e)
 }

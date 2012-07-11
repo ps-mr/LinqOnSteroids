@@ -10,6 +10,7 @@ case class ExoticTermException(msg: String) extends IllegalArgumentException(msg
 case class TypedVar[+T](id: Int) extends Arity0Exp[T] {
   def name = "v" + id
   override def toString() = name
+  override def toCode = name
   def interpret(): T = {
     FunInterp.env.get().get(id) match {
       case Some(v) => v.asInstanceOf[T]
