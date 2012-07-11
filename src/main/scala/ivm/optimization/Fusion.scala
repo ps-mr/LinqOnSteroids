@@ -4,6 +4,8 @@ package optimization
 import expressiontree._
 import Lifting._
 import OptimizationUtil._
+import collection.generic.CanBuildFrom
+import collection.TraversableLike
 
 /**
  * User: pgiarrusso
@@ -11,14 +13,17 @@ import OptimizationUtil._
  */
 
 trait Fusion {
-  private def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: Fun[T, U], g: Fun[U, V]): Exp[Traversable[V]] =
-    coll.map(x => letExp(f(x))(g))
+  private def buildMergedMaps[
+    T, U, V, To <: Traversable[V] with TraversableLike[V, To]](coll: Exp[Traversable[T]],
+                                                               f: Fun[T, U], g: Fun[U, V],
+                                                               cbf: CanBuildFrom[Nothing, V, To with TraversableLike[V, To]]): Exp[To] =
+    coll.map(x => letExp(f(x))(g))(collection.breakOut(cbf))
 
   val mergeMaps: Exp[_] => Exp[_] = {
-    case MapNode(MapNode(coll, f), g) =>
+    case m @ MapNode(MapNode(coll, f), g) =>
       //Since inner nodes were already optimized, coll will not be a MapNode node, hence we needn't call mergeMaps on the
       //result.
-      buildMergedMaps(coll, f, g)
+      buildMergedMaps(coll, f, g, m.c)
     case e => e
   }
 
