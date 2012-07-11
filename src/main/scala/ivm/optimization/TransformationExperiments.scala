@@ -52,6 +52,10 @@ object TransformationExperiments {
     def apply[T](e: Exp[T]): Exp[T]
   }
 
+  trait TransformerOpt {
+    def apply[T](e: Exp[T]): Option[Exp[T]]
+  }
+
   val mergeMaps2: Transformer = new Transformer {
     def apply[T](e: Exp[T]) = e match {
       case MapNode(MapNode(coll, f1), f2) =>
@@ -90,13 +94,13 @@ object TransformationExperiments {
   }*/
 
   val mergeMaps: PartialFunction[Exp[_], Exp[_]] = {
-    case MapNode(MapNode(coll, f), g) =>
+    case MapNode(m@MapNode(coll, f), g) =>
       //coll.map(g.f andThen f.f)  //This line passes the typechecker happily, even if wrong. Hence the actual code
       //exploits parametricity: it generates the new body in a generic function which can be typechecked, and calls it
       //with Any, Any, Any as type parameters since that's what type inference will deduce:
       //  buildMergedMaps(coll, f, g)
       //coll map (x => g(f(x))) //Simplest syntax
-      coll map (f andThen g) //Demonstrate norm-by-eval.
+      (coll map (f andThen g))(m.c) //Demonstrate norm-by-eval.
   }
   val mergeFilterWithMap: Exp[_] => Exp[_] = {
     //This case, together with inlinng and transformedFilterToFilter, is equivalent to what Tillmann suggested and
@@ -118,5 +122,36 @@ object TransformationExperiments {
   /*val mapToFlatMap: Exp[_] => Exp[_] = {
     case Call2(OptionOps.OptionMapId, _, c: Exp[Option[t]], f: Fun[_, u]) =>
       c flatMap Fun.makefun(Some(f.body), f.x)
+  }*/
+  val mergeMapsTyped = new TransformerOpt {
+    //import optimization.&
+    def apply[T](e: Exp[T]) = e match {
+      //case (m: MapNode[t, repr, u, that]) & MapNode(c, base) => //doesn't refine the type of c and base.
+      case m: MapNode[t, repr, u, that] => //T = that
+        Util.assertType[Exp[repr]](m.base)
+        val ret1 = (m.base map m.f)(m.c)
+        Util.assertType[Exp[that]](ret1)
+        Util.assertType[Exp[T]](ret1)
+
+        m.base match {
+          case m2: MapNode[t2, repr2, u2, that2] =>
+            Some((expToTraversableLikeOps[t /*u2*/, /*that2*/ repr]((m2.base map m2.f)(m2.c)) map m.f)(m.c)) //works
+          case _ => None
+        }
+      case _ => None
+    }
+  }
+  //This just doesn't work, the type of m.base is Exp[repr with Traversable[t]].
+  /*def mergeMapsPartial[T]: PartialFunction[Exp[T], Exp[T]] = ({
+    //case (m: MapNode[t, repr, u, that]) & MapNode(c, base) => //doesn't refine the type of c and base.
+    case m: MapNode[t, repr, u, that] => //T = that
+      Util.assertType[Exp[repr]](m.base)
+      val ret1 = (m.base map m.f)(m.c)
+      Util.assertType[Exp[that]](ret1)
+      Util.assertType[Exp[T]](ret1)
+      m.base
+  }: PartialFunction[Exp[T], Exp[T]]).andThen[Exp[T]] {
+    case m2: MapNode[t2, repr2, u2, that2] =>
+      (expToTraversableLikeOps[t /*u2*/, /*that2*/ repr]((m2.base map m2.f)(m2.c)) map m.f)(m.c)
   }*/
 }
