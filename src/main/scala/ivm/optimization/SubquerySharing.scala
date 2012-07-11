@@ -52,7 +52,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
   val directsubqueryShare: Exp[_] => Exp[_] =
     e => subqueries.get(normalizeBeforeLookup(e)) match {
-      case Some(t) => asExp(new ConstByIdentity(t)) //this gives the right behavior but is a hack
+      case Some(t) => new ConstByIdentity(t) //this gives the right behavior but is a hack
       case None => e
     }
 

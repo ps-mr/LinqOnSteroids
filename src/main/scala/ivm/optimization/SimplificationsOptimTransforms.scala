@@ -72,6 +72,7 @@ trait SimplificationsOptimTransforms {
   }
 
   /*
+  /*
    * Thanks for the idea to Tillmann Rendel - this optimization was one of his insightful side remarks.
    * His actual comment was that this optimization (which he assumed to be done) introduces the possibility of
    * non-termination if interpret() is ever non-terminating.
@@ -95,6 +96,7 @@ trait SimplificationsOptimTransforms {
       else
         e
   }
+  */
 
   //This is used only at the end, to convert the remaining Let()s into function applications; they are however
   //_not_ beta-reduced, so that computation is not duplicated.

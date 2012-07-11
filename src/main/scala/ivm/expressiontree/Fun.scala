@@ -54,8 +54,8 @@ abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
 }
 
 abstract class Fun[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S => T] {
-  def interpret(): S => T =
-    z => f(Const(z)).interpret()
+  //def interpret(): S => T =
+    //z => f(Const(z)).interpret()
 
   def copy[U >: T](t1: Exp[U]): Fun[S, U] = Fun.makefun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[Fun[_,_]]

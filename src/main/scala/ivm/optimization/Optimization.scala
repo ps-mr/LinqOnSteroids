@@ -81,7 +81,7 @@ object Optimization {
   def letTransformer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformer)
 
   //This should be called after any sort of inlining, including for instance map fusion.
-  def betaDeltaReducer[T](exp: Exp[T]): Exp[T] = constantFolding(exp.transform(OptimizationTransforms.betaDeltaReducer))
+  def betaDeltaReducer[T](exp: Exp[T]): Exp[T] = /*constantFolding*/(exp.transform(OptimizationTransforms.betaDeltaReducer))
 
   def existsRenester[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.existsRenester)
 
@@ -99,7 +99,7 @@ object Optimization {
 
   def filterToTransformedFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.filterToTransformedFilter)
 
-  def constantFolding[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.constantFolding)
+  //def constantFolding[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.constantFolding)
 
   //removeIdentityMaps is appropriate here because typed-indexing can introduce identity maps.
   def shareSubqueries[T](query: Exp[T]): Exp[T] =

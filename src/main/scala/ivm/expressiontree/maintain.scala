@@ -183,6 +183,7 @@ class MapNodeMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
   override def copy(base: Exp[Repr], f: Fun[T, U]) = new MapNodeMaintainerExp[T, Repr, U, That](base, f)
 }
 
+/*
 class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
                  U, That <: Traversable[U]](base: Exp[Repr], f: Fun[T, Traversable[U]])
                          (implicit override val c: CanBuildFrom[Repr, U, That]) extends FlatMap[T, Repr, U, That](base, f)
@@ -195,6 +196,7 @@ class FlatMapMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Rep
 
   override def copy(base: Exp[Repr], f: Fun[T, Traversable[U]]) = new FlatMapMaintainerExp[T, Repr, U, That](base, f)
 }
+*/
 
 class FilterMaintainerExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr], p: Fun[T, Boolean]) extends Filter[T, Repr](base, p)
     with FilterMaintainer[T, Exp[Repr]] with OneRootTraversableMaintainer[T, Repr, Repr] with MsgSeqPublisher[Repr, FilterMaintainerExp[T, Repr]] {
