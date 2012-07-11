@@ -35,14 +35,15 @@ trait NumericOptimTransforms {
   // addition (XXX which is a pessimization if no constants are involved)
   def buildSum[T: Numeric](l: Exp[T], r: Exp[T]): Exp[T] = {
     r match {
-      case Const(rV) => l match {
-        case Const(a) => //R1
-          a + rV
-        case Plus(Const(a), b) => //R9 - must be before R2!
-          buildSum(a + rV, b)
-        case _ => //R2 - must be after R1!
-          buildSum(r, l)
-      }
+      case rc @ Const(rV) =>
+        l match {
+          case Const(a) => //R1
+            a + rV
+          case Plus(Const(a), b) => //R9 - must be before R2!
+            buildSum(a + rV, b)
+          case _ => //R2 - must be after R1!
+            buildSum(r, l)
+        }
       case Plus(rl, rr) => //R7
         buildSum(buildSum(l, rl), rr)
       case _ =>
@@ -69,14 +70,15 @@ trait NumericOptimTransforms {
   //Copy-n-paste of buildSum. We don't use the distributive rule currently.
   def buildProd[T: Numeric](l: Exp[T], r: Exp[T]): Exp[T] = {
     r match {
-      case Const(rV) => l match {
-        case Const(a) => //R1
-          a * rV
-        case Plus(Const(a), b) => //R9 - must be before R2!
-          buildProd(a * rV, b)
-        case _ => //R2 - must be after R1!
-          buildProd(r, l)
-      }
+      case Const(rV) =>
+        l match {
+          case Const(a) => //R1
+            a * rV
+          case Plus(Const(a), b) => //R9 - must be before R2!
+            buildProd(a * rV, b)
+          case _ => //R2 - must be after R1!
+            buildProd(r, l)
+        }
       case Times(rl, rr) => //R7
         buildProd(buildProd(l, rl), rr)
       case _ =>
