@@ -43,16 +43,17 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     val expectedOptQuery = expectedOptQueryProducer(idxRes)
     query.interpret() should be (expectedOptQuery.interpret().force) //The call to force makes sure that
     // the expected value in error messages shows the actual collection contents.
+    def constantFolding[T](t: Exp[T]) = /*Optimization constantFolding */ t
 
     Optimization.addIndex(idx, Some(idxRes))
     val optQuery =
       if (fullOptim)
         Optimization.optimize(query)
       else
-        Optimization constantFolding shareSubqueriesOpt(query)
+        constantFolding(shareSubqueriesOpt(query))
     Optimization.removeIndex(idx)
 
-    optQuery should be (Optimization constantFolding expectedOptQuery)
+    optQuery should be (constantFolding(expectedOptQuery))
     //We assumed that if optQuery == expectedOptQuery, then optQuery.interpret() == expectedOptQuery.interpret() == query.interpret()
     //but manifests could be different!
     optQuery.interpret() should be (expectedOptQuery.interpret())
