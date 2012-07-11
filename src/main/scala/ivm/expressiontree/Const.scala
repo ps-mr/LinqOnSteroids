@@ -7,9 +7,9 @@ case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends 
       case s: String =>
         """"%s"""" format s
       case x: Number =>
-        if (toEval)
+        /*if (toEval)
           "(" + x.toString + ")"
-        else
+        else*/
           x.toString
       case _ =>
         String.valueOf(x)

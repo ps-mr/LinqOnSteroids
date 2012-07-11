@@ -7,7 +7,10 @@ package ivm.expressiontree
 
 trait InfixPrinting {
   this: Exp[_] =>
-  override def toCode: String = children.head.toCode + "." + operator + children.tail.map(_.toCode).mkString("(", ", ", ")")
+  override def toCode: String = children.head.toCode +
+    //"." +
+    " " +
+    operator + children.tail.map(_.toCode).mkString("(", ", ", ")")
   def operator: String
 }
 
