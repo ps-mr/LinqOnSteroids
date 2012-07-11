@@ -24,7 +24,7 @@ case class Plus[T](override val t1: Exp[T], override val t2: Exp[T])(implicit va
 
 case class Times[T](override val t1: Exp[T], override val t2: Exp[T])(implicit val isNum: Numeric[T]) extends CommOp[T, Times[T]](t1, t2) with InfixPrinting {
   def op = _ * _
-  def operator = "-"
+  def operator = "*"
   def copy(x: Exp[T], y: Exp[T]) = Times(x, y)
 }
 
