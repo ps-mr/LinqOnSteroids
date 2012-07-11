@@ -123,8 +123,8 @@ trait TraversableOps {
 
   //Compare collection nodes by identity.
   //Saves costs when comparing collections, which happens during optimization.
-  implicit def pureColl[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Repr with Traversable[T]): Exp[Repr] =
-    new ConstByIdentity(v)
+  implicit def pureColl[T, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassManifest](v: Repr with Traversable[T]): Exp[Repr] =
+    ConstByIdentity(v)
 
   //This version does not work, due to https://issues.scala-lang.org/browse/SI-5298:
   //implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr])
@@ -141,7 +141,7 @@ trait TraversableOps {
    * irrespective of the order in which the bounds are considered. */
   implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with TraversableLike[T, Repr]]) =
     new TraversableLikeOps[T, Repr](v)
-  implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Repr with TraversableLike[T, Repr]) =
+  implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassManifest](v: Repr with TraversableLike[T, Repr]) =
     expToTraversableLikeOps(v)
 
   //Ranges are cheap to compare for equality; hence we can easily use pure, not pureColl, for them.
@@ -156,12 +156,12 @@ trait TraversableOps {
     extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]](tp)
 
   implicit def expToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Exp[TraversableView[T, Repr]]): TraversableViewOps[T, Repr] = new TraversableViewOps(t)
-  implicit def tToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
+  implicit def tToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassManifest](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
 
   implicit def expToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: Exp[TraversableView[T, C[_]]]): TraversableViewOps[T, C[T]] = expToTravViewExp(
     t.asInstanceOf[Exp[TraversableView[T, C[T]]]])
   //XXX
-  implicit def tToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
+  implicit def tToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]])(implicit evidence: ClassManifest[C[_]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
 
   implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e)
 }
@@ -233,7 +233,7 @@ trait CollectionMapOps {
   }
   implicit def expToMapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]](v: Exp[Repr with Map[K, V]]) =
     new MapLikeOps[K, V, Repr] {val t = v}
-  implicit def toMapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]](v: Repr with Map[K, V]) =
+  implicit def toMapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]: ClassManifest](v: Repr with Map[K, V]) =
     expToMapLikeOps(v)
 }
 
@@ -275,7 +275,7 @@ trait CollectionSetOps {
 
   implicit def expToSetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]](v: Exp[Repr with Set[T]]) =
     new SetLikeOps[T, Repr] {val t = v}
-  implicit def toSetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]](v: Repr with Set[T]) =
+  implicit def toSetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]: ClassManifest](v: Repr with Set[T]) =
     expToSetLikeOps(v)
   implicit def CollectionSetExp2ExpCollectionSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
 }

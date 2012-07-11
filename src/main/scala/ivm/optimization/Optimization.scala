@@ -10,10 +10,11 @@ import performancetests.Benchmarking
 object Optimization {
   //Should the two normal forms (after flatMapToMap and after mapToFlatMap) be distinguished by different types?
 
-  val subqueries: Map[Exp[_], Any] = Map.empty
+  val subqueries: Map[Exp[_], (Any, ClassManifest[_])] = Map.empty
+  val castedSubqueries = subqueries.asInstanceOf[Map[Exp[_], (Any, ClassManifest[Any])]]
 
   def resetSubqueries() = subqueries.clear()
-  def addIndex[T](_query: UnconvertedExp[Exp[T]], res: Option[T] = None) {
+  def addIndex[T: ClassManifest](_query: UnconvertedExp[Exp[T]], res: Option[T] = None) {
     val query = OptimizationUtil.stripViewUntyped(_query.v)
     val optquery = optimizeIdx(query)
     val intQuery = res match {
@@ -24,8 +25,8 @@ object Optimization {
 
     //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the
     // optimizer. TODO: Reconsider again whether this is a good idea.
-    subqueries += normalize(query) -> intQuery
-    subqueries += normalize(optquery) -> intQuery
+    subqueries += normalize(query) -> (intQuery, classManifest[T])
+    subqueries += normalize(optquery) -> (intQuery, classManifest[T])
   }
 
   def removeIndex[T](_query: UnconvertedExp[Exp[T]]) {
@@ -103,7 +104,7 @@ object Optimization {
 
   //removeIdentityMaps is appropriate here because typed-indexing can introduce identity maps.
   def shareSubqueries[T](query: Exp[T]): Exp[T] =
-    removeIdentityMaps(new SubquerySharing(subqueries).shareSubqueries(query))
+    removeIdentityMaps(new SubquerySharing(castedSubqueries).shareSubqueries(query))
 
   //Internally converts to flatMap normal form
   def handleFilters[T](exp: Exp[T]): Exp[T] =

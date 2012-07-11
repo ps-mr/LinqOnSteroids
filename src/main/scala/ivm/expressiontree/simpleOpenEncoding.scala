@@ -33,7 +33,7 @@ trait LiftingConvs extends ConversionDisabler {
   //but it does not work (bug https://issues.scala-lang.org/browse/SI-3346).
   //implicit def pure[T, U <% T](t: U): Exp[T] = Const(t)
   //So let's keep it simple.
-  implicit def pure[T](t: T): Exp[T] = Const(t)
+  implicit def pure[T: ClassManifest](t: T): Exp[T] = Const(t)
 
   //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
   //parameter of Exp here.
@@ -198,14 +198,14 @@ trait NumOps {
   //Doesn't work because of https://issues.scala-lang.org/browse/SI-3346 - expToNumOps is the same as mkOps in their example.
   //Solution 2:
   implicit def expToNumOps[T: Numeric](t: Exp[T]) = new NumericOps(t)
-  implicit def toNumOps[T: Numeric](t: T) = expToNumOps(t)
+  implicit def toNumOps[T: Numeric: ClassManifest](t: T) = expToNumOps(t)
 
   //Same for the others:
   implicit def expToFractionalOps[T: Fractional](t: Exp[T]) = new FractionalOps(t)
-  implicit def toFractionalOps[T: Fractional](t: T) = expToFractionalOps(t)
+  implicit def toFractionalOps[T: Fractional: ClassManifest](t: T) = expToFractionalOps(t)
 
   implicit def expToIntegralOps[T: Integral](t: Exp[T]) = new IntegralOps(t)
-  implicit def toIntegralOps[T: Integral](t: T) = expToIntegralOps(t)
+  implicit def toIntegralOps[T: Integral: ClassManifest](t: T) = expToIntegralOps(t)
 }
 
 trait BaseTypesOps {
@@ -240,7 +240,7 @@ trait BaseTypesOps {
    * just having a polymorphic lift conversion. Other solutions are possible here but don't remove this ambiguity that
    * affects client code then.
    */
-  implicit def toOrderingOps[T: Ordering](t: T) = expToOrderingOps(t)
+  implicit def toOrderingOps[T: Ordering: ClassManifest](t: T) = expToOrderingOps(t)
   implicit def toStringOps(t: String) = expToStringOps(t)
   implicit def toBooleanOps(t: Boolean) = expToBooleanOps(t)
 }

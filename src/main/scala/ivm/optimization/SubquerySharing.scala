@@ -31,7 +31,7 @@ object SubquerySharing {
   }
 }
 
-class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
+class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassManifest[Any])]) {
   import SubquerySharing._
 
   // To perform index lookup, we need to put both indexes and original queries in normal form-and it should be the
@@ -52,7 +52,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], Any]) {
 
   val directsubqueryShare: Exp[_] => Exp[_] =
     e => subqueries.get(normalizeBeforeLookup(e)) match {
-      case Some(t) => new ConstByIdentity(t) //this gives the right behavior but is a hack
+      case Some((t, tMan)) => ConstByIdentity(t)(tMan) //this gives the right behavior but is a hack
       case None => e
     }
 

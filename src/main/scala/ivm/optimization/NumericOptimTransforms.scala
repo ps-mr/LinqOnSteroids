@@ -36,6 +36,7 @@ trait NumericOptimTransforms {
   def buildSum[T: Numeric](l: Exp[T], r: Exp[T]): Exp[T] = {
     r match {
       case rc @ Const(rV) =>
+        implicit val manifest = rc.classManifest
         l match {
           case Const(a) => //R1
             a + rV
@@ -70,7 +71,8 @@ trait NumericOptimTransforms {
   //Copy-n-paste of buildSum. We don't use the distributive rule currently.
   def buildProd[T: Numeric](l: Exp[T], r: Exp[T]): Exp[T] = {
     r match {
-      case Const(rV) =>
+      case rc @ Const(rV) =>
+        implicit val manifest = rc.classManifest
         l match {
           case Const(a) => //R1
             a * rV
@@ -87,7 +89,8 @@ trait NumericOptimTransforms {
   }
 
   val reassociateOps: Exp[_] => Exp[_] = {
-    case n@Negate(Const(c)) =>
+    case n@Negate(constNode@Const(c)) =>
+      implicit val manifest = constNode.classManifest
       n.isNum.negate(c)
     case p@Plus(l, r) =>
       buildSum(l, r)(p.isNum)
