@@ -218,6 +218,7 @@ trait BaseTypesOps {
     def >=(that: Exp[T]): Exp[Boolean] = LEq(that, this.t)
   }
 
+  //No. Not both operands must be strings, just one is enough.
   class StringOps(t: Exp[String]) {
     def +(that: Exp[String]): Exp[String] = StringConcat(t, that)
     def contains(that: Exp[CharSequence]) = fmap(this.t, that)('StringOps$contains, _ contains _)
