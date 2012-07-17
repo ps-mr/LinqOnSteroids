@@ -7,29 +7,33 @@ case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends 
     //"""java.lang.%s.parse%s("%s")""".format(typ, typ, x.toString)
     Compile.addVar(this)
   }
+
+  private val allowInlineInEval = false
+
   private def show(toEval: Boolean = false): String = {
     import java.{lang => jl}
     val maxInlineStringLength = 10
+    val allowInline = allowInlineInEval || !toEval
     (toEval, x) match {
       //Strings can be always represented directly, but for long strings that's not a good idea, since the string will
       //have to be parsed again.
-      case (_, s: String) if !toEval || s.length < maxInlineStringLength =>
+      case (_, s: String) if allowInline || s.length < maxInlineStringLength =>
         "\"%s\"" format s
-      case (_, c: Char) =>
+      case (_, c: Char) if allowInline =>
         "'%c'" format c
       case (false, x: Number) =>
         x.toString
       //case (true, x: Int) => //Doesn't work.
-      case (true, x: jl.Integer) =>
+      case (true, x: jl.Integer) if allowInline =>
         x.toString
       // More precision for non-integral numbers. We might want to drop this case and use standard CSP for non-integers
       // or at least for floating-point values - where some numbers pretty-print as strings that are not valid literals
       // (such as "Infinity"). Integer numbers can be added by suffixes.
-      case (true, x: Double) =>
+      case (true, x: Double) if allowInline =>
         showFP(x)
-      case (true, x: Float) =>
+      case (true, x: Float) if allowInline =>
         showFP(x)
-      case (true, x: Number) =>
+      case (true, x: Number) if allowInline =>
         "(%s: %s)".format(x.toString, classManifest)
       case (true, _) =>
         Compile.addVar(this)
