@@ -3,6 +3,33 @@ package ivm.expressiontree
 case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends Arity0Exp[T] {
   override def interpret() = x
   private def show(toEval: Boolean = false): String = {
+    import java.{lang => jl}
+    val maxInlineStringLength = 10
+    (toEval, x) match {
+      //Strings can be always represented directly, but for long strings that's not a good idea, since the string will
+      //have to be parsed again.
+      case (_, s: String) if !toEval || s.length < maxInlineStringLength =>
+        "\"%s\"" format s
+      case (_, c: Char) =>
+        "'%c'" format c
+      case (false, x: Number) =>
+        x.toString
+      //case (true, x: Int) => //Doesn't work.
+      case (true, x: jl.Integer) =>
+        x.toString
+      // More precision for non-integral numbers. We might want to drop this case and use standard CSP for non-integers
+      // or at least for floating-point values - where some numbers pretty-print as strings that are not valid literals
+      // (such as "Infinity"). Integer numbers can be added by suffixes.
+      case (true, x: Number) =>
+        val typ = classManifest.toString
+        """java.lang.%s.parse%s("%s")""" format (typ, typ, x.toString)
+      case (true, _) =>
+        Compile.addVar(this)
+      case (false, _) =>
+        String.valueOf(x)
+    }
+  }
+  /*private def show(toEval: Boolean = false): String = {
     val str = x match {
       case s: String =>
         """"%s"""" format s
@@ -15,7 +42,7 @@ case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends 
       Compile.addVar(this)
     } else
       str
-  }
+  }*/
 
   override def toCode = show(toEval = true)
   override def toString = {
