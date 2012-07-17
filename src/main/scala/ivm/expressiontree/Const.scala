@@ -3,9 +3,9 @@ package ivm.expressiontree
 case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends Arity0Exp[T] {
   override def interpret() = x
   private def showFP[U](t: U): String = {
-    val typ = classManifest.toString
-    """java.lang.%s.parse%s("%s")""".format(typ, typ, x.toString)
-    //Compile.addVar(this)
+    //val typ = classManifest.toString
+    //"""java.lang.%s.parse%s("%s")""".format(typ, typ, x.toString)
+    Compile.addVar(this)
   }
   private def show(toEval: Boolean = false): String = {
     import java.{lang => jl}
