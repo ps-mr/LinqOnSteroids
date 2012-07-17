@@ -12,7 +12,7 @@ trait InfixPrinting {
     //"." +
     " " +
     operator + children.tail.map(_.toCode).mkString("(", ", ", ")")*/
-    "(%s) %s (%s)" format (children.head.toCode, operator, children.tail map (_.toCode) mkString ", ")
+    "(%s).%s%s" format (children.head.toCode, operator, if (children.tail.isEmpty) "" else children.tail map (_.toCode) mkString (" (", ", ", ")"))
   def operator: String
 }
 
