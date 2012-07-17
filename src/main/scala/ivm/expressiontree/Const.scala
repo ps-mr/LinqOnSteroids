@@ -14,9 +14,9 @@ case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends 
       case _ =>
         String.valueOf(x)
     }
-    if (toEval)
-      "(%s: %s)" format (str, classManifest)
-    else
+    if (toEval) {
+      Compile.addVar(this)
+    } else
       str
   }
 
