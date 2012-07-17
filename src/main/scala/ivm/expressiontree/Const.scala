@@ -3,14 +3,11 @@ package ivm.expressiontree
 case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends Arity0Exp[T] {
   override def interpret() = x
   private def show(toEval: Boolean = false): String = {
-    val str = x match { //XXX: Doesn't work for most values. Barely good for testing.
+    val str = x match {
       case s: String =>
         """"%s"""" format s
       case x: Number =>
-        /*if (toEval)
-          "(" + x.toString + ")"
-        else*/
-          x.toString
+        x.toString
       case _ =>
         String.valueOf(x)
     }
