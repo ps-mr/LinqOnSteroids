@@ -2,6 +2,7 @@ package ivm.expressiontree
 
 import collection.TraversableLike
 import collection.generic.CanBuildFrom
+import actors.threadpool.AtomicInteger
 
 object ClassUtil {
   import java.{lang => jl}
@@ -44,6 +45,23 @@ object Util {
    * @return `v`
    */
   def checkSameTypeAndRet[T](typeParam: T)(v: T): T = v
+
+  class GlobalIDGenerator extends (() => Int) {
+    def reset() { counter set 0 }
+
+    private val counter = new AtomicInteger(0)
+    override def apply() = counter incrementAndGet ()
+  }
+
+  class ThreadLocalIDGenerator extends (() => Int) {
+    private val counter = new ScalaThreadLocal(0)
+    def localReset() { counter modify (_ => 0) }
+
+    override def apply() = {
+      counter modify (_ + 1)
+      counter get ()
+    }
+  }
 
   //Precondition: classS must have been produced through primitiveToBoxed, because v will be boxed.
   def ifInstanceOfBody[T, S](v: T, classS: Class[_]): Option[S] =

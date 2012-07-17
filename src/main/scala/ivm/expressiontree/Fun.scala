@@ -166,8 +166,7 @@ object Fun {
     toFOAS(f.f)
   }
 
-  private val varCounter = new AtomicInteger(0)
-  def gensymId(): Int = varCounter.incrementAndGet()
+  val gensymId: () => Int = new Util.GlobalIDGenerator
   //def gensym(): Var = Var(gensymId())
   def gensym[T](): TypedVar[T] = TypedVar[T](gensymId())
 
