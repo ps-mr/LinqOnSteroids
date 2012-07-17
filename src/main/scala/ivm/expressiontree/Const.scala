@@ -2,6 +2,11 @@ package ivm.expressiontree
 
 case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends Arity0Exp[T] {
   override def interpret() = x
+  private def showFP[U](t: U): String = {
+    val typ = classManifest.toString
+    """java.lang.%s.parse%s("%s")""".format(typ, typ, x.toString)
+    //Compile.addVar(this)
+  }
   private def show(toEval: Boolean = false): String = {
     import java.{lang => jl}
     val maxInlineStringLength = 10
@@ -20,9 +25,12 @@ case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends 
       // More precision for non-integral numbers. We might want to drop this case and use standard CSP for non-integers
       // or at least for floating-point values - where some numbers pretty-print as strings that are not valid literals
       // (such as "Infinity"). Integer numbers can be added by suffixes.
+      case (true, x: Double) =>
+        showFP(x)
+      case (true, x: Float) =>
+        showFP(x)
       case (true, x: Number) =>
-        val typ = classManifest.toString
-        """java.lang.%s.parse%s("%s")""" format (typ, typ, x.toString)
+        "(%s: %s)".format(x.toString, classManifest)
       case (true, _) =>
         Compile.addVar(this)
       case (false, _) =>
