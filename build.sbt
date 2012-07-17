@@ -66,6 +66,9 @@ initialCommands in console := """
     import expressiontree._
     import Lifting._
     import optimization._
+    import squopt.imports._
+    import performancetests.Benchmarking
+    val bench = new Benchmarking { override val debugBench = false }
 """
 
 initialCommands in (Test, console) := """
