@@ -53,15 +53,9 @@ object ScalaCompile {
     compiler = new Global(settings, reporter)
   }
 
-  def invokeCompiler[T: ClassManifest](exp: Exp[T]) = {
+  def invokeCompiler[T: ClassManifest](sourceStr: String, className: String) = {
     if (this.compiler eq null)
       setupCompiler()
-
-    //val className = "staged$" + compileCount
-
-    //val staticData = codegen.emitSource(f, className, new PrintWriter(source))
-    //val sourceStr = source.toString
-    val (sourceStr, staticData, className) = Compile.emitSourceInternal(exp)
 
     val compiler = this.compiler
     val run = new compiler.Run
@@ -85,32 +79,39 @@ object ScalaCompile {
     val loader = new AbstractFileClassLoader(fileSystem, parent)
 
     val cls: Class[_] = loader.loadClass(className)
-    (cls, staticData)
+    cls
   }
 }
 
 object Compile {
   import CrossStagePersistence.{map, varId}
 
-  private val codeCache = new ScalaThreadLocal(mutable.Map[String, Class[_]]())
-
   val classId = new Util.GlobalIDGenerator
-  //private val varId = new ScalaThreadLocal(0)
 
-  //Just (or mostly?) for testing.
-  def reset() {
-    codeCache.get().clear()
-    map.get().clear()
-    classId.reset()
-    precompileReset()
-  }
+  //Cache compilation results.
+  private val codeCache = new ScalaThreadLocal(mutable.Map[String, Class[_]]())
+  def cachedInvokeCompiler[T: ClassManifest](sourceStr: String, className: String) =
+    codeCache.get().getOrElseUpdate(sourceStr, ScalaCompile.invokeCompiler(sourceStr, className))
 
+  //*Reset methods are just (or mostly?) for testing {{{
   def precompileReset() {
     map.get().clear()
     varId.localReset()
   }
 
-  def emitSourceInternal[T: ClassManifest](e: Exp[T]): (String, Seq[(ClassManifest[_], Any)], String) = {
+  def reset() {
+    precompileReset()
+    codeCache.get().clear()
+    classId.reset()
+  }
+
+  def completeReset() {
+    codeCache.get().clear()
+    reset()
+  }
+  //}}}
+
+  private[expressiontree] def emitSourceInternal[T: ClassManifest](e: Exp[T]): (String, Seq[(ClassManifest[_], Any)], String) = {
     precompileReset()
     val name = "Outclass" + classId()
     val typ = classManifest[T]
@@ -125,17 +126,23 @@ object Compile {
       """class %s(%s) extends Compiled[%s] {
         |  override def result = %s
         |}""".stripMargin format (name, declsStr, typ, body)
-    //Compile res and cache the result.
     (res, staticData, name)
   }
 
+  //Mostly for testing
   def emitSource[T: ClassManifest](e: Exp[T]): String =
     emitSourceInternal(e)._1
 
   def toValue[T: ClassManifest](exp: Exp[T]): T = {
-    val (cls, staticData) = ScalaCompile.invokeCompiler(exp)
-    val cons = cls.getConstructor(staticData.map(_._1.erasure):_*)
+    //val className = "staged$" + compileCount
 
+    //val staticData = codegen.emitSource(f, className, new PrintWriter(source))
+    //val sourceStr = source.toString
+    val (sourceStr, staticData, className) = emitSourceInternal(exp)
+
+    val cls = cachedInvokeCompiler(sourceStr, className)
+
+    val cons = cls.getConstructor(staticData.map(_._1.erasure):_*)
     val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[T]
     obj
   }
