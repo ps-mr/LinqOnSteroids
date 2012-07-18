@@ -1,4 +1,5 @@
-#import(ivm.generation.ScalaSigHelpers._)
+#import(ivm.generation.ScalaSigHelpers)
+#import(ScalaSigHelpers._)
 #import(scala.tools.scalap.scalax.util.StringUtil)
 #import(tools.scalap.scalax.rules.scalasig.MethodSymbol)<%@
 val classFile: String %>
@@ -26,13 +27,15 @@ val classFile: String %>
      val arity = getNumberOfParameters(n) + 1
      if (n.isCaseAccessor)
        caseClassSelectorIdx += 1
+     val resultType = getResultType(n, false)
+     val isResultSeq = resultType startsWith ScalaSigHelpers.replacementSeqType
 %>
-  case class ${wName}${unescape(getTypeParameters(n))}(t: Exp[${className}]${paramsDef}) extends Arity${arity}Op[Exp[${className}]${getParameterTypesAsString(n, ",", "")},${getResultType(n, false)},${wName}${getTypeArgs(n)}](t${paramTypes}) with InfixPrinting<%
+  case class ${wName}${unescape(getTypeParameters(n))}(t: Exp[${className}]${paramsDef}) extends Arity${arity}Op[Exp[${className}]${getParameterTypesAsString(n, ",", "")},${resultType},${wName}${getTypeArgs(n)}](t${paramTypes}) with InfixPrinting<%
   if (n.isCaseAccessor) {
     %> with ExpSelection[${className}]<%
   } %> {
     def interpret() = t.interpret().${n.name}${getParameterNamesAsString(n, transform = x => x + ".interpret()")}
-    def operator = "${n.name}"
+    def operator = "${n.name + (if (isResultSeq) ".toSeq" else "")}"
     def copy(t: Exp[${className}]${paramsDef}) = new ${wName}(t${paramsToPass})<%
       if (n.isCaseAccessor) {%>
 

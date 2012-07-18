@@ -104,9 +104,11 @@ object ScalaSigHelpers {
     return buffer.toList
   }
 
+  val replacementSeqType = "scala.Seq"
+
   def getResultType(ms: MethodSymbol, wrapped: Boolean = true): String = {
     val t = ms.infoType
-    val m = Map("scala.Array" -> "scala.Seq")
+    val m = Map("scala.Array" -> replacementSeqType)
     t match {
       case PolyType(mt, _) => if (wrapped) getWrappedType(mt, m) else getType(mt, m)
       case _               => if (wrapped) getWrappedType(t, m)  else getType(t, m)
