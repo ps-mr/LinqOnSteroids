@@ -191,3 +191,10 @@ object TupleSupport2 {
     }
   }
 }
+
+object OverloadHack {
+#for (i <- 1 to 30)
+  class Overloaded${i}
+  implicit val overloaded${i} = new Overloaded${i}
+#end
+}

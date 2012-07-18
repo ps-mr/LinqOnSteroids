@@ -14,7 +14,7 @@ val classFile: String %>
    var i = 0
    val caseClassArity = getCaseAccessors(classSymbol, fil).length
    symbols foreach { n => %>
-    def ${n.name}${unescape(getTypeParameters(n))}${getParametersAsString(n)}: ${getResultType(n)} = new ${className}_${n.name}${i}(t${getParameterNamesAsString(n, ",", "")})
+    def ${n.name}${unescape(getTypeParameters(n))}${getParametersAsString(n)}(implicit o: Overloaded${i + 1}): ${getResultType(n)} = new ${className}_${n.name}${i}(t${getParameterNamesAsString(n, ",", "")})
 <% i = i+1 } %>
   }
 <% i = 0
