@@ -102,7 +102,9 @@ object Compile {
     codeCache.get().clear()
     map.get().clear()
     classId.reset()
+    precompileReset()
   }
+
   def precompileReset() {
     map.get().clear()
     varId.localReset()
