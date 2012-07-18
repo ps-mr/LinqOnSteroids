@@ -54,6 +54,7 @@ object ScalaCompile {
   }
 
   def invokeCompiler[T: ClassManifest](sourceStr: String, className: String) = {
+    Console.err println sourceStr
     if (this.compiler eq null)
       setupCompiler()
 
