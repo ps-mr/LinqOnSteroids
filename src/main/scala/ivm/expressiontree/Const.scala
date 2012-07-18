@@ -1,19 +1,56 @@
 package ivm.expressiontree
 
+object Const {
+  private val maxInlineStringLength = 10
+  val allowInlineInEval = true
+}
+
 case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends Arity0Exp[T] {
+  import Const._
+
   override def interpret() = x
+
+  //Pretty-printing: we print some constants inline, sometimes (but not always) using toString.
+
   private def showFP[U](t: U): String = {
     //val typ = classManifest.toString
     //"""java.lang.%s.parse%s("%s")""".format(typ, typ, x.toString)
     CrossStagePersistence.addVar(this)
   }
 
-  private val allowInlineInEval = false
+  private def baseShow: PartialFunction[T, String] = {
+    case s: String if s.length < maxInlineStringLength =>
+      "\"%s\"" format s
+    case c: Char =>
+      "'%c'" format c
+  }
+  import java.{lang => jl}
+
+  private def inlineShow: PartialFunction[T, String] = {
+    case x: jl.Integer =>
+      x.toString
+    case x: Double =>
+      showFP(x)
+    case x: Float =>
+      showFP(x)
+    case x: Number =>
+      "(%s: %s)".format(x.toString, classManifest)
+    case _ =>
+      CrossStagePersistence.addVar(this)
+  }
 
   private def show(toEval: Boolean = false): String = {
-    import java.{lang => jl}
-    val maxInlineStringLength = 10
     val allowInline = allowInlineInEval || !toEval
+    /*if (toEval) {
+      if (allowInlineInEval) {
+        (baseShow orElse inlineShow)(x)
+      } else {
+        CrossStagePersistence.addVar(this)
+      }
+    } else {
+      (baseShow orElse (String.valueOf((_: Any))).asPartial)(x)
+    }*/
+
     (toEval, x) match {
       //Strings can be always represented directly, but for long strings that's not a good idea, since the string will
       //have to be parsed again.
