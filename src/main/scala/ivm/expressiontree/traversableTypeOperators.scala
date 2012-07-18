@@ -10,18 +10,21 @@ import collection.generic.CanBuildFrom
 
 
 object TypeFilter {
-  def apply[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], cS: ClassManifest[S]) =
-    apply[T, C, D, S](base, f, ClassUtil.boxedErasure(cS))
+  def apply[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], cS: ClassManifest[S], nameCDS: String) =
+    apply[T, C, D, S](base, f, ClassUtil.boxedErasure(cS), nameCDS)
 }
 
 //Just like for IfInstanceOf, equality comparison must consider also classS. Therefore, classS must be a class parameter.
-case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], classS: Class[_])
+case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], classS: Class[_], nameCDS: String)
   extends Arity2Op[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]], TypeFilter[T, C, D, S]](base, f) {
   override def interpret() = {
     val b: C[D[T]] = base.interpret()
     b.filter(x => classS.isInstance(f.interpret()(x))).asInstanceOf[C[D[S]]]
   }
-  override def copy(base: Exp[C[D[T]]], f: Exp[D[T] => T]) = TypeFilter[T, C, D, S](base, f, classS)
+  //XXX: the cast '.asInstanceOf[C[D[S]]]' is missing. How can we encode it? With an extra manifest?
+  override def toCode = "%s.filter(el => %s.isInstance(%s)).asInstanceOf[%s]" format (
+    base.toCode, classS.getName /*XXX won't work*/, Lifting.app(f)(NamedVar("el")).toCode, nameCDS)
+  override def copy(base: Exp[C[D[T]]], f: Exp[D[T] => T]) = TypeFilter[T, C, D, S](base, f, classS, nameCDS)
 }
 
 // XXX: It is not clear whether the cast from Repr to That is always valid. OTOH, this could express typeFilter on Map,

@@ -92,12 +92,12 @@ trait TraversableOps {
     def typeFilter[S](implicit cS: ClassManifest[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
       //TypeFilter[T, Coll, ID, S](t, Fun(identity[Exp[T]]), cS) //variance mismatch
-      TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]), cS)
+      TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]), cS, classManifest[Traversable[S]].toString)
     }
     private[ivm] def typeFilterClass[S](classS: Class[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
       //TypeFilter[T, Coll, ID, S](t, Fun(identity[Exp[T]]), classS) //variance mismatch again
-      TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]), classS)
+      TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]), classS, "Traversable[%s]" format classS.getName)
     }
 
     //XXX: Generate these wrappers, also for other methods.
@@ -464,7 +464,8 @@ trait TypeFilterOps {
   }
 
   class TypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](val t: Exp[C[D[T]]]) {
-    def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassManifest[S]) = TypeFilter[T, C, D, S](t, Fun(f), cS)
+    def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassManifest[S], cCDS: ClassManifest[C[D[S]]]) =
+      TypeFilter[T, C, D, S](t, Fun(f), cS, classManifest[C[D[S]]].toString)
     //def groupByType(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t, Fun(f))
   }
   implicit def expToTypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T, C, D](t)
