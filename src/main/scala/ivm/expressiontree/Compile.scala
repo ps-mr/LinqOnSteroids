@@ -56,18 +56,15 @@ object ScalaCompile {
     compiler = new Global(settings, reporter)
   }
 
-  var compileCount = 0
-
-  /*
-  def compile[A,B](f: Exp[A] => Exp[B])(implicit mA: Manifest[A], mB: Manifest[B]): A=>B = {
+  def compileInternal[A](exp: Exp[A]) = {
     if (this.compiler eq null)
       setupCompiler()
 
-    val className = "staged$" + compileCount
-    compileCount += 1
+    //val className = "staged$" + compileCount
 
-    val source = new StringWriter()
-    val staticData = codegen.emitSource(f, className, new PrintWriter(source))
+    //val staticData = codegen.emitSource(f, className, new PrintWriter(source))
+    //val sourceStr = source.toString
+    val (sourceStr, staticData, className) = Compile.compileInternal(exp)
 
     val compiler = this.compiler
     val run = new compiler.Run
@@ -76,7 +73,7 @@ object ScalaCompile {
     compiler.settings.outputDirs.setSingleOutput(fileSystem)
     //      compiler.genJVM.outputDir = fileSystem
 
-    run.compileSources(List(new util.BatchSourceFile("<stdin>", source.toString)))
+    run.compileSources(List(new util.BatchSourceFile("<stdin>", sourceStr)))
     reporter.printSummary()
 
     if (!reporter.hasErrors)
@@ -84,19 +81,23 @@ object ScalaCompile {
     else
       println("compilation: had errors")
 
-    reporter.reset
+    reporter.reset()
     //output.reset
 
     val parent = this.getClass.getClassLoader
-    val loader = new AbstractFileClassLoader(fileSystem, this.getClass.getClassLoader)
+    val loader = new AbstractFileClassLoader(fileSystem, parent)
 
     val cls: Class[_] = loader.loadClass(className)
+    (cls, staticData)
+  }
+
+  /*def compile[A](exp: Exp[A]): A = {
+    val (cls, staticData) = compileInternal(exp)
     val cons = cls.getConstructor(staticData.map(_._1.tp.erasure):_*)
 
-    val obj: A=>B = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[A=>B]
+    val obj: A = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[A]
     obj
-  }
-  */
+  }*/
 }
 
 object Compile {
