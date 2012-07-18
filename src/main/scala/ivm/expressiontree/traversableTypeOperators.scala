@@ -23,7 +23,7 @@ case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this 
   }
   //XXX: the cast '.asInstanceOf[C[D[S]]]' is missing. How can we encode it? With an extra manifest?
   override def toCode = "%s.filter(el => %s.isInstance(%s)).asInstanceOf[%s]" format (
-    base.toCode, classS.getName /*XXX won't work*/, Lifting.app(f)(NamedVar("el")).toCode, nameCDS)
+    base.toCode, Const(classS).toCode, Lifting.app(f)(NamedVar("el")).toCode, nameCDS)
   override def copy(base: Exp[C[D[T]]], f: Exp[D[T] => T]) = TypeFilter[T, C, D, S](base, f, classS, nameCDS)
 }
 
