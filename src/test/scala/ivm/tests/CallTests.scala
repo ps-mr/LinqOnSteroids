@@ -1,8 +1,8 @@
 package ivm
 package tests
 
-import expressiontree.Lifting._
 import expressiontree._
+import Lifting._
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.Test
