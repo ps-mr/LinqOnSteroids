@@ -24,16 +24,16 @@ case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends 
       case (false, x: Number) =>
         x.toString
       //case (true, x: Int) => //Doesn't work.
-      case (true, x: jl.Integer) if allowInline =>
+      case (true, x: jl.Integer) if allowInlineInEval =>
         x.toString
       // More precision for non-integral numbers. We might want to drop this case and use standard CSP for non-integers
       // or at least for floating-point values - where some numbers pretty-print as strings that are not valid literals
       // (such as "Infinity"). Integer numbers can be added by suffixes.
-      case (true, x: Double) if allowInline =>
+      case (true, x: Double) if allowInlineInEval =>
         showFP(x)
-      case (true, x: Float) if allowInline =>
+      case (true, x: Float) if allowInlineInEval =>
         showFP(x)
-      case (true, x: Number) if allowInline =>
+      case (true, x: Number) if allowInlineInEval =>
         "(%s: %s)".format(x.toString, classManifest)
       case (true, _) =>
         Compile.addVar(this)
