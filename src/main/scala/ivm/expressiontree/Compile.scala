@@ -89,6 +89,14 @@ object ScalaCompile {
 object Compile {
   import CrossStagePersistence.{map, varId}
 
+  def manifestToString[T](m: ClassManifest[T]): String = {
+    val str = m.toString
+    if (str endsWith ".type") //Workaround bug: names for singleton types are not fully qualified!
+      //Remove final '$' from class name.
+      m.erasure.getName.replaceFirst("""\$$""", "") + ".type"
+    else
+      str
+  }
   val classId = new Util.GlobalIDGenerator
 
   //Cache compilation results.
@@ -121,7 +129,7 @@ object Compile {
     val body = e.toCode
     val declValues = (map.get().toSeq map {
       case (value, CSPVar(memberName, memberType)) =>
-        ("val %s: %s" format (memberName, memberType), (memberType, value))
+        ("val %s: %s" format (memberName, manifestToString(memberType)), (memberType, value))
     })
     val (decls, staticData) = declValues.unzip[String, (ClassManifest[_], Any)]
     val declsStr = decls mkString ", "
@@ -129,7 +137,7 @@ object Compile {
     val rest =
       """(%s) extends Compiled[%s] {
         |  override def result = %s
-        |}""".stripMargin format (declsStr, typ, body)
+        |}""".stripMargin format (declsStr, manifestToString(typ), body)
     (prefix, rest, staticData, name)
   }
 
