@@ -1,17 +1,18 @@
 package ivm
 package optimization
 
+import collection.mutable.Stack
+import collection.mutable
+
 import expressiontree._
 import Lifting._
-import collection.mutable.Stack
-import scala.collection.mutable.Map
 import performancetests.Benchmarking
 
 object Optimization {
   //Should the two normal forms (after flatMapToMap and after mapToFlatMap) be distinguished by different types?
 
-  val subqueries: Map[Exp[_], (Any, ClassManifest[_])] = Map.empty
-  val castedSubqueries = subqueries.asInstanceOf[Map[Exp[_], (Any, ClassManifest[Any])]]
+  val subqueries: mutable.Map[Exp[_], (Any, ClassManifest[_])] = mutable.Map.empty
+  val castedSubqueries = subqueries.asInstanceOf[mutable.Map[Exp[_], (Any, ClassManifest[Any])]]
 
   def resetSubqueries() = subqueries.clear()
   def addIndex[T: ClassManifest](_query: UnconvertedExp[Exp[T]], res: Option[T] = None) {
