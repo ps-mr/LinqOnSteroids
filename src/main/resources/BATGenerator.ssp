@@ -7,9 +7,11 @@ import annotation.switch
 
 import de.tud.cs.st.bat.resolved
 import resolved._
+import analyses.ClassHierarchy
 import ivm._
 import expressiontree._
 import Lifting._
+import OverloadHack._
 <%--
 
 
@@ -19,13 +21,10 @@ import Lifting._
 --%>
 object BATLifting {<%
   for (c <- List("ClassFile", "ObjectType", "Field", "Method",
-		  "ClassMember", "MethodDescriptor", "Code", "ExceptionHandler")) {
-  render("WrappedClassInlined.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))} %>
-<%--
-<% for(c <- List("ClassFile", "ObjectType", "Field", "Method",
-	         "MethodDescriptor", "Code", "ExceptionHandler")) {
-  render("WrappedClass.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))} %>
---%>
+		  "ClassMember", "MethodDescriptor", "Code", "ExceptionHandler", "analyses.ClassHierarchy")) {
+  //render("WrappedClass.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))}
+  render("WrappedClassInlined.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))
+} %>
 <%--
 <%
   val classLoader = Thread.currentThread().getContextClassLoader()
