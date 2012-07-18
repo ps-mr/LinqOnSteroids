@@ -7,13 +7,23 @@ package ivm.expressiontree
 
 trait InfixPrinting {
   this: Exp[_] =>
+  def isSymbol = operator.matches("[A-Za-z_][A-Za-z_0-9]*")
   override def toCode: String = {
-    val isSymbol = operator.matches("[A-Za-z_][A-Za-z_0-9.]*") //Argh. Maybe the client code should have explicit control over this?
     val hasArgs = children.tail.nonEmpty
     "(" + children.head.toCode + ")" + (if (isSymbol) '.' else ' ') + operator +
       (if (hasArgs) (if (!isSymbol) " " else "") + (children.tail map (_.toCode) mkString ("(", ", ", ")")) else "")
   }
   def operator: String
+}
+
+trait MethodPrinting extends InfixPrinting {
+  this: Exp[_] =>
+  override def isSymbol = true
+}
+
+trait OperatorPrinting extends InfixPrinting {
+  this: Exp[_] =>
+  override def isSymbol = false
 }
 
 trait PrefixPrinting {

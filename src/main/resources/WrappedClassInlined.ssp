@@ -30,7 +30,7 @@ val classFile: String %>
      val resultType = getResultType(n, false)
      val isResultSeq = resultType startsWith ScalaSigHelpers.replacementSeqType
 %>
-  case class ${wName}${unescape(getTypeParameters(n))}(t: Exp[${className}]${paramsDef}) extends Arity${arity}Op[Exp[${className}]${getParameterTypesAsString(n, ",", "")},${resultType},${wName}${getTypeArgs(n)}](t${paramTypes}) with InfixPrinting<%
+  case class ${wName}${unescape(getTypeParameters(n))}(t: Exp[${className}]${paramsDef}) extends Arity${arity}Op[Exp[${className}]${getParameterTypesAsString(n, ",", "")},${resultType},${wName}${getTypeArgs(n)}](t${paramTypes}) with MethodPrinting<%
   if (n.isCaseAccessor) {
     %> with ExpSelection[${className}]<%
   } %> {
