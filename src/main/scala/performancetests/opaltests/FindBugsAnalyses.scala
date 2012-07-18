@@ -156,6 +156,10 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   println("Number of class files: " + classFiles.length)
   println("Numer of methods: " + methodsSQuOpt().interpret().size)
 
+  test("Compilation") {
+    Compile.toValue(methodBodiesSQuOpt) should be (methodBodiesSQuOpt.interpret())
+  }
+
   // The following code is meant to show how easy it is to write analyses;
   // it is not meant to demonstrate how to write such analyses in an efficient
   // manner.
