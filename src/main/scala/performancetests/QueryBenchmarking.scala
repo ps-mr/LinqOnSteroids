@@ -2,7 +2,7 @@ package performancetests
 
 import ivm._
 import tests.TestUtil
-import expressiontree.{Lifting, Exp}
+import expressiontree.{Compile, Lifting, Exp}
 import Lifting._
 import optimization.Optimization
 import org.scalatest.matchers.ShouldMatchers
@@ -27,10 +27,11 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
   //If we're running only the optimized version, we only run it only once.
   override def debugBench = super.debugBench || onlyOptimized
 
-  private def doRun[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll]) = {
+  private def doRun[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll], c: ClassManifest[Coll]) = {
     if (!onlyOptimized)
       showExpNoVal(v, msg)
     benchMarkInternal(msg)(v.expResult().force)
+//    benchMarkInternal(msg)(Compile.toValue(v).force)
   }
 
   private def benchOptimize[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]]) = {
@@ -56,7 +57,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
 
   private def benchInterpret[T, Coll <: Traversable[T]](msg: String,
                                                 v: Exp[Coll with Traversable[T]],
-                                                timeScala: Double)(implicit f: Forceable[T, Coll]): Traversable[T] =
+                                                timeScala: Double)(implicit f: Forceable[T, Coll], c: ClassManifest[Coll]): Traversable[T] =
   {
     val (optimized, optimizationTime) = benchOptimize(msg, v)
     val (resOpt, timeOpt) = doRun(msg + " - after optimization", optimized)
@@ -87,7 +88,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
    * @tparam Coll
    * @return
    */
-  def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
+  def benchQueryComplete[T, Coll <: Traversable[T]: ClassManifest](msg: String)
                                                    (expected: => Traversable[T], altExpected: => Traversable[T] = null /* Tried using OptParam here with */)
                                                    (query: => Exp[Coll], altQueries: Exp[Coll]*)
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
