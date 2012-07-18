@@ -70,7 +70,7 @@ abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDeclOv
 
 case class Call${arity}[${tparams}, Res](/*val*/ name: Symbol, restId: Symbol, callfunc: (${tparams}) => Res, ${paramsDeclOverride})
     extends Arity${arity}OpExp[${tparams}, Res, Call${arity}[${tparams}, Res]](${params}) with Call[Res] {
-  def copy(${paramsDecl}) = new Call${arity}(name, restId, callfunc, ${params})
+  def copy(${paramsDecl}) = Call${arity}(name, restId, callfunc, ${params})
   def interpret() = callfunc(${interpretParams})
 }
 
