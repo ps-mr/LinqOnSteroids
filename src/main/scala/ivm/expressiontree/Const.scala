@@ -2,7 +2,7 @@ package ivm.expressiontree
 
 object Const {
   private val maxInlineStringLength = 10
-  val allowInlineInEval = true
+  val allowInlineInEval = false
 }
 
 case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends Arity0Exp[T] {

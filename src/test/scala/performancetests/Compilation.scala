@@ -36,6 +36,7 @@ class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
     if (Const.allowInlineInEval) {
       e.toCode should be ("((1) + (2)) * (3)")
     } else {
+      Compile.precompileReset()
       e.toCode should be ("((x1) + (x2)) * (x3)")
     }
   }
@@ -47,14 +48,14 @@ class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
           |}""".stripMargin)
     } else {
       Compile.emitSource(e) should be (
-      """class Outclass1(val x4: Int, val x5: Int, val x6: Int) extends Compiled[Int] {
-        |  override def result = ((x4) + (x5)) * (x6)
+      """class Outclass1(val x1: Int, val x2: Int, val x3: Int) extends Compiled[Int] {
+        |  override def result = ((x1) + (x2)) * (x3)
         |}""".stripMargin)
     }
   }
 
-  class Outclass1(val x4: Int, val x5: Int, val x6: Int) extends Compiled[Int] {
-    override def result = ((x4) + (x5)) * (x6)
+  class Outclass1(val x1: Int, val x2: Int, val x3: Int) extends Compiled[Int] {
+    override def result = ((x1) + (x2)) * (x3)
   }
 
   test("benchmark and test generated code") {
