@@ -11,12 +11,12 @@ class CallTests extends JUnitSuite with ShouldMatchersForJUnit {
   def test(x: Int, y: Int): Boolean = x+y == 12
   def foo(x: Int): Int = x
   def bar(x: Int): Int = x
-  val l1 = liftCall('test$Int$Int, test, 2, 3)
-  val l2 = liftCall('test$Int$Int, test, 3, 4)
-  val l3 = liftCall('test$Int$Int, test, 2, 3)
-  val l4 = liftCall('bar$Int, bar, 3)
-  val l5 = liftCall('foo$Int, foo, 3)
-  val l6 = liftCall('foo$Int, bar, 3) // deliberate violation of the liftCall contract
+  val l1 = fmap(2, 3)('test$Int$Int, test)
+  val l2 = fmap(3, 4)('test$Int$Int, test)
+  val l3 = fmap(2, 3)('test$Int$Int, test)
+  val l4 = fmap(3)('bar$Int, bar)
+  val l5 = fmap(3)('foo$Int, foo)
+  val l6 = fmap(3)('foo$Int, bar) // deliberate violation of the liftCall contract
 
   @Test
   def testCalls() {
