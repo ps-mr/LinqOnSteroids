@@ -72,25 +72,17 @@ def asSmart[U >: T](implicit conv: T => Exp[U]): Exp[U] = conv(t)
 
 trait FunctionOps {
   this: LiftingConvs =>
-  // these functions are explicitly not implicit :)
-  def liftCall[Res](id: Symbol, callfunc: () => Res) = new Call0(id, callfunc)
-  def liftCall[A0, Res](id: Symbol, callfunc: A0 => Res, arg0: Exp[A0]) = new Call1(id, callfunc, arg0)
-  def liftCall[A0, A1, Res](id: Symbol, callfunc: (A0, A1) => Res, arg0: Exp[A0], arg1: Exp[A1]) =
-    new Call2(id, callfunc, arg0, arg1)
-  def liftCall[A0, A1, A2, Res](id: Symbol, callfunc: (A0, A1, A2) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2]) =
-    new Call3(id, callfunc, arg0, arg1, arg2)
-  def liftCall[A0, A1, A2, A3, Res](id: Symbol, callfunc: (A0, A1, A2, A3) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3]) =
-    new Call4(id, callfunc, arg0, arg1, arg2, arg3)
-  def liftCall[A0, A1, A2, A3, A4, Res](id: Symbol, callfunc: (A0, A1, A2, A3, A4) => Res, arg0: Exp[A0], arg1: Exp[A1], arg2: Exp[A2], arg3: Exp[A3], arg4: Exp[A4]) =
-    new Call5(id, callfunc, arg0, arg1, arg2, arg3, arg4)
+  // Unused!
+  def fmap[Res](id: Symbol, callfunc: () => Res) = new Call0(id, callfunc)
 
-  def fmap[A0, Res](t: Exp[A0])(id: Symbol, f: A0 => Res): Exp[Res] = liftCall(id, f, t)
-  def fmap[A0, A1, Res](a0: Exp[A0], a1: Exp[A1])(id: Symbol, f: (A0, A1) => Res): Exp[Res] = liftCall(id, f, a0, a1)
-  def fmap[A0, A1, A2, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2])(id: Symbol, f: (A0, A1, A2) => Res): Exp[Res] = liftCall(id, f, a0, a1, a2)
+  // these functions are explicitly not implicit :)
+  def fmap[A0, Res](t: Exp[A0])(id: Symbol, f: A0 => Res): Exp[Res] = new Call1(id, f, t)
+  def fmap[A0, A1, Res](a0: Exp[A0], a1: Exp[A1])(id: Symbol, f: (A0, A1) => Res): Exp[Res] = new Call2(id, f, a0, a1)
+  def fmap[A0, A1, A2, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2])(id: Symbol, f: (A0, A1, A2) => Res): Exp[Res] = new Call3(id, f, a0, a1, a2)
   def fmap[A0, A1, A2, A3, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3])(id: Symbol, f: (A0, A1, A2, A3) => Res): Exp[Res] =
-    liftCall(id, f, a0, a1, a2, a3)
+    new Call4(id, f, a0, a1, a2, a3)
   def fmap[A0, A1, A2, A3, A4, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3], a4: Exp[A4])(id: Symbol, f: (A0, A1, A2, A3, A4) => Res): Exp[Res] =
-    liftCall(id, f, a0, a1, a2, a3, a4)
+    new Call5(id, f, a0, a1, a2, a3, a4)
 
   /*
   //This is not applied implicitly.

@@ -16,7 +16,7 @@ class CallTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l3 = fmap(2, 3)('test$Int$Int, test)
   val l4 = fmap(3)('bar$Int, bar)
   val l5 = fmap(3)('foo$Int, foo)
-  val l6 = fmap(3)('foo$Int, bar) // deliberate violation of the liftCall contract
+  val l6 = fmap(3)('foo$Int, bar) // deliberate violation of the fmap contract
 
   @Test
   def testCalls() {
