@@ -145,9 +145,10 @@ class ScalaThreadLocal[T](v: => T) extends ThreadLocal[T] {
   }
 }
 
-case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends Arity2OpExp[PartialFunction[S,T], S, Boolean, IsDefinedAt[S, T]](f, a) {
+case class IsDefinedAt[S, T](f: Exp[PartialFunction[S, T]], a: Exp[S]) extends Arity2OpExp[PartialFunction[S,T], S, Boolean, IsDefinedAt[S, T]](f, a) with InfixPrinting {
   def interpret() = f.interpret().isDefinedAt(a.interpret())
   override def copy(f: Exp[PartialFunction[S, T]], a: Exp[S]) = IsDefinedAt(f, a)
+  def operator = "isDefinedAt"
 }
 
 object Fun {
