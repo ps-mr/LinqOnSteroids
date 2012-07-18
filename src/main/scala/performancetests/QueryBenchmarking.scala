@@ -88,7 +88,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
    * @tparam Coll
    * @return
    */
-  def benchQueryComplete[T, Coll <: Traversable[T]: ClassManifest](msg: String)
+  def benchQueryComplete[T: ClassManifest, Coll <: Traversable[T]: ClassManifest](msg: String)
                                                    (expected: => Traversable[T], altExpected: => Traversable[T] = null /* Tried using OptParam here with */)
                                                    (query: => Exp[Coll], altQueries: Exp[Coll]*)
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
