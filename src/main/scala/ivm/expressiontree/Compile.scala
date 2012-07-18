@@ -17,7 +17,7 @@ object ScalaCompile {
    * virtualization-lms-core/src/internal/ScalaCompile.scala, branch delite-develop,
    * commit 8f4cabbb2605f246496c084b765d1df95f903f57.
    */
-  import java.io._
+  import java.io.{Console => _, _}
 
   import scala.tools.nsc._
   import scala.tools.nsc.util._
@@ -49,7 +49,7 @@ object ScalaCompile {
     //settings.verbose.value = true
     // -usejavacp needed on windows?
 
-    reporter = new ConsoleReporter(settings, null, new PrintWriter(System.out))//writer
+    reporter = new ConsoleReporter(settings, null, new PrintWriter(Console.err))//writer
     compiler = new Global(settings, reporter)
   }
 
