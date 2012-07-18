@@ -76,5 +76,8 @@ class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
   test("benchMark Compile.toValue for CSP") {
     benchMark("Use Compile.toValue on CSP expression")(Compile.toValue(asExp(List(1)))) should be (List(1))
   }
+  test("benchMark Compile.toValue for collection expression") {
+    benchMark("Use Compile.toValue on collection expression")(Compile.toValue(asExp(List(1, 2, 3)) map (_ + 1))) should be (List(2, 3, 4))
+  }
   // }}}
 }
