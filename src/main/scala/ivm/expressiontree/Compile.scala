@@ -66,8 +66,7 @@ object ScalaCompile {
 
     //Apparently, this compiler setup does not load the files from the executing application. Prepending the "correct"
     //source code works fine enough for now!
-    val pkg = "ivm.expressiontree"
-    val prefix = "package %s\ntrait Compiled[T] {\n  def result: T\n}\n" format pkg
+    val prefix = "import ivm.expressiontree.Compiled\n"
     run.compileSources(List(new util.BatchSourceFile("<stdin>", prefix + sourceStr)))
     reporter.printSummary()
 
@@ -82,7 +81,7 @@ object ScalaCompile {
     val parent = this.getClass.getClassLoader
     val loader = new AbstractFileClassLoader(fileSystem, parent)
 
-    val cls: Class[_] = loader.loadClass(pkg + "." + className)
+    val cls: Class[_] = loader.loadClass(className)
     cls
   }
 }
