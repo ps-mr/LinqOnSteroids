@@ -1,6 +1,7 @@
 package ivm.expressiontree
 
 import collection.mutable
+import java.util.regex.Pattern
 
 /**
  * User: pgiarrusso
@@ -97,7 +98,7 @@ object Compile {
       m.erasure.getName.replaceFirst("""\$$""", "") + ".type"
     else if (str startsWith "ivm.collections.TypeMapping[")
       //Manifests don't support type constructors, but TypeTags do! Yeah!
-      str replaceFirst("<?>, <?>", "Traversable,({type l[+X]=Any})#l")
+      str.replaceFirst(Pattern.quote("<?>, <?>"), "Traversable, ({type l[+X]=Any})#l")
     else
       str.replaceAllLiterally("<?>", "_")
   }
