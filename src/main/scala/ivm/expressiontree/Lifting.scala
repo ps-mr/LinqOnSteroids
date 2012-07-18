@@ -6,7 +6,15 @@ import ivm.collections.TypeMapping
 
 trait OptionLifting extends BaseExps {
   this: TraversableOps =>
-  implicit def expOption2Iterable[T](t: Exp[Option[T]]): Exp[Iterable[T]] = convLift(t, OptionOps.OptionToIterableId)
+  implicit def expOption2Iterable[T](t: Exp[Option[T]]): Exp[Iterable[T]] =
+    new Call1(OptionOps.OptionToIterableId, (x: Option[T]) => x: Iterable[T], t) with PrefixPrinting {
+      def prefix = "Option.option2Iterable"
+    }
+  //This would require extra manifests in all callers, horrible. And it requires implicit lookup during run-time
+  //compilation, which for sure won't speed up the compiler.
+  /*{
+    override def toCode = "(%s: Iterable[%s])" format (t1.toCode, classManifest[T])
+  }*/
 
   // We would like to have this conversion available:
   //   implicit def expOption2TraversableOps[T](t: Exp[Option[T]]) = (t: Exp[Iterable[T]]): TraversableOps[T]
