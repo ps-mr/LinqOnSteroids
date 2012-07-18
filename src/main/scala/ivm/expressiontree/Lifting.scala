@@ -7,7 +7,7 @@ import ivm.collections.TypeMapping
 trait OptionLifting extends BaseExps {
   this: TraversableOps =>
   implicit def expOption2Iterable[T](t: Exp[Option[T]]): Exp[Iterable[T]] =
-    new GlobalFuncCall1(OptionOps.OptionToIterableId, "Option.option2Iterable", (x: Option[T]) => x: Iterable[T], t)
+    convLift(t, OptionOps.OptionToIterableId, "Option.option2Iterable")
   //This would require extra manifests in all callers, horrible. And it requires implicit lookup during run-time
   //compilation, which for sure won't speed up the compiler.
   /*{

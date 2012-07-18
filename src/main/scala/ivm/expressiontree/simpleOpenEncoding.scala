@@ -102,8 +102,8 @@ trait FunctionOps extends AutoFunctionOps {
   */
 
   //Use something derived from the above to lift other implicit conversions.
-  def convLift[T, U](t: Exp[T], name: Symbol)(implicit conv: T => U): Exp[U] =
-    fmap(t)(name, conv)
+  def convLift[T, U](t: Exp[T], name: Symbol, prefix: String)(implicit conv: T => U): Exp[U] =
+    new GlobalFuncCall1(name, prefix, conv, t)
 
   //Should we add this?
   implicit def funcExp[S, T](f: Exp[S] => Exp[T]) = Fun(f)
