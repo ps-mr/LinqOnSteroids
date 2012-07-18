@@ -460,6 +460,7 @@ trait TypeFilterOps {
     override def copy(base: Exp[TypeMapping[C, D, Base]]) = TypeMappingApp[C, D, Base, T](base, classS)
     override def interpret() =
       base.interpret().get[T](classS)
+    override def toCode = "%s.get[%s](%s)".format(base.toCode, classS.getName /*XXX won't work*/, Const(classS).toCode)
   }
 
   class TypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](val t: Exp[C[D[T]]]) {
