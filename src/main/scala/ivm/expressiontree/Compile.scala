@@ -12,7 +12,7 @@ trait Compiled[T] {
   def result: T
 }
 
-case class CSPVar(name: String, typ: String)
+case class CSPVar(name: String, typ: ClassManifest[_])
 
 object ScalaCompile {
   /*
@@ -56,7 +56,7 @@ object ScalaCompile {
     compiler = new Global(settings, reporter)
   }
 
-  def compileInternal[A](exp: Exp[A]) = {
+  def compileInternal[A: ClassManifest](exp: Exp[A]) = {
     if (this.compiler eq null)
       setupCompiler()
 
@@ -91,13 +91,13 @@ object ScalaCompile {
     (cls, staticData)
   }
 
-  /*def compile[A](exp: Exp[A]): A = {
+  def compile[A: ClassManifest](exp: Exp[A]): A = {
     val (cls, staticData) = compileInternal(exp)
-    val cons = cls.getConstructor(staticData.map(_._1.tp.erasure):_*)
+    val cons = cls.getConstructor(staticData.map(_._1.erasure):_*)
 
     val obj: A = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[A]
     obj
-  }*/
+  }
 }
 
 object Compile {
@@ -105,7 +105,7 @@ object Compile {
   private val map = new ScalaThreadLocal(ArrayBuffer[(Any, CSPVar)]())
   def addVar[T: ClassManifest](node: Const[T]) = {
     val name = "x" + varId()
-    map.get() += (node.x -> CSPVar(name, classManifest[T].toString))
+    map.get() += (node.x -> CSPVar(name, classManifest[T]))
     name
   }
   val classId = new Util.GlobalIDGenerator
@@ -123,22 +123,36 @@ object Compile {
     varId.localReset()
   }
 
-  def compile[T: ClassManifest](e: Exp[T]) = {
+  def compileInternal[T: ClassManifest](e: Exp[T]): (String, Seq[(ClassManifest[_], Any)], String) = {
     precompileReset()
     val name = "Outclass" + classId()
     val typ = classManifest[T]
     val body = e.toCode
     val declValues = (map.get().toSeq map {
       case (value, CSPVar(memberName, memberType)) =>
-        ("val %s: %s" format (memberName, memberType), value)
+        ("val %s: %s" format (memberName, memberType), (memberType, value))
     })
-    val (decls, values) = declValues.unzip
+    val (decls, staticData) = declValues.unzip[String, (ClassManifest[_], Any)]
     val declsStr = decls mkString ", "
     val res =
       """class %s(%s) extends Compiled[%s] {
         |  override def result = %s
         |}""".stripMargin format (name, declsStr, typ, body)
     //Compile res and cache the result.
-    res
+    (res, staticData, name)
+  }
+
+  def compile[T: ClassManifest](e: Exp[T]): String = {
+    val (code, _, _) = compileInternal(e)
+    code
+  }
+
+  private def invokeCompiler(code: String): Class[_] = null
+
+  def toValue[T: ClassManifest](e: Exp[T]): String = {
+    val (code, staticData, _) = compileInternal(e)
+    val clazz = invokeCompiler(code)
+
+    code
   }
 }
