@@ -5,7 +5,7 @@ case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends 
   private def showFP[U](t: U): String = {
     //val typ = classManifest.toString
     //"""java.lang.%s.parse%s("%s")""".format(typ, typ, x.toString)
-    Compile.addVar(this)
+    CrossStagePersistence.addVar(this)
   }
 
   private val allowInlineInEval = false
@@ -36,7 +36,7 @@ case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends 
       case (true, x: Number) if allowInlineInEval =>
         "(%s: %s)".format(x.toString, classManifest)
       case (true, _) =>
-        Compile.addVar(this)
+        CrossStagePersistence.addVar(this)
       case (false, _) =>
         String.valueOf(x)
     }
@@ -51,7 +51,7 @@ case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends 
         String.valueOf(x)
     }
     if (toEval) {
-      Compile.addVar(this)
+      CrossStagePersistence.addVar(this)
     } else
       str
   }*/

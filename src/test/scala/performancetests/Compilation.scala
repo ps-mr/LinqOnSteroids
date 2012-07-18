@@ -22,7 +22,7 @@ class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
     e.toCode should be ("((x1) + (x2)) * (x3)")
   }
   test("output") {
-    Compile.compile(e) should be (
+    Compile.emitSource(e) should be (
       """class Outclass1(val x4: Int, val x5: Int, val x6: Int) extends Compiled[Int] {
         |  override def result = ((x4) + (x5)) * (x6)
         |}""".stripMargin)
@@ -41,7 +41,7 @@ class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
     benchMark("convert expression to code")(e.toCode)
   }
   test("benchmark Compile.compile") {
-    benchMark("Use Compile.compile on expression")(Compile.compile(e))
+    benchMark("Use Compile.compile on expression")(Compile.emitSource(e))
   }
   // }}}
 }

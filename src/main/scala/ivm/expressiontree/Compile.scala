@@ -1,7 +1,6 @@
 package ivm.expressiontree
 
 import collection.mutable
-import collection.mutable.ArrayBuffer
 
 /**
  * User: pgiarrusso
@@ -11,8 +10,6 @@ import collection.mutable.ArrayBuffer
 trait Compiled[T] {
   def result: T
 }
-
-case class CSPVar(name: String, typ: ClassManifest[_])
 
 object ScalaCompile {
   /*
@@ -56,7 +53,7 @@ object ScalaCompile {
     compiler = new Global(settings, reporter)
   }
 
-  def compileInternal[A: ClassManifest](exp: Exp[A]) = {
+  def invokeCompiler[T: ClassManifest](exp: Exp[T]) = {
     if (this.compiler eq null)
       setupCompiler()
 
@@ -64,7 +61,7 @@ object ScalaCompile {
 
     //val staticData = codegen.emitSource(f, className, new PrintWriter(source))
     //val sourceStr = source.toString
-    val (sourceStr, staticData, className) = Compile.compileInternal(exp)
+    val (sourceStr, staticData, className) = Compile.emitSourceInternal(exp)
 
     val compiler = this.compiler
     val run = new compiler.Run
@@ -90,27 +87,15 @@ object ScalaCompile {
     val cls: Class[_] = loader.loadClass(className)
     (cls, staticData)
   }
-
-  def compile[A: ClassManifest](exp: Exp[A]): A = {
-    val (cls, staticData) = compileInternal(exp)
-    val cons = cls.getConstructor(staticData.map(_._1.erasure):_*)
-
-    val obj: A = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[A]
-    obj
-  }
 }
 
 object Compile {
+  import CrossStagePersistence.{map, varId}
+
   private val codeCache = new ScalaThreadLocal(mutable.Map[String, Class[_]]())
-  private val map = new ScalaThreadLocal(ArrayBuffer[(Any, CSPVar)]())
-  def addVar[T: ClassManifest](node: Const[T]) = {
-    val name = "x" + varId()
-    map.get() += (node.x -> CSPVar(name, classManifest[T]))
-    name
-  }
+
   val classId = new Util.GlobalIDGenerator
   //private val varId = new ScalaThreadLocal(0)
-  val varId = new Util.ThreadLocalIDGenerator
 
   //Just (or mostly?) for testing.
   def reset() {
@@ -123,7 +108,7 @@ object Compile {
     varId.localReset()
   }
 
-  def compileInternal[T: ClassManifest](e: Exp[T]): (String, Seq[(ClassManifest[_], Any)], String) = {
+  def emitSourceInternal[T: ClassManifest](e: Exp[T]): (String, Seq[(ClassManifest[_], Any)], String) = {
     precompileReset()
     val name = "Outclass" + classId()
     val typ = classManifest[T]
@@ -142,17 +127,14 @@ object Compile {
     (res, staticData, name)
   }
 
-  def compile[T: ClassManifest](e: Exp[T]): String = {
-    val (code, _, _) = compileInternal(e)
-    code
-  }
+  def emitSource[T: ClassManifest](e: Exp[T]): String =
+    emitSourceInternal(e)._1
 
-  private def invokeCompiler(code: String): Class[_] = null
+  def toValue[T: ClassManifest](exp: Exp[T]): T = {
+    val (cls, staticData) = ScalaCompile.invokeCompiler(exp)
+    val cons = cls.getConstructor(staticData.map(_._1.erasure):_*)
 
-  def toValue[T: ClassManifest](e: Exp[T]): String = {
-    val (code, staticData, _) = compileInternal(e)
-    val clazz = invokeCompiler(code)
-
-    code
+    val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[T]
+    obj
   }
 }
