@@ -101,9 +101,9 @@ trait TraversableOps {
     }
 
     //XXX: Generate these wrappers, also for other methods.
-    def toSet = fmap(this.t)('TraversableLike$toSet, _.toSet)
-    def toSeq = fmap(this.t)('TraversableLike$toSeq, _.toSeq)
-    def flatten[U](implicit asTraversable: T => TraversableOnce[U]) = fmap(this.t)('TraversableLikeOps$flatten, _.flatten)
+    def toSet = fmap(this.t, 'TraversableLike)('toSet, _.toSet)
+    def toSeq = fmap(this.t, 'TraversableLike)('toSeq, _.toSeq)
+    def flatten[U](implicit asTraversable: T => TraversableOnce[U]) = fmap(this.t, 'TraversableLikeOps)('flatten, _.flatten)
 
     def typeCase[Res](cases: TypeCase[_, Res]*): Exp[Set[Res]] = TypeCaseExp(this.t, cases)
   }
