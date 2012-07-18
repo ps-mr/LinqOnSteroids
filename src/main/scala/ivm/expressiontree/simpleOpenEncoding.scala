@@ -70,20 +70,29 @@ def asSmart[U >: T](implicit conv: T => Exp[U]): Exp[U] = conv(t)
    */
 }
 
-trait FunctionOps {
+trait FunctionOps extends AutoFunctionOps {
   this: LiftingConvs =>
   // Unused!
-  def fmap[Res](id: Symbol, callfunc: () => Res) = new Call0(id, callfunc)
+  def fmap[Res](id: Symbol, callfunc: () => Res) = new Call0(id, Symbol(""), callfunc)
 
+  /*
   // these functions are explicitly not implicit :)
-  def fmap[A0, Res](t: Exp[A0])(id: Symbol, f: A0 => Res): Exp[Res] = new Call1(id, f, t)
-  def fmap[A0, A1, Res](a0: Exp[A0], a1: Exp[A1])(id: Symbol, f: (A0, A1) => Res): Exp[Res] = new Call2(id, f, a0, a1)
-  def fmap[A0, A1, A2, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2])(id: Symbol, f: (A0, A1, A2) => Res): Exp[Res] = new Call3(id, f, a0, a1, a2)
-  def fmap[A0, A1, A2, A3, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3])(id: Symbol, f: (A0, A1, A2, A3) => Res): Exp[Res] =
-    new Call4(id, f, a0, a1, a2, a3)
-  def fmap[A0, A1, A2, A3, A4, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3], a4: Exp[A4])(id: Symbol, f: (A0, A1, A2, A3, A4) => Res): Exp[Res] =
-    new Call5(id, f, a0, a1, a2, a3, a4)
-
+  def fmap[A0, Res](t: Exp[A0])
+                   (name: Symbol, f: A0 => Res, restId: Symbol = Symbol("")): Exp[Res] =
+    new Call1(name, restId, f, t)
+  def fmap[A0, A1, Res](a0: Exp[A0], a1: Exp[A1])
+                       (name: Symbol, f: (A0, A1) => Res, restId: Symbol = Symbol("")): Exp[Res] =
+    new Call2(name, restId, f, a0, a1)
+  def fmap[A0, A1, A2, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2])
+                           (name: Symbol, f: (A0, A1, A2) => Res, restId: Symbol = Symbol("")): Exp[Res] =
+    new Call3(name, restId, f, a0, a1, a2)
+  def fmap[A0, A1, A2, A3, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3])
+                               (name: Symbol, f: (A0, A1, A2, A3) => Res, restId: Symbol = Symbol("")): Exp[Res] =
+    new Call4(name, restId, f, a0, a1, a2, a3)
+  def fmap[A0, A1, A2, A3, A4, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3], a4: Exp[A4])
+                                   (name: Symbol, f: (A0, A1, A2, A3, A4) => Res, restId: Symbol = Symbol("")): Exp[Res] =
+    new Call5(name, restId, f, a0, a1, a2, a3, a4)
+  */
   /*
   //This is not applied implicitly.
   implicit def liftConv[T, U](t: Exp[T])(implicit tM: Manifest[T], uM: Manifest[U], conv: T => U): Exp[U] =
@@ -93,8 +102,8 @@ trait FunctionOps {
   */
 
   //Use something derived from the above to lift other implicit conversions.
-  def convLift[T, U](t: Exp[T], id: Symbol)(implicit conv: T => U): Exp[U] =
-    fmap(t)(id, conv)
+  def convLift[T, U](t: Exp[T], name: Symbol)(implicit conv: T => U): Exp[U] =
+    fmap(t)(name, conv)
 
   //Should we add this?
   implicit def funcExp[S, T](f: Exp[S] => Exp[T]) = Fun(f)

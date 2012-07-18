@@ -7,7 +7,7 @@ import ivm.collections.TypeMapping
 trait OptionLifting extends BaseExps {
   this: TraversableOps =>
   implicit def expOption2Iterable[T](t: Exp[Option[T]]): Exp[Iterable[T]] =
-    new Call1(OptionOps.OptionToIterableId, (x: Option[T]) => x: Iterable[T], t) with PrefixPrinting {
+    new Call1(OptionOps.OptionToIterableId, Symbol(""), (x: Option[T]) => x: Iterable[T], t) with PrefixPrinting {
       def prefix = "Option.option2Iterable"
     }
   //This would require extra manifests in all callers, horrible. And it requires implicit lookup during run-time
@@ -185,6 +185,8 @@ trait LiftingTrait
   // However, given f(x), since f is just a method name and not the target of a method invocation, the compiler will not
   // apply implicit conversions, including the ones below. This is highly irregular, and hopefully could be solved
   // through a compiler plugin.
+  //XXX: This problem should be now faced not with a compiler plugin but with some macros!
+  /*
   object FunctionLifter {
     //Such an implicit conversion makes no sense - it might be needed if the function call, instead of its result, is
     //to be present in the expression tree, but the compiler will not insert this call, but rather a Const conversion on
@@ -204,6 +206,7 @@ trait LiftingTrait
     implicit def liftCall5[A0, A1, A2, A3, A4, Res](id: Symbol, f: (A0, A1, A2, A3, A4) => Res):
       (Exp[A0], Exp[A1], Exp[A2], Exp[A3], Exp[A4]) => Exp[Res]= new Call5(id,f, _, _, _, _, _)
   }
+  */
 
   // maybe this is not the best place to define this function
   //def filterByType[S: Manifest]: Exp[PartialFunction[Any, S]] = new PartialFuncExp(x => x.ifInstanceOf[S])

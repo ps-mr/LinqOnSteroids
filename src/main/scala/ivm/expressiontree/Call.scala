@@ -15,18 +15,21 @@ package ivm.expressiontree
    of D, we are in effect invoking D.name. A correct solution is to never generate, in such a case, a wrapper node
    for D.name.
  */
-trait Call[Res] extends Exp[Res] {
-  val id: Symbol
+trait Call[Res] extends Exp[Res] with InfixPrinting {
+  val name: Symbol
+  val restId: Symbol
   //val recvManifest: OptManifest[Any /*Recv*/].
   override def equals(other: Any) = other match {
       case that: Call[_] =>
-        this.id == that.id &&
+        this.name == that.name &&
+        this.restId == that.restId &&
         //this.recvManifest == that.recvManifest &&
         (this.children equals that.children)
       case _ =>
         false
   }
-  override def hashCode = 41 * id.hashCode + children.hashCode
+  override def hashCode = 41 * 41 * name.hashCode + 41 * restId.hashCode + children.hashCode
   private def baseName(str: String) = str substring ((str lastIndexOf '.') + 1)
-  override def toString = "%s(%s, %s)" format (baseName(getClass.getName), id, children mkString ", ")
+  override def toString = "%s(%s, %s, %s)" format (baseName(getClass.getName), name, restId, children mkString ", ")
+  def operator = name.name
 }

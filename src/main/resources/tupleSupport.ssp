@@ -68,11 +68,10 @@ abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDeclOv
 // SUPPORT FOR CALLs OF ARITY ${arity} //
 /////////////////////////////////////////
 
-case class Call${arity}[${tparams}, Res](/*val*/ id: Symbol, callfunc: (${tparams}) => Res, ${paramsDeclOverride})
-    extends Arity${arity}OpExp[${tparams}, Res, Call${arity}[${tparams}, Res]](${params}) with Call[Res] with InfixPrinting {
-  def copy(${paramsDecl}) = new Call${arity}(id, callfunc, ${params})
+case class Call${arity}[${tparams}, Res](/*val*/ name: Symbol, restId: Symbol, callfunc: (${tparams}) => Res, ${paramsDeclOverride})
+    extends Arity${arity}OpExp[${tparams}, Res, Call${arity}[${tparams}, Res]](${params}) with Call[Res] {
+  def copy(${paramsDecl}) = new Call${arity}(name, restId, callfunc, ${params})
   def interpret() = callfunc(${interpretParams})
-  def operator = id.name
 }
 
 #end <%-- //We close and reopen the loop because there are no unary tuples. --%>
@@ -138,6 +137,22 @@ trait AutoTupleOps {
   implicit def toTuple${arity}Ops[${tparams}](e: Exp[(${tparams})]): Tuple${arity}Ops[${tparams}] = new Tuple${arity}Ops(e)
 #end
 }
+
+trait AutoFunctionOps {
+  this: LiftingConvs =>
+#for (arity <- 1 to maxArity)
+  <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2; foreachParam = p._3 %>
+
+  def fmap[${tparams}, Res](${paramsDecl}, restId: Symbol)
+      (name: Symbol, f: (${tparams}) => Res): Exp[Res] =
+    new Call${arity}(name, restId, f, ${params})
+
+  def fmap[${tparams}, Res](${paramsDecl})
+      (name: Symbol, f: (${tparams}) => Res): Exp[Res] =
+    fmap(${params}, Symbol(""))(name, f)
+#end
+}
+
 
 <%
 def nothingN(arity: Int) = Seq.fill(arity)("Nothing") mkString ", "
