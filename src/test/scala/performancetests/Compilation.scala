@@ -39,6 +39,9 @@ class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
       Compile.precompileReset()
       e.toCode should be ("((x1) + (x2)) * (x3)")
     }
+    Compile.precompileReset()
+    expOption2Iterable(Some(1)).toCode should be ("Option.option2Iterable(x1)")
+    expOption2Iterable(Some(1)).transform(identity).toCode should be ("Option.option2Iterable(x2)")
   }
   test("output") {
     if (Const.allowInlineInEval) {

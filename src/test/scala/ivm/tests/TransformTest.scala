@@ -61,6 +61,7 @@ class TransformTest extends JUnitSuite with ShouldMatchersForJUnit with Transfor
     testTransforms(for (k <- l; k2 <- l2 if k + k2 ==# k2 + k) yield k+k2)
     testTransforms(for (k <- l; k2 <- l2 if k + k2 ==# k2 + k) yield k*k2)
     testTransforms(for (c <- l if c * 3 ==# 7; if c + 8 ==# 19) yield c)
+    testTransforms(expOption2Iterable(Some(1)))
   }
 
   @Test def testTransformSome() {
