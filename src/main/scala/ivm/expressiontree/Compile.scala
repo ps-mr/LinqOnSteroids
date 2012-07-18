@@ -116,14 +116,17 @@ object Compile {
   def reset() {
     codeCache.get().clear()
     map.get().clear()
-    varId.localReset()
     classId.reset()
+  }
+  def precompileReset() {
+    map.get().clear()
+    varId.localReset()
   }
 
   def compile[T: ClassManifest](e: Exp[T]) = {
+    precompileReset()
     val name = "Outclass" + classId()
     val typ = classManifest[T]
-    map.get().clear()
     val body = e.toCode
     val declValues = (map.get().toSeq map {
       case (value, CSPVar(memberName, memberType)) =>
