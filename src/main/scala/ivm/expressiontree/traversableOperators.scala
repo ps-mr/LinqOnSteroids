@@ -137,7 +137,8 @@ case class TypeCase[Case, +Res](classS: Class[_], guard: Fun[Case, Boolean], f: 
 //that is Res <: AnyRef; this is valid for all types but Res <: AnyVal, i.e. for primitive types, but since Res is a type
 //parameter, it will be erased to java.lang.Object and even primitive types will be passed boxed.
 //Hence in practice v: Res can be casted to AnyRef and compared against null.
-case class TypeCaseExp[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, +That /*XXX to drop*/](e: Exp[Repr with TraversableLike[BaseT, Repr]], cases: Seq[TypeCase[_ /*Case_i*/, Res]])/*(implicit protected[this] val c: CanBuildFrom[TraversableView[BaseT, Repr], Res, That])*/ extends Exp[immutable.Set[Res]] {
+//- What happens if the underlying function returns null? Argh. You shouldn't do that!
+case class TypeCaseExp[BaseT, Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr], Res, +That /*XXX to drop*/](e: Exp[Repr with TraversableLike[BaseT, Repr]], cases: Seq[TypeCase[_ /*Case_i*/, Res]])/*(implicit protected[this] val c: CanBuildFrom[TraversableView[BaseT, Repr], Res, That])*/ extends Exp[immutable.Set[Res]] {
   override def nodeArity = 2 * cases.length + 1
   override def children = e +: (cases.flatMap /*[Exp[_], Seq[Exp[_]]] */(c => Seq[Exp[_]](c.guard, c.f)))
   override def checkedGenericConstructor: Seq[Exp[_]] => Exp[immutable.Set[Res]] =
@@ -157,6 +158,13 @@ case class TypeCaseExp[BaseT, Repr <: TraversableLike[BaseT, Repr], Res, +That /
     //results. We needn't call them once per element of e, since TypeCaseExp binds no variable iterating over e.
     cases foreach (_ preInterpret())
     (e.interpret().view map checkF filter (_.asInstanceOf[AnyRef] ne null)).toSet
+  }
+  private def externalInterpret(e: Repr with TraversableLike[BaseT, Repr], cases: Seq[(Any => Boolean, Any => Res, Class[_])]): immutable.Set[Res] = {
+    (for {
+      v <- e
+      (guard, f, classS) <- cases
+      if classS.isInstance(v) && guard(v)
+    } yield f(v)).toSet
   }
   //cases map { case TypeCase(classS, f) => (v: Base) => if (v == null || !classS.isInstance(v)) Util.ifInstanceOfBody(v, classS)}
 }
