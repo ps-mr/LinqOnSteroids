@@ -39,7 +39,7 @@ import annotation.switch
 ///////////////////////////////////////////////////
 
 //Passing Self allows to prevent statically the only boilerplate-related copy-n-paste bug in defining tree classes.
-trait Arity${arity}OpTrait[${paramsLoopComma("A%d <: Exp[_]")}, +R, Self <: Exp[R]] extends Exp[R] {<%--
+trait Arity${arity}OpTrait[${paramsLoopComma("A%d <: Exp[_]")}, +R, +Self <: Exp[R]] extends Exp[R] {<%--
   //Ensure that Self is actually correct: --%>
   this: Self =>
   ${paramsLoop("\n  ")("def " + argPfx + "%d: A%<d")}
@@ -52,14 +52,14 @@ trait Arity${arity}OpTrait[${paramsLoopComma("A%d <: Exp[_]")}, +R, Self <: Exp[
   def copy(${paramsLoopComma(argPfx + "%d: A%<d")}): Self
 }
 
-abstract class Arity${arity}Op[${paramsLoopComma(tpPfx + "%d <: Exp[_]")}, +R, Self <: Exp[R]](${paramsLoopComma("val " + argPfx + "%d: A%<d")}) extends Arity${arity}OpTrait[${tparams}, R, Self] {
+abstract class Arity${arity}Op[${paramsLoopComma(tpPfx + "%d <: Exp[_]")}, +R, +Self <: Exp[R]](${paramsLoopComma("val " + argPfx + "%d: A%<d")}) extends Arity${arity}OpTrait[${tparams}, R, Self] {
   this: Self =>
 }
 <%--
 Should this inherit from Arity2OpExpTrait or from Arity2Op? Does it matter? I hope not - these classes should
 stay an implementation detail.
 --%>
-abstract class Arity${arity}OpExp[${tparams}, +R, Self <: Exp[R]](${paramsDeclOverride})
+abstract class Arity${arity}OpExp[${tparams}, +R, +Self <: Exp[R]](${paramsDeclOverride})
   extends Arity${arity}Op[${paramsLoopComma("Exp[" + tpPfx + "%d]")}, R, Self](${params}) {
   this: Self =>
 }
