@@ -64,7 +64,11 @@ object ScalaCompile {
     compiler.settings.outputDirs.setSingleOutput(fileSystem)
     //      compiler.genJVM.outputDir = fileSystem
 
-    run.compileSources(List(new util.BatchSourceFile("<stdin>", sourceStr)))
+    //Apparently, this compiler setup does not load the files from the executing application. Prepending the "correct"
+    //source code works fine enough for now!
+    val pkg = "ivm.expressiontree"
+    val prefix = "package %s\ntrait Compiled[T] {\n  def result: T\n}\n" format pkg
+    run.compileSources(List(new util.BatchSourceFile("<stdin>", prefix + sourceStr)))
     reporter.printSummary()
 
     if (!reporter.hasErrors)
@@ -78,7 +82,7 @@ object ScalaCompile {
     val parent = this.getClass.getClassLoader
     val loader = new AbstractFileClassLoader(fileSystem, parent)
 
-    val cls: Class[_] = loader.loadClass(className)
+    val cls: Class[_] = loader.loadClass(pkg + "." + className)
     cls
   }
 }
@@ -139,7 +143,7 @@ object Compile {
     val cls = cachedInvokeCompiler(sourceStr, className)
 
     val cons = cls.getConstructor(staticData.map(_._1.erasure):_*)
-    val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[T]
+    val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[Compiled[T]].result
     obj
   }
 }

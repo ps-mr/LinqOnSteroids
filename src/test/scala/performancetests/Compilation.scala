@@ -67,8 +67,14 @@ class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
   test("benchmark Exp.toCode") {
     benchMark("convert expression to code")(e.toCode)
   }
-  test("benchmark Compile.compile") {
-    benchMark("Use Compile.compile on expression")(Compile.emitSource(e))
+  test("benchmark Compile.emitSource") {
+    benchMark("Use Compile.emitSource on expression")(Compile.emitSource(e))
+  }
+  test("benchMark Compile.toValue") {
+    benchMark("Use Compile.toValue on expression")(Compile.toValue(e)) should be (9)
+  }
+  test("benchMark Compile.toValue for CSP") {
+    benchMark("Use Compile.toValue on CSP expression")(Compile.toValue(asExp(List(1)))) should be (List(1))
   }
   // }}}
 }
