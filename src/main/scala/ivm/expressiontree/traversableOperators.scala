@@ -75,7 +75,7 @@ case class Union[T, Repr <: TraversableLike[T, Repr], That](base: Exp[Repr], tha
 case class Diff[T, Repr <: collection.Set[T] with SetLike[T, Repr]](base: Exp[Repr], that: Exp[Traversable[T]]) extends Arity2OpExp[Repr, Traversable[T], Repr, Diff[T, Repr]](base, that) with InfixPrinting {
   override def interpret() = base.interpret() -- that.interpret()
   override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = Diff[T, Repr](base, that)
-  def operator = "diff"
+  def operator = "--"
 }
 
 case class Size[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) extends Arity1OpExp[Repr, Int, Size[T, Repr]](t) with InfixPrinting {
