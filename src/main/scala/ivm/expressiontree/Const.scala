@@ -91,4 +91,6 @@ class ConstByIdentity[T](content: T, wit: ClassManifest[T]) extends Const(conten
 
 object ConstByIdentity {
   def apply[T: ClassManifest](content: T) = new ConstByIdentity[T](content, classManifest[T])
+  def apply[T](content: T, cm: ClassManifest[_])(implicit v: DummyImplicit) =
+    new ConstByIdentity[T](content, cm.asInstanceOf[ClassManifest[T]])
 }

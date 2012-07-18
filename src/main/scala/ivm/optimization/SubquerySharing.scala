@@ -68,9 +68,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassManifest[Any])]) {
       //In both cases, the type of the resulting expression becomes Traversable, which might lead to the result having the wrong dynamic type.
       //Luckily, the CanBuildFrom instances will be too generic but will delegate their work to the source collection,
       //hence producing a result of the right dynamic type.
-      case Some(t) =>
+      case Some((t, tMan)) =>
         println("Found simple index of form " + toLookup)
-        Some(asExp(t.asInstanceOf[Map[U, Traversable[T]]]) apply constantEqSide)
+        Some(ConstByIdentity(t.asInstanceOf[Map[U, Traversable[T]]], tMan) apply constantEqSide)
       case None =>
         println("Found no simple index of form " + toLookup)
         None
@@ -279,10 +279,10 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassManifest[Any])]) {
         assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
         val toLookup = normalizeBeforeLookup(groupedBy)
         subqueries.get(toLookup) match {
-          case Some(t) =>
+          case Some((t, tMan)) =>
             println("Found nested index of form " + toLookup)
             //Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) get constantEqSide flatMap identity withFilter Fun.makefun(cond, fx))
-            Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) apply constantEqSide withFilter Fun.makefun(cond, fx))
+            Some(ConstByIdentity(t.asInstanceOf[Map[U, Traversable[TupleT]]], tMan) apply constantEqSide withFilter Fun.makefun(cond, fx))
           case None =>
             println("Found no nested index of form " + toLookup)
             None
@@ -364,11 +364,11 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassManifest[Any])]) {
         //assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
         val toLookup = normalizeBeforeLookup(groupedBy)
         subqueries.get(toLookup) match {
-          case Some(t) =>
+          case Some((t, tMan)) =>
             println("Found nested type-index of form " + toLookup)
             type TupleTAnd[+T] = (TupleT, T)
             //This map step is wrong, we rely on substitution!
-            Some(asExp(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]]).get[T](clazz) /*map(_._1) */withFilter Fun.makefun(cond, fx))
+            Some(ConstByIdentity(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]], tMan).get[T](clazz) /*map(_._1) */withFilter Fun.makefun(cond, fx))
           case None =>
             println("Found no nested type-index of form " + toLookup)
             None
