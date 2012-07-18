@@ -134,10 +134,6 @@ object Compile {
     emitSourceInternal(e)._1
 
   def toValue[T: ClassManifest](exp: Exp[T]): T = {
-    //val className = "staged$" + compileCount
-
-    //val staticData = codegen.emitSource(f, className, new PrintWriter(source))
-    //val sourceStr = source.toString
     val (sourceStr, staticData, className) = emitSourceInternal(exp)
 
     val cls = cachedInvokeCompiler(sourceStr, className)
