@@ -17,8 +17,8 @@ case class CSPVar(name: String, typ: String)
 object ScalaCompile {
   /*
    * Derived from
-   * virtualization-lms-core/src/internal/ScalaCompile.scala, branch master,
-   * commit 4835c7f882578a76db0dac52267be06967560dd0.
+   * virtualization-lms-core/src/internal/ScalaCompile.scala, branch delite-develop,
+   * commit 8f4cabbb2605f246496c084b765d1df95f903f57.
    */
   import java.io._
 
@@ -49,7 +49,8 @@ object ScalaCompile {
     settings.encoding.value = "UTF-8"
     settings.outdir.value = "."
     settings.extdirs.value = ""
-    //    settings.verbose.value = true
+    //settings.verbose.value = true
+    // -usejavacp needed on windows?
 
     reporter = new ConsoleReporter(settings, null, new PrintWriter(System.out))//writer
     compiler = new Global(settings, reporter)
@@ -90,7 +91,7 @@ object ScalaCompile {
     val loader = new AbstractFileClassLoader(fileSystem, this.getClass.getClassLoader)
 
     val cls: Class[_] = loader.loadClass(className)
-    val cons = cls.getConstructor(staticData.map(_._1.Type.erasure):_*)
+    val cons = cls.getConstructor(staticData.map(_._1.tp.erasure):_*)
 
     val obj: A=>B = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[A=>B]
     obj
