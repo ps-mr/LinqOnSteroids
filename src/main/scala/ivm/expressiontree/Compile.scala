@@ -96,11 +96,11 @@ object Compile {
     if (str endsWith ".type") //Workaround bug: names for singleton types are not fully qualified!
       //Remove final '$' from class name.
       m.erasure.getName.replaceFirst("""\$$""", "") + ".type"
-    else if (str startsWith "ivm.collections.TypeMapping[")
+    else if (str startsWith "ivm.collections.TypeMapping[<?>, <?>, ")
       //Manifests don't support type constructors, but TypeTags do! Yeah!
       str.replaceFirst(Pattern.quote("<?>, <?>"), "Traversable, ({type l[+X]=Any})#l")
     else
-      str.replaceAllLiterally("<?>", "_")
+      str.replaceAll(Pattern.quote("<?>"), "_")
   }
   val classId = new Util.GlobalIDGenerator
 
