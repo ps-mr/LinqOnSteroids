@@ -85,6 +85,19 @@ case class TypeCaseExp[BaseT, Repr <: Traversable[BaseT] with TraversableLike[Ba
       if classS.isInstance(v) && guard(v)
     } yield f(v)).toSet
   }
+  override def toCode = {
+    val caseCode =
+      for (t <- cases.asInstanceOf[Seq[TypeCase[Any, Res]]])
+      yield """if (el.isInstanceOf[%s] && (%s)(el)) {
+        |  Seq((%s)(el))
+        |} else
+      """.stripMargin format (t.classS.getName /*XXX Won't work*/, t.guard.toCode, t.f.toCode) //Use named var to apply them to 'el'? This would avoid type inference issues...
+    """%s flatMap { el =>
+      | %s
+      |   Seq.empty
+      |}
+    """.stripMargin.format(e.toCode, caseCode.mkString("\n"))
+  }
   //cases map { case TypeCase(classS, f) => (v: Base) => if (v == null || !classS.isInstance(v)) Util.ifInstanceOfBody(v, classS)}
 }
 
