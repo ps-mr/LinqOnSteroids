@@ -114,7 +114,7 @@ object Compile {
   }
   //}}}
 
-  private[expressiontree] def emitSourceInternal[T: ClassManifest](e: Exp[T]): (String, String, Seq[(ClassManifest[_], Any)], String) = {
+  /*private[expressiontree]*/ def emitSourceInternal[T: ClassManifest](e: Exp[T]): (String, String, Seq[(ClassManifest[_], Any)], String) = {
     precompileReset()
     val name = "Outclass" + classId()
     val typ = classManifest[T]
