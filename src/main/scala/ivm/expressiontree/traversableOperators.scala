@@ -84,6 +84,7 @@ case class Size[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) ext
   def operator = "size"
 }
 
+//XXX t is a duplicated field.
 case class IsEmpty[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) extends Arity1OpExp[Repr, Boolean, IsEmpty[T, Repr]](t) with InfixPrinting {
   def interpret() = t.interpret().isEmpty
   def copy(t: Exp[Repr]) = IsEmpty(t)
