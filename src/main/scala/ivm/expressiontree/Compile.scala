@@ -94,8 +94,8 @@ object Compile {
 
   //Cache compilation results.
   private val codeCache = new ScalaThreadLocal(mutable.Map[String, Class[_]]())
-  def cachedInvokeCompiler[T: ClassManifest](sourceStr: String, className: String) =
-    codeCache.get().getOrElseUpdate(sourceStr, ScalaCompile.invokeCompiler(sourceStr, className))
+  def cachedInvokeCompiler[T: ClassManifest](prefix: String, restSourceStr: String, className: String) =
+    codeCache.get().getOrElseUpdate(restSourceStr, ScalaCompile.invokeCompiler(prefix + restSourceStr, className))
 
   //*Reset methods are just (or mostly?) for testing {{{
   def precompileReset() {
@@ -115,7 +115,7 @@ object Compile {
   }
   //}}}
 
-  private[expressiontree] def emitSourceInternal[T: ClassManifest](e: Exp[T]): (String, Seq[(ClassManifest[_], Any)], String) = {
+  private[expressiontree] def emitSourceInternal[T: ClassManifest](e: Exp[T]): (String, String, Seq[(ClassManifest[_], Any)], String) = {
     precompileReset()
     val name = "Outclass" + classId()
     val typ = classManifest[T]
@@ -126,21 +126,25 @@ object Compile {
     })
     val (decls, staticData) = declValues.unzip[String, (ClassManifest[_], Any)]
     val declsStr = decls mkString ", "
-    val res =
-      """class %s(%s) extends Compiled[%s] {
+    val prefix = "class %s" format name
+    val rest =
+      """(%s) extends Compiled[%s] {
         |  override def result = %s
-        |}""".stripMargin format (name, declsStr, typ, body)
-    (res, staticData, name)
+        |}""".stripMargin format (declsStr, typ, body)
+    (prefix, rest, staticData, name)
   }
 
   //Mostly for testing
-  def emitSource[T: ClassManifest](e: Exp[T]): String =
-    emitSourceInternal(e)._1
+  def emitSource[T: ClassManifest](e: Exp[T]): String = {
+    val res = emitSourceInternal(e)
+    res._1 + res._2
+  }
+
 
   def toValue[T: ClassManifest](exp: Exp[T]): T = {
-    val (sourceStr, staticData, className) = emitSourceInternal(exp)
+    val (prefix, restSourceStr, staticData, className) = emitSourceInternal(exp)
 
-    val cls = cachedInvokeCompiler(sourceStr, className)
+    val cls = cachedInvokeCompiler(prefix, restSourceStr, className)
 
     val cons = cls.getConstructor(staticData.map(_._1.erasure):_*)
     val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[Compiled[T]].result
