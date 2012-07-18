@@ -7,12 +7,12 @@ package ivm.expressiontree
 
 trait InfixPrinting {
   this: Exp[_] =>
-  override def toCode: String =
-    /*children.head.toCode +
-    //"." +
-    " " +
-    operator + children.tail.map(_.toCode).mkString("(", ", ", ")")*/
-    "(%s).%s%s" format (children.head.toCode, operator, if (children.tail.isEmpty) "" else children.tail map (_.toCode) mkString (" (", ", ", ")"))
+  override def toCode: String = {
+    val isSymbol = operator.matches("[A-Za-z_][A-Za-z_0-9]*")
+    val hasArgs = children.tail.nonEmpty
+    "(" + children.head.toCode + ")" + (if (isSymbol) '.' else ' ') + operator +
+      (if (hasArgs) (if (!isSymbol) " " else "") + (children.tail map (_.toCode) mkString ("(", ", ", ")")) else "")
+  }
   def operator: String
 }
 
