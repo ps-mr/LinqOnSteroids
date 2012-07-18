@@ -223,7 +223,7 @@ trait CollectionMapOps {
 
   trait MapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]]
     extends Holder[Repr] {
-    def get(key: Exp[K]): Exp[Option[V]] = fmap(t, key)('Map$get, _ get _)
+    def get(key: Exp[K]): Exp[Option[V]] = fmap(t, key, 'Map)('get, _ get _)
     /*
     //IterableView[(K, V), Map[K, V]] is not a subclass of Map; therefore we cannot simply return Exp[Map[K, V]].
     case class WithFilter(base: Exp[Map[K, V]], f: Exp[((K, V)) => Boolean]) extends Exp[IterableView[(K, V), Map[K, V]]] {
