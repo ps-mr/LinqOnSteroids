@@ -137,14 +137,19 @@ object Optimization {
 
   private def preIndexing[T](exp: Exp[T]): Exp[T] = newOptimize(exp)
 
-  private def postIndexing[T](exp: Exp[T]): Exp[T] =
+  private def postIndexing[T](forIdx: Boolean, exp: Exp[T]): Exp[T] =
     handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
       mergeFilters( //Merge filters again after indexing, since it introduces new filters.
-        simplifyFilters(exp)))))))))
+        simplifyFilters(
+          // XXX: tests if existsRenester works in this position, if it does not leave optimization
+          // opportunities which require more aggressive optimizations, and in general for any negative side-effect
+          // from doing this so late. Unfortunately, this must done after indexing.
+          // It used instead to be called at the beginning of physicalOptimize.
+          if (forIdx) exp else existsRenester(exp))))))))))
 
   //TODO: rewrite using function composition
-  private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean): Exp[T] =
-    postIndexing((if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(mapToFlatMap(preIndexing(exp)))) //the call to reducer is to test.
+  private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean, forIdx: Boolean): Exp[T] =
+    postIndexing(forIdx, (if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(mapToFlatMap(preIndexing(exp)))) //the call to reducer is to test.
 
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
@@ -153,7 +158,7 @@ object Optimization {
     checkIdempotent(exp, idxLookup, "optimizeIdx") {
       optimizeIdx(_, idxLookup = false)
     } {
-      flatMapToMap(optimizeBase(exp, idxLookup))
+      flatMapToMap(optimizeBase(exp, idxLookup, forIdx = true))
     }
 
   //Check that optim(exp) == exp, but only if we are in debugging mode (flag Benchmarking.debugBench) and
@@ -177,10 +182,7 @@ object Optimization {
     checkIdempotent(exp, idxLookup, "optimize") {
       optimize(_, idxLookup = false)
     } {
-      // XXX: tests if existsRenester works in this position, if it does not leave optimization
-      // opportunities which require more aggressive optimizations, and in general for any negative side-effect
-      // from doing this so late. Unfortunately, this must done after indexing and only for non-indexes.
-      flatMapToMap(letTransformer(betaDeltaReducer(existsRenester(optimizeBase(exp, idxLookup)))))
+      flatMapToMap(letTransformer(betaDeltaReducer(optimizeBase(exp, idxLookup, forIdx = false))))
     }
 
   private val enableDebugLogStack = Stack(true)
