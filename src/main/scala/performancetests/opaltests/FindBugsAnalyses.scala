@@ -785,7 +785,8 @@ Call1('TraversableLike$toSet,
     benchQueryComplete("NOT_CLONEABLE"){ // FB: CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE") {
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
       for {
-        classFile ← classFiles if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
+        classFile ← classFiles
+        if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
         method @ Method(_, "clone", MethodDescriptor(CSeq(), ObjectType.Object), _) ← classFile.methods
         if !classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
       } yield (classFile.thisClass.className, method.name)
