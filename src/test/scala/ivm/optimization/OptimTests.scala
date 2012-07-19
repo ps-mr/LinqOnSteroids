@@ -172,7 +172,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
       y <- (1 to 10).asSmart
       if y % 2 ==# 0
     } yield (x, 1 + y)).optimize
-    Optimization.newOptimize(Yquery) should be (expected)
+    Optimization.preIndexing(Yquery) should be (expected)
     Yquery.optimize should be (expected)
   }
 
@@ -184,7 +184,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
       if (pair._1 % 2 ==# 0)
     } yield pair
     //val optZ = Zquery.optimize
-    val optZ = Optimization.newOptimize(Zquery)
+    val optZ = Optimization.preIndexing(Zquery)
     showExp(Zquery, "Zquery")
     showExp(optZ, "optZ")
     optZ should be (for {
@@ -226,7 +226,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     val e3 = generalUnnesting(e2)
     val e4 = resimplFilterIdentity(e3)
     e4 should be (e1)
-    newOptimize(e4) should be (reassociateOps(e1))
+    preIndexing(e4) should be (reassociateOps(e1))
   }
 
   @Test def renestExists1() {

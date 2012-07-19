@@ -107,7 +107,7 @@ object Optimization {
           // It used instead to be called at the beginning of physicalOptimize.
           resimplFilterIdentity(if (forIdx) exp else existsRenester(exp)))))))))))
 
-  private def preIndexing[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
+  private[optimization] def preIndexing[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
   // downcasting exp to Exp[Nothing].
     (handleNewMaps[T] _ compose flatMapToMap[T] //compose ((x: Exp[T]) => /*transformedFilterToFilter*/(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(x)))))
       compose filterFusion[T]
