@@ -7,7 +7,7 @@ addSbtPlugin("com.typesafe.sbtscalariform" % "sbtscalariform" % "0.4.0")
 libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.6.1"
 
 
-addSbtPlugin("com.typesafe.startscript" % "xsbt-start-script-plugin" % "0.5.2")
+//addSbtPlugin("com.typesafe.startscript" % "xsbt-start-script-plugin" % "0.5.2")
 
 //This is enough to build our own generator:
 libraryDependencies += "org.fusesource.scalate" % "scalate-core" % "1.5.3"
