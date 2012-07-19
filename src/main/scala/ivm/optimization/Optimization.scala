@@ -17,7 +17,7 @@ object Optimization {
   def resetSubqueries() = subqueries.clear()
   def addIndex[T: ClassManifest](_query: UnconvertedExp[Exp[T]], res: Option[T] = None) {
     val query = OptimizationUtil.stripViewUntyped(_query.v)
-    val optquery = optimizeIdx(query)
+    val optquery = optimizeIdx(query, idxLookup = true)
     val intQuery = res match {
       case Some(v) => v
       case None => optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret() again!
@@ -154,7 +154,7 @@ object Optimization {
   //The result of letTransformer is not understood by the index optimizer.
   //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
   //subquery sharing.
-  def optimizeIdx[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
+  def optimizeIdx[T](exp: Exp[T], idxLookup: Boolean): Exp[T] =
     checkIdempotent(exp, idxLookup, "optimizeIdx") {
       optimizeIdx(_, idxLookup = false)
     } {
