@@ -34,7 +34,6 @@
     <orderEntry type="library" name="org.scala-lang_scala-compiler_2.9.2" level="project" />
     <orderEntry type="library" name="org.scalatest_scalatest_2.9.2_1.7.1" level="project" />
     <orderEntry type="library" scope="TEST" name="junit_junit_4.8.2_test" level="project" />
-    <orderEntry type="library" name="junit-4.8.2.jar" level="project" />
     <orderEntry type="module" module-name="los-sampleapp" exported="" />
     <orderEntry type="module-library">
       <library>
