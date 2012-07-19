@@ -97,8 +97,9 @@ initialCommands in (Test, console) := """
     import reader.Java6Framework
 """
 
-sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, scalaVersion) map { (dir, baseDir, scalaVer) =>
-  val gen = new Generator(scalaVer)
+sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory) map { (dir, baseDir) =>
+  val sbtScalaVersion = "2.9.2"
+  val gen = new Generator(sbtScalaVersion)
   dir.mkdirs()
   if (!(dir.exists() && dir.isDirectory())) {
     scala.Console.err.printf("Failure creating output directory %s\n", dir)
