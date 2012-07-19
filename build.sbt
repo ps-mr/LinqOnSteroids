@@ -9,6 +9,8 @@ version := "0.1"
 
 scalaVersion := "2.9.2"
 
+scalaVersion in ThisBuild := "2.9.2"
+
 parallelExecution in Test := false
 
 libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-compiler" % ver)
