@@ -143,7 +143,7 @@ object Optimization {
         simplifyFilters(exp)))))))))
 
   //TODO: rewrite using function composition
-  private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
+  private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean): Exp[T] =
     postIndexing((if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(mapToFlatMap(preIndexing(exp)))) //the call to reducer is to test.
 
   //The result of letTransformer is not understood by the index optimizer.
