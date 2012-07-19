@@ -145,7 +145,7 @@ object Optimization {
           // opportunities which require more aggressive optimizations, and in general for any negative side-effect
           // from doing this so late. Unfortunately, this must done after indexing.
           // It used instead to be called at the beginning of physicalOptimize.
-          if (forIdx) exp else existsRenester(exp))))))))))
+          resimplFilterIdentity(if (forIdx) exp else existsRenester(exp)))))))))))
 
   //TODO: rewrite using function composition
   private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean, forIdx: Boolean): Exp[T] =
@@ -200,7 +200,7 @@ object Optimization {
   // obscures structures to recognize.
   // Requires result of mapToFlatMap, produces result of flatMapToMap
   private def physicalOptimize[T](exp: Exp[T]): Exp[T] =
-    (cartProdToAntiJoin[T] _ compose optimizeCartProdToJoin[T] compose flatMapToMap[T] compose resimplFilterIdentity[T])(exp)
+    (cartProdToAntiJoin[T] _ compose optimizeCartProdToJoin[T] compose flatMapToMap[T])(exp)
   //cartProdToAntiJoin(optimizeCartProdToJoin(
   private def newHandleFilters[T](exp: Exp[T]): Exp[T] =
     (mergeFilters[T] _ compose hoistFilter[T]
