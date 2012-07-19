@@ -98,7 +98,7 @@ object Compile {
       m.erasure.getName.replaceFirst("""\$$""", "") + ".type"
     else if (str startsWith "ivm.collections.TypeMapping[<?>, <?>, ")
       //Manifests don't support type constructors, but TypeTags do! Yeah!
-      str.replaceFirst(Pattern.quote("<?>, <?>"), "Traversable, ({type l[+X]=Any})#l")
+      str.replaceFirst(Pattern.quote("<?>, <?>"), "Traversable, ({type l[+X]=Tuple2[Any, X]})#l")
     else
       str.replaceAll(Pattern.quote("<?>"), "_")
   }
