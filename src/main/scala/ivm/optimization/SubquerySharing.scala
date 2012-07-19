@@ -369,6 +369,8 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassManifest[Any])]) {
             type TupleTAnd[+T] = (TupleT, T)
             //This map step is wrong, we rely on substitution!
             Some(ConstByIdentity(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]], tMan).get[T](clazz) /*map(_._1) */withFilter Fun.makefun(cond, fx))
+            //This variant does the lookup earlier but is even less able to provide a precise manifest :-(.
+            //Some(asExp(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]].get[T](clazz)) /*map(_._1) */withFilter Fun.makefun(cond, fx))
           case None =>
             println("Found no nested type-index of form " + toLookup)
             None

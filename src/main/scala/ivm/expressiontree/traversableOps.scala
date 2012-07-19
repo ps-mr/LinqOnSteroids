@@ -414,6 +414,13 @@ object TypeHierarchyUtils {
 
 trait TypeFilterOps {
   this: LiftingConvs with TupleOps with FunctionOps with TraversableOps =>
+
+  //Compare collection nodes by identity.
+  //Saves costs when comparing collections, which happens during optimization.
+  implicit def pureTypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], T](v: TypeMapping[C, D, T])
+                                                                          (implicit cm: ClassManifest[TypeMapping[C, D, T]]) =
+    asExp(ConstByIdentity(v)) //asExp here is a simple upcast :-)
+
   case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: Exp[D[T] => T])(implicit cbf: CanBuildFrom[C[D[T]], D[T], C[D[T]]], cm: ClassManifest[T]) extends Arity2OpExp[C[D[T]], D[T] => T, TypeMapping[C, D, T],
     GroupByType[T, C, D]](base, f) {
     import CollectionUtils._
