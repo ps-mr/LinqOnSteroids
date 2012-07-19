@@ -358,7 +358,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
       } yield (classFile, privateFields)
-    }, {
+    }, Optimization removeIdentityMaps {
       import BATLifting._
       for {
         classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration
