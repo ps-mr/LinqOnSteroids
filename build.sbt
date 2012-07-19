@@ -26,7 +26,7 @@ scalacOptions ++= Seq("-unchecked", "-deprecation")
 
 scalacOptions += "-explaintypes"
 
-scalacOptions += "-optimise"
+//scalacOptions += "-optimise"
 
 //scalacOptions += "-Yinline"
 
