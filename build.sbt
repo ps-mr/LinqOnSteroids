@@ -18,7 +18,7 @@ libraryDependencies += "junit" % "junit" % "4.8.2" % "test->default"
 //We can't restrict this to "test" as long as FindBugsAnalysis is in main, including its "testing" part.
 libraryDependencies += "org.scalatest" %% "scalatest" % "1.7.1"// % "test"
 
-libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
+//libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
 
