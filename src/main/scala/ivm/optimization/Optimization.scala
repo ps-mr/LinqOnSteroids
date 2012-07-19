@@ -97,8 +97,6 @@ object Optimization {
   private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean, forIdx: Boolean): Exp[T] =
     postIndexing(forIdx, (if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(mapToFlatMap(preIndexing(exp)))) //the call to reducer is to test.
 
-  private def preIndexing[T](exp: Exp[T]): Exp[T] = newOptimize(exp)
-
   private def postIndexing[T](forIdx: Boolean, exp: Exp[T]): Exp[T] =
     handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
       mergeFilters( //Merge filters again after indexing, since it introduces new filters.
@@ -109,7 +107,7 @@ object Optimization {
           // It used instead to be called at the beginning of physicalOptimize.
           resimplFilterIdentity(if (forIdx) exp else existsRenester(exp)))))))))))
 
-  def newOptimize[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
+  private def preIndexing[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
   // downcasting exp to Exp[Nothing].
     (handleNewMaps[T] _ compose flatMapToMap[T] //compose ((x: Exp[T]) => /*transformedFilterToFilter*/(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(x)))))
       compose filterFusion[T]
