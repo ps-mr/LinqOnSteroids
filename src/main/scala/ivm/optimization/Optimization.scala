@@ -177,7 +177,10 @@ object Optimization {
     checkIdempotent(exp, idxLookup, "optimize") {
       optimize(_, idxLookup = false)
     } {
-      flatMapToMap(letTransformer(betaDeltaReducer(optimizeBase(exp, idxLookup))))
+      // XXX: tests if existsRenester works in this position, if it does not leave optimization
+      // opportunities which require more aggressive optimizations, and in general for any negative side-effect
+      // from doing this so late. Unfortunately, this must done after indexing and only for non-indexes.
+      flatMapToMap(letTransformer(betaDeltaReducer(existsRenester(optimizeBase(exp, idxLookup)))))
     }
 
   private val enableDebugLogStack = Stack(true)
@@ -195,7 +198,7 @@ object Optimization {
   // obscures structures to recognize.
   // Requires result of mapToFlatMap, produces result of flatMapToMap
   private def physicalOptimize[T](exp: Exp[T]): Exp[T] =
-    (cartProdToAntiJoin[T] _ compose optimizeCartProdToJoin[T] compose flatMapToMap[T] compose resimplFilterIdentity[T] compose existsRenester[T])(exp)
+    (cartProdToAntiJoin[T] _ compose optimizeCartProdToJoin[T] compose flatMapToMap[T] compose resimplFilterIdentity[T])(exp)
   //cartProdToAntiJoin(optimizeCartProdToJoin(
   private def newHandleFilters[T](exp: Exp[T]): Exp[T] =
     (mergeFilters[T] _ compose hoistFilter[T]
