@@ -608,7 +608,9 @@ Call1('TraversableLike$toSet,
         classFile ← classFiles if classFile.isClassDeclaration
         method ← classFile.methods
         body ← method.body.toList
-        exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType == ObjectType("java/lang/IllegalMonitorStateException")
+        exceptionHandler ← body.exceptionHandlers
+        catchType ← exceptionHandler.catchType.toList
+        if catchType == ObjectType("java/lang/IllegalMonitorStateException")
       } yield (classFile, method)
     } {
       import BATLifting._
@@ -616,7 +618,9 @@ Call1('TraversableLike$toSet,
         classFile ← classFiles.asSmart if classFile.isClassDeclaration
         method ← classFile.methods
         body ← method.body
-        exceptionHandler ← body.exceptionHandlers if exceptionHandler.catchType ==# ObjectType("java/lang/IllegalMonitorStateException")
+        exceptionHandler ← body.exceptionHandlers
+        catchType ← exceptionHandler.catchType
+        if catchType ==# ObjectType("java/lang/IllegalMonitorStateException")
       } yield (classFile, method)
     }
   }
@@ -845,12 +849,13 @@ Call1('TraversableLike$toSet,
     method ← classFile.methods
   } yield (classFile, method)).indexBy(_._2.name)
 
-  val excHandlerTypeIdx: Exp[Map[Option[ObjectType], Traversable[(ClassFile, Method, Code, ExceptionHandler)]]] = (for {
+  val excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, Code, ExceptionHandler, ObjectType)]]] = (for {
     classFile ← classFiles.asSmart if classFile.isClassDeclaration
     method ← classFile.methods
     body ← method.body
     exceptionHandler ← body.exceptionHandlers
-  } yield (classFile, method, body, exceptionHandler)) indexBy (_._4.catchType)
+    catchType ← exceptionHandler.catchType
+  } yield (classFile, method, body, exceptionHandler, catchType)) indexBy (_._5)
 
   type QueryAnd[+T] = ((ClassFile, Method, Code), T)
   val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
