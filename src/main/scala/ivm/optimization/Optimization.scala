@@ -11,6 +11,19 @@ import performancetests.Benchmarking
 object Optimization {
   //Should the two normal forms (after flatMapToMap and after mapToFlatMap) be distinguished by different types?
 
+  //Logging {{{
+  private val enableDebugLogStack = Stack(true)
+
+  def pushEnableDebugLog(newVal: Boolean) {
+    enableDebugLogStack push newVal
+  }
+
+  def popEnableDebugLog() {
+    enableDebugLogStack.pop()
+  }
+  def isDebugLogEnabled = enableDebugLogStack.head
+  //}}}}
+
   val subqueries: mutable.Map[Exp[_], (Any, ClassManifest[_])] = mutable.Map.empty
   val castedSubqueries = subqueries.asInstanceOf[mutable.Map[Exp[_], (Any, ClassManifest[Any])]]
 
@@ -119,17 +132,6 @@ object Optimization {
     } {
       flatMapToMap(letTransformer(betaDeltaReducer(optimizeBase(exp, idxLookup, forIdx = false))))
     }
-
-  private val enableDebugLogStack = Stack(true)
-
-  def pushEnableDebugLog(newVal: Boolean) {
-    enableDebugLogStack push newVal
-  }
-
-  def popEnableDebugLog() {
-    enableDebugLogStack.pop()
-  }
-  def isDebugLogEnabled = enableDebugLogStack.head
 
   // Order in the end: first recognize operator, and only after that try fusion between different operators, since it
   // obscures structures to recognize.
