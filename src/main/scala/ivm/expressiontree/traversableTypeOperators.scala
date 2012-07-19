@@ -22,6 +22,7 @@ case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this 
     b.filter(x => classS.isInstance(f.interpret()(x))).asInstanceOf[C[D[S]]]
   }
   //XXX: the cast '.asInstanceOf[C[D[S]]]' is missing. How can we encode it? With an extra manifest?
+  //XXX: nameCDS, at times, is the result of erasure; hence we get java.lang.Integer instead of Int.
   override def toCode = "%s.filter(el => %s.isInstance(%s)).asInstanceOf[%s]" format (
     base.toCode, Const(classS).toCode, Lifting.app(f)(NamedVar("el")).toCode, nameCDS)
   override def copy(base: Exp[C[D[T]]], f: Exp[D[T] => T]) = TypeFilter[T, C, D, S](base, f, classS, nameCDS)
