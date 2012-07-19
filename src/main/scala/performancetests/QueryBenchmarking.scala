@@ -120,9 +120,9 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
 
       val optimizedQueries = for {
         (altQuery, i) <- altQueries.zipWithIndex
-        val altMsg = "%s Los - Alternative %d" format (msg, i)
+        altMsg = "%s Los - Alternative %d" format (msg, i)
         //Benchmark optimization time
-        val (altOptimized, _ /*altOptimizationTime*/) = benchOptimize(altMsg, altQuery)
+        (altOptimized, _ /*altOptimizationTime*/) = benchOptimize(altMsg, altQuery)
       } yield (altMsg, altOptimized, altQuery, i)
 
       for ((altMsg, altOptimized, altQuery, i) <- optimizedQueries) {

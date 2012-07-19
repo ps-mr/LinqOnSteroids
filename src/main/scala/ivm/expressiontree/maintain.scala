@@ -150,7 +150,7 @@ trait Maintainer[SrcMsg, Src <: SrcMsg, +Res] extends MsgSeqSubscriber[SrcMsg, E
         try {
           this.toString
         } catch {
-          case _ => ""
+          case _ : Exception => ""
         }
       println("%s startListeningOn %s" format (asString, root))
     }

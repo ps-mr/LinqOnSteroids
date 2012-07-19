@@ -471,8 +471,8 @@ trait TypeFilterOps {
   implicit def expToTypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T, C, D](t)
 
   class TypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val t: Exp[TypeMapping[C, D, Base]]) {
-    def get[T](implicit cS: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]) = get[T](ClassUtil.boxedErasure(cS))
-    def get[T](classS: Class[_])(implicit m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]) = TypeMappingApp[C, D, Base, T](t, classS)
+    def get[T](implicit cS: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): TypeMappingApp[C, D, Base, T] = get[T](ClassUtil.boxedErasure(cS))
+    def get[T](classS: Class[_])(implicit m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): TypeMappingApp[C, D, Base, T] = TypeMappingApp(t, classS)
   }
   implicit def expToTypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new TypeMappingAppOps[C, D, Base](t)
 

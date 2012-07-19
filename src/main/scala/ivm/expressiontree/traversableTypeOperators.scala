@@ -10,7 +10,7 @@ import collection.generic.CanBuildFrom
 
 
 object TypeFilter {
-  def apply[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], cS: ClassManifest[S], nameCDS: String) =
+  def apply[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], cS: ClassManifest[S], nameCDS: String): TypeFilter[T, C, D, S] =
     apply[T, C, D, S](base, f, ClassUtil.boxedErasure(cS), nameCDS)
 }
 
