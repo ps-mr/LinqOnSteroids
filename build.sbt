@@ -22,7 +22,7 @@ libraryDependencies += "org.scalatest" % "scalatest_2.10.0-M5" % "1.9-2.10.0-M5-
 
 resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
-libraryDependencies in ThisBuild += "de.tud.cs.st" % "bat-core" % "1.0.0-SNAPSHOT"
+libraryDependencies in ThisBuild += "de.tud.cs.st" %% "bat-core" % "1.0.0-SNAPSHOT"
 
 //libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 
