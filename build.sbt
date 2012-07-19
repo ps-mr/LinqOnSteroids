@@ -20,7 +20,9 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "1.7.1"// % "test"
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 
-scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes")
+scalacOptions ++= Seq("-unchecked", "-deprecation")
+
+scalacOptions += "-explaintypes"
 
 scalacOptions += "-optimise"
 
