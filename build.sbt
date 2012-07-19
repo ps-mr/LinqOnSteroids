@@ -9,8 +9,7 @@ version := "0.1"
 
 scalaVersion := "2.9.2"
 
-//scalaVersion in ThisBuild := "2.9.2"
-scalaVersion in ThisBuild := "2.10.0-M5"
+scalaVersion in ThisBuild := "2.9.2"
 
 parallelExecution in Test := false
 
@@ -19,14 +18,13 @@ libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-compiler"
 libraryDependencies += "junit" % "junit" % "4.8.2" % "test->default"
 
 //We can't restrict this to "test" as long as FindBugsAnalysis is in main, including its "testing" part.
-//libraryDependencies += "org.scalatest" %% "scalatest" % "1.7.1"// % "test"
-libraryDependencies += "org.scalatest" % "scalatest_2.10.0-M5" % "1.9-2.10.0-M5-B2"
+libraryDependencies += "org.scalatest" %% "scalatest" % "1.7.1"// % "test"
 
 //libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
 
-//scalacOptions += "-explaintypes"
+scalacOptions += "-explaintypes"
 
 //scalacOptions += "-optimise"
 
