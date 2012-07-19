@@ -800,7 +800,7 @@ Call1('TraversableLike$toSet,
         method ← classFile.methods
         if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
         //Shouldn't we have a lifter for this? Yep.
-        if !fmap(classFile.thisClass)('foo, classHierarchy.isSubtypeOf(_, ObjectType("java/lang/Cloneable")).getOrElse(false))
+        if !asExp(classHierarchy).isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
       } yield (classFile.thisClass.className, method.name)
     }
   }
