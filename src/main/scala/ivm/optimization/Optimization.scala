@@ -55,6 +55,78 @@ object Optimization {
     removeIdentityMaps(new SubquerySharing(castedSubqueries).shareSubqueries(query))
   //}}}
 
+  //Check that optim(exp) == exp, but only if we are in debugging mode (flag Benchmarking.debugBench) and
+  //if we are not recursively executing this check (flag doCheck)
+  private def checkIdempotent[T](orig: Exp[T], doCheck: Boolean, name: String)(optim: Exp[T] => Exp[T])(exp: Exp[T]): Exp[T] = {
+    if (Benchmarking.debugBench && doCheck) {
+      val reOptim = optim(exp)
+      if (exp != reOptim)
+        Console.err.println("%s not idempotent.\nOriginal query:\n>>>>> %s\nOptim. query:\n>>>>> %s\nReoptimized query:\n>>>>> %s"
+          format (name, orig, exp, reOptim))
+    }
+
+    exp
+  }
+
+  //Optimization entry points and major phases {{{
+
+  //After letTransformer (an inliner), we can reduce redexes which arised; let's not do that, to avoid inlining
+  // let definitions introduced by the user.
+  //The reasoning described above would imply that this optimizer is not idempotent, since we transform
+  //stuff into App nodes which we beta-reduce only in a second call to the optimizer.
+  //In fact, now beta reduction checks the inlining side conditions to guarantee idempotence. This however means that
+  //we'll miss some opportunities for inlining and optimization, so maybe it should be reversed.
+  def optimize[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
+    checkIdempotent(exp, idxLookup, "optimize") {
+      optimize(_, idxLookup = false)
+    } {
+      flatMapToMap(letTransformer(betaDeltaReducer(optimizeBase(exp, idxLookup, forIdx = false))))
+    }
+
+  //The result of letTransformer is not understood by the index optimizer.
+  //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
+  //subquery sharing.
+  def optimizeIdx[T](exp: Exp[T], idxLookup: Boolean): Exp[T] =
+    checkIdempotent(exp, idxLookup, "optimizeIdx") {
+      optimizeIdx(_, idxLookup = false)
+    } {
+      flatMapToMap(optimizeBase(exp, idxLookup, forIdx = true))
+    }
+
+  //TODO: rewrite using function composition
+  private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean, forIdx: Boolean): Exp[T] =
+    postIndexing(forIdx, (if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(mapToFlatMap(preIndexing(exp)))) //the call to reducer is to test.
+
+  private def preIndexing[T](exp: Exp[T]): Exp[T] = newOptimize(exp)
+
+  private def postIndexing[T](forIdx: Boolean, exp: Exp[T]): Exp[T] =
+    handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
+      mergeFilters( //Merge filters again after indexing, since it introduces new filters.
+        simplifyFilters(
+          // XXX: tests if existsRenester works in this position, if it does not leave optimization
+          // opportunities which require more aggressive optimizations, and in general for any negative side-effect
+          // from doing this so late. Unfortunately, this must done after indexing.
+          // It used instead to be called at the beginning of physicalOptimize.
+          resimplFilterIdentity(if (forIdx) exp else existsRenester(exp)))))))))))
+
+  def newOptimize[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
+  // downcasting exp to Exp[Nothing].
+    (handleNewMaps[T] _ compose flatMapToMap[T] //compose ((x: Exp[T]) => /*transformedFilterToFilter*/(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(x)))))
+      compose filterFusion[T]
+      compose physicalOptimize[T] //returns result of flatMapToMap
+      compose betaDeltaReducer[T]
+      compose newHandleFilters[T] //3s
+      compose basicInlining[T] //5-7s
+      compose existsUnnester[T] //6s
+      compose removeRedundantOption[T] compose toTypeFilter[T] compose sizeToEmpty[T]
+      compose generalUnnesting[T] //11s
+      compose mapToFlatMap[T] //12-18s
+      compose removeIdentityMaps[T] //40s
+      compose betaDeltaReducer[T])(exp)
+
+  //}}}
+
+  //Pipeline building blocks {{{
   //Internally converts to flatMap normal form
   def handleFilters[T](exp: Exp[T]): Exp[T] =
     flatMapToMap(
@@ -71,8 +143,6 @@ object Optimization {
 
   def basicInlining[T](exp: Exp[T]): Exp[T] = letTransformerUsedAtMostOnce(letTransformerTrivial(exp))
 
-  def ifSimplify[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.ifSimplify)
-
   private def preIndexingOld[T](exp: Exp[T]): Exp[T] =
       handleNewMaps(
         cartProdToAntiJoin(
@@ -82,58 +152,6 @@ object Optimization {
                 //generalUnnesting, in practice, can produce the equivalent of let statements. Hence it makes sense to desugar them _after_ (at least the trivial ones).
                 sizeToEmpty(basicInlining(generalUnnesting(mapToFlatMap(
                   removeIdentityMaps(betaDeltaReducer(exp)))))))))))))
-
-  private def preIndexing[T](exp: Exp[T]): Exp[T] = newOptimize(exp)
-
-  private def postIndexing[T](forIdx: Boolean, exp: Exp[T]): Exp[T] =
-    handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
-      mergeFilters( //Merge filters again after indexing, since it introduces new filters.
-        simplifyFilters(
-          // XXX: tests if existsRenester works in this position, if it does not leave optimization
-          // opportunities which require more aggressive optimizations, and in general for any negative side-effect
-          // from doing this so late. Unfortunately, this must done after indexing.
-          // It used instead to be called at the beginning of physicalOptimize.
-          resimplFilterIdentity(if (forIdx) exp else existsRenester(exp)))))))))))
-
-  //TODO: rewrite using function composition
-  private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean, forIdx: Boolean): Exp[T] =
-    postIndexing(forIdx, (if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(mapToFlatMap(preIndexing(exp)))) //the call to reducer is to test.
-
-  //The result of letTransformer is not understood by the index optimizer.
-  //Therefore, we don't apply it at all on indexes, and we apply it to queries only after
-  //subquery sharing.
-  def optimizeIdx[T](exp: Exp[T], idxLookup: Boolean): Exp[T] =
-    checkIdempotent(exp, idxLookup, "optimizeIdx") {
-      optimizeIdx(_, idxLookup = false)
-    } {
-      flatMapToMap(optimizeBase(exp, idxLookup, forIdx = true))
-    }
-
-  //Check that optim(exp) == exp, but only if we are in debugging mode (flag Benchmarking.debugBench) and
-  //if we are not recursively executing this check (flag doCheck)
-  private def checkIdempotent[T](orig: Exp[T], doCheck: Boolean, name: String)(optim: Exp[T] => Exp[T])(exp: Exp[T]): Exp[T] = {
-    if (Benchmarking.debugBench && doCheck) {
-      val reOptim = optim(exp)
-      if (exp != reOptim)
-        Console.err.println("%s not idempotent.\nOriginal query:\n>>>>> %s\nOptim. query:\n>>>>> %s\nReoptimized query:\n>>>>> %s"
-          format (name, orig, exp, reOptim))
-    }
-
-    exp
-  }
-
-  //After letTransformer (an inliner), we can reduce redexes which arised; let's not do that, to avoid inlining
-  // let definitions introduced by the user.
-  //The reasoning described above would imply that this optimizer is not idempotent, since we transform
-  //stuff into App nodes which we beta-reduce only in a second call to the optimizer.
-  //In fact, now beta reduction checks the inlining side conditions to guarantee idempotence. This however means that
-  //we'll miss some opportunities for inlining and optimization, so maybe it should be reversed.
-  def optimize[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
-    checkIdempotent(exp, idxLookup, "optimize") {
-      optimize(_, idxLookup = false)
-    } {
-      flatMapToMap(letTransformer(betaDeltaReducer(optimizeBase(exp, idxLookup, forIdx = false))))
-    }
 
   // Order in the end: first recognize operator, and only after that try fusion between different operators, since it
   // obscures structures to recognize.
@@ -151,21 +169,6 @@ object Optimization {
       compose transformedFilterToFilter[T] compose betaDeltaReducer[T] compose basicInlining[T]
       compose mapToFlatMap[T] compose mergeFlatMaps[T] compose mergeMaps[T] compose flatMapToMap[T]
       compose betaDeltaReducer[T] compose ifSimplify[T] compose filterToTransformedFilter[T])(exp)
-
-  def newOptimize[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
-  // downcasting exp to Exp[Nothing].
-    (handleNewMaps[T] _ compose flatMapToMap[T] //compose ((x: Exp[T]) => /*transformedFilterToFilter*/(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(x)))))
-      compose filterFusion[T]
-      compose physicalOptimize[T] //returns result of flatMapToMap
-      compose betaDeltaReducer[T]
-      compose newHandleFilters[T] //3s
-      compose basicInlining[T] //5-7s
-      compose existsUnnester[T] //6s
-      compose removeRedundantOption[T] compose toTypeFilter[T] compose sizeToEmpty[T]
-      compose generalUnnesting[T] //11s
-      compose mapToFlatMap[T] //12-18s
-      compose removeIdentityMaps[T] //40s
-      compose betaDeltaReducer[T])(exp)
 
   //Boilerplate {{{
   def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.cartProdToJoin)
@@ -232,6 +235,8 @@ object Optimization {
   def transformedFilterToFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.transformedFilterToFilter)
 
   def filterToTransformedFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.filterToTransformedFilter)
+
+  def ifSimplify[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.ifSimplify)
 
   //def constantFolding[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.constantFolding)
   //}}}
