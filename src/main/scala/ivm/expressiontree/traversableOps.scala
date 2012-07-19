@@ -101,7 +101,7 @@ trait TraversableOps {
     }
 
     //XXX: Generate these wrappers, also for other methods.
-    def toSet(implicit cm: ClassManifest[T]) = fmap(this.t, 'TraversableLike)(Symbol("toSet[%s]" format cm), _.toSet)
+    def toSet = fmap(this.t, 'TraversableLike)('toSet, _.toSet)
     def toSeq = fmap(this.t, 'TraversableLike)('toSeq, _.toSeq)
     def flatten[U](implicit asTraversable: T => TraversableOnce[U]) = fmap(this.t, 'TraversableLikeOps)('flatten, _.flatten)
 
@@ -277,12 +277,12 @@ trait CollectionSetOps {
     new SetLikeOps[T, Repr] {val t = v}
   implicit def toSetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]: ClassManifest](v: Repr with Set[T]) =
     expToSetLikeOps(v)
-  implicit def CollectionSetExp2ExpCollectionSet[T: ClassManifest](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
+  implicit def CollectionSetExp2ExpCollectionSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
 }
 
 trait SetOps extends CollectionSetOps {
   this: LiftingConvs with TraversableOps =>
-  implicit def SetExp2ExpSet[T: ClassManifest](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
+  implicit def SetExp2ExpSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
 }
 
 sealed trait MaybeSub[-A, +B]
