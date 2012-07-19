@@ -27,7 +27,9 @@ class Generator(scalaVersion: String) {
 
   engine.combinedClassPath = true
   val cpBuilder = new ClassPathBuilder
-  cpBuilder.addEntry((new File(System.getProperty("user.home")) / ".ivy2" / "cache" / "org.scala-lang" / "scala-library" / "jars" / ("scala-library-" + scalaVersion + ".jar")).absolutePath)
+  cpBuilder.addEntry((new File(System.getProperty("user.home")) /
+    ".ivy2" / "cache" / "org.scala-lang" / "scala-library" / "jars" /
+    ("scala-library-" + scalaVersion + ".jar")).absolutePath)
   //To add a directory use:
   //  cpBuilder.addLibDir("lib")
   //However, "lib" is already available as part of the classpath inherited from
