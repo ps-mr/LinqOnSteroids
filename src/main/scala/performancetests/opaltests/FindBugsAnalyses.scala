@@ -845,7 +845,7 @@ Call1('TraversableLike$toSet,
     method ← classFile.methods
   } yield (classFile, method)).indexBy(_._2.name)
 
-  val excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, Code, ExceptionHandler)]]] = (for {
+  val excHandlerTypeIdx: Exp[Map[Option[ObjectType], Traversable[(ClassFile, Method, Code, ExceptionHandler)]]] = (for {
     classFile ← classFiles.asSmart if classFile.isClassDeclaration
     method ← classFile.methods
     body ← method.body
