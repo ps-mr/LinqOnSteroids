@@ -24,6 +24,7 @@ object Optimization {
   def isDebugLogEnabled = enableDebugLogStack.head
   //}}}}
 
+  //Indexing {{{
   val subqueries: mutable.Map[Exp[_], (Any, ClassManifest[_])] = mutable.Map.empty
   val castedSubqueries = subqueries.asInstanceOf[mutable.Map[Exp[_], (Any, ClassManifest[Any])]]
 
@@ -52,6 +53,7 @@ object Optimization {
   //removeIdentityMaps is appropriate here because typed-indexing can introduce identity maps.
   def shareSubqueries[T](query: Exp[T]): Exp[T] =
     removeIdentityMaps(new SubquerySharing(castedSubqueries).shareSubqueries(query))
+  //}}}
 
   //Internally converts to flatMap normal form
   def handleFilters[T](exp: Exp[T]): Exp[T] =
@@ -165,6 +167,7 @@ object Optimization {
       compose removeIdentityMaps[T] //40s
       compose betaDeltaReducer[T])(exp)
 
+  //Boilerplate {{{
   def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.cartProdToJoin)
 
   def cartProdToAntiJoin[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.cartProdToAntiJoin)
@@ -231,4 +234,5 @@ object Optimization {
   def filterToTransformedFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.filterToTransformedFilter)
 
   //def constantFolding[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.constantFolding)
+  //}}}
 }
