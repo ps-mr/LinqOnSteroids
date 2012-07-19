@@ -151,7 +151,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
 
   // Now the classHierarchy is built functionally - hence, the result could be incrementally maintained (at least for the
   // addition of classes).
-  val classHierarchy = (new ClassHierarchy {} /: classFiles)(_ + _)
+  val classHierarchy = (new ClassHierarchy /: classFiles)(_ + _)
 
   println("Number of class files: " + classFiles.length)
   println("Numer of methods: " + methodsSQuOpt().interpret().size)
