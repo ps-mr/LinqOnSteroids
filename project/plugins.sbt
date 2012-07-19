@@ -2,6 +2,10 @@ resolvers += Classpaths.typesafeResolver
 
 addSbtPlugin("com.typesafe.sbtscalariform" % "sbtscalariform" % "0.4.0")
 
+resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+
+libraryDependencies += "de.tud.cs.st" % "bat-core" % "1.0.0-SNAPSHOT"
+
 //addSbtPlugin("de.johoop" % "findbugs4sbt" % "1.1.6")
 
 libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.6.1"
