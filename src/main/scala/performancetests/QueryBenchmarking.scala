@@ -88,9 +88,9 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
    * @tparam Coll
    * @return
    */
-  def benchQueryComplete[T: ClassManifest, Coll <: Traversable[T]: ClassManifest](msg: String)
+  def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
                                                    (expected: => Traversable[T], altExpected: => Traversable[T] = null /* Tried using OptParam here with */)
-                                                   (query: => Exp[Coll], altQueries: Exp[Coll]*)
+                                                   (query: => Exp[Coll], altQueries: Exp[Coll]*)(implicit cm: ClassManifest[Traversable[T]])
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
     //Those versions don't work - bug https://issues.scala-lang.org/browse/SI-5642.
     //val builtQuery: Exp[Coll with Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query[T, Coll](query))
