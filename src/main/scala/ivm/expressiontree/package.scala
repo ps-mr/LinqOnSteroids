@@ -4,6 +4,7 @@ package object expressiontree {
   import scala.reflect.runtime.universe
   val u = universe
   type ClassTag[T] = reflect.ClassTag[T]
+  val ClassTag = reflect.ClassTag
   type TypeTag[T] = u.TypeTag[T]
   def classTag[T](implicit c: ClassTag[T]) = c
   def typeTag[T](implicit ttag: TypeTag[T]) = ttag
