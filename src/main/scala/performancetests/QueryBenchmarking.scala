@@ -2,7 +2,7 @@ package performancetests
 
 import ivm._
 import tests.TestUtil
-import expressiontree.{Compile, Lifting, Exp, ClassTag}
+import expressiontree.{Compile, Lifting, Exp, TypeTag}
 import Lifting._
 import optimization.Optimization
 import org.scalatest.matchers.ShouldMatchers
@@ -27,7 +27,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
   //If we're running only the optimized version, we only run it only once.
   override def debugBench = super.debugBench || onlyOptimized
 
-  private def doRun[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll], c: ClassTag[Coll]) = {
+  private def doRun[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll], c: TypeTag[Coll]) = {
     if (!onlyOptimized)
       showExpNoVal(v, msg)
     benchMarkInternal(msg)(v.expResult().force)
@@ -57,7 +57,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
 
   private def benchInterpret[T, Coll <: Traversable[T]](msg: String,
                                                 v: Exp[Coll with Traversable[T]],
-                                                timeScala: Double)(implicit f: Forceable[T, Coll], c: ClassTag[Coll]): Traversable[T] =
+                                                timeScala: Double)(implicit f: Forceable[T, Coll], c: TypeTag[Coll]): Traversable[T] =
   {
     val (optimized, optimizationTime) = benchOptimize(msg, v)
     val (resOpt, timeOpt) = doRun(msg + " - after optimization", optimized)
@@ -90,7 +90,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
    */
   def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
                                                    (expected: => Traversable[T], altExpected: => Traversable[T] = null /* Tried using OptParam here with */)
-                                                   (query: => Exp[Coll], altQueries: Exp[Coll]*)(implicit cm: ClassTag[Traversable[T]])
+                                                   (query: => Exp[Coll], altQueries: Exp[Coll]*)(implicit cm: TypeTag[Traversable[T]])
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
     //Those versions don't work - bug https://issues.scala-lang.org/browse/SI-5642.
     //val builtQuery: Exp[Coll with Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query[T, Coll](query))
