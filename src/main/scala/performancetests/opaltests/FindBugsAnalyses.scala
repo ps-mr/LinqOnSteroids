@@ -88,9 +88,12 @@ object FindBugsAnalyses {
     //Use toList to convert args to an immutable sequence - arrays can be converted implicitly only to generic sequences (in particular, mutable ones)!
     (new FindBugsAnalyses(args.toList)).analyze()
   }
+  type QueryAnd[+T] = ((ClassFile, Method, Code), T)
 }
 
 class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
+  import FindBugsAnalyses.QueryAnd
+
   def methodsNative() = {
     for {
       classFile ← classFiles
@@ -857,7 +860,6 @@ Call1('TraversableLike$toSet,
     catchType ← exceptionHandler.catchType
   } yield (classFile, method, body, exceptionHandler, catchType)) indexBy (_._5)
 
-  type QueryAnd[+T] = ((ClassFile, Method, Code), T)
   val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
     classFile ← classFiles.asSmart
     method ← classFile.methods
