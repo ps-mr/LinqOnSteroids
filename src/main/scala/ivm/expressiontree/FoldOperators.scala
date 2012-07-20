@@ -65,6 +65,8 @@ trait FoldOperators {
             f.update(cache.get, oldV, newV)
           case Reset =>
             z
+          case _ => //Should not be possible
+            throw new IllegalArgumentException
         })
     }
   }
