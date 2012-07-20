@@ -403,7 +403,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     val typeIdx = typeIdxBase.groupByTupleType2
     val typeIdxSeq = typeIdxBaseSeq.groupByTupleType2
     //This is normalization-by-evaluation over terms instead of functions (and who said it is limited to functions?)
-    val evaluatedtypeindex: Exp[TypeMapping[Seq, PairMethodAnd, Instruction]] = //benchMark("los6 index creation"){ asExp(typeIdx.interpret()) } //XXX
+    /*val evaluatedtypeindex: Exp[TypeMapping[Seq, PairMethodAnd, Instruction]] = //benchMark("los6 index creation"){ asExp(typeIdx.interpret()) } //XXX
       benchMark("los6 Seq-index creation"){ asExp(typeIdxSeq.interpret()) }
     //println(evaluatedtypeindex.map.keys)
 
@@ -428,7 +428,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     val m6Int: Traversable[String] = benchMark("los6 (with index)") {
       methodsLos6.interpret()
     }
-    methodsNative should equal (m6Int)
+    methodsNative should equal (m6Int)*/
 
     type QueryAnd[+T] = ((ClassFile, Method, Code), T);
     {
@@ -467,7 +467,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       // per each instruction. The fix was adding toSeq above. In fact, this transformation could probably be done also on the query to optimize;
       // after that, the optimizer would again find a matching subquery. The new runtime is ~ 0.3-0.4 sec.
       val evaluatedtypeindex = benchMark("los6 Seq-index (less manually optimized) creation"){ typeIdx.interpret() }
-      Optimization.addIndex(typeIdx, Some(evaluatedtypeindex))
+      /*Optimization.addIndex(typeIdx, Some(evaluatedtypeindex))
 
       val methodsLos6 = asExp(evaluatedtypeindex).get[INSTANCEOF].map(_._1._2.name).toSet
 
@@ -478,7 +478,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized)") {
         methodsLos6.interpret()
       }
-      methodsNative should equal (m6Int)
+      methodsNative should equal (m6Int)*/
     }
 
     // another version using type index, to try to understand how this could be coded more easily into the optimizer.
@@ -489,7 +489,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     } yield (m, ca)
     val typeIdx1 = idx1Base.groupByTupleType2
     //NOTE: it is crucial to mention SND here.
-    val evTypeIdx1: Exp[TypeMapping[Seq, PairMethodAnd, Attribute]] = benchMark("los7: creation of index typeIdx1"){ asExp(typeIdx1.interpret()) }
+    /*val evTypeIdx1: Exp[TypeMapping[Seq, PairMethodAnd, Attribute]] = benchMark("los7: creation of index typeIdx1"){ asExp(typeIdx1.interpret()) }
     //Hmm: this index inverts a 1-1 mapping, is that a good idea performance-wise?
     val idx1 = idx1Base.groupBySel(_._2, _._1)
     val idx1BaseWithSeqs = for {
@@ -524,12 +524,12 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     val m7Int: Traversable[String] = benchMark("los7 (with hierarchical indexing)") {
       methodsLos7.interpret().toSet
     }
-    methodsNative should equal (m7Int)
+    methodsNative should equal (m7Int)*/
   }
 
   test("testOpalWithIndexing-2") {
     //Code coming from TypeTests.
-    type QueryAnd[+T] = ((ClassFile, Method), T);
+    type QueryAnd[+T] = ((ClassFile, Method), T)
     val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
       cf <- queryData.toSeq
       m <- cf.methods
@@ -538,13 +538,13 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     } yield (asExp((cf, m)), i)
 
     val typeIdx = typeIdxBase.groupByTupleType2
-    val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation, with fixed type indexing"){ asExp(typeIdx.interpret()) }
+    /*val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation, with fixed type indexing"){ asExp(typeIdx.interpret()) }
 
     val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name).toSet
 
     val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized, fixed type indexing)") {
       methodsLos6.interpret()
     }
-    methodsNative should equal (m6Int)
+    methodsNative should equal (m6Int)*/
   }
 }
