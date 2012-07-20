@@ -35,4 +35,4 @@ resolvers += "Sonatype snapshots" at "http://oss.sonatype.org/content/repositori
 
 addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.1.0-SNAPSHOT")
 
-libraryDependencies += Defaults.sbtPluginExtra("com.eed3si9n" % "sbt-assembly" % "0.8.3", "0.12", "2.9.2")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.8.3")

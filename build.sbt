@@ -13,8 +13,6 @@ scalaVersion in ThisBuild := "2.10.0-M5"
 
 parallelExecution in Test := false
 
-libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-library" % ver)
-
 libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-compiler" % ver)
 
 libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-reflect" % ver)
@@ -35,8 +33,6 @@ scalacOptions ++= Seq("-unchecked", "-deprecation")
 
 scalacOptions ++= Seq("-feature", "-language:implicitConversions",
   "-language:higherKinds", "-language:existentials")
-
-retrieveManaged := true
 
 //scalacOptions += "-explaintypes"
 
