@@ -14,6 +14,8 @@ parallelExecution in Test := false
 
 libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-compiler" % ver)
 
+libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-reflect" % ver)
+
 libraryDependencies += "junit" % "junit" % "4.8.2" % "test->default"
 
 //We can't restrict this to "test" as long as FindBugsAnalysis is in main, including its "testing" part.
