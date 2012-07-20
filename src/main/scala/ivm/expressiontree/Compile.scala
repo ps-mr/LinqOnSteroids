@@ -54,7 +54,7 @@ object ScalaCompile {
     compiler = new Global(settings, reporter)
   }
 
-  def invokeCompiler[T: TypeTag](sourceStr: String, className: String) = {
+  def invokeCompiler[T: TypeTag](sourceStr: String, className: String): Option[Class[_]] = {
     Console.err println sourceStr
     if (this.compiler eq null)
       setupCompiler()
@@ -71,20 +71,23 @@ object ScalaCompile {
     val prefix = "import ivm.expressiontree.Compiled\n"
     run.compileSources(List(new util.BatchSourceFile("<stdin>", prefix + sourceStr)))
     reporter.printSummary()
-
-    if (!reporter.hasErrors)
-      println("compilation: ok")
-    else
-      println("compilation: had errors")
+    val hasErrors = reporter.hasErrors
 
     reporter.reset()
     //output.reset
 
-    val parent = this.getClass.getClassLoader
-    val loader = new AbstractFileClassLoader(fileSystem, parent)
+    if (!hasErrors) {
+      println("compilation: ok")
 
-    val cls: Class[_] = loader.loadClass(className)
-    cls
+      val parent = this.getClass.getClassLoader
+      val loader = new AbstractFileClassLoader(fileSystem, parent)
+
+      val cls: Class[_] = loader.loadClass(className)
+      Some(cls)
+    } else {
+      println("compilation: had errors")
+      None
+    }
   }
 }
 
@@ -109,7 +112,7 @@ object Compile {
   val classId = new Util.GlobalIDGenerator
 
   //Cache compilation results.
-  private val codeCache = new ScalaThreadLocal(mutable.Map[String, Class[_]]())
+  private val codeCache = new ScalaThreadLocal(mutable.Map[String, Option[Class[_]]]())
   def cachedInvokeCompiler[T: TypeTag](prefix: String, restSourceStr: String, className: String) =
     codeCache.get().getOrElseUpdate(restSourceStr, ScalaCompile.invokeCompiler(prefix + restSourceStr, className))
 
@@ -160,10 +163,15 @@ object Compile {
   def toValue[T: TypeTag](exp: Exp[T]): T = {
     val (prefix, restSourceStr, staticData, className) = emitSourceInternal(exp)
 
-    val cls = cachedInvokeCompiler(prefix, restSourceStr, className)
-
-    val cons = cls.getConstructor(staticData.map(_._1.runtimeClass):_*)
-    val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[Compiled[T]].result
-    obj
+    cachedInvokeCompiler(prefix, restSourceStr, className) match {
+      case Some(cls) =>
+        val cons = cls.getConstructor(staticData.map(_._1.runtimeClass):_*)
+        val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[Compiled[T]].result
+        obj
+      case None =>
+        throw new CompilationFailedException("")
+    }
   }
 }
+
+case class CompilationFailedException(message: String) extends Exception(message)
