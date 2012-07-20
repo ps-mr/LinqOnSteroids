@@ -30,6 +30,9 @@ libraryDependencies in ThisBuild += "de.tud.cs.st" %% "bat-core" % "1.0.0-SNAPSH
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
 
+scalacOptions ++= Seq("-feature", "-language:implicitConversions",
+  "-language:higherKinds", "-language:existentials")
+
 //scalacOptions += "-explaintypes"
 
 //scalacOptions += "-optimise"
