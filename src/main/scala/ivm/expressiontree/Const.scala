@@ -68,7 +68,7 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
       if (s.length() > 100) {
         val begin = s take 100
         val quoteCloser = if (begin.contains('"')) "\"" else if (begin.contains('\'')) "'" else ""
-        begin + "..." + quoteCloser + ")" * (begin.count('(' == ) - begin.count(')' == ))
+        begin + "..." + quoteCloser + ")" * (begin.count(_  == '(') - begin.count(_ == ')'))
       }
       else
         s

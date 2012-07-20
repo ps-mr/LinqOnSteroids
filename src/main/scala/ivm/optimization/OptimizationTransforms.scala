@@ -27,7 +27,7 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
       case And(a, b) => b +: collectCondsReversed(a)
       case _ => Seq(exp)
     }
-  private def collectConds = collectCondsReversed _ andThen (_ reverse)
+  private def collectConds = collectCondsReversed _ andThen (_.reverse)
 
   //Split multiple filters anded together.
   val splitFilters: Exp[_] => Exp[_] = {
