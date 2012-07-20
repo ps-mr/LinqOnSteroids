@@ -70,7 +70,7 @@ class TransformTest extends JUnitSuite with ShouldMatchersForJUnit with Transfor
 
   //substSubTerm: the replacement can contain the replaced term.
   @Test def testTransformCont() {
-    val x = Fun.gensym[(Int, Int)]()
+    val x = asExp(Fun.gensym[(Int, Int)]()) //asExp upcasts the return value. TypedVar has already a member named _1.
     val transf = asExp(x, x) substSubTerm (x, x._1)
     transf should be (asExp(x._1, x._1))
   }
