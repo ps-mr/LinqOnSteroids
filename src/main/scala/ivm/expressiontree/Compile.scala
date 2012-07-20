@@ -93,7 +93,10 @@ object Compile {
 
   def manifestToString[T](m: TypeTag[T]): String = {
     val str = m.tpe.toString
-    str
+    if (str contains "_$")
+      str replaceAll ("""_\$\d+""", "_")
+    else
+      str
     /*if (str endsWith ".type") //Workaround bug: names for singleton types are not fully qualified!
       //Remove final '$' from class name.
       m.runtimeClass.getName.replaceFirst("""\$$""", "") + ".type"
