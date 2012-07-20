@@ -93,10 +93,10 @@ trait TraversableOps {
     //This awkward form is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
     //def exists(f: Exp[T] => Exp[Boolean]) = !(Forall(this.t, Fun(f andThen (!(_)))))
 
-    def typeFilter[S](implicit cS: ClassTag[S]): Exp[Traversable[S]] = {
+    def typeFilter[S: TypeTag](implicit cS: ClassTag[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
       //TypeFilter[T, Coll, ID, S](t, Fun(identity[Exp[T]]), cS) //variance mismatch
-      TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]), cS, classManifest[Traversable[S]].toString)
+      TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]), cS, Compile.manifestToString(typeTag[Traversable[S]]))
     }
     private[ivm] def typeFilterClass[S](classS: Class[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
