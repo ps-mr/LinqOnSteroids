@@ -4,42 +4,46 @@
     <facet type="scala" name="Scala">
       <configuration>
         <option name="compilerLibraryLevel" value="Project" />
-        <option name="compilerLibraryName" value="scala-2.9.2" />
+        <option name="compilerLibraryName" value="scala-2.10.0-M5" />
         <option name="fsc" value="true" />
       </configuration>
     </facet>
   </component>
   <component name="NewModuleRootManager" inherit-compiler-output="false">
-    <output url="file://$MODULE_DIR$/../target/scala-2.9.2/classes" />
-    <output-test url="file://$MODULE_DIR$/../target/scala-2.9.2/test-classes" />
+    <output url="file://$MODULE_DIR$/../target/scala-2.10/classes" />
+    <output-test url="file://$MODULE_DIR$/../target/scala-2.10/test-classes" />
     <exclude-output />
     <content url="file://$MODULE_DIR$/..">
       <sourceFolder url="file://$MODULE_DIR$/../src/main/scala" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../src/main/java" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../target/scala-2.9.2/src_managed/main" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../target/scala-2.10/src_managed/main" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../src/main/resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../src/test/scala" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../src/test/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../src/test/resources" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/../gen-out" />
-      <excludeFolder url="file://$MODULE_DIR$/../target/scala-2.10" />
-      <excludeFolder url="file://$MODULE_DIR$/../target/scala-2.9.2/cache" />
-      <excludeFolder url="file://$MODULE_DIR$/../target/scala-2.9.2/classes" />
+      <excludeFolder url="file://$MODULE_DIR$/../target/scala-2.10/cache" />
+      <excludeFolder url="file://$MODULE_DIR$/../target/scala-2.10/classes" />
+      <excludeFolder url="file://$MODULE_DIR$/../target/scala-2.10/test-classes" />
+      <excludeFolder url="file://$MODULE_DIR$/../target/scala-2.9.2" />
       <excludeFolder url="file://$MODULE_DIR$/../target/streams" />
       <excludeFolder url="file://$MODULE_DIR$/../various" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="de.tud.cs.st_bat-core_2.9.2_1.0.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" name="org.scala-lang_scala-library_2.9.2" level="project" />
-    <orderEntry type="library" name="org.scala-lang_scala-compiler_2.9.2" level="project" />
-    <orderEntry type="library" name="org.scalatest_scalatest_2.9.2_1.7.1" level="project" />
+    <orderEntry type="library" name="de.tud.cs.st_bat-core_2.10_1.0.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="org.scala-lang_scala-library_2.10.0-M5" level="project" />
+    <orderEntry type="library" name="com.typesafe_config_0.4.0" level="project" />
+    <orderEntry type="library" name="org.scala-lang_scala-compiler_2.10.0-M5" level="project" />
+    <orderEntry type="library" name="org.scala-lang_scala-reflect_2.10.0-M5" level="project" />
+    <orderEntry type="library" name="org.scalatest_scalatest_2.10.0-M5_1.9-2.10.0-M5-B2" level="project" />
+    <orderEntry type="library" name="org.scala-lang_scala-actors_2.10.0-M5" level="project" />
     <orderEntry type="library" scope="TEST" name="junit_junit_4.8.2_test" level="project" />
     <orderEntry type="module" module-name="los-sampleapp" exported="" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="file://$MODULE_DIR$/../sampleapp/target/scala-2.9.2/classes" />
+          <root url="file://$MODULE_DIR$/../sampleapp/target/scala-2.10/classes" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

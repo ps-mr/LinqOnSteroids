@@ -24,7 +24,6 @@
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/commons-httpclient-3.1.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/sbt-0.12.0-RC4.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/io-0.12.0-RC4.jar!/" />
-          <root url="jar://$USER_HOME$/.ivy2/cache/org.scala-lang/scalap/jars/scalap-2.9.1.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/commons-logging-1.0.4.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/collections-0.12.0-RC4.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/jline-1.0.jar!/" />
@@ -47,7 +46,6 @@
           <root url="jar://$USER_HOME$/.ivy2/cache/scala_2.9.2/sbt_0.12/com.github.mpeltonen/sbt-idea/jars/sbt-idea-1.1.0-SNAPSHOT.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/run-0.12.0-RC4.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/compiler-ivy-integration-0.12.0-RC4.jar!/" />
-          <root url="jar://$MODULE_DIR$/../project/sampleapp/lib/bat-1.6.0.RC1.jar!/" />
           <root url="jar://$USER_HOME$/.ivy2/cache/org.fusesource.scalate/scalate-util/bundles/scalate-util-1.5.3.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/xsbti/interface-0.12.0-RC4.jar!/" />
           <root url="jar://$USER_HOME$/.ivy2/cache/de.tud.cs.st/bat-core_2.9.2/jars/bat-core_2.9.2-1.0.0-SNAPSHOT.jar!/" />
@@ -61,6 +59,7 @@
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/ivy-2.3.0-rc1.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/classfile-0.12.0-RC4.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/testing-0.12.0-RC4.jar!/" />
+          <root url="jar://$USER_HOME$/.ivy2/cache/org.scala-lang/scalap/jars/scalap-2.9.2.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/main-0.12.0-RC4.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/lib/jline.jar!/" />
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/api-0.12.0-RC4.jar!/" />
