@@ -89,7 +89,7 @@ trait TraversableOps {
     //This awkward form is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
     //def exists(f: Exp[T] => Exp[Boolean]) = !(Forall(this.t, Fun(f andThen (!(_)))))
 
-    def typeFilter[S](implicit cS: ClassManifest[S]): Exp[Traversable[S]] = {
+    def typeFilter[S](implicit cS: reflect.ClassTag[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
       //TypeFilter[T, Coll, ID, S](t, Fun(identity[Exp[T]]), cS) //variance mismatch
       TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]), cS, classManifest[Traversable[S]].toString)
@@ -123,7 +123,7 @@ trait TraversableOps {
 
   //Compare collection nodes by identity.
   //Saves costs when comparing collections, which happens during optimization.
-  implicit def pureColl[T, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassManifest](v: Repr with Traversable[T]): Exp[Repr] =
+  implicit def pureColl[T, Repr <: Traversable[T] with TraversableLike[T, Repr]: reflect.ClassTag](v: Repr with Traversable[T]): Exp[Repr] =
     ConstByIdentity(v)
 
   //This version does not work, due to https://issues.scala-lang.org/browse/SI-5298:
@@ -141,7 +141,7 @@ trait TraversableOps {
    * irrespective of the order in which the bounds are considered. */
   implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with TraversableLike[T, Repr]]) =
     new TraversableLikeOps[T, Repr](v)
-  implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassManifest](v: Repr with TraversableLike[T, Repr]) =
+  implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]: reflect.ClassTag](v: Repr with TraversableLike[T, Repr]) =
     expToTraversableLikeOps(v)
 
   //Ranges are cheap to compare for equality; hence we can easily use pure, not pureColl, for them.
@@ -156,12 +156,12 @@ trait TraversableOps {
     extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]](tp)
 
   implicit def expToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Exp[TraversableView[T, Repr]]): TraversableViewOps[T, Repr] = new TraversableViewOps(t)
-  implicit def tToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassManifest](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
+  implicit def tToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]: reflect.ClassTag](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
 
   implicit def expToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: Exp[TraversableView[T, C[_]]]): TraversableViewOps[T, C[T]] = expToTravViewExp(
     t.asInstanceOf[Exp[TraversableView[T, C[T]]]])
   //XXX
-  implicit def tToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]])(implicit evidence: ClassManifest[C[_]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
+  implicit def tToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]])(implicit evidence: reflect.ClassTag[C[_]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
 
   implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e)
 }
@@ -233,7 +233,7 @@ trait CollectionMapOps {
   }
   implicit def expToMapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]](v: Exp[Repr with Map[K, V]]) =
     new MapLikeOps[K, V, Repr] {val t = v}
-  implicit def toMapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]: ClassManifest](v: Repr with Map[K, V]) =
+  implicit def toMapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]: reflect.ClassTag](v: Repr with Map[K, V]) =
     expToMapLikeOps(v)
 }
 
@@ -275,7 +275,7 @@ trait CollectionSetOps {
 
   implicit def expToSetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]](v: Exp[Repr with Set[T]]) =
     new SetLikeOps[T, Repr] {val t = v}
-  implicit def toSetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]: ClassManifest](v: Repr with Set[T]) =
+  implicit def toSetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]: reflect.ClassTag](v: Repr with Set[T]) =
     expToSetLikeOps(v)
   implicit def CollectionSetExp2ExpCollectionSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
 }
@@ -383,7 +383,7 @@ object TypeHierarchyUtils {
   //their implementing interfaces.
   //With this contract, given a type, we can find its concrete subtypes, and look them up in a type index.
   //XXX Careful: T must be passed explicitly! Otherwise it will be deduced to be Nothing
-  def computeSubTypeRel[T: ClassManifest](seenTypes: Set[Class[_]]): immutable.Map[Class[_], Set[Class[_]]] = {
+  def computeSubTypeRel[T: reflect.ClassTag](seenTypes: Set[Class[_]]): immutable.Map[Class[_], Set[Class[_]]] = {
     //val subtypeRel = mutable.Set.empty[(Class[_], Class[_])]
     val subtypeRel = ArrayBuffer.empty[(Class[_], Class[_])]
     val classesToScan: Queue[Class[_]] = Queue()
@@ -418,10 +418,10 @@ trait TypeFilterOps {
   //Compare collection nodes by identity.
   //Saves costs when comparing collections, which happens during optimization.
   implicit def pureTypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], T](v: TypeMapping[C, D, T])
-                                                                          (implicit cm: ClassManifest[TypeMapping[C, D, T]]) =
+                                                                          (implicit cm: reflect.ClassTag[TypeMapping[C, D, T]]) =
     asExp(ConstByIdentity(v)) //asExp here is a simple upcast :-)
 
-  case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: Exp[D[T] => T])(implicit cbf: CanBuildFrom[C[D[T]], D[T], C[D[T]]], cm: ClassManifest[T]) extends Arity2OpExp[C[D[T]], D[T] => T, TypeMapping[C, D, T],
+  case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: Exp[D[T] => T])(implicit cbf: CanBuildFrom[C[D[T]], D[T], C[D[T]]], cm: reflect.ClassTag[T]) extends Arity2OpExp[C[D[T]], D[T] => T, TypeMapping[C, D, T],
     GroupByType[T, C, D]](base, f) {
     import CollectionUtils._
     import TypeHierarchyUtils._
@@ -455,8 +455,8 @@ trait TypeFilterOps {
     case class GroupByType[T, C[X] <: Traversable[X], Repr <: TraversableLike[T, Repr]](base: Exp[C[T] with Repr]) extends Arity1OpExp[C[T] with Repr, TypeMapping[C]](base) {
     override def interpret() = {
       val x: C[T] with Repr = base.interpret()
-      new TypeMapping[C](x.groupBy[ClassManifest[_]]( (_: Any) => ClassManifest.Int).asInstanceOf[Map[ClassManifest[_], C[_]]])
-      //x.groupBy[ClassManifest[_]]( (x:C[T])  => ClassManifest.fromClass(x.getClass).asInstanceOf[ClassManifest[_]])
+      new TypeMapping[C](x.groupBy[reflect.ClassTag[_]]( (_: Any) => reflect.ClassTag.Int).asInstanceOf[Map[reflect.ClassTag[_], C[_]]])
+      //x.groupBy[reflect.ClassTag[_]]( (x:C[T])  => reflect.ClassTag.fromClass(x.getClass).asInstanceOf[reflect.ClassTag[_]])
     }
     override def copy(base: Exp[C[T] with Repr]) = GroupByType[T, C, Repr](base)
   }
@@ -471,14 +471,14 @@ trait TypeFilterOps {
   }
 
   class TypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](val t: Exp[C[D[T]]]) {
-    def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassManifest[S], cCDS: ClassManifest[C[D[S]]]) =
+    def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: reflect.ClassTag[S], cCDS: reflect.ClassTag[C[D[S]]]) =
       TypeFilter[T, C, D, S](t, Fun(f), cS, classManifest[C[D[S]]].toString)
     //def groupByType(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t, Fun(f))
   }
   implicit def expToTypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T, C, D](t)
 
   class TypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val t: Exp[TypeMapping[C, D, Base]]) {
-    def get[T](implicit cS: ClassManifest[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): TypeMappingApp[C, D, Base, T] = get[T](ClassUtil.boxedErasure(cS))
+    def get[T](implicit cS: reflect.ClassTag[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): TypeMappingApp[C, D, Base, T] = get[T](ClassUtil.boxedErasure(cS))
     def get[T](classS: Class[_])(implicit m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): TypeMappingApp[C, D, Base, T] = TypeMappingApp(t, classS)
   }
   implicit def expToTypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new TypeMappingAppOps[C, D, Base](t)
@@ -495,23 +495,23 @@ trait TypeFilterOps {
     type Flip[+B] = T[B, A]
   }
 
-  class GroupByTupleTypeOps1[T: ClassManifest, U, C[X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
+  class GroupByTupleTypeOps1[T: reflect.ClassTag, U, C[X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
     def groupByTupleType1(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[T]) */ = GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, Fun(_._1))
   }
-  implicit def expToGroupByTupleType1[T: ClassManifest, U, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps1(t)
+  implicit def expToGroupByTupleType1[T: reflect.ClassTag, U, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps1(t)
 
-  class GroupByTupleTypeOps2[T, U: ClassManifest, C[X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
+  class GroupByTupleTypeOps2[T, U: reflect.ClassTag, C[X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
     def groupByTupleType2(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, Fun(_._2))
   }
-  implicit def expToGroupByTupleType2[T, U: ClassManifest, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps2(t)
+  implicit def expToGroupByTupleType2[T, U: reflect.ClassTag, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps2(t)
 
   //typeCase method
 
-  //def when[Case, Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) = TypeCase(cS, Fun(f))
+  //def when[Case, Res](f: Exp[Case] => Exp[Res])(implicit cS: reflect.ClassTag[Case]) = TypeCase(cS, Fun(f))
   trait WhenResult[Case] {
     private[ivm] def onClass[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res], classS: Class[_]): TypeCase[Case, Res]
-    def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]): TypeCase[Case, Res]
-    def apply[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]): TypeCase[Case, Res]
+    def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: reflect.ClassTag[Case]): TypeCase[Case, Res]
+    def apply[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res])(implicit cS: reflect.ClassTag[Case]): TypeCase[Case, Res]
   }
 
   object when {
@@ -520,9 +520,9 @@ trait TypeFilterOps {
         TypeCase(classS,
           Fun(guard),
           Fun(f))
-      override def apply[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
+      override def apply[Res](guard: Exp[Case] => Exp[Boolean], f: Exp[Case] => Exp[Res])(implicit cS: reflect.ClassTag[Case]) =
         onClass[Res](guard, f, ClassUtil.boxedErasure(cS))
-      override def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: ClassManifest[Case]) =
+      override def apply[Res](f: Exp[Case] => Exp[Res])(implicit cS: reflect.ClassTag[Case]) =
         apply(_ => true, f)
     }
   }

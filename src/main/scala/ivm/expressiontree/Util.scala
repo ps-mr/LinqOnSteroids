@@ -19,13 +19,13 @@ object ClassUtil {
     classOf[Unit] -> classOf[jl.Void]
   )
   def primitiveToBoxed(classS: Class[_]) =
-    /*if (cS <:< ClassManifest.AnyVal)
+    /*if (cS <:< reflect.ClassTag.AnyVal)
       primitiveToWrapper(cS.erasure)
     else
       cS.erasure*/
     primitiveToBoxedMap.getOrElse(classS, classS)
-  def boxedErasure(cS: ClassManifest[_]) =
-    /*if (cS <:< ClassManifest.AnyVal)
+  def boxedErasure(cS: reflect.ClassTag[_]) =
+    /*if (cS <:< reflect.ClassTag.AnyVal)
       primitiveToWrapper(cS.erasure)
     else
       cS.erasure*/
@@ -79,7 +79,7 @@ object Util {
 
     implicit def pimpInstanceOf[T](t: T) = new IfInstanceOfAble(t)
     class IfInstanceOfAble[T](v: T) {
-      def ifInstanceOf[S](implicit cS: ClassManifest[S]): Option[S] =
+      def ifInstanceOf[S](implicit cS: reflect.ClassTag[S]): Option[S] =
         ifInstanceOfBody[T, S](v, ClassUtil.boxedErasure(cS))
     }
   }

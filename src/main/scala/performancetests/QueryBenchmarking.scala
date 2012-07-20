@@ -27,7 +27,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
   //If we're running only the optimized version, we only run it only once.
   override def debugBench = super.debugBench || onlyOptimized
 
-  private def doRun[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll], c: ClassManifest[Coll]) = {
+  private def doRun[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll], c: reflect.ClassTag[Coll]) = {
     if (!onlyOptimized)
       showExpNoVal(v, msg)
     benchMarkInternal(msg)(v.expResult().force)
@@ -57,7 +57,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
 
   private def benchInterpret[T, Coll <: Traversable[T]](msg: String,
                                                 v: Exp[Coll with Traversable[T]],
-                                                timeScala: Double)(implicit f: Forceable[T, Coll], c: ClassManifest[Coll]): Traversable[T] =
+                                                timeScala: Double)(implicit f: Forceable[T, Coll], c: reflect.ClassTag[Coll]): Traversable[T] =
   {
     val (optimized, optimizationTime) = benchOptimize(msg, v)
     val (resOpt, timeOpt) = doRun(msg + " - after optimization", optimized)
@@ -90,7 +90,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
    */
   def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
                                                    (expected: => Traversable[T], altExpected: => Traversable[T] = null /* Tried using OptParam here with */)
-                                                   (query: => Exp[Coll], altQueries: Exp[Coll]*)(implicit cm: ClassManifest[Traversable[T]])
+                                                   (query: => Exp[Coll], altQueries: Exp[Coll]*)(implicit cm: reflect.ClassTag[Traversable[T]])
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
     //Those versions don't work - bug https://issues.scala-lang.org/browse/SI-5642.
     //val builtQuery: Exp[Coll with Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query[T, Coll](query))

@@ -5,7 +5,7 @@ object Const {
   val allowInlineInEval = false
 }
 
-case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends Arity0Exp[T] {
+case class Const[T](x: T)(implicit val classManifest: reflect.ClassTag[T]) extends Arity0Exp[T] {
   import Const._
 
   override def interpret() = x
@@ -77,7 +77,7 @@ case class Const[T](x: T)(implicit val classManifest: ClassManifest[T]) extends 
 }
 
 //This class has much faster hashing and comparison; we use it when we can semantically afford it, that is within asSmart.
-class ConstByIdentity[T](content: T, wit: ClassManifest[T]) extends Const(content)(wit) {
+class ConstByIdentity[T](content: T, wit: reflect.ClassTag[T]) extends Const(content)(wit) {
   override def canEqual(o: Any) = o.isInstanceOf[ConstByIdentity[_]]
 
   override def equals(other: Any) = other match {
@@ -90,7 +90,7 @@ class ConstByIdentity[T](content: T, wit: ClassManifest[T]) extends Const(conten
 }
 
 object ConstByIdentity {
-  def apply[T: ClassManifest](content: T) = new ConstByIdentity[T](content, classManifest[T])
-  def apply[T](content: T, cm: ClassManifest[_])(implicit v: DummyImplicit) =
-    new ConstByIdentity[T](content, cm.asInstanceOf[ClassManifest[T]])
+  def apply[T: reflect.ClassTag](content: T) = new ConstByIdentity[T](content, classManifest[T])
+  def apply[T](content: T, cm: reflect.ClassTag[_])(implicit v: DummyImplicit) =
+    new ConstByIdentity[T](content, cm.asInstanceOf[reflect.ClassTag[T]])
 }
