@@ -29,7 +29,7 @@ object ClassUtil {
       primitiveToWrapper(cS.erasure)
     else
       cS.erasure*/
-    primitiveToBoxed(cS.erasure)
+    primitiveToBoxed(cS.runtimeClass)
 }
 
 object Util {

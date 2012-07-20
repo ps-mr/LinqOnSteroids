@@ -21,9 +21,9 @@ object ScalaCompile {
   import java.io.{Console => _, _}
 
   import scala.tools.nsc._
-  import scala.tools.nsc.util._
   import scala.tools.nsc.reporters._
   import scala.tools.nsc.io._
+  import scala.reflect.internal.util
 
   import scala.tools.nsc.interpreter.AbstractFileClassLoader
   var compiler: Global = _
@@ -95,7 +95,7 @@ object Compile {
     val str = m.toString
     if (str endsWith ".type") //Workaround bug: names for singleton types are not fully qualified!
       //Remove final '$' from class name.
-      m.erasure.getName.replaceFirst("""\$$""", "") + ".type"
+      m.runtimeClass.getName.replaceFirst("""\$$""", "") + ".type"
     else if (str startsWith "ivm.collections.TypeMapping[<?>, <?>, ")
       //Manifests don't support type constructors, but TypeTags do! Yeah!
       str.replaceFirst(Pattern.quote("<?>, <?>"), "Traversable, ({type l[+X]=Tuple2[Any, X]})#l")
@@ -158,7 +158,7 @@ object Compile {
 
     val cls = cachedInvokeCompiler(prefix, restSourceStr, className)
 
-    val cons = cls.getConstructor(staticData.map(_._1.erasure):_*)
+    val cons = cls.getConstructor(staticData.map(_._1.runtimeClass):_*)
     val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[Compiled[T]].result
     obj
   }
