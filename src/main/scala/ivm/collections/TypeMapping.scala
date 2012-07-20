@@ -2,7 +2,7 @@ package ivm.collections
 
 import collection.TraversableLike
 import collection.generic.CanBuildFrom
-import ivm.expressiontree.{ClassUtil, NoSub, YesSub, TypeHierarchyUtils, MaybeSub}
+import ivm.expressiontree.{ClassUtil, NoSub, YesSub, TypeHierarchyUtils, MaybeSub, ClassTag}
 
 
 // contract: map must map a ClassTag[T] to a C[D[T]]

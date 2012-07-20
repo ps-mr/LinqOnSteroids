@@ -2,7 +2,7 @@ package performancetests
 
 import ivm._
 import tests.TestUtil
-import expressiontree.{Compile, Lifting, Exp}
+import expressiontree.{Compile, Lifting, Exp, ClassTag}
 import Lifting._
 import optimization.Optimization
 import org.scalatest.matchers.ShouldMatchers
