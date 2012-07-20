@@ -25,11 +25,11 @@ object Optimization {
   //}}}}
 
   //Indexing {{{
-  val subqueries: mutable.Map[Exp[_], (Any, reflect.ClassTag[_])] = mutable.Map.empty
-  val castedSubqueries = subqueries.asInstanceOf[mutable.Map[Exp[_], (Any, reflect.ClassTag[Any])]]
+  val subqueries: mutable.Map[Exp[_], (Any, reflect.ClassTag[_], reflect.TypeTag[_])] = mutable.Map.empty
+  val castedSubqueries = subqueries.asInstanceOf[mutable.Map[Exp[_], (Any, reflect.ClassTag[Any], reflect.TypeTag[Any])]]
 
   def resetSubqueries() = subqueries.clear()
-  def addIndex[T: reflect.ClassTag](_query: UnconvertedExp[Exp[T]], res: Option[T] = None) {
+  def addIndex[T: reflect.ClassTag: reflect.TypeTag](_query: UnconvertedExp[Exp[T]], res: Option[T] = None) {
     val query = OptimizationUtil.stripViewUntyped(_query.v)
     val optquery = optimizeIdx(query, idxLookup = true)
     val intQuery = res match {
@@ -40,8 +40,8 @@ object Optimization {
 
     //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the
     // optimizer. TODO: Reconsider again whether this is a good idea.
-    subqueries += normalize(query) -> (intQuery, implicitly[reflect.ClassTag[T]])
-    subqueries += normalize(optquery) -> (intQuery, implicitly[reflect.ClassTag[T]])
+    subqueries += normalize(query) -> (intQuery, classTag[T], typeTag[T])
+    subqueries += normalize(optquery) -> (intQuery, classTag[T], typeTag[T])
   }
 
   def removeIndex[T](_query: UnconvertedExp[Exp[T]]) {

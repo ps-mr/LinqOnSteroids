@@ -33,7 +33,7 @@ trait LiftingConvs extends ConversionDisabler {
   //but it does not work (bug https://issues.scala-lang.org/browse/SI-3346).
   //implicit def pure[T, U <% T](t: U): Exp[T] = Const(t)
   //So let's keep it simple.
-  implicit def pure[T: reflect.ClassTag](t: T): Exp[T] = Const(t)
+  implicit def pure[T: reflect.ClassTag: reflect.TypeTag](t: T): Exp[T] = Const(t)
 
   //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
   //parameter of Exp here.
@@ -186,11 +186,11 @@ trait NumOps {
     def unary_- : Exp[T] = Negate(this.t)
   }
 
-  class FractionalOps[T: Fractional](t: Exp[T]) {
+  class FractionalOps[T: Fractional](t: Exp[T])(implicit tTag: reflect.TypeTag[Fractional[T]]) {
     def /(that: Exp[T]): Exp[T] = fmap(implicitly[Fractional[T]], this.t, that)('FractionalOps$div, _.div(_, _))
   }
 
-  class IntegralOps[T: Integral](t: Exp[T]) {
+  class IntegralOps[T: Integral](t: Exp[T])(implicit tTag: reflect.TypeTag[Integral[T]]) {
     def %(that: Exp[T]): Exp[T] = fmap(implicitly[Integral[T]], this.t, that)('IntegralOps$mod, _.rem(_, _))
   }
 
@@ -199,14 +199,14 @@ trait NumOps {
   //Doesn't work because of https://issues.scala-lang.org/browse/SI-3346 - expToNumOps is the same as mkOps in their example.
   //Solution 2:
   implicit def expToNumOps[T: Numeric](t: Exp[T]) = new NumericOps(t)
-  implicit def toNumOps[T: Numeric: reflect.ClassTag](t: T) = expToNumOps(t)
+  implicit def toNumOps[T: Numeric: reflect.ClassTag: reflect.TypeTag](t: T) = expToNumOps(t)
 
   //Same for the others:
-  implicit def expToFractionalOps[T: Fractional](t: Exp[T]) = new FractionalOps(t)
-  implicit def toFractionalOps[T: Fractional: reflect.ClassTag](t: T) = expToFractionalOps(t)
+  implicit def expToFractionalOps[T: Fractional](t: Exp[T])(implicit tTag: reflect.TypeTag[Fractional[T]]) = new FractionalOps(t)
+  implicit def toFractionalOps[T: Fractional: reflect.ClassTag: reflect.TypeTag](t: T)(implicit tTag: reflect.TypeTag[Fractional[T]]) = expToFractionalOps(t)
 
-  implicit def expToIntegralOps[T: Integral](t: Exp[T]) = new IntegralOps(t)
-  implicit def toIntegralOps[T: Integral: reflect.ClassTag](t: T) = expToIntegralOps(t)
+  implicit def expToIntegralOps[T: Integral](t: Exp[T])(implicit tTag: reflect.TypeTag[Integral[T]]) = new IntegralOps(t)
+  implicit def toIntegralOps[T: Integral: reflect.ClassTag: reflect.TypeTag](t: T)(implicit tTag: reflect.TypeTag[Integral[T]]) = expToIntegralOps(t)
 }
 
 trait BaseTypesOps {
@@ -241,7 +241,7 @@ trait BaseTypesOps {
    * just having a polymorphic lift conversion. Other solutions are possible here but don't remove this ambiguity that
    * affects client code then.
    */
-  implicit def toOrderingOps[T: Ordering: reflect.ClassTag](t: T) = expToOrderingOps(t)
+  implicit def toOrderingOps[T: Ordering: reflect.ClassTag: reflect.TypeTag](t: T) = expToOrderingOps(t)
   implicit def toStringOps(t: String) = expToStringOps(t)
   implicit def toBooleanOps(t: Boolean) = expToBooleanOps(t)
 }

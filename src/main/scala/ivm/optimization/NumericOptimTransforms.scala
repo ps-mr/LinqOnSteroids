@@ -36,7 +36,8 @@ trait NumericOptimTransforms {
   def buildSum[T: Numeric](l: Exp[T], r: Exp[T]): Exp[T] = {
     r match {
       case rc @ Const(rV) =>
-        implicit val manifest = rc.classManifest.asInstanceOf[reflect.ClassTag[T]]
+        implicit val cTag = rc.cTag.asInstanceOf[reflect.ClassTag[T]]
+        implicit val tTag = rc.tTag.asInstanceOf[reflect.TypeTag[T]]
         l match {
           case Const(a) => //R1
             a + rV
@@ -72,7 +73,8 @@ trait NumericOptimTransforms {
   def buildProd[T: Numeric](l: Exp[T], r: Exp[T]): Exp[T] = {
     r match {
       case rc @ Const(rV) =>
-        implicit val manifest = rc.classManifest.asInstanceOf[reflect.ClassTag[T]]
+        implicit val cTag = rc.cTag.asInstanceOf[reflect.ClassTag[T]]
+        implicit val tTag = rc.tTag.asInstanceOf[reflect.TypeTag[T]]
         l match {
           case Const(a) => //R1
             a * rV
@@ -90,7 +92,7 @@ trait NumericOptimTransforms {
 
   val reassociateOps: Exp[_] => Exp[_] = {
     case n@Negate(constNode@Const(c)) =>
-      implicit val manifest = constNode.classManifest
+      implicit val manifest = constNode.cTag
       n.isNum.negate(c)
     case p@Plus(l, r) =>
       buildSum(l, r)(p.isNum)

@@ -34,7 +34,7 @@ class CallTests extends JUnitSuite with ShouldMatchersForJUnit {
   @Test
   def testWithExp() {
     //Normally use fmap instead - we want to show the problem with this definition.
-    def withExp[T, U](t: Exp[T])(f: T => U): Exp[U] = asExp(f)(t)
+    def withExp[T: reflect.TypeTag, U: reflect.TypeTag](t: Exp[T])(f: T => U): Exp[U] = asExp(f)(t)
 
     val a = withExp(1)(1 +)
     val b = withExp(1)(1 +)

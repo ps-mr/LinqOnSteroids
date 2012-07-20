@@ -31,7 +31,7 @@ object SubquerySharing {
   }
 }
 
-class SubquerySharing(val subqueries: Map[Exp[_], (Any, reflect.ClassTag[Any])]) {
+class SubquerySharing(val subqueries: Map[Exp[_], (Any, reflect.ClassTag[Any], reflect.TypeTag[Any])]) {
   import SubquerySharing._
 
   // To perform index lookup, we need to put both indexes and original queries in normal form-and it should be the
@@ -52,14 +52,14 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, reflect.ClassTag[Any])])
 
   val directsubqueryShare: Exp[_] => Exp[_] =
     e => subqueries.get(normalizeBeforeLookup(e)) match {
-      case Some((t, tMan)) => ConstByIdentity(t)(tMan) //this gives the right behavior but is a hack
+      case Some((t, cTag, tTag)) => ConstByIdentity(t)(cTag, tTag) //this gives the right behavior but is a hack
       case None => e
     }
 
   private def groupByShareBody[T, U](c: Exp[Traversable[T]],
                                       fx: Var,
                                       fEqBody: Eq[U], constantEqSide: Exp[U], varEqSide: Exp[U]) = {
-    val groupedBy = c.indexBy[U](Fun.makefun[T, U](varEqSide, fx).f)
+    val groupedBy = c.indexBy[U](Fun.makefun[T, U](varEqSide, fx).f)(implicitly, null, null) //XXX argh!
 
     assertType[Exp[U => Traversable[T]]](groupedBy) //Just for documentation.
     val toLookup = normalizeBeforeLookup(groupedBy)
@@ -68,9 +68,9 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, reflect.ClassTag[Any])])
       //In both cases, the type of the resulting expression becomes Traversable, which might lead to the result having the wrong dynamic type.
       //Luckily, the CanBuildFrom instances will be too generic but will delegate their work to the source collection,
       //hence producing a result of the right dynamic type.
-      case Some((t, tMan)) =>
+      case Some((t, cTag, tTag)) =>
         println("Found simple index of form " + toLookup)
-        Some(ConstByIdentity(t.asInstanceOf[Map[U, Traversable[T]]], tMan) apply constantEqSide)
+        Some(ConstByIdentity(t.asInstanceOf[Map[U, Traversable[T]]], cTag, tTag) apply constantEqSide)
       case None =>
         println("Found no simple index of form " + toLookup)
         None
@@ -274,15 +274,15 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, reflect.ClassTag[Any])])
     val tries = Seq((indexBaseToLookup, Const(true)), (baseNoFilter, filterCond))
     collectFirst(tries) {
       case (base, cond) =>
-        val groupedBy = base.indexBy[U](Fun.makefun[TupleT, U](varEqSideTransf, fx))
+        val groupedBy = base.indexBy[U](Fun.makefun[TupleT, U](varEqSideTransf, fx))(implicitly, null, null) //XXX argh!
 
         assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
         val toLookup = normalizeBeforeLookup(groupedBy)
         subqueries.get(toLookup) match {
-          case Some((t, tMan)) =>
+          case Some((t, cTag, tTag)) =>
             println("Found nested index of form " + toLookup)
             //Some(asExp(t.asInstanceOf[Map[U, Traversable[TupleT]]]) get constantEqSide flatMap identity withFilter Fun.makefun(cond, fx))
-            Some(ConstByIdentity(t.asInstanceOf[Map[U, Traversable[TupleT]]], tMan) apply constantEqSide withFilter Fun.makefun(cond, fx))
+            Some(ConstByIdentity(t.asInstanceOf[Map[U, Traversable[TupleT]]], cTag, tTag) apply constantEqSide withFilter Fun.makefun(cond, fx))
           case None =>
             println("Found no nested index of form " + toLookup)
             None
@@ -364,11 +364,11 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, reflect.ClassTag[Any])])
         //assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
         val toLookup = normalizeBeforeLookup(groupedBy)
         subqueries.get(toLookup) match {
-          case Some((t, tMan)) =>
+          case Some((t, cTag, tTag)) =>
             println("Found nested type-index of form " + toLookup)
             type TupleTAnd[+T] = (TupleT, T)
             //This map step is wrong, we rely on substitution!
-            Some(ConstByIdentity(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]], tMan).get[T](clazz) /*map(_._1) */withFilter Fun.makefun(cond, fx))
+            Some(ConstByIdentity(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]], cTag, tTag).get[T](clazz) /*map(_._1) */withFilter Fun.makefun(cond, fx))
             //This variant does the lookup earlier but is even less able to provide a precise manifest :-(.
             //Some(asExp(t.asInstanceOf[TypeMapping[Traversable, TupleTAnd, AnyRef]].get[T](clazz)) /*map(_._1) */withFilter Fun.makefun(cond, fx))
           case None =>

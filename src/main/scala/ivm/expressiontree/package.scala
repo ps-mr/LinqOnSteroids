@@ -1,6 +1,9 @@
 package ivm
 
 package object expressiontree {
+  def classTag[T](implicit c: reflect.ClassTag[T]) = c
+  def typeTag[T](implicit ttag: reflect.TypeTag[T]) = ttag
+
   type TravMessage[+T] = Message[Traversable[T]]
   type TravMsgSeqPublisher[+T, +Pub <: TravMsgSeqPublisher[T, Pub]] = MsgSeqPublisher[Traversable[T], Pub]
   type TravMsgSeqSubscriber[-T, -Repr] = MsgSeqSubscriber[Traversable[T], Repr]

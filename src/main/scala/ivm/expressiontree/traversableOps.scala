@@ -23,9 +23,9 @@ trait TraversableOps {
   def newUnion[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U >: T, That <: Traversable[U]](base: Exp[Repr with Traversable[T]], that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
     Union(base, that)
 
-  def groupBySelImpl[T, Repr <: Traversable[T] with
-    TraversableLike[T, Repr], K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
-                                                                                                   g: Exp[T] => Exp[Rest])(
+  def groupBySelImpl[T: reflect.TypeTag, Repr <: Traversable[T] with
+    TraversableLike[T, Repr]: reflect.TypeTag, K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
+                                                                                                                    g: Exp[T] => Exp[Rest])(
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
 
   trait Holder[Repr] {
@@ -72,11 +72,15 @@ trait TraversableOps {
 
     def view: Exp[TraversableView[T, Repr]] = View(this.t)
 
-    def indexBy[K](f: Exp[T] => Exp[K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr]): Exp[Map[K, Repr]] =
+    def indexBy[K](f: Exp[T] => Exp[K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr], tTag: reflect.TypeTag[T], tTag2: reflect.TypeTag[Repr]): Exp[Map[K, Repr]] =
       IndexBy(this.t, Fun(f))
 
-    def groupBySel[K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](f: Exp[T] => Exp[K], g: Exp[T] => Exp[Rest])(implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
-      groupBySelImpl(this.t, f, g)(cbf, cbf2)
+    def groupBySel[K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](f: Exp[T] => Exp[K], g: Exp[T] => Exp[Rest])
+                                                                                       (implicit cbf: CanBuildFrom[Repr, T, Repr],
+                                                                                        cbf2: CanBuildFrom[Repr, Rest, That],
+                                                                                        tTagT: reflect.TypeTag[T],
+                                                                                        tTagRepr: reflect.TypeTag[Repr]): Exp[Map[K, That]] =
+      groupBySelImpl(this.t, f, g)(tTagT, tTagRepr, cbf, cbf2)
 
     def join[S, TKey, TResult, That](innerColl: Exp[Traversable[S]]) //Split argument list to help type inference deduce S and use it after.
                                     (outerKeySelector: Exp[T] => Exp[TKey],
@@ -123,7 +127,7 @@ trait TraversableOps {
 
   //Compare collection nodes by identity.
   //Saves costs when comparing collections, which happens during optimization.
-  implicit def pureColl[T, Repr <: Traversable[T] with TraversableLike[T, Repr]: reflect.ClassTag](v: Repr with Traversable[T]): Exp[Repr] =
+  implicit def pureColl[T: reflect.TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: reflect.ClassTag: reflect.TypeTag](v: Repr with Traversable[T]): Exp[Repr] =
     ConstByIdentity(v)
 
   //This version does not work, due to https://issues.scala-lang.org/browse/SI-5298:
@@ -141,7 +145,7 @@ trait TraversableOps {
    * irrespective of the order in which the bounds are considered. */
   implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with TraversableLike[T, Repr]]) =
     new TraversableLikeOps[T, Repr](v)
-  implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]: reflect.ClassTag](v: Repr with TraversableLike[T, Repr]) =
+  implicit def toTraversableLikeOps[T: reflect.TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: reflect.ClassTag: reflect.TypeTag](v: Repr with TraversableLike[T, Repr]) =
     expToTraversableLikeOps(v)
 
   //Ranges are cheap to compare for equality; hence we can easily use pure, not pureColl, for them.
@@ -156,12 +160,12 @@ trait TraversableOps {
     extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]](tp)
 
   implicit def expToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Exp[TraversableView[T, Repr]]): TraversableViewOps[T, Repr] = new TraversableViewOps(t)
-  implicit def tToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]: reflect.ClassTag](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
+  implicit def tToTravViewExp[T: reflect.TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: reflect.ClassTag: reflect.TypeTag](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
 
   implicit def expToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: Exp[TraversableView[T, C[_]]]): TraversableViewOps[T, C[T]] = expToTravViewExp(
     t.asInstanceOf[Exp[TraversableView[T, C[T]]]])
   //XXX
-  implicit def tToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]])(implicit evidence: reflect.ClassTag[C[_]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
+  implicit def tToTravViewExp2[T: reflect.TypeTag, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]])(implicit evidence: reflect.ClassTag[C[_]], ev2: reflect.TypeTag[TraversableView[T, C[_]]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
 
   implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e)
 }
@@ -233,7 +237,7 @@ trait CollectionMapOps {
   }
   implicit def expToMapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]](v: Exp[Repr with Map[K, V]]) =
     new MapLikeOps[K, V, Repr] {val t = v}
-  implicit def toMapLikeOps[K, V, Repr <: Map[K, V] with MapLike[K, V, Repr]: reflect.ClassTag](v: Repr with Map[K, V]) =
+  implicit def toMapLikeOps[K: reflect.TypeTag, V: reflect.TypeTag, Repr <: Map[K, V] with MapLike[K, V, Repr]: reflect.ClassTag: reflect.TypeTag](v: Repr with Map[K, V]) =
     expToMapLikeOps(v)
 }
 
@@ -275,7 +279,7 @@ trait CollectionSetOps {
 
   implicit def expToSetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]](v: Exp[Repr with Set[T]]) =
     new SetLikeOps[T, Repr] {val t = v}
-  implicit def toSetLikeOps[T, Repr <: Set[T] with SetLike[T, Repr]: reflect.ClassTag](v: Repr with Set[T]) =
+  implicit def toSetLikeOps[T: reflect.TypeTag, Repr <: Set[T] with SetLike[T, Repr]: reflect.ClassTag: reflect.TypeTag](v: Repr with Set[T]) =
     expToSetLikeOps(v)
   implicit def CollectionSetExp2ExpCollectionSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
 }
@@ -418,7 +422,8 @@ trait TypeFilterOps {
   //Compare collection nodes by identity.
   //Saves costs when comparing collections, which happens during optimization.
   implicit def pureTypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], T](v: TypeMapping[C, D, T])
-                                                                          (implicit cm: reflect.ClassTag[TypeMapping[C, D, T]]) =
+                                                                          (implicit cm: reflect.ClassTag[TypeMapping[C, D, T]],
+                                                                           tTag: reflect.TypeTag[TypeMapping[C, D, T]]) =
     asExp(ConstByIdentity(v)) //asExp here is a simple upcast :-)
 
   case class GroupByType[T, C[X] <: TraversableLike[X, C[X]], D[+_]](base: Exp[C[D[T]]], f: Exp[D[T] => T])(implicit cbf: CanBuildFrom[C[D[T]], D[T], C[D[T]]], cm: reflect.ClassTag[T]) extends Arity2OpExp[C[D[T]], D[T] => T, TypeMapping[C, D, T],
