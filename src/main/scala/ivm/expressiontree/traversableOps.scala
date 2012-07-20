@@ -109,7 +109,7 @@ trait TraversableOps {
     def toSeq = fmap(this.t, 'TraversableLike)('toSeq, _.toSeq)
     def flatten[U](implicit asTraversable: T => TraversableOnce[U]) = fmap(this.t, 'TraversableLikeOps)('flatten, _.flatten)
 
-    def typeCase[Res](cases: TypeCase[_, Res]*): Exp[Set[Res]] = TypeCaseExp(this.t, cases)
+    def typeCase[Res: TypeTag](cases: TypeCase[_, Res]*): Exp[Set[Res]] = TypeCaseExp(this.t, cases)
   }
 
   class TraversableViewLikeOps[
