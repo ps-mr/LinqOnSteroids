@@ -390,10 +390,10 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
       exp => exp match {
         case v: Var if v == fx || (FVMap contains v) =>
           if (v == fx)
-            tupleVar._2
+            asExp(tupleVar)._2 //Disable member _1 of tupleVar.
           else
             //TupleSupport2.projectionTo(tupleVar._1, allFVSeq.length, FVMap(v)) //now this is incorrect!
-            TupleSupport2.projectionTo(tupleVar, FVSeq.length, FVMap(v)).substSubTerm(tupleVar, tupleVar._1)
+            TupleSupport2.projectionTo(tupleVar, FVSeq.length, FVMap(v)).substSubTerm(tupleVar, asExp(tupleVar)._1)
         case _ =>
           exp
       })
