@@ -5,16 +5,16 @@ import collection.generic.CanBuildFrom
 import ivm.expressiontree.{ClassUtil, NoSub, YesSub, TypeHierarchyUtils, MaybeSub}
 
 
-// contract: map must map a reflect.ClassTag[T] to a C[D[T]]
+// contract: map must map a ClassTag[T] to a C[D[T]]
 class TypeMapping[C[X] <: TraversableLike[X, C[X]], D[+_], Base](val map: Map[Class[_], C[D[Base]]], val subtypeRel: Map[Class[_], Set[Class[_]]], origColl: C[D[Base]]) {
   //TODO Problem with this implementation: instances of subtypes of T won't be part of the returned collection.
-  //def getOld[T](implicit tmf: reflect.ClassTag[T]): C[D[T]] = map(ClassUtil.boxedErasure(tmf)).asInstanceOf[C[D[T]]]
+  //def getOld[T](implicit tmf: ClassTag[T]): C[D[T]] = map(ClassUtil.boxedErasure(tmf)).asInstanceOf[C[D[T]]]
 
   import TypeHierarchyUtils._
 
   //XXX reintroduce That here, maybe, for coherence. Not necessary for the paper, I believe (it can obviously be done, assuming the trick used for TypeFilterOps.when works here, too).
-  //def get[T, That](implicit tmf: reflect.ClassTag[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], That]): That = {
-  def get[T](implicit tmf: reflect.ClassTag[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): C[D[T]] = {
+  //def get[T, That](implicit tmf: ClassTag[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], That]): That = {
+  def get[T](implicit tmf: ClassTag[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): C[D[T]] = {
     m match {
       case v @ YesSub() =>
         //origColl map (_ map v.p.apply) //Try to apply the subtype relationship as a cast; to do this, we'd need D to be a Functor, and a witness of that to be passed.

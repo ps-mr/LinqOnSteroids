@@ -123,7 +123,7 @@ case class Forall[T](coll: Exp[Traversable[T]], f: Fun[T, Boolean])
   }
 }
 
-case class IndexBy[T: reflect.TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: reflect.TypeTag, K](base: Exp[Repr], f: Exp[T => K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr]) extends Arity2OpExp[Repr,
+case class IndexBy[T: TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: TypeTag, K](base: Exp[Repr], f: Exp[T => K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr]) extends Arity2OpExp[Repr,
   T => K, immutable.Map[K, Repr], IndexBy[T, Repr, K]](base, f) {
   override def interpret() = CollectionUtils.groupBy(base.interpret())(f.interpret())(cbf)
   override def copy(base: Exp[Repr], f: Exp[T => K]) = IndexBy(base, f)

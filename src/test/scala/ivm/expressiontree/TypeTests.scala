@@ -10,10 +10,10 @@ import collection.TraversableLike
 import collection.generic.CanBuildFrom
 
 trait TypeMatchers {
-  def typ[ExpectedT: reflect.ClassTag] = new HavePropertyMatcher[Any, reflect.ClassTag[_]] {
-    def apply(obj: Any): HavePropertyMatchResult[reflect.ClassTag[_]] = {
-      val actual = reflect.ClassTag(obj.getClass)
-      val expected = implicitly[reflect.ClassTag[ExpectedT]]
+  def typ[ExpectedT: ClassTag] = new HavePropertyMatcher[Any, ClassTag[_]] {
+    def apply(obj: Any): HavePropertyMatchResult[ClassTag[_]] = {
+      val actual = ClassTag(obj.getClass)
+      val expected = implicitly[ClassTag[ExpectedT]]
       HavePropertyMatchResult(
         //expected.erasure.isInstance(obj), //Natural and wrong way to write this
         ClassUtil.boxedErasure(expected).isInstance(obj),
@@ -134,8 +134,8 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   import Lifting._
 
   //Analogous to Lifting.groupBySelImpl; I copied it here just to test whether expToTraversableLikeOps works.
-  def groupBySelImpl[T: reflect.TypeTag, Repr <: Traversable[T] with
-    TraversableLike[T, Repr]: reflect.TypeTag, K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K])(
+  def groupBySelImpl[T: TypeTag, Repr <: Traversable[T] with
+    TraversableLike[T, Repr]: TypeTag, K, Rest, That <: Traversable[Rest]](t: Exp[Repr], f: Exp[T] => Exp[K])(
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, Repr]] =
   {
     Util.assertTypeAndRet[Exp[Map[K, Repr]]] {

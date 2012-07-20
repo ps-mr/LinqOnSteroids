@@ -25,11 +25,11 @@ object Optimization {
   //}}}}
 
   //Indexing {{{
-  val subqueries: mutable.Map[Exp[_], (Any, reflect.ClassTag[_], reflect.TypeTag[_])] = mutable.Map.empty
-  val castedSubqueries = subqueries.asInstanceOf[mutable.Map[Exp[_], (Any, reflect.ClassTag[Any], reflect.TypeTag[Any])]]
+  val subqueries: mutable.Map[Exp[_], (Any, ClassTag[_], TypeTag[_])] = mutable.Map.empty
+  val castedSubqueries = subqueries.asInstanceOf[mutable.Map[Exp[_], (Any, ClassTag[Any], TypeTag[Any])]]
 
   def resetSubqueries() = subqueries.clear()
-  def addIndex[T: reflect.ClassTag: reflect.TypeTag](_query: UnconvertedExp[Exp[T]], res: Option[T] = None) {
+  def addIndex[T: ClassTag: TypeTag](_query: UnconvertedExp[Exp[T]], res: Option[T] = None) {
     val query = OptimizationUtil.stripViewUntyped(_query.v)
     val optquery = optimizeIdx(query, idxLookup = true)
     val intQuery = res match {

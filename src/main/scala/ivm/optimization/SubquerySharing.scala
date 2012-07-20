@@ -31,7 +31,7 @@ object SubquerySharing {
   }
 }
 
-class SubquerySharing(val subqueries: Map[Exp[_], (Any, reflect.ClassTag[Any], reflect.TypeTag[Any])]) {
+class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[Any])]) {
   import SubquerySharing._
 
   // To perform index lookup, we need to put both indexes and original queries in normal form-and it should be the
@@ -146,7 +146,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, reflect.ClassTag[Any], r
             val guard = branch.guard
             val conds = BooleanOperators.cnf(guard.body)
             //branch.f is also an open term which needs to be processed like the rest.
-            //implicit val cm = reflect.ClassTag fromClass branch.classS //XXX hack 1
+            //implicit val cm = ClassTag fromClass branch.classS //XXX hack 1
             tryTypedGroupByNested(indexBaseToLookup, conds, guard.x, allFVSeq, parentNode, this)(branch.classS).map(_.asInstanceOf[Exp[Traversable[t]]] map branch.f)
           //collectFirst(conds)(tryGroupByNested(indexBaseToLookup, conds, guard.x, allFVSeq, parentNode, this)(_)).get
         }
@@ -343,7 +343,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, reflect.ClassTag[Any], r
     }
   }
 
-  private def typedGroupByShareBodyNested[TupleT, T /*: reflect.ClassTag*/, U](indexBaseToLookup: Exp[Traversable[(TupleT, T)]],
+  private def typedGroupByShareBodyNested[TupleT, T /*: ClassTag*/, U](indexBaseToLookup: Exp[Traversable[(TupleT, T)]],
                                       fx: TypedVar[(TupleT, T)],
                                       clazz: Class[_],
                                       allFVSeq: Seq[Var],
@@ -378,7 +378,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, reflect.ClassTag[Any], r
     }
   }
 
-  private def tryTypedGroupByNested[TupleT, U, FmT /*: reflect.ClassTag*/, FmRepr <: Traversable[FmT] with TraversableLike[FmT, FmRepr], FmU, FmThat <: Traversable[FmU]](indexBaseToLookup: Exp[Traversable[(TupleT, FmT)]],
+  private def tryTypedGroupByNested[TupleT, U, FmT /*: ClassTag*/, FmRepr <: Traversable[FmT] with TraversableLike[FmT, FmRepr], FmU, FmThat <: Traversable[FmU]](indexBaseToLookup: Exp[Traversable[(TupleT, FmT)]],
                             allConds: Set[Exp[Boolean]],
                             fx: Var, FVSeq: Seq[Var],
                             parentNode: FlatMap[FmT, FmRepr, FmU, FmThat], fn: FoundNode[FmT, FmRepr])

@@ -102,12 +102,12 @@ trait ExpSugar extends ConversionDisabler2 {
 
   implicit def toPimper[T](t: T) = new WithAsSmartCollection(t)
 
-  implicit def arrayToExpSeq[T: reflect.TypeTag](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
+  implicit def arrayToExpSeq[T: TypeTag](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
 
-  class ArrayWithAsSmartCollection[T: reflect.TypeTag](t: Array[T]) {
+  class ArrayWithAsSmartCollection[T: TypeTag](t: Array[T]) {
     def asSmart = t: Exp[Seq[T]]
   }
-  implicit def toArrayPimper[T: reflect.TypeTag](t: Array[T]) = new ArrayWithAsSmartCollection(t)
+  implicit def toArrayPimper[T: TypeTag](t: Array[T]) = new ArrayWithAsSmartCollection(t)
   //Either we use ArrayWithAsSmartCollection, or we create an implicit conversion from Exp[Array[T]] to TraverableOps[T] by adding the final cast to TraversableOps[T] here.
   //Since this is an implicit conversion, we can't just return Exp[Seq[T]] and rely on an additional implicit conversion to supply lifted collection methods.
   //implicit def expArrayToExpSeq[T](x: Exp[Array[T]]) = fmap(x)('castToSeq, x => x: Seq[T]): TraversableOps[T]
@@ -159,8 +159,8 @@ trait LiftingTrait
   def Let[T](e: Exp[T]): Exp[Seq[T]] = Seq(e)
   //def Let[T](e: Exp[T]): Exp[Option[T]] = Some(e)
 
-  override def groupBySelImpl[T: reflect.TypeTag, Repr <: Traversable[T] with
-    TraversableLike[T, Repr]: reflect.TypeTag, K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
+  override def groupBySelImpl[T: TypeTag, Repr <: Traversable[T] with
+    TraversableLike[T, Repr]: TypeTag, K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
                                              g: Exp[T] => Exp[Rest])(
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
   {

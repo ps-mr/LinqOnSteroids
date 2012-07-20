@@ -10,7 +10,7 @@ import collection.generic.CanBuildFrom
 
 
 object TypeFilter {
-  def apply[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], cS: reflect.ClassTag[S], nameCDS: String): TypeFilter[T, C, D, S] =
+  def apply[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], cS: ClassTag[S], nameCDS: String): TypeFilter[T, C, D, S] =
     apply[T, C, D, S](base, f, ClassUtil.boxedErasure(cS), nameCDS)
 }
 
@@ -31,7 +31,7 @@ case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this 
 // XXX: It is not clear whether the cast from Repr to That is always valid. OTOH, this could express typeFilter on Map,
 // though not necessarily with a desirable interface.
 case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](base: Exp[Repr],
-                                                                               f: Exp[D[T] => T])(implicit cS: reflect.ClassTag[S],
+                                                                               f: Exp[D[T] => T])(implicit cS: ClassTag[S],
                                                                                                   cb: CanBuildFrom[Repr, S, That])
   extends Arity2Op[Exp[Repr], Exp[D[T] => T], That, TypeFilter2[T, D, Repr, S, That]](base, f)
 {

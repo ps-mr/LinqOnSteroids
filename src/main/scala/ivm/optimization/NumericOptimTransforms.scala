@@ -36,8 +36,8 @@ trait NumericOptimTransforms {
   def buildSum[T: Numeric](l: Exp[T], r: Exp[T]): Exp[T] = {
     r match {
       case rc @ Const(rV) =>
-        implicit val cTag = rc.cTag.asInstanceOf[reflect.ClassTag[T]]
-        implicit val tTag = rc.tTag.asInstanceOf[reflect.TypeTag[T]]
+        implicit val cTag = rc.cTag.asInstanceOf[ClassTag[T]]
+        implicit val tTag = rc.tTag.asInstanceOf[TypeTag[T]]
         l match {
           case Const(a) => //R1
             a + rV
@@ -73,8 +73,8 @@ trait NumericOptimTransforms {
   def buildProd[T: Numeric](l: Exp[T], r: Exp[T]): Exp[T] = {
     r match {
       case rc @ Const(rV) =>
-        implicit val cTag = rc.cTag.asInstanceOf[reflect.ClassTag[T]]
-        implicit val tTag = rc.tTag.asInstanceOf[reflect.TypeTag[T]]
+        implicit val cTag = rc.cTag.asInstanceOf[ClassTag[T]]
+        implicit val tTag = rc.tTag.asInstanceOf[TypeTag[T]]
         l match {
           case Const(a) => //R1
             a * rV

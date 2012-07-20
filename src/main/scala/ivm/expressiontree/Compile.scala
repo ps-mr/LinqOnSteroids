@@ -54,7 +54,7 @@ object ScalaCompile {
     compiler = new Global(settings, reporter)
   }
 
-  def invokeCompiler[T: reflect.TypeTag](sourceStr: String, className: String) = {
+  def invokeCompiler[T: TypeTag](sourceStr: String, className: String) = {
     Console.err println sourceStr
     if (this.compiler eq null)
       setupCompiler()
@@ -91,7 +91,7 @@ object ScalaCompile {
 object Compile {
   import CrossStagePersistence.{map, varId}
 
-  def manifestToString[T](m: reflect.TypeTag[T]): String = {
+  def manifestToString[T](m: TypeTag[T]): String = {
     val str = m.tpe.toString
     str
     /*if (str endsWith ".type") //Workaround bug: names for singleton types are not fully qualified!
@@ -107,7 +107,7 @@ object Compile {
 
   //Cache compilation results.
   private val codeCache = new ScalaThreadLocal(mutable.Map[String, Class[_]]())
-  def cachedInvokeCompiler[T: reflect.TypeTag](prefix: String, restSourceStr: String, className: String) =
+  def cachedInvokeCompiler[T: TypeTag](prefix: String, restSourceStr: String, className: String) =
     codeCache.get().getOrElseUpdate(restSourceStr, ScalaCompile.invokeCompiler(prefix + restSourceStr, className))
 
   //*Reset methods are just (or mostly?) for testing {{{
@@ -128,7 +128,7 @@ object Compile {
   }
   //}}}
 
-  /*private[expressiontree]*/ def emitSourceInternal[T: reflect.TypeTag](e: Exp[T]): (String, String, Seq[(reflect.ClassTag[_], Any)], String) = {
+  /*private[expressiontree]*/ def emitSourceInternal[T: TypeTag](e: Exp[T]): (String, String, Seq[(ClassTag[_], Any)], String) = {
     precompileReset()
     val name = "Outclass" + classId()
     val typ = typeTag[T]
@@ -137,7 +137,7 @@ object Compile {
       case (value, CSPVar(memberName, memberCtag, memberType)) =>
         ("val %s: %s" format (memberName, manifestToString(memberType)), (memberCtag, value))
     })
-    val (decls, staticData) = declValues.unzip[String, (reflect.ClassTag[_], Any)]
+    val (decls, staticData) = declValues.unzip[String, (ClassTag[_], Any)]
     val declsStr = decls mkString ", "
     val prefix = "class %s" format name
     val rest =
@@ -148,13 +148,13 @@ object Compile {
   }
 
   //Mostly for testing
-  def emitSource[T: reflect.TypeTag](e: Exp[T]): String = {
+  def emitSource[T: TypeTag](e: Exp[T]): String = {
     val res = emitSourceInternal(e)
     res._1 + res._2
   }
 
 
-  def toValue[T: reflect.TypeTag](exp: Exp[T]): T = {
+  def toValue[T: TypeTag](exp: Exp[T]): T = {
     val (prefix, restSourceStr, staticData, className) = emitSourceInternal(exp)
 
     val cls = cachedInvokeCompiler(prefix, restSourceStr, className)
