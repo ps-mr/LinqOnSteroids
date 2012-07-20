@@ -55,28 +55,9 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
     reportTimeRatio("native Scala version, counting optimization time", (timeOpt + optimizationTime) / timeScala)
   }
 
-  private def benchInterpret[T, Coll <: Traversable[T]](msg: String,
-                                                v: Exp[Coll with Traversable[T]],
-                                                timeScala: Double)(implicit f: Forceable[T, Coll], c: TypeTag[Coll]): Traversable[T] =
-  {
-    val (optimized, optimizationTime) = benchOptimize(msg, v)
-    val (resOpt, timeOpt) = doRun(msg + " - after optimization", optimized)
-    if (!onlyOptimized) {
-      val (res, time) = doRun(msg, v)
-      //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
-      // list.flatMap(listEl => set(listEl))
-      //returns results in non-deterministic order.
-      resOpt should be (res) //keep this and alter queries instead.
-
-      compare(time, timeOpt, optimizationTime, timeScala)
-    }
-    resOpt
-  }
-
   // The pattern matching costs of using force are quite annoying. I expect them to be small; so it would be be best to
   // just always have them, i.e. always check dynamically whether forcing is needed, for all LoS queries, slowing them
   // down a tiny insignificant bit.
-  //XXX unused parameter: altExpected
   /**
    *
    * @param msg
@@ -131,9 +112,6 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         //Check that we get the same result
         resAlt should be (resOpt)
         reportTimeRatio("base embedded version - Alternative %d" format i, timeOpt / timeAlt)
-
-        //This code also measures performance of the optimized query, and does not check that the optimized query is the same as the other optimized query :-(.
-        //benchInterpret[T, Traversable[T]]("%s Los - Alternative %d" format (msg, i), altQuery, timeScala)
       }
       val msgNativeAltExtra = " - Alternative (modularized)"
       val (altNativeRes, timeAltScala) =
@@ -152,21 +130,5 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
     println("\tViolations: " + resOpt.size)
 
     resOpt
-
-      /*
-      showExpNoVal(altQuery
-      altQuery.optimize
-      val benchMarkInternal(msg2, altQuery, timeScala)
-      should be (res)
-
-    showExpNoVal(query, "modular version of query")
-    val optQuery = query.optimize
-    showExpNoVal(optQuery, "modular version of query - optimized")
-    optQuery should be (queryBase.optimize)
-    //val query2 =
-    showExpNoVal(query2, "more modular version of query")
-    val optQuery2 = query2.optimize
-    showExpNoVal(optQuery2, "more modular version of query - optimized")
-    optQuery2 should be (optQuery)*/
   }
 }
