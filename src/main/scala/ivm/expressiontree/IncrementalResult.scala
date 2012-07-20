@@ -104,6 +104,8 @@ class IncrementalResultBase[T](val base: Exp[Traversable[T]])
         // The handling here is valid more in general, but no batching is done.
         case Update(old, curr) =>
           notify(pub, Seq(Remove(old), Include(curr)))
+        case _ => //Should not be possible
+          throw new IllegalArgumentException
       }
     }
   }

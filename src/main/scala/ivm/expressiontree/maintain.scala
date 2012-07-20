@@ -104,6 +104,8 @@ trait FlatMapMaintainer[T, U, Repr, That <: Traversable[U]] extends EvtTransform
             //modification before performing the update. Otherwise, we could pack the list of elements within
             //Reset notifications
             case Reset => publish(pub.interpret().toSeq map (Remove(_)))
+            case _ => //Should not be possible
+              throw new IllegalArgumentException
           }
         }
       }

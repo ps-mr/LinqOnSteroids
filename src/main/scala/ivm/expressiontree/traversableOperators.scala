@@ -119,6 +119,8 @@ case class Forall[T](coll: Exp[Traversable[T]], f: Fun[T, Boolean])
         notifyEv(pub, Include(newV))
       case Reset =>
         countFalse = 0
+      case _ => //Should not be possible
+        throw new IllegalArgumentException
     }
   }
 }
