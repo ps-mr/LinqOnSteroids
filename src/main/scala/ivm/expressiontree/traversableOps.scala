@@ -80,7 +80,7 @@ trait TraversableOps {
                                                                                         cbf2: CanBuildFrom[Repr, Rest, That],
                                                                                         tTagT: reflect.TypeTag[T],
                                                                                         tTagRepr: reflect.TypeTag[Repr]): Exp[Map[K, That]] =
-      groupBySelImpl(this.t, f, g)(tTagT, tTagRepr, cbf, cbf2)
+      groupBySelImpl(this.t, f, g)
 
     def join[S, TKey, TResult, That](innerColl: Exp[Traversable[S]]) //Split argument list to help type inference deduce S and use it after.
                                     (outerKeySelector: Exp[T] => Exp[TKey],
