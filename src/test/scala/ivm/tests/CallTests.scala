@@ -36,15 +36,15 @@ class CallTests extends JUnitSuite with ShouldMatchersForJUnit {
     //Normally use fmap instead - we want to show the problem with this definition.
     def withExp[T: TypeTag, U: TypeTag](t: Exp[T])(f: T => U): Exp[U] = asExp(f)(t)
 
-    val a = withExp(1)(1 +)
-    val b = withExp(1)(1 +)
+    val a = withExp(1)(_ + 1)
+    val b = withExp(1)(_ + 1)
 
     //a and b are semantically equal, but unfortunately they are not recognized as such, thus we cannot use such a simple
     //definition
     a should not equal (b)
 
-    val c = fmap(1)('plusOne, 1 +)
-    val d = fmap(1)('plusOne, 1 +)
+    val c = fmap(1)('plusOne, _ + 1)
+    val d = fmap(1)('plusOne, _ + 1)
 
     c should equal (d)
   }

@@ -116,7 +116,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     opt21.interpret() should be (query2.interpret())
   }
 
-  val baseCol = Seq(1) asSmart
+  val baseCol = Seq(1).asSmart
 
   @Test
   def testRemoveRedundantOption() {
@@ -137,7 +137,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
 
   @Test
   def testMapToFlatMapAndBack() {
-    val baseRange = (1 to 10) asSmart
+    val baseRange = (1 to 10).asSmart
     val query = for (i <- baseRange) yield i
     import Optimization._
     val transf = mapToFlatMap(query)
@@ -230,12 +230,12 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   }
 
   @Test def renestExists1() {
-    val compr = for { x <- Set(1, 2, 3, 4) asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
+    val compr = for { x <- Set(1, 2, 3, 4).asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
     testRenestingExistsForSets(compr)
     testRenestingExistsGeneric(compr)
   }
   @Test def renestExists2() {
-    val compr = for { x <- Seq(1, 2, 3, 4) asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
+    val compr = for { x <- Seq(1, 2, 3, 4).asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
     testRenestingExistsGeneric(compr)
   }
 }
