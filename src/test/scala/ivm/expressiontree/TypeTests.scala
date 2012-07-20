@@ -10,10 +10,10 @@ import collection.TraversableLike
 import collection.generic.CanBuildFrom
 
 trait TypeMatchers {
-  def typ[ExpectedT: reflect.ClassTag] = new HavePropertyMatcher[Any, OptManifest[_]] {
-    def apply(obj: Any): HavePropertyMatchResult[OptManifest[_]] = {
+  def typ[ExpectedT: reflect.ClassTag] = new HavePropertyMatcher[Any, reflect.ClassTag[_]] {
+    def apply(obj: Any): HavePropertyMatchResult[reflect.ClassTag[_]] = {
       val actual = reflect.ClassTag(obj.getClass)
-      val expected = classManifest[ExpectedT]
+      val expected = implicitly[reflect.ClassTag[ExpectedT]]
       HavePropertyMatchResult(
         //expected.erasure.isInstance(obj), //Natural and wrong way to write this
         ClassUtil.boxedErasure(expected).isInstance(obj),

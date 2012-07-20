@@ -130,7 +130,7 @@ object Compile {
   /*private[expressiontree]*/ def emitSourceInternal[T: reflect.ClassTag](e: Exp[T]): (String, String, Seq[(reflect.ClassTag[_], Any)], String) = {
     precompileReset()
     val name = "Outclass" + classId()
-    val typ = classManifest[T]
+    val typ = implicitly[reflect.ClassTag[T]]
     val body = e.toCode
     val declValues = (map.get().toSeq map {
       case (value, CSPVar(memberName, memberType)) =>

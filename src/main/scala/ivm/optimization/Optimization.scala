@@ -40,8 +40,8 @@ object Optimization {
 
     //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the
     // optimizer. TODO: Reconsider again whether this is a good idea.
-    subqueries += normalize(query) -> (intQuery, classManifest[T])
-    subqueries += normalize(optquery) -> (intQuery, classManifest[T])
+    subqueries += normalize(query) -> (intQuery, implicitly[reflect.ClassTag[T]])
+    subqueries += normalize(optquery) -> (intQuery, implicitly[reflect.ClassTag[T]])
   }
 
   def removeIndex[T](_query: UnconvertedExp[Exp[T]]) {
