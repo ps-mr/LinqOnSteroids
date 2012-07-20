@@ -1,5 +1,6 @@
 #!/bin/sh -e
 git pull || true
-./oldResultsAway.sh || true
+./deploy.sh
+./oldResultsAway.sh
 ./profileLos.sh
 ./profileLosJDK.sh
