@@ -1,8 +1,12 @@
 package ivm
 
 package object expressiontree {
-  def classTag[T](implicit c: reflect.ClassTag[T]) = c
-  def typeTag[T](implicit ttag: reflect.TypeTag[T]) = ttag
+  import scala.reflect.runtime.universe
+  val u = universe
+  type ClassTag[T] = reflect.ClassTag[T]
+  type TypeTag[T] = u.TypeTag[T]
+  def classTag[T](implicit c: ClassTag[T]) = c
+  def typeTag[T](implicit ttag: TypeTag[T]) = ttag
 
   type TravMessage[+T] = Message[Traversable[T]]
   type TravMsgSeqPublisher[+T, +Pub <: TravMsgSeqPublisher[T, Pub]] = MsgSeqPublisher[Traversable[T], Pub]
