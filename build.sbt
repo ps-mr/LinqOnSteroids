@@ -1,5 +1,6 @@
 import java.io.FileWriter
 import scalariform.formatter.preferences._
+import AssemblyKeys._
 //import de.johoop.findbugs4sbt.FindBugs._
 //import com.typesafe.startscript.StartScriptPlugin
 
@@ -11,6 +12,8 @@ version := "0.3-SNAPSHOT"
 scalaVersion in ThisBuild := "2.10.0-M5"
 
 parallelExecution in Test := false
+
+libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-library" % ver)
 
 libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-compiler" % ver)
 
@@ -32,6 +35,8 @@ scalacOptions ++= Seq("-unchecked", "-deprecation")
 
 scalacOptions ++= Seq("-feature", "-language:implicitConversions",
   "-language:higherKinds", "-language:existentials")
+
+retrieveManaged := true
 
 //scalacOptions += "-explaintypes"
 
@@ -140,3 +145,10 @@ object GitVersion {
 //mainClass in Test := Some("performancetests.opaltests.FindBugsAnalyses")
 //
 //mainClass in Compile := Some("performancetests.opaltests.FindBugsAnalyses")
+
+//generate fat JAR
+assemblySettings
+
+mainClass in assembly := Some("performancetests.opaltests.FindBugsAnalyses")
+
+test in assembly := {}

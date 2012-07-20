@@ -1,0 +1,6 @@
+#!/bin/bash -x
+classPath=$(find lib_managed -type f|while read i; do echo -n $i:; done)
+classPath=${classPath%:}
+mainJar=$(echo target/scala-*/linqonsteroids_*.jar)
+mainClass="performancetests.opaltests.FindBugsAnalyses"
+java -classpath $classPath:$mainJar $mainClass "$@"
