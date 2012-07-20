@@ -5,7 +5,7 @@ import scalariform.formatter.preferences._
 
 name := "LinqOnSteroids"
 
-version := "0.1"
+version := "0.3-SNAPSHOT"
 
 //scalaVersion in ThisBuild := "2.9.2"
 scalaVersion in ThisBuild := "2.10.0-M5"
