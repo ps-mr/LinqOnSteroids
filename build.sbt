@@ -36,7 +36,7 @@ scalacOptions ++= Seq("-feature", "-language:implicitConversions",
 
 //scalacOptions += "-explaintypes"
 
-//scalacOptions += "-optimise"
+scalacOptions += "-optimise"
 
 //scalacOptions += "-Yinline"
 
