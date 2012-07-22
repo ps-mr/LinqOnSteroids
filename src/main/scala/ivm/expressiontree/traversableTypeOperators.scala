@@ -10,12 +10,12 @@ import collection.generic.CanBuildFrom
 
 
 object TypeFilter {
-  def apply[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], cS: ClassTag[S], nameCDS: String): TypeFilter[T, C, D, S] =
-    apply[T, C, D, S](base, f, ClassUtil.boxedErasure(cS), nameCDS)
+  def apply[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S: ClassTag /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T])(implicit cdsTTag: TypeTag[C[D[S]]]): TypeFilter[T, C, D, S] =
+    apply[T, C, D, S](base, f, ClassUtil.boxedErasure(classTag[S]))
 }
 
 //Just like for IfInstanceOf, equality comparison must consider also classS. Therefore, classS must be a class parameter.
-case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], classS: Class[_], nameCDS: String)
+case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], classS: Class[_])(implicit cdsTTag: TypeTag[C[D[S]]])
   extends Arity2Op[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]], TypeFilter[T, C, D, S]](base, f) {
   override def interpret() = {
     val b: C[D[T]] = base.interpret()
@@ -24,8 +24,8 @@ case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this 
   //XXX: the cast '.asInstanceOf[C[D[S]]]' is missing. How can we encode it? With an extra manifest?
   //XXX: nameCDS, at times, is the result of erasure; hence we get java.lang.Integer instead of Int.
   override def toCode = "%s.filter(el => %s.isInstance(%s)).asInstanceOf[%s]" format (
-    base.toCode, Const(classS).toCode, Lifting.app(f)(NamedVar("el")).toCode, nameCDS)
-  override def copy(base: Exp[C[D[T]]], f: Exp[D[T] => T]) = TypeFilter[T, C, D, S](base, f, classS, nameCDS)
+    base.toCode, Const(classS).toCode, Lifting.app(f)(NamedVar("el")).toCode, Compile.manifestToString(typeTag[C[D[S]]]))
+  override def copy(base: Exp[C[D[T]]], f: Exp[D[T] => T]) = TypeFilter[T, C, D, S](base, f, classS)
 }
 
 // XXX: It is not clear whether the cast from Repr to That is always valid. OTOH, this could express typeFilter on Map,

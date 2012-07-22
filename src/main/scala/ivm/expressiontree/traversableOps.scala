@@ -93,15 +93,15 @@ trait TraversableOps {
     //This awkward form is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
     //def exists(f: Exp[T] => Exp[Boolean]) = !(Forall(this.t, Fun(f andThen (!(_)))))
 
-    def typeFilter[S: TypeTag](implicit cS: ClassTag[S]): Exp[Traversable[S]] = {
+    def typeFilter[S: ClassTag: TypeTag]: Exp[Traversable[S]] = {
       type ID[+T] = T
       //TypeFilter[T, Coll, ID, S](t, Fun(identity[Exp[T]]), cS) //variance mismatch
-      TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]), cS, Compile.manifestToString(typeTag[Traversable[S]]))
+      TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]))
     }
-    private[ivm] def typeFilterClass[S](classS: Class[S]): Exp[Traversable[S]] = {
+    private[ivm] def typeFilterClass[S: TypeTag](classS: Class[S]): Exp[Traversable[S]] = {
       type ID[+T] = T
       //TypeFilter[T, Coll, ID, S](t, Fun(identity[Exp[T]]), classS) //variance mismatch again
-      TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]), classS, "Traversable[%s]" format classS.getName)
+      TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]), classS)
     }
 
     //XXX: Generate these wrappers, also for other methods.
@@ -476,8 +476,8 @@ trait TypeFilterOps {
   }
 
   class TypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](val t: Exp[C[D[T]]]) {
-    def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassTag[S], cCDS: ClassTag[C[D[S]]]) =
-      TypeFilter[T, C, D, S](t, Fun(f), cS, classManifest[C[D[S]]].toString)
+    def typeFilterWith[S](f: Exp[D[T]] => Exp[T])(implicit cS: ClassTag[S], cCDS: TypeTag[C[D[S]]]) =
+      TypeFilter[T, C, D, S](t, Fun(f))
     //def groupByType(f: Exp[D[T]] => Exp[T]) = GroupByType(this.t, Fun(f))
   }
   implicit def expToTypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T, C, D](t)

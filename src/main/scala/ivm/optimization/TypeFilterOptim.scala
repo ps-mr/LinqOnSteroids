@@ -11,7 +11,7 @@ import OptimizationUtil._
  */
 
 trait TypeFilterOptim {
-  private def buildTypeFilter[S, T, U](coll: Exp[Traversable[T]], classS: Class[S], f: Fun[S, Traversable[U]], origFmFun: Fun[T, Traversable[U]]): Exp[Traversable[U]] = {
+  private def buildTypeFilter[S: TypeTag, T, U](coll: Exp[Traversable[T]], classS: Class[S], f: Fun[S, Traversable[U]], origFmFun: Fun[T, Traversable[U]]): Exp[Traversable[U]] = {
     val res = coll.typeFilterClass(classS).flatMap(f.f)
     //Check that the transformed expression has overall the same type as the original one:
     Util.checkSameTypeAndRet(coll flatMap origFmFun)(res)
@@ -27,6 +27,7 @@ trait TypeFilterOptim {
     val containingX = fmFun.body.findTotFun(_.children.contains(X))
     containingX.headOption match {
       case Some(instanceOfNode@IfInstanceOf(X, _)) if containingX.forall(_ == instanceOfNode) =>
+        implicit val classTagS = instanceOfNode.cS
         if (containingXParent.forall(_ == (instanceOfNode: Exp[Iterable[_]]))) {
           val v = Fun.gensym()
           val transformed = fmFun.body.substSubTerm(containingXParent.head, Seq(v))
