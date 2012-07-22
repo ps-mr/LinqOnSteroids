@@ -139,7 +139,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } yield MethodRecord(classFile, method, body) //MethodRecord(cfM._1, cfM._2, body)
   }
 
-  //def this() = this(Seq("lib/scalatest-1.6.1.jar"))
+  //def this() = this(Seq("src/test/resources/scalatest-1.6.1.jar"))
   def this() = this(Seq("src/test/resources/Bugs.zip"))
 
   //This is to have a run comparable with FindBugs
