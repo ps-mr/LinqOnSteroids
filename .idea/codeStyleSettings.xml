@@ -31,6 +31,9 @@
         <codeStyleSettings language="JAVA">
           <option name="KEEP_FIRST_COLUMN_COMMENT" value="false" />
           <option name="PARENT_SETTINGS_INSTALLED" value="true" />
+          <indentOptions>
+            <option name="TAB_SIZE" value="8" />
+          </indentOptions>
         </codeStyleSettings>
         <codeStyleSettings language="Scala">
           <indentOptions>

@@ -30,7 +30,7 @@
       <excludeFolder url="file://$MODULE_DIR$/../target/test-reports" />
       <excludeFolder url="file://$MODULE_DIR$/../various" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="1.6" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="de.tud.cs.st_bat-core_2.10_1.0.0-SNAPSHOT" level="project" />
     <orderEntry type="library" name="org.scala-lang_scala-library_2.10.0-M5" level="project" />
