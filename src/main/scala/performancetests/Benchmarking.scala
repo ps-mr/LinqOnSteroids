@@ -31,16 +31,16 @@ trait Benchmarking {
 
   /**
    *
-   * @param name
+   * @param name name for the benchmark to use in output
    * @param silent If silent is true, the benchmark output is supposed to still be saved (when output will be saved), but not displayed.
-   * @param execLoops
-   * @param minSampleLoops
+   * @param execLoops Number of times to execute the benchmark in each inner loop; time is taken every execLoops iterations.
+   * @param minSampleLoops Minimum number of benchmark iterations.
    * @param verbose
-   * @param hasConsoleOutput
-   * @param toBench
-   * @param maxCov if Some(x), x is the maximum coefficient of variation allowed.
+   * @param hasConsoleOutput Does the benchmarked code produce console output?
+   * @param toBench Code to benchmark
+   * @param maxCov If Some(x), x is the maximum coefficient of variation allowed.
    * @tparam T
-   * @return
+   * @return The return value of executing toBench, assuming it always returns the same value.
    */
   def benchMark[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCov: Option[Double] = Some(defaultMaxCov), verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): T =
