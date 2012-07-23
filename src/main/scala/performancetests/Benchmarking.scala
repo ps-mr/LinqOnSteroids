@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.io.{PrintWriter, FileWriter, BufferedWriter}
 import collection.mutable.ArrayBuffer
+import java.{util => jUtil, text => jText}
 
 trait Benchmarking {
   import Benchmarking._
@@ -113,7 +114,7 @@ trait Benchmarking {
     if (verbose) {
       if (hasConsoleOutput)
         print(">>> Name = %s, needed iterations = %d, time = " format (name, stats.iterations))
-      println("(%,.3f +- %,.3f (stdErr = %,.3f)) ms; relative std.dev. %.3f, std.err. %.3f; extra memory consumption = %,d bytes" format (avgMs, devStdMs, stdErrMs, devStdMs / avgMs, stdErrMs / avgMs, usedMemory))
+      println("(%,.3f +- %,.3f (stdErr = %,.3f)) ms; relative std.dev. %.3f, std.err. %.3f; extra memory consumption = %,d bytes" formatLocal (defaultLocale, avgMs, devStdMs, stdErrMs, devStdMs / avgMs, stdErrMs / avgMs, usedMemory))
     }
     //Format output for Jenkins' Measurement Plot plugin - https://wiki.jenkins-ci.org/display/JENKINS/Measurement+Plots+Plugin
     //println(<measurement><name>{name}</name><value>{avgMs}</value></measurement>) //Remove, that Jenkins plugin does not work.
@@ -211,4 +212,8 @@ object Benchmarking {
   private val rawDataLogPath = "LOSTestLog-raw.csv"
   private val rawDataLogWriter = new PrintWriter(new BufferedWriter(new FileWriter(rawDataLogPath, true)))
   private var usedNames = Set[String]()
+
+  //The JDK 1.6 ignores the grouping separator for the 1.6 locale.
+  val defaultLocale = jUtil.Locale.UK //jUtil.Locale getDefault jUtil.Locale.Category.FORMAT
+  jText.DecimalFormatSymbols getInstance defaultLocale setGroupingSeparator ' '
 }
