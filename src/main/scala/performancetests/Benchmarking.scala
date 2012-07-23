@@ -10,14 +10,12 @@ trait Benchmarking {
   import Benchmarking._
 
   val execLoops = 1
-  val warmUpLoops = 100 //Deprecated, used only by my old methodology.
-  val sampleLoops = 50
+  val defaultMinSampleLoops = 10
 
   val maxLoops = 1000
 
   //val maxCov = 0.10
   val maxCov = 0.02
-  val myMethodology = false
   val printAllData = false
   val callGC = false
 
@@ -26,37 +24,33 @@ trait Benchmarking {
 
   //These are a def, so that overriding the values they depend on works!
   def effectiveExecLoops = if (debugBench) 1 else execLoops
-  def effectiveWarmUpLoops = if (debugBench) 0 else warmUpLoops
-  def effectiveSampleLoops = if (debugBench) 1 else sampleLoops
 
-  def benchMarkTime(name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  def benchMarkTime(name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                    (toBench: => Unit) =
-    benchMarkInternal(name, silent, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)._2
+    benchMarkInternal(name, silent, execLoops, minSampleLoops, verbose, hasConsoleOutput)(toBench)._2
 
   /**
    *
    * @param name
    * @param silent If silent is true, the benchmark output is supposed to still be saved (when output will be saved), but not displayed.
    * @param execLoops
-   * @param warmUpLoops
-   * @param sampleLoops
+   * @param minSampleLoops
    * @param verbose
    * @param hasConsoleOutput
    * @param toBench
    * @tparam T
    * @return
    */
-  def benchMark[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  def benchMark[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): T =
-    benchMarkInternal(name, silent, execLoops, warmUpLoops, sampleLoops, verbose, hasConsoleOutput)(toBench)._1
+    benchMarkInternal(name, silent, execLoops, minSampleLoops, verbose, hasConsoleOutput)(toBench)._1
 
   /**
-   * @param warmUpLoops: Warm up the VM - should be more
-   * @param sampleLoops Iterations to measure variance.
+   * @param minSampleLoops Iterations to measure variance.
    * @param toBench code to benchmark, which is supposed to always return the same value.
    * @return the value returned by toBench
    */
-  def benchMarkInternal[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, warmUpLoops: Int = effectiveWarmUpLoops, sampleLoops: Int = effectiveSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  def benchMarkInternal[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): (T, Double) = {
     def print(x: Any) = if (!silent) Console.err.print(x)
     def println(x: Any) = if (!silent) Console.err.println(x)
@@ -77,34 +71,25 @@ trait Benchmarking {
 
     var ret: T = null.asInstanceOf[T]
     newLine() //Make space at the beginning
-    println("Benchmarking params: execLoops: %d, warmUpLoops: %d, sampleLoops: %d" format (execLoops, warmUpLoops, sampleLoops))
+    println("Benchmarking params: execLoops: %d, minSampleLoops: %d" format (execLoops, minSampleLoops))
     if (!hasConsoleOutput) {
       print(">>> Name = %s" format name)
-      if (myMethodology)
-        print(", starting warmup...")
       newLine()
     }
     //Use Console.err instead of println and flush here.
     //Console.flush()
 
-    if (myMethodology)
-      for (i <- 1 to warmUpLoops)
-        toBench
     val memoryBefore = gcAndSnapshotUsedMemory()
 
     if (hasConsoleOutput)
       newLine()
-    else {
-      if (myMethodology)
-        print(" ending warmup,")
+    else
       print(" starting benchmarking...")
-    }
 
     //val stats = if (myMethodology) new VarianceCalcMyMethodology else new VarianceCalc(sampleLoops)
-    val stats = new VarianceCalc(sampleLoops)
+    val stats = new VarianceCalc(minSampleLoops)
     val values = ArrayBuffer[Long]()
 
-    val maxLoops_ = if (myMethodology) sampleLoops else maxLoops
     var i = 0
     do {
       val before = System.nanoTime()
@@ -118,7 +103,7 @@ trait Benchmarking {
         System.gc()
       i += 1
       //If debugBench, we never want to reiterate a benchmark.
-    } while (!debugBench && i < maxLoops_ && (myMethodology || stats.cov > maxCov || i < 10))
+    } while (!debugBench && i < maxLoops && (stats.cov > maxCov || i < 10))
     val usedMemory = gcAndSnapshotUsedMemory() - memoryBefore
 
     if (!hasConsoleOutput)
@@ -126,7 +111,7 @@ trait Benchmarking {
     val avgMs = stats.avg / math.pow(10,6)
     val devStdMs = math.sqrt(stats.variance) / math.pow(10,6)
     //The error of the measured average as an estimator of the average of the underlying random variable
-    val stdErrMs = devStdMs / math.sqrt(sampleLoops)
+    val stdErrMs = devStdMs / math.sqrt(minSampleLoops)
 
     if (verbose) {
       if (hasConsoleOutput)
