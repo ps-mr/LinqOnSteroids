@@ -61,7 +61,7 @@ trait Benchmarking {
       if (!debugBench)
         MemoryUsage.gcAndSnapshotUsedMemory() //This call is expensive because it invokes GC - on my machine it takes 240 ms.
       else
-        0
+        0L
 
 
     val benchmarkingBegin = System.nanoTime()
