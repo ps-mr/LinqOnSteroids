@@ -15,8 +15,7 @@ trait Benchmarking {
 
   val maxLoops = 1000
 
-  //val maxCov = 0.10
-  val maxCov = 0.02
+  val defaultMaxCov = 0.02
   val printAllData = false
   val callGC = false
 
@@ -26,9 +25,9 @@ trait Benchmarking {
   //These are a def, so that overriding the values they depend on works!
   def effectiveExecLoops = if (debugBench) 1 else execLoops
 
-  def benchMarkTime(name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  def benchMarkTime(name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCov: Option[Double] = Some(defaultMaxCov), verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                    (toBench: => Unit) =
-    benchMarkInternal(name, silent, execLoops, minSampleLoops, verbose, hasConsoleOutput)(toBench)._2
+    benchMarkInternal(name, silent, execLoops, minSampleLoops, maxCov, verbose, hasConsoleOutput)(toBench)._2
 
   /**
    *
@@ -39,19 +38,20 @@ trait Benchmarking {
    * @param verbose
    * @param hasConsoleOutput
    * @param toBench
+   * @param maxCov if Some(x), x is the maximum coefficient of variation allowed.
    * @tparam T
    * @return
    */
-  def benchMark[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  def benchMark[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCov: Option[Double] = Some(defaultMaxCov), verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): T =
-    benchMarkInternal(name, silent, execLoops, minSampleLoops, verbose, hasConsoleOutput)(toBench)._1
+    benchMarkInternal(name, silent, execLoops, minSampleLoops, maxCov, verbose, hasConsoleOutput)(toBench)._1
 
   /**
    * @param minSampleLoops Iterations to measure variance.
    * @param toBench code to benchmark, which is supposed to always return the same value.
    * @return the value returned by toBench
    */
-  def benchMarkInternal[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  def benchMarkInternal[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCov: Option[Double] = Some(defaultMaxCov), verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): (T, Double) = {
     def print(x: Any) = if (!silent) Console.err.print(x)
     def println(x: Any) = if (!silent) Console.err.println(x)
@@ -72,7 +72,7 @@ trait Benchmarking {
 
     var ret: T = null.asInstanceOf[T]
     newLine() //Make space at the beginning
-    println("Benchmarking params: execLoops: %d, minSampleLoops: %d" format (execLoops, minSampleLoops))
+    println("Benchmarking params: execLoops: %d, minSampleLoops: %d, maxCov" format (execLoops, minSampleLoops, maxCov))
     if (!hasConsoleOutput) {
       print(">>> Name = %s" format name)
       newLine()
@@ -103,7 +103,7 @@ trait Benchmarking {
         System.gc()
       i += 1
       //If debugBench, we never want to reiterate a benchmark.
-    } while (!debugBench && i < maxLoops && (stats.cov > maxCov || i < minSampleLoops))
+    } while (!debugBench && i < maxLoops && (maxCov map (_ < stats.cov) getOrElse false || i < minSampleLoops))
     val usedMemory = gcAndSnapshotUsedMemory() - memoryBefore
 
     if (!hasConsoleOutput)
