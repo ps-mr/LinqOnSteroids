@@ -11,7 +11,7 @@ case class And(t1: Exp[Boolean], t2: Exp[Boolean]) extends Arity2OpSymmExp[Boole
 case class Or(t1: Exp[Boolean], t2: Exp[Boolean]) extends Arity2OpSymmExp[Boolean, Boolean, Or] with InfixPrinting {
   def copy(x: Exp[Boolean], y: Exp[Boolean]) = Or(x, y)
   def interpret() = t1.interpret() || t2.interpret()
-  def operator = "&&"
+  def operator = "||"
 }
 
 case class Not(t1: Exp[Boolean]) extends Arity1OpExpTrait[Boolean, Boolean, Not] with PrefixPrinting {
