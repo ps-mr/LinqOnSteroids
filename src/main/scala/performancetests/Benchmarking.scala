@@ -9,7 +9,7 @@ import collection.mutable.ArrayBuffer
 trait Benchmarking {
   import Benchmarking._
 
-  val execLoops = 1
+  val defaultExecLoops = 1
   val defaultMinSampleLoops = 10
   private val rememberedSampleLoops = 50
 
@@ -22,10 +22,7 @@ trait Benchmarking {
   //Import and re-export to inheritors.
   def debugBench = Benchmarking.debugBench
 
-  //These are a def, so that overriding the values they depend on works!
-  def effectiveExecLoops = if (debugBench) 1 else execLoops
-
-  def benchMarkTime(name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCov: Option[Double] = Some(defaultMaxCov), verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  def benchMarkTime(name: String, silent: Boolean = false, execLoops: Int = defaultExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCov: Option[Double] = Some(defaultMaxCov), verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                    (toBench: => Unit) =
     benchMarkInternal(name, silent, execLoops, minSampleLoops, maxCov, verbose, hasConsoleOutput)(toBench)._2
 
@@ -42,7 +39,7 @@ trait Benchmarking {
    * @tparam T
    * @return The return value of executing toBench, assuming it always returns the same value.
    */
-  def benchMark[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCov: Option[Double] = Some(defaultMaxCov), verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  def benchMark[T](name: String, silent: Boolean = false, execLoops: Int = defaultExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCov: Option[Double] = Some(defaultMaxCov), verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): T =
     benchMarkInternal(name, silent, execLoops, minSampleLoops, maxCov, verbose, hasConsoleOutput)(toBench)._1
 
@@ -51,7 +48,7 @@ trait Benchmarking {
    * @param toBench code to benchmark, which is supposed to always return the same value.
    * @return the value returned by toBench
    */
-  def benchMarkInternal[T](name: String, silent: Boolean = false, execLoops: Int = effectiveExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCov: Option[Double] = Some(defaultMaxCov), verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  def benchMarkInternal[T](name: String, silent: Boolean = false, execLoops: Int = defaultExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCov: Option[Double] = Some(defaultMaxCov), verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): (T, Double) = {
     def print(x: Any) = if (!silent) Console.err.print(x)
     def println(x: Any) = if (!silent) Console.err.println(x)

@@ -23,7 +23,7 @@ import tests.TransformTestHelper
 */
 
 class TransformedFuncPerfTests extends JUnitSuite with ShouldMatchersForJUnit with TransformTestHelper with Benchmarking {
-  override val effectiveExecLoops = 10
+  override val defaultExecLoops = 10
   val collSize = if (debugBench) 10 else 100
   val l: Exp[Traversable[Int]] = pure(ArrayBuffer.range(1, collSize))
   val l2: Exp[Traversable[Int]] = pure(ArrayBuffer.range(1, collSize))
