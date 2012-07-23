@@ -11,6 +11,7 @@ trait Benchmarking {
 
   val execLoops = 1
   val defaultMinSampleLoops = 10
+  private val rememberedSampleLoops = 50
 
   val maxLoops = 1000
 
@@ -86,8 +87,7 @@ trait Benchmarking {
     else
       print(" starting benchmarking...")
 
-    //val stats = if (myMethodology) new VarianceCalcMyMethodology else new VarianceCalc(sampleLoops)
-    val stats = new VarianceCalc(minSampleLoops)
+    val stats = new VarianceCalc(rememberedSampleLoops)
     val values = ArrayBuffer[Long]()
 
     var i = 0
@@ -111,7 +111,7 @@ trait Benchmarking {
     val avgMs = stats.avg / math.pow(10,6)
     val devStdMs = math.sqrt(stats.variance) / math.pow(10,6)
     //The error of the measured average as an estimator of the average of the underlying random variable
-    val stdErrMs = devStdMs / math.sqrt(minSampleLoops)
+    val stdErrMs = devStdMs / math.sqrt(stats.count)
 
     if (verbose) {
       if (hasConsoleOutput)
@@ -189,7 +189,7 @@ object Benchmarking {
     var iterations = 0
 
     //var count = 0
-    def count = nSamples
+    override def count = math.min(nSamples, iterations)
 
     def update(sample: Long) {
       iterations += 1
@@ -206,16 +206,6 @@ object Benchmarking {
     }
     override def cov =
       if (iterations < nSamples) 1 else super.cov
-  }
-
-  class VarianceCalcMyMethodology extends IVarianceCalc {
-    var count = 0
-    def iterations = count
-
-    def update(sample: Long) {
-      count += 1
-      updateSumsForNewSample(sample)
-    }
   }
 
   private val testDate = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance.getTime)
