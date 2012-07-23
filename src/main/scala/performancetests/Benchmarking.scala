@@ -72,7 +72,7 @@ trait Benchmarking {
 
     var ret: T = null.asInstanceOf[T]
     newLine() //Make space at the beginning
-    println("Benchmarking params: execLoops: %d, minSampleLoops: %d, maxCov" format (execLoops, minSampleLoops, maxCov))
+    println("Benchmarking params: execLoops: %d, minSampleLoops: %d, maxCov: %s" format (execLoops, minSampleLoops, maxCov))
     if (!hasConsoleOutput) {
       print(">>> Name = %s" format name)
       newLine()
