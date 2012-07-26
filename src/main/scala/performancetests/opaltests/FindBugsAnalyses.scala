@@ -94,6 +94,8 @@ object FindBugsAnalyses {
 class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
   import FindBugsAnalyses.QueryAnd
 
+  override val defaultExecLoops = 10
+
   def methodsNative() = {
     for {
       classFile ← classFiles
@@ -159,9 +161,22 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
   println("Number of class files: " + classFiles.length)
   println("Numer of methods: " + methodsSQuOpt().interpret().size)
 
+  /* XXX:
+   * This test is currently pointless. Either I do it with a single query, where it'll benchmark cache lookup time;
+   * or I do it with multiple queries, and it'll fill the compilation cache with alpha-equivalent but different queries
+   * and measure GC performance on a memory leaking program which is calling the Scala compiler many times.
+   * The cache should replace constants with different nodes (say, NamedVar's) and then check alpha-equivalence using
+   * standard equality.
+   */
+/*
   test("Compilation") {
-    benchMark("Compiling methodBodiesSQuOpt"){Compile.toValue(methodBodiesSQuOpt())} should be (methodBodiesSQuOpt().interpret())
+    //benchMark("Compiling methodBodiesSQuOpt"){Compile.toValue(methodBodiesSQuOpt())} should be (methodBodiesSQuOpt().interpret())
+/*
+    val query = methodBodiesSQuOpt()
+    benchMark("Compiling methodBodiesSQuOpt"){Compile.toValue(query)} should be (query.interpret())
+*/
   }
+*/
 
   // The following code is meant to show how easy it is to write analyses;
   // it is not meant to demonstrate how to write such analyses in an efficient
