@@ -143,7 +143,7 @@ trait Benchmarking {
     logWriter.flush()
     //Detailed log.
     //Format output for R
-    for (v <- if (printAllData) values else stats.buf) {
+    for (v <- if (printAllData) values else stats.samples) {
       rawDataLogWriter.println("%s;%s;%s;%d" format (GitVersion.version, testDate, nameToPrint, v))
     }
     rawDataLogWriter.flush()
@@ -197,6 +197,8 @@ object Benchmarking {
 
     def cov =
       math.sqrt(variance) / avg
+
+    def samples: Seq[Long]
   }
 
   class VarianceCalc(nSamples: Int) extends IVarianceCalc {
@@ -207,6 +209,7 @@ object Benchmarking {
     //var count = 0
     override def count = math.min(nSamples, iterations)
 
+    def samples: Seq[Long] = (buf take count).toList
     def update(sample: Long) {
       iterations += 1
 
