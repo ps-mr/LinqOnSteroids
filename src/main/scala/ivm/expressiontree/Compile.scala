@@ -166,18 +166,18 @@ object Compile {
     res._1 + res._2
   }
 
+  def buildInstance[T](c: Option[Class[_]], staticData: Seq[(ClassTag[_], Any)]): T = c match {
+    case Some(cls) =>
+      val cons = cls.getConstructor(staticData.map(_._1.runtimeClass):_*)
+      val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[Compiled[T]].result
+      obj
+    case None =>
+      throw new CompilationFailedException("")
+  }
 
   def toValue[T: TypeTag](exp: Exp[T]): T = {
     val (prefix, restSourceCode, staticData, className) = emitSourceInternal(exp)
-
-    cachedInvokeCompiler(prefix, restSourceCode, className) match {
-      case Some(cls) =>
-        val cons = cls.getConstructor(staticData.map(_._1.runtimeClass):_*)
-        val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[Compiled[T]].result
-        obj
-      case None =>
-        throw new CompilationFailedException("")
-    }
+    buildInstance(cachedInvokeCompiler(prefix, restSourceCode, className), staticData)
   }
 }
 
