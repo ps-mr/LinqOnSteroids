@@ -113,7 +113,10 @@ object Compile {
   }
   val classId = new Util.GlobalIDGenerator
 
-  //Cache compilation results.
+  //Cache compilation results. Note: the cache does not identify alpha-equivalent expressions, but it does identify
+  // expressions with the same constants!
+  // Moreover, this cache should use soft references for keys. Googling SoftHashMap gives this answer:
+  // http://stackoverflow.com/questions/264582/is-there-a-softhashmap-in-java
   private val codeCache = new ScalaThreadLocal(mutable.Map[String, Option[Class[_]]]())
   def cachedInvokeCompiler[T: TypeTag](prefix: String, restSourceStr: String, className: String) =
     codeCache.get().getOrElseUpdate(restSourceStr, ScalaCompile.invokeCompiler(prefix + restSourceStr, className))
