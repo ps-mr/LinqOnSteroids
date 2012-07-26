@@ -453,6 +453,7 @@ trait TypeFilterOps {
       new TypeMapping[C, D, T](map, subtypeRel, coll)
     }
     override def copy(base: Exp[C[D[T]]], f: Exp[D[T] => T]) = GroupByType[T, C, D](base, f)
+    //XXX add toCode
   }
 
   /*
