@@ -117,9 +117,11 @@ object Compile {
   // expressions with the same constants!
   // Moreover, this cache should use soft references for keys. Googling SoftHashMap gives this answer:
   // http://stackoverflow.com/questions/264582/is-there-a-softhashmap-in-java
+
+  //Note: these two maps should be concurrent maps, not ThreadLocals!
   private val codeCache = new ScalaThreadLocal(mutable.Map[String, Option[Class[_]]]())
-  def cachedInvokeCompiler[T: TypeTag](prefix: String, restSourceStr: String, className: String) =
-    codeCache.get().getOrElseUpdate(restSourceStr, ScalaCompile.invokeCompiler(prefix + restSourceStr, className))
+  def cachedInvokeCompiler[T: TypeTag](prefix: String, restSourceCode: String, className: String) =
+    codeCache.get().getOrElseUpdate(restSourceCode, ScalaCompile.invokeCompiler(prefix + restSourceCode, className))
 
   //*Reset methods are just (or mostly?) for testing {{{
   def precompileReset() {
@@ -141,7 +143,7 @@ object Compile {
 
   /*private[expressiontree]*/ def emitSourceInternal[T: TypeTag](e: Exp[T]): (String, String, Seq[(ClassTag[_], Any)], String) = {
     precompileReset()
-    val name = "Outclass" + classId()
+    val className = "Outclass" + classId()
     val typ = typeTag[T]
     val body = e.toCode
     val declValues = (cspMap.get().toSeq map {
@@ -150,12 +152,12 @@ object Compile {
     })
     val (decls, staticData) = declValues.unzip[String, (ClassTag[_], Any)]
     val declsStr = decls mkString ", "
-    val prefix = "class %s" format name
-    val rest =
+    val prefix = "class %s" format className
+    val restSourceCode =
       """(%s) extends Compiled[%s] {
         |  override def result = %s
         |}""".stripMargin format (declsStr, manifestToString(typ), body)
-    (prefix, rest, staticData, name)
+    (prefix, restSourceCode, staticData, className)
   }
 
   //Mostly for testing
@@ -166,9 +168,9 @@ object Compile {
 
 
   def toValue[T: TypeTag](exp: Exp[T]): T = {
-    val (prefix, restSourceStr, staticData, className) = emitSourceInternal(exp)
+    val (prefix, restSourceCode, staticData, className) = emitSourceInternal(exp)
 
-    cachedInvokeCompiler(prefix, restSourceStr, className) match {
+    cachedInvokeCompiler(prefix, restSourceCode, className) match {
       case Some(cls) =>
         val cons = cls.getConstructor(staticData.map(_._1.runtimeClass):_*)
         val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[Compiled[T]].result
