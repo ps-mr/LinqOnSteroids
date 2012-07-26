@@ -94,7 +94,7 @@ object ScalaCompile {
 }
 
 object Compile {
-  import CrossStagePersistence.{map, varId}
+  import CrossStagePersistence.{cspMap, varId}
 
   def manifestToString[T](m: TypeTag[T]): String = {
     val str = m.tpe.toString
@@ -123,7 +123,7 @@ object Compile {
 
   //*Reset methods are just (or mostly?) for testing {{{
   def precompileReset() {
-    map.get().clear()
+    cspMap.get().clear()
     varId.localReset()
   }
 
@@ -144,7 +144,7 @@ object Compile {
     val name = "Outclass" + classId()
     val typ = typeTag[T]
     val body = e.toCode
-    val declValues = (map.get().toSeq map {
+    val declValues = (cspMap.get().toSeq map {
       case (value, CSPVar(memberName, memberCtag, memberType)) =>
         ("val %s: %s" format (memberName, manifestToString(memberType)), (memberCtag, value))
     })
