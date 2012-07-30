@@ -120,6 +120,9 @@ object Compile {
 
   //Note: these two maps should be concurrent maps, not ThreadLocals!
   private val codeCache = new ScalaThreadLocal(mutable.Map[String, Option[Class[_]]]())
+  private val expCodeCache = new ScalaThreadLocal(mutable.Map[Exp[_], Option[Class[_]]]())
+
+  //The caching here is to remove. Also, we must remove Const.toCode :-).
   def cachedInvokeCompiler[T: TypeTag](prefix: String, restSourceCode: String, className: String) =
     codeCache.get().getOrElseUpdate(restSourceCode, ScalaCompile.invokeCompiler(prefix + restSourceCode, className))
 
@@ -140,6 +143,40 @@ object Compile {
     reset()
   }
   //}}}
+  def removeConsts[T](e: Exp[T]) = {
+    precompileReset()
+    e transform {
+      case c: Const[_] =>
+        NamedVar(CrossStagePersistence.addVar(c)(c.cTag, c.tTag))
+      case exp => exp
+    }
+  }
+  def toValue2[T: TypeTag](e: Exp[T]): T = {
+    val transfExp = removeConsts(e)
+    val cspValues = cspMap.get().toSeq
+
+    val staticData: Seq[(ClassTag[_], Any)] = cspValues map {
+      case (value, CSPVar(memberName, memberCtag, memberType)) =>
+        (memberCtag, value)
+    }
+    val maybeCls = expCodeCache.get().getOrElseUpdate(transfExp, {
+      val className = "Outclass" + classId()
+      val typ = typeTag[T]
+      val body = e.toCode
+      val decls = (cspValues map {
+        case (value, CSPVar(memberName, memberCtag, memberType)) =>
+          "val %s: %s" format (memberName, manifestToString(memberType))
+      })
+      val declsStr = decls mkString ", "
+      val prefix = "class %s" format className
+      val restSourceCode =
+        """(%s) extends Compiled[%s] {
+          |  override def result = %s
+          |}""".stripMargin format (declsStr, manifestToString(typ), body)
+      cachedInvokeCompiler(prefix, restSourceCode, className)
+    })
+    buildInstance(maybeCls, staticData)
+  }
 
   /*private[expressiontree]*/ def emitSourceInternal[T: TypeTag](e: Exp[T]): (String, String, Seq[(ClassTag[_], Any)], String) = {
     precompileReset()
