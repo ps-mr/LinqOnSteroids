@@ -260,7 +260,8 @@ false
             //((m2.base map m2.f)(m2.c) map m.f)(m.c) //doesn't work
             //expToTraversableLikeOps[u2, that2](m2.base.map(m2.f)(m2.c)).map(m.f.f)(m.c) //doesn't work.
             //expToTraversableLikeOps[t, repr](m2.base.map(m2.f)(m2.c)).map(m.f)(m.c) //works
-            (expToTraversableLikeOps[t /*u2*/, /*that2*/ repr]((m2.base map m2.f)(m2.c)) map m.f)(m.c) //works
+            //(expToTraversableLikeOps[t /*u2*/, /*that2*/ repr]((m2.base map m2.f)(m2.c)) map m.f)(m.c) //works
+            (((m2.base map m2.f)(m2.c): Exp[repr with TraversableLike[t, repr]]) map m.f)(m.c) //works
             //Util.checkSameTypeAndRet(ret1)(((m2.base map m2.f)(m2.c) map m.f)(m.c)) //doesn't work.
             //(expToTraversableLikeOps[u2, that2]((m2.base map m2.f)(m2.c)) map m.f)(m.c) //doesn't work, the t = u2 equality is not deduced!
             //(expToTraversableLikeOps[t /*u2*/, that2]((m2.base map m2.f)(m2.c)) map m.f)(m.c) //doesn't work, the t = u2 equality is not deduced!
