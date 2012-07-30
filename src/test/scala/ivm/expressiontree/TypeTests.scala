@@ -257,7 +257,14 @@ false
             //repr.elem => that.elem
 
             //Different experiments:
-            //((m2.base map m2.f)(m2.c) map m.f)(m.c) //doesn't work
+            //((m2.base map m2.f)(m2.c) map m.f)(m.c) //doesn't work. Error:
+/*
+ * [error] /Users/pgiarrusso/Documents/Research/Sorgenti/linqonsteroids/src/test/scala/ivm/expressiontree/TypeTests.scala:260:
+ * type arguments [t with u2,that2] do not conform to method expToTraversableLikeOps's type parameter bounds
+ * [T,Repr <: Traversable[T] with scala.collection.TraversableLike[T,Repr]]
+ * [error]             ((m2.base map m2.f)(m2.c) map m.f)(m.c) //doesn't work
+ * [error]                                ^
+ */
             //expToTraversableLikeOps[u2, that2](m2.base.map(m2.f)(m2.c)).map(m.f.f)(m.c) //doesn't work.
             //expToTraversableLikeOps[t, repr](m2.base.map(m2.f)(m2.c)).map(m.f)(m.c) //works
             //(expToTraversableLikeOps[t /*u2*/, /*that2*/ repr]((m2.base map m2.f)(m2.c)) map m.f)(m.c) //works
