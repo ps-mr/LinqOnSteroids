@@ -23,13 +23,17 @@ trait Unnesting {
   private def cbfStaticResult[From, Elem, To](cbf: CanBuildFrom[From, Elem, To]): To =
     cbf.apply().result()
 
+  private def isSet[T](t: T) = t.isInstanceOf[collection.Set[_]]
+  private def isMap[T](t: T) = t.isInstanceOf[collection.Map[_, _]]
+  private def isSeq[T](t: T) = t.isInstanceOf[collection.Seq[_, _]] //Untested
+
   def isCbfCommutative[From, Elem, To](cbf: CanBuildFrom[From, Elem, To]) = {
-    cbfStaticResult(cbf).isInstanceOf[collection.Set[_]]
+    isSet(cbfStaticResult(cbf))
   }
 
   def isCbfIdempotent[From, Elem, To](cbf: CanBuildFrom[From, Elem, To]) = {
     val cbfRes = cbfStaticResult(cbf)
-    cbfRes.isInstanceOf[collection.Set[_]] || cbfRes.isInstanceOf[collection.Map[_, _]]
+    isSet(cbfRes) || isMap(cbfRes)
   }
 
   /*
