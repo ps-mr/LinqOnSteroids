@@ -33,6 +33,7 @@ object Optimization {
     val query = OptimizationUtil.stripViewUntyped(_query.v)
     val optquery = optimizeIdx(query, idxLookup = true)
     optquery match {
+      //XXX: This is an hack
       case Const(_) =>
       case _ =>
         val intQuery = res match {
