@@ -1,10 +1,11 @@
 #!/bin/bash -e
 #git pull
+DATA=/usr/lib/jvm/jre-1.6.0-openjdk.x86_64/lib/rt.jar
 nIters=3
 . javaSettings.inc
 for ((i=0; i < $nIters; i++)); do
   out=profileLogJDK-`timestamp`
-  { echo -n "Git version: "; git describe --always --dirty --abbrev=40; time ./start.sh /usr/lib/jvm/jre-1.6.0-openjdk.x86_64/lib/rt.jar; } 2>&1|tee $out
+  { echo -n "Git version: "; git describe --always --dirty --abbrev=40; time ./start.sh $DATA; } 2>&1|tee $out
 done
 cat LOSTestLog.csv >> LOSTestLog-JDK.csv
 rm -f LOSTestLog.csv
