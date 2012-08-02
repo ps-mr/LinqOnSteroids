@@ -124,8 +124,8 @@ trait Benchmarking {
 
     if (!hasConsoleOutput)
       print(" ended benchmarking, name = %s, needed iterations = %d, time = " format (name, stats.iterations))
-    val avgMs = stats.avg / math.pow(10,6)
-    val devStdMs = math.sqrt(stats.variance) / math.pow(10,6)
+    val avgMs = stats.avg / math.pow(10, 6)
+    val devStdMs = math.sqrt(stats.variance) / math.pow(10, 6)
     //The error of the measured average as an estimator of the average of the underlying random variable
     val stdErrMs = devStdMs / math.sqrt(stats.count)
 
