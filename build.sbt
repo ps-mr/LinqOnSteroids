@@ -108,8 +108,7 @@ initialCommands in (Test, console) := """
 //scalaVersion in GlobalScope <<= appConfiguration(_.provider.scalaProvider.version)
 
 sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, appConfiguration) map { (dir, baseDir, appConfig ) =>
-  val libraryJar = appConfig.provider.scalaProvider.libraryJar
-  val gen = new Generator(libraryJar)
+  val gen = new Generator(scalaLibraryPath = appConfig.provider.scalaProvider.libraryJar)
   dir.mkdirs()
   if (!(dir.exists() && dir.isDirectory())) {
     scala.Console.err.printf("Failure creating output directory %s\n", dir)
