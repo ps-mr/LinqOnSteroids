@@ -71,7 +71,9 @@
           <root url="jar://$USER_HOME$/.sbt/boot/scala-2.9.2/org.scala-sbt/sbt/0.12.0-RC4/actions-0.12.0-RC4.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../BAT/src/main" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="library" name="scala-2.9.2" level="project" />

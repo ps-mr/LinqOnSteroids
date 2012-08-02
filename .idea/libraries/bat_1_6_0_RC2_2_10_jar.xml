@@ -4,6 +4,8 @@
       <root url="jar://$PROJECT_DIR$/lib/bat-1.6.0.RC2-2.10.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../BAT/src/main" />
+    </SOURCES>
   </library>
 </component>
