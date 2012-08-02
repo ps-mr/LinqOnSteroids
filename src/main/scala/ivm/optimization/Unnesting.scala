@@ -25,7 +25,7 @@ trait Unnesting {
 
   private def isSet[T](t: T) = t.isInstanceOf[collection.Set[_]]
   private def isMap[T](t: T) = t.isInstanceOf[collection.Map[_, _]]
-  private def isSeq[T](t: T) = t.isInstanceOf[collection.Seq[_, _]] //Untested
+  private def isSeq[T](t: T) = t.isInstanceOf[collection.Seq[_]] //Untested
 
   def isCbfCommutative[From, Elem, To](cbf: CanBuildFrom[From, Elem, To]) = {
     isSet(cbfStaticResult(cbf))
