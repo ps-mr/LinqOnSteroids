@@ -32,16 +32,21 @@ object Optimization {
   def addIndex[T: ClassTag: TypeTag](_query: UnconvertedExp[Exp[T]], res: Option[T] = None) {
     val query = OptimizationUtil.stripViewUntyped(_query.v)
     val optquery = optimizeIdx(query, idxLookup = true)
-    val intQuery = res match {
-      case Some(v) => v
-      case None => optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret() again!
+    optquery match {
+      case Const(_) =>
+      case _ =>
+        val intQuery = res match {
+          case Some(v) => v
+          case None =>
+            //Compile.toValue(optquery)
+            optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret() again!
+        }
+
+        //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the
+        // optimizer. TODO: Reconsider again whether this is a good idea.
+        subqueries += normalize(query) -> (intQuery, classTag[T], typeTag[T])
+        subqueries += normalize(optquery) -> (intQuery, classTag[T], typeTag[T])
     }
-
-
-    //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the
-    // optimizer. TODO: Reconsider again whether this is a good idea.
-    subqueries += normalize(query) -> (intQuery, classTag[T], typeTag[T])
-    subqueries += normalize(optquery) -> (intQuery, classTag[T], typeTag[T])
   }
 
   def removeIndex[T](_query: UnconvertedExp[Exp[T]]) {
