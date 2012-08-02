@@ -327,7 +327,9 @@ object CollectionUtils {
     for ((k, v) <- m)
       b += ((k, v.result()))
 
-    b.result withDefault (_ => cbf(coll).result() /*coll.companion.empty[A].asInstanceOf[Repr]*/)
+    val emptyColl = cbf(coll).result()  /*coll.companion.empty[A].asInstanceOf[Repr]*/
+    //Don't inline emptyColl - currently, the result holds onto emptyColl; after inlining, it would hold onto the potentially much bigger coll.
+    b.result withDefault (_ => emptyColl)
   }
 
   //This must be only used inside the implementation. Mutability fun!
