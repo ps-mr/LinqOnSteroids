@@ -860,7 +860,7 @@ Call1('TraversableLike$toSet,
   }
   */
 
-  /*import BATLifting._
+  import BATLifting._
 
   val methodNameIdx: Exp[Map[String, Seq[(ClassFile, Method)]]] = (for {
     classFile ← classFiles.asSmart
@@ -893,7 +893,7 @@ Call1('TraversableLike$toSet,
   benchMark("Exception-handler-type index creation (for e.g. DONT_CATCH_IMSE)"/* FB: DONT_CATCH_IMSE*/)(Optimization.addIndex(excHandlerTypeIdx))
   benchMark("Instructions type-index creation")(Optimization.addIndex(typeIdx))
 
-  Optimization.popEnableDebugLog()*/
+  Optimization.popEnableDebugLog()
 
   //def setupIndexes() {
     /*
@@ -930,9 +930,9 @@ Call1('TraversableLike$toSet,
 
   def tearDownIndexes() {
     if (!onlyOptimized) {
-      /*Optimization.removeIndex(methodNameIdx)
+      Optimization.removeIndex(methodNameIdx)
       Optimization.removeIndex(excHandlerTypeIdx)
-      Optimization.removeIndex(typeIdx)*/
+      Optimization.removeIndex(typeIdx)
     }
   }
 
