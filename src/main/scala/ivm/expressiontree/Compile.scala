@@ -140,6 +140,7 @@ object Compile {
 
   def completeReset() {
     codeCache.get().clear()
+    expCodeCache.get.clear()
     reset()
   }
   //}}}
