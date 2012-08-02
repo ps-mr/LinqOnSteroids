@@ -38,6 +38,8 @@ trait Benchmarking {
   /** Invoke the garbage collector between benchmark iterations. This adds a tremendous slowdown for small benchmarks. */
   protected val callGC = false
 
+  protected val minIterationIntervalNanoSec = 10 * math.pow(10, 9)
+
   //Import and re-export to inheritors.
   def debugBench = Benchmarking.debugBench
 
@@ -105,19 +107,25 @@ trait Benchmarking {
 
     val stats = new VarianceCalc(rememberedSampleLoops)
     val values = ArrayBuffer[Long]()
+    var lastPrintTime = System.nanoTime()
 
     var i = 0
     do {
       val before = System.nanoTime()
       for (j <- 1 to execLoops)
         ret = toBench
-      val timeD = (System.nanoTime() - before) / execLoops
+      val after = System.nanoTime()
+      val timeD = (after - before) / execLoops
       //print("%d;" format timeD)
       stats.update(timeD)
       values += timeD
       if (callGC && !debugBench)
         System.gc()
       i += 1
+      if (after - lastPrintTime > minIterationIntervalNanoSec) {
+        println("Iteration %d, used memory %,d".format(i, gcAndSnapshotUsedMemory() - memoryBefore))
+        lastPrintTime = after
+      }
       //If debugBench, we never want to reiterate a benchmark.
     } while (!debugBench && i < maxLoops && (maxCoV map (_ < stats.cov) getOrElse false || i < minSampleLoops))
     val usedMemory = gcAndSnapshotUsedMemory() - memoryBefore
