@@ -107,15 +107,9 @@ initialCommands in (Test, console) := """
 
 //scalaVersion in GlobalScope <<= appConfiguration(_.provider.scalaProvider.version)
 
-sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, scalaVersion in GlobalScope) map { (dir, baseDir, sbtScalaVersion ) =>
-  //val ver = scala.util.Properties.versionNumberString
-//  val binaryVersion =
-//    if (ver startsWith "2.10")
-//      "2.10"
-//    else
-//      ver
-  scala.Console.err.printf("sbtScalaVersion %s\n", sbtScalaVersion)
-  val gen = new Generator(sbtScalaVersion)
+sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, appConfiguration) map { (dir, baseDir, appConfig ) =>
+  val libraryJar = appConfig.provider.scalaProvider.libraryJar
+  val gen = new Generator(libraryJar)
   dir.mkdirs()
   if (!(dir.exists() && dir.isDirectory())) {
     scala.Console.err.printf("Failure creating output directory %s\n", dir)
