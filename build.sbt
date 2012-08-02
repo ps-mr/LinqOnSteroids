@@ -105,8 +105,16 @@ initialCommands in (Test, console) := """
     import reader.Java6Framework
 """
 
-sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory) map { (dir, baseDir) =>
-  val sbtScalaVersion = "2.9.2"
+//scalaVersion in GlobalScope <<= appConfiguration(_.provider.scalaProvider.version)
+
+sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, scalaVersion in GlobalScope) map { (dir, baseDir, sbtScalaVersion ) =>
+  //val ver = scala.util.Properties.versionNumberString
+//  val binaryVersion =
+//    if (ver startsWith "2.10")
+//      "2.10"
+//    else
+//      ver
+  scala.Console.err.printf("sbtScalaVersion %s\n", sbtScalaVersion)
   val gen = new Generator(sbtScalaVersion)
   dir.mkdirs()
   if (!(dir.exists() && dir.isDirectory())) {
