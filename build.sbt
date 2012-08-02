@@ -34,6 +34,8 @@ scalacOptions ++= Seq("-unchecked", "-deprecation")
 scalacOptions ++= Seq("-feature", "-language:implicitConversions",
   "-language:higherKinds", "-language:existentials")
 
+scalacOptions += "-target:jvm-1.5-fjbg"
+
 //scalacOptions += "-explaintypes"
 
 scalacOptions += "-optimise"
