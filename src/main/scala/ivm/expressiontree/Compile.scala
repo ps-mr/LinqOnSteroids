@@ -56,7 +56,7 @@ object ScalaCompile {
   }
 
   def invokeCompiler[T: TypeTag](sourceStr: String, className: String): Option[Class[_]] = {
-    if (!Benchmarking.debugBench)
+    if (Benchmarking.debugBench)
       Console.err println sourceStr
     if (this.compiler eq null)
       setupCompiler()
