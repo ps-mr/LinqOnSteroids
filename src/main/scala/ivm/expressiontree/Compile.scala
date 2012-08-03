@@ -216,11 +216,6 @@ object Compile {
     case None =>
       throw new CompilationFailedException("")
   }
-
-  def toValue2[T: TypeTag](exp: Exp[T]): T = {
-    val (prefix, restSourceCode, staticData, className) = emitSourceInternal(exp)
-    buildInstance(cachedInvokeCompiler(prefix, restSourceCode, className), staticData)
-  }
 }
 
 case class CompilationFailedException(message: String) extends Exception(message)
