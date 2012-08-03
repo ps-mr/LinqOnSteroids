@@ -71,6 +71,14 @@ object BATLiftingExperimental {
     }
   }
 
+  import InstructionLifting._
+  object INSTANCEOFNew {
+    def unapply(t: Exp[_]): Exp[Option[ReferenceType]] = {
+      if (t ne null)
+        t.ifInstanceOf[INSTANCEOF].map(_.referenceType).asInstanceOf[Exp[Option[ReferenceType]]] //XXX will fail at runtime.
+      else None
+    }
+  }
 }
   /* end of boilerplate code */
 
@@ -95,6 +103,14 @@ object OpalTestData {
 
 class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
   import OpalTestData._
+
+  object __match {
+    def one[T](x: Exp[T]): Exp[Option[T]] = Some(x)
+    def zero: Exp[Option[Nothing]] = None
+    def guard[T](cond: Exp[Boolean], thenBranch: => Exp[T]): Exp[Option[T]] = if_# (cond) { Some(thenBranch) } else_# { None }
+    def runOrElse[T, U](in: Exp[T])(matcher: Exp[T] => Exp[Option[U]]): Exp[U] = matcher(in).getOrElse(
+      fmap(in, 'throwMatchError)('MatchError, in => throw new MatchError(in)))
+  }
 
   /*
   //Does not work, whether we hide or not Lifting.tuple2ToTuple2Exp.
