@@ -16,7 +16,7 @@ object TypeFilter {
 
 //Just like for IfInstanceOf, equality comparison must consider also classS. Therefore, classS must be a class parameter.
 case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], classS: Class[_])(implicit cdsTTag: TypeTag[C[D[S]]])
-  extends Arity2Op[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]], TypeFilter[T, C, D, S]](base, f) {
+  extends Arity2Op[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]], TypeFilter[T, C, D, S]](base, f) with PersistClassS {
   override def interpret() = {
     val b: C[D[T]] = base.interpret()
     b.filter(x => classS.isInstance(f.interpret()(x))).asInstanceOf[C[D[S]]]
@@ -24,7 +24,7 @@ case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this 
   //XXX: the cast '.asInstanceOf[C[D[S]]]' is missing. How can we encode it? With an extra manifest?
   //XXX: nameCDS, at times, is the result of erasure; hence we get java.lang.Integer instead of Int.
   override def toCode = "%s.filter(el => %s.isInstance(%s)).asInstanceOf[%s]" format (
-    base.toCode, CrossStagePersistence persist classS, Lifting.app(f)(NamedVar("el")).toCode, Compile.manifestToString(typeTag[C[D[S]]]))
+    base.toCode, persistedValue, Lifting.app(f)(NamedVar("el")).toCode, Compile.manifestToString(typeTag[C[D[S]]]))
   override def copy(base: Exp[C[D[T]]], f: Exp[D[T] => T]) = TypeFilter[T, C, D, S](base, f, classS)
 }
 

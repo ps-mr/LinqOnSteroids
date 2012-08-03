@@ -471,11 +471,11 @@ trait TypeFilterOps {
  */
   case class TypeMappingApp[C[+X] <: TraversableLike[X, C[X]], D[+_], Base, T](base: Exp[TypeMapping[C, D, Base]], classS: Class[_])
                                                                               (implicit m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]])
-    extends Arity1OpExp[TypeMapping[C, D, Base], C[D[T]], TypeMappingApp[C, D, Base, T]](base) {
+    extends Arity1OpExp[TypeMapping[C, D, Base], C[D[T]], TypeMappingApp[C, D, Base, T]](base) with PersistClassS {
     override def copy(base: Exp[TypeMapping[C, D, Base]]) = TypeMappingApp[C, D, Base, T](base, classS)
     override def interpret() =
       base.interpret().get[T](classS)
-    override def toCode = "%s.get[%s](%s)".format(base.toCode, classS.getName /*XXX won't work*/, CrossStagePersistence persist classS)
+    override def toCode = "%s.get[%s](%s)".format(base.toCode, classS.getName /*XXX won't work*/, persistedValue)
   }
 
   class TypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](val t: Exp[C[D[T]]]) {

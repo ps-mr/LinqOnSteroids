@@ -155,6 +155,7 @@ object Compile {
 
   def toValue[T: TypeTag](e: Exp[T]): T = {
     val transfExp = removeConsts(e)
+    transfExp.persistValues()
     val cspValues = cspMap.get().toSeq
 
     val staticData: Seq[(ClassTag[_], Any)] = cspValues map {
