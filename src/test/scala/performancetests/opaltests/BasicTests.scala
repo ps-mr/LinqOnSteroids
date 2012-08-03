@@ -100,7 +100,7 @@ object OpalTestData {
   //Not very pretty, but better than nothing
   val expectNResults = 84
 }
-
+/*
 class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
   import OpalTestData._
 
@@ -564,3 +564,4 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     methodsNative should equal (m6Int)*/
   }
 }
+*/

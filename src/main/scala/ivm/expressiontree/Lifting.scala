@@ -30,8 +30,20 @@ trait OptionLifting extends BaseExps {
      * Symbol names might seem similar, but they are not supported by refactorings - and additionally there is no
      * builtin concept of name resolution for symbols in Scala.
      */
-
+    val OptionMapId = 'Option$map
+    val OptionFilterId = 'Option$filter
+    val OptionFlatMapId = 'Option$flatMap
     val OptionToIterableId = 'Option_option2Iterable
+
+    sealed trait FlatMappableTo[-U, +Res] {
+      def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[U]): Exp[Res]
+    }
+    implicit def option[U] = new FlatMappableTo[Option[U], Option[U]] {
+      override def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[Option[U]]): Exp[Option[U]] = fmap(t, Fun(f))(OptionFlatMapId, (a, b) => a flatMap b)
+    }
+    implicit def traversable[U] = new FlatMappableTo[Traversable[U], Iterable[U]] {
+      override def flatMap[T](t: Exp[Option[T]], f: Exp[T] => Exp[Traversable[U]]) = (t: Exp[Iterable[T]]) flatMap f
+    }
   }
 
   implicit def expToOptionOps[T](t: Exp[Option[T]]) = new OptionOps(t)
@@ -40,7 +52,6 @@ trait OptionLifting extends BaseExps {
     def isDefined = fmap(t)('isDefined, _.isDefined)
     def get = fmap(t)('get, _.get)
 
-    /*
     def filter(p: Exp[T] => Exp[Boolean]): Exp[Option[T]] = fmap(t, Fun(p))(OptionFilterId, _ filter _) //(t: Exp[Iterable[T]]) withFilter p
     //We do not lift Option.withFilter because it returns a different type; we could provide operations
     //for that type as well, but I do not see the point of doing that, especially for a side-effect-free predicate.
@@ -56,20 +67,21 @@ trait OptionLifting extends BaseExps {
     // but then type inference fails for f's domain type.
 
     //Tillmann's suggestion was to use Haskell-style overloading by emulating type classes with implicits:
-    def flatMap[U, That](f: Exp[T] => Exp[U])(implicit v: FlatMappableTo[U, That]): Exp[That] = v.flatMap(t, f)
-    */
+    //def flatMap[U, That](f: Exp[T] => Exp[U])(implicit v: FlatMappableTo[U, That]): Exp[That] = v.flatMap(t, f)
+    def flatMap[U](f: Exp[T] => Exp[Option[U]]): Exp[Option[U]] = fmap(t, Fun(f))(OptionFlatMapId, (a, b) => a flatMap b)
     // TODO apparently, the implicit conversions from Scala are not that powerful; for instance, Some(1) flatMap (Seq(_))
     // is not accepted. I guess I should revert this, or argue why it's better.
 
-    def filter(p: Exp[T] => Exp[Boolean]): Exp[Iterable[T]] = (t: Exp[Iterable[T]]) filter p
+    /*def filter(p: Exp[T] => Exp[Boolean]): Exp[Iterable[T]] = (t: Exp[Iterable[T]]) filter p
     def withFilter(p: Exp[T] => Exp[Boolean]): Exp[Traversable[T]] = (t: Exp[Iterable[T]]) withFilter p
     def map[U](f: Exp[T] => Exp[U]): Exp[Iterable[U]] = (t: Exp[Iterable[T]]) map f
     def flatMap[U, That](f: Exp[T] => Exp[Traversable[U]]) = (t: Exp[Iterable[T]]) flatMap f
+    */
 
     //Note: we do not support call-by-name parameters; therefore we currently provide only orElse, and expect the user to
     //provide a default which will never fail evalution through exceptions but only evaluate to None.
     //def getOrElse[U >: T](v: /*=> */ Exp[U]) = fmap(t, v)('Option$getOrElse, _ getOrElse _)
-    def orElse[U >: T](v: /*=> */ Exp[Option[U]]) = fmap(t, v)('Option$orElse, _ orElse _)
+    def orElse[U >: T](v: => Exp[Option[U]]) = fmap(t, v)('Option$orElse, _ orElse _)
     def getOrElse[U >: T](default: /*=> */ Exp[U]) = OptionGetOrElse(t, default) //fmap(t, v)('Option$getOrElse, _ getOrElse _)
   }
 

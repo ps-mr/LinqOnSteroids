@@ -64,6 +64,7 @@ import collection.{Seq => CSeq}
  * @author Michael Eichberg
  */
 
+/*
 object FindBugsAnalyses {
   private def printUsage: Unit = {
     println("Usage: java … ClassHierarchy <ZIP or JAR file containing class files>+")
@@ -981,3 +982,4 @@ Call1('TraversableLike$toSet,
     tearDownIndexes()
   }
 }
+*/
