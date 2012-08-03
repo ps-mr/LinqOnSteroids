@@ -82,7 +82,6 @@ object PatmatTest {
     case _ => "bar"
   }
 
-  /*
   def f1(i: Exp[Instruction]) = {
   //def f1(i: Instruction) = {
     i match {
@@ -90,7 +89,6 @@ object PatmatTest {
       //case _ =>
     }
   }
-  */
 
   /*val methodsLos1 =
     for {
