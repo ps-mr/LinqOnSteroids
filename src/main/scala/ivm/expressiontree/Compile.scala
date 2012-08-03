@@ -3,6 +3,7 @@ package ivm.expressiontree
 import collection.mutable
 import java.util.regex.Pattern
 import performancetests.Benchmarking
+import java.lang.reflect.Constructor
 
 /**
  * User: pgiarrusso
@@ -120,7 +121,7 @@ object Compile {
 
   //Note: these two maps should be concurrent maps, not ThreadLocals!
   private val codeCache = new ScalaThreadLocal(mutable.Map[String, Option[Class[_]]]())
-  private val expCodeCache = new ScalaThreadLocal(mutable.Map[Exp[_], Option[Class[_]]]())
+  private val expCodeCache = new ScalaThreadLocal(mutable.Map[Exp[_], Option[Constructor[_]]]())
 
   //The caching here is to remove. Also, we must remove Const.toCode :-).
   def cachedInvokeCompiler[T: TypeTag](prefix: String, restSourceCode: String, className: String) =
@@ -162,7 +163,7 @@ object Compile {
       case (value, CSPVar(memberName, memberCtag, memberType)) =>
         (memberCtag, value)
     }
-    val maybeCls = expCodeCache.get().getOrElseUpdate(transfExp, {
+    val maybeCons = expCodeCache.get().getOrElseUpdate(transfExp, {
       val className = "Outclass" + classId()
       val typ = typeTag[T]
       val body = transfExp.toCode
@@ -176,11 +177,11 @@ object Compile {
         """(%s) extends Compiled[%s] {
           |  override def result = %s
           |}""".stripMargin format (declsStr, manifestToString(typ), body)
-      cachedInvokeCompiler(prefix, restSourceCode, className)
+      cachedInvokeCompiler(prefix, restSourceCode, className) map (cls => cls.getConstructor(staticData.map(_._1.runtimeClass):_*))
       //Or simply
       //ScalaCompile.invokeCompiler(prefix + restSourceCode, className)
     })
-    buildInstance(maybeCls, staticData)
+    buildInstance(maybeCons, staticData)
   }
 
   /*private[expressiontree]*/ def emitSourceInternal[T: TypeTag](e: Exp[T]): (String, String, Seq[(ClassTag[_], Any)], String) = {
@@ -208,9 +209,8 @@ object Compile {
     res._1 + res._2
   }
 
-  def buildInstance[T](c: Option[Class[_]], staticData: Seq[(ClassTag[_], Any)]): T = c match {
-    case Some(cls) =>
-      val cons = cls.getConstructor(staticData.map(_._1.runtimeClass):_*)
+  def buildInstance[T](maybeCons: Option[Constructor[_]], staticData: Seq[(ClassTag[_], Any)]): T = maybeCons match {
+    case Some(cons) =>
       val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[Compiled[T]].result
       obj
     case None =>
