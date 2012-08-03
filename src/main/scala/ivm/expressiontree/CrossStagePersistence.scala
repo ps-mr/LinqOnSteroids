@@ -13,9 +13,12 @@ object CrossStagePersistence {
   private[expressiontree] val cspMap = new ScalaThreadLocal(ArrayBuffer[(Any, CSPVar)]())
   private[expressiontree] val varId = new Util.ThreadLocalIDGenerator
 
-  def addVar[T: ClassTag: TypeTag](node: Const[T]) = {
+  def addVar[T: ClassTag: TypeTag](value: T) = {
     val name = "x" + varId()
-    cspMap.get() += (node.x -> CSPVar(name, classTag[T], typeTag[T]))
+    cspMap.get() += (value -> CSPVar(name, classTag[T], typeTag[T]))
     name
   }
+
+  def persist[T: ClassTag: TypeTag](value: T) =
+    NamedVar(CrossStagePersistence.addVar(value))
 }

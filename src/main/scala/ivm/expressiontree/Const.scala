@@ -15,7 +15,7 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
   private def showFP[U](t: U): String = {
     //val typ = classManifest.toString
     //"""java.lang.%s.parse%s("%s")""".format(typ, typ, x.toString)
-    CrossStagePersistence.addVar(this)
+    CrossStagePersistence.addVar(x)
   }
 
   private def baseShow: PartialFunction[T, String] = {
@@ -36,7 +36,7 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
     case x: Number =>
       "(%s: %s)".format(x.toString, cTag)
     case _ =>
-      CrossStagePersistence.addVar(this)
+      CrossStagePersistence.addVar(x)
   }
 
   private def show(toEval: Boolean = false): String = {
@@ -45,14 +45,14 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
       if (allowInlineInEval) {
         (baseShow orElse inlineShow)(x)
       } else {
-        CrossStagePersistence.addVar(this)
+        CrossStagePersistence.addVar(x)
       }
     } else {
       (baseShow orElse (String.valueOf((_: Any))).asPartial)(x)
     }
   }
 
-  override def toCode = show(toEval = true)
+  override def toCode = throw new RuntimeException("Const.toCode should never be called")
   override def toString = {
     val s =
       x match {

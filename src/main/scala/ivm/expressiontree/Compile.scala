@@ -148,11 +148,12 @@ object Compile {
     precompileReset()
     e transform {
       case c: Const[_] =>
-        NamedVar(CrossStagePersistence.addVar(c)(c.cTag, c.tTag))
+        CrossStagePersistence.persist(c.x)(c.cTag, c.tTag)
       case exp => exp
     }
   }
-  def toValue2[T: TypeTag](e: Exp[T]): T = {
+
+  def toValue[T: TypeTag](e: Exp[T]): T = {
     val transfExp = removeConsts(e)
     val cspValues = cspMap.get().toSeq
 
@@ -163,7 +164,7 @@ object Compile {
     val maybeCls = expCodeCache.get().getOrElseUpdate(transfExp, {
       val className = "Outclass" + classId()
       val typ = typeTag[T]
-      val body = e.toCode
+      val body = transfExp.toCode
       val decls = (cspValues map {
         case (value, CSPVar(memberName, memberCtag, memberType)) =>
           "val %s: %s" format (memberName, manifestToString(memberType))
@@ -175,6 +176,8 @@ object Compile {
           |  override def result = %s
           |}""".stripMargin format (declsStr, manifestToString(typ), body)
       cachedInvokeCompiler(prefix, restSourceCode, className)
+      //Or simply
+      //ScalaCompile.invokeCompiler(prefix + restSourceCode, className)
     })
     buildInstance(maybeCls, staticData)
   }
@@ -213,7 +216,7 @@ object Compile {
       throw new CompilationFailedException("")
   }
 
-  def toValue[T: TypeTag](exp: Exp[T]): T = {
+  def toValue2[T: TypeTag](exp: Exp[T]): T = {
     val (prefix, restSourceCode, staticData, className) = emitSourceInternal(exp)
     buildInstance(cachedInvokeCompiler(prefix, restSourceCode, className), staticData)
   }
