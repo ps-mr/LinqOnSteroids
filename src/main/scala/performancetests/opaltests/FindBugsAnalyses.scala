@@ -96,6 +96,20 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
 
   //override val defaultExecLoops = 10
 
+  def fieldsNative() =
+    for {
+      classFile ← classFiles
+      field ← classFile.fields
+    } yield (classFile, field)
+
+  def fieldsSQuOpt() = {
+    import BATLifting._
+    for {
+      classFile ← classFiles.asSmart
+      field ← classFile.fields
+    } yield (classFile, field)
+  }
+
   def methodsNative() = {
     for {
       classFile ← classFiles
@@ -185,19 +199,30 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     analyzeConfusedInheritance()
   }
   def analyzeConfusedInheritance() {
+    import BATLifting._
     // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
-    benchQueryComplete("PROTECTED_FIELD"){ //FB:"CI_CONFUSED_INHERITANCE") {
+    benchQueryComplete("PROTECTED_FIELD") ( //FB:"CI_CONFUSED_INHERITANCE") {
       for {
         classFile ← classFiles if classFile.isFinal
         field ← classFile.fields if field.isProtected
+      } yield (classFile, field),
+      for {
+        (classFile, field) <- fieldsNative() if classFile.isFinal
+        if field.isProtected
       } yield (classFile, field)
-    } {
-      import BATLifting._
+    ) (
       for {
         classFile ← classFiles.asSmart if classFile.isFinal
         field ← classFile.fields if field.isProtected
+      } yield (classFile, field),
+      for {
+        classFileField <- fieldsNative().asSmart
+        classFile <- Let(classFileField._1)
+        field <- Let(classFileField._2)
+        if classFile.isFinal
+        if field.isProtected
       } yield (classFile, field)
-    }
+    )
   }
 
   /*
