@@ -1,7 +1,6 @@
 package ivm
 package optimization
 
-import collection.mutable.Stack
 import collection.mutable
 
 import expressiontree._
@@ -12,7 +11,7 @@ object Optimization {
   //Should the two normal forms (after flatMapToMap and after mapToFlatMap) be distinguished by different types?
 
   //Logging {{{
-  private val enableDebugLogStack = Stack(true)
+  private val enableDebugLogStack = mutable.Stack(true)
 
   def pushEnableDebugLog(newVal: Boolean) {
     enableDebugLogStack push newVal
