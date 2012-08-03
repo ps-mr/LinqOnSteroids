@@ -119,13 +119,10 @@ object Compile {
   // Moreover, this cache should use soft references for keys. Googling SoftHashMap gives this answer:
   // http://stackoverflow.com/questions/264582/is-there-a-softhashmap-in-java
 
-  //Note: these two maps should be concurrent maps, not ThreadLocals!
-  private val codeCache = new ScalaThreadLocal(mutable.Map[String, Option[Class[_]]]())
+  //Note: this map should be a concurrent map, not ThreadLocals!
   private val expCodeCache = new ScalaThreadLocal(mutable.Map[Exp[_], Option[Constructor[_]]]())
 
-  //The caching here is to remove. Also, we must remove Const.toCode :-).
-  def cachedInvokeCompiler[T: TypeTag](prefix: String, restSourceCode: String, className: String) =
-    codeCache.get().getOrElseUpdate(restSourceCode, ScalaCompile.invokeCompiler(prefix + restSourceCode, className))
+  //We must remove Const.toCode :-).
 
   //*Reset methods are just (or mostly?) for testing {{{
   def precompileReset() {
@@ -135,12 +132,10 @@ object Compile {
 
   def reset() {
     precompileReset()
-    codeCache.get().clear()
     classId.reset()
   }
 
   def completeReset() {
-    codeCache.get().clear()
     expCodeCache.get.clear()
     reset()
   }
@@ -177,9 +172,7 @@ object Compile {
         """(%s) extends Compiled[%s] {
           |  override def result = %s
           |}""".stripMargin format (declsStr, manifestToString(typ), body)
-      cachedInvokeCompiler(prefix, restSourceCode, className) map (cls => cls.getConstructor(staticData.map(_._1.runtimeClass):_*))
-      //Or simply
-      //ScalaCompile.invokeCompiler(prefix + restSourceCode, className)
+      ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls.getConstructor(staticData.map(_._1.runtimeClass):_*))
     })
     buildInstance(maybeCons, staticData)
   }
