@@ -156,7 +156,7 @@ object Compile {
   def toValue[T: TypeTag](e: Exp[T]): T = {
     val transfExp = removeConsts(e)
     transfExp.persistValues()
-    val cspValues = cspMap.get().toSeq
+    val cspValues = cspMap.get().toList.toSeq //toList forces immutability.
 
     val staticData: Seq[(ClassTag[_], Any)] = cspValues map {
       case (value, CSPVar(memberName, memberCtag, memberType)) =>
