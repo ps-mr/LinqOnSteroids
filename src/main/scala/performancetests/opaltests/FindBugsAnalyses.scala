@@ -94,7 +94,7 @@ object FindBugsAnalyses {
 class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking {
   import FindBugsAnalyses.QueryAnd
 
-  override val defaultExecLoops = 10
+  //override val defaultExecLoops = 10
 
   def methodsNative() = {
     for {
