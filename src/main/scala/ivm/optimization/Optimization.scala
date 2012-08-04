@@ -85,7 +85,7 @@ object Optimization {
     checkIdempotent(exp, idxLookup, "optimize") {
       optimize(_, idxLookup = false)
     } {
-      flatMapToMap(letTransformer(betaDeltaReducer(optimizeBase(exp, idxLookup, forIdx = false))))
+      flatMapToMap(betaDeltaReducer(letTransformer(optimizeBase(exp, idxLookup, forIdx = false))))
     }
 
   //The result of letTransformer is not understood by the index optimizer.
