@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="bat-1.6.0.RC2-2.10.jar">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/bat-1.6.0.RC2-2.10.jar!/" />
+      <root url="jar://$PROJECT_DIR$/sampleapp/lib/bat-1.6.0.RC2-2.10.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
