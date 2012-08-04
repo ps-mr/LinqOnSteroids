@@ -165,12 +165,15 @@ object Optimization {
   private def newHandleFilters[T](exp: Exp[T]): Exp[T] =
     (handleFilters[T] _ compose splitFilters[T] compose simplifyConditions[T])(exp)
 
+  //Requires flatMap normal form
   def handleFilters[T](exp: Exp[T]): Exp[T] =
     mergeFilters(hoistFilter(exp)) //Do this before merging filters!
 
   //Accepts either normal form
   private def filterFusion[T](exp: Exp[T]): Exp[T] =
     (newHandleFilters[T] _
+      //removeIdentityMaps can be triggered by transformedFilterToFilter
+      compose mapToFlatMap[T] compose removeIdentityMaps[T] compose flatMapToMap[T]
       compose transformedFilterToFilter[T] compose betaDeltaReducer[T] compose basicInlining[T]
       compose mapToFlatMap[T] compose mergeFlatMaps[T] compose mergeMaps[T] compose flatMapToMap[T]
       compose betaDeltaReducer[T] compose ifSimplify[T] compose filterToTransformedFilter[T])(exp)
@@ -206,6 +209,7 @@ object Optimization {
 
   def toTypeFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.toTypeFilter)
 
+  //Requires flatMap normal form.
   def hoistFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.hoistFilter)
 
   def removeRedundantOption[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.removeRedundantOption)

@@ -78,6 +78,10 @@ trait Fusion {
 
   val transformedFilterToFilter: Exp[_] => Exp[_] = {
     case FlatMap(coll, fmFun@FuncExpBody(IfThenElse(test, thenBranch, elseBranch@ExpSeq(Seq())))) =>
+      //Note that the function we build here might well turn out to be, after flatMapToMap, an identity function to remove
+      //with removeIdentityMaps.
+      //In particular, this will always be the case when calling transformedFilterToFilter right after
+      //filterToTransformedFilter, or if the Filter was not transformed enough.
       coll filter Fun.makefun(test, fmFun.x) flatMap Fun.makefun(thenBranch, fmFun.x)
     case FlatMap(coll, fmFun@FuncExpBody(FlatMap(IfThenElse(test, thenBranch, elseBranch@ExpSeq(Seq())), fmFun2))) =>
       coll filter Fun.makefun(test, fmFun.x) flatMap Fun.makefun(thenBranch flatMap fmFun2, fmFun.x)
