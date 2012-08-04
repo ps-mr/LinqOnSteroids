@@ -28,11 +28,10 @@ libraryDependencies += "org.fusesource.scalate" % "scalate-core" % "1.5.3"
 libraryDependencies += "org.scala-lang" % "scalap" % "2.9.2"
 
 //Support for sbt-idea.
-//resolvers += "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
+addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.1.0")
 
-//addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.0.0")
-resolvers += "Sonatype snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
+//resolvers += "Sonatype snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
 
-addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.1.0-SNAPSHOT")
+//addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.2.0-SNAPSHOT")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.8.3")
