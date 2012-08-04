@@ -99,9 +99,11 @@ object Optimization {
     }
 
   //TODO: rewrite using function composition
+  //The result should be in flatMap normal form.
   private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean, forIdx: Boolean): Exp[T] =
     postIndexing(forIdx, (if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(mapToFlatMap(preIndexing(exp)))) //the call to reducer is to test.
 
+  //The result should be in flatMap normal form.
   private def postIndexing[T](forIdx: Boolean, exp: Exp[T]): Exp[T] =
     handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
       mergeFilters( //Merge filters again after indexing, since it introduces new filters.
