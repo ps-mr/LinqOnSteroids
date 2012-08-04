@@ -132,12 +132,11 @@ object Optimization {
   //}}}
 
   //Pipeline building blocks {{{
-  //Internally converts to flatMap normal form
+  //Converts to flatMap normal form.
   def handleFilters[T](exp: Exp[T]): Exp[T] =
-    flatMapToMap(
-      mergeFilters(
-        hoistFilter( //Do this before merging filters!
-          mapToFlatMap(exp))))
+    mergeFilters(
+      hoistFilter( //Do this before merging filters!
+        mapToFlatMap(exp)))
 
   //Call this whenever new MapNode nodes might be created, to simplify them if needed.
   //Requires map+flatMap normal form
@@ -148,6 +147,7 @@ object Optimization {
 
   def basicInlining[T](exp: Exp[T]): Exp[T] = letTransformerUsedAtMostOnce(letTransformerTrivial(exp))
 
+  /*
   private def preIndexingOld[T](exp: Exp[T]): Exp[T] =
       handleNewMaps(
         cartProdToAntiJoin(
@@ -157,6 +157,7 @@ object Optimization {
                 //generalUnnesting, in practice, can produce the equivalent of let statements. Hence it makes sense to desugar them _after_ (at least the trivial ones).
                 sizeToEmpty(basicInlining(generalUnnesting(mapToFlatMap(
                   removeIdentityMaps(betaDeltaReducer(exp)))))))))))))
+                  */
 
   // Order in the end: first recognize operator, and only after that try fusion between different operators, since it
   // obscures structures to recognize.
