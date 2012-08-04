@@ -150,57 +150,59 @@ object Compile {
     }
   }
 
-  def toValue[T: TypeTag](e: Exp[T]): T = {
-    val transfExp = removeConsts(e)
-    transfExp.persistValues()
-    val cspValues = cspMap.get().toList.toSeq //toList forces immutability.
-
-    val staticData: Seq[(ClassTag[_], Any)] = cspValues map {
+  private def getStaticData(cspValues: Seq[(Any, CSPVar)]): Seq[(ClassTag[_], Any)] =
+    cspValues map {
       case (value, CSPVar(memberName, memberCtag, memberType)) =>
         (memberCtag, value)
     }
+
+  private def getDecls(cspValues: Seq[(Any, CSPVar)]) =
+    cspValues map {
+      case (value, CSPVar(memberName, memberCtag, memberType)) =>
+        "val %s: %s" format (memberName, manifestToString(memberType))
+    }
+
+  private def compileConstlessExp[T: TypeTag](transfExp: Exp[T], cspValues: Seq[(Any, CSPVar)]): (String, String, String) = {
+    val body = transfExp.toCode
+    val className = "Outclass" + classId()
+    val typ = typeTag[T]
+    val declsStr = getDecls(cspValues) mkString ", "
+    val prefix = "class %s" format className
+    val restSourceCode =
+      """(%s) extends Compiled[%s] {
+        |  override def result = %s
+        |}""".stripMargin format(declsStr, manifestToString(typ), body)
+    (prefix, restSourceCode, className)
+  }
+
+  private def extractConsts[T: TypeTag](e: Exp[T]): (Exp[T], Seq[(Any, CSPVar)]) = {
+    val transfExp = removeConsts(e)
+    transfExp.persistValues()
+    val cspValues = cspMap.get().toList.toSeq //toList forces immutability.
+    (transfExp, cspValues)
+  }
+
+  def toValue[T: TypeTag](e: Exp[T]): T = {
+    val (transfExp, cspValues) = extractConsts(e)
+    val staticData = getStaticData(cspValues)
+
     val maybeCons = expCodeCache.get().getOrElseUpdate(transfExp, {
-      val className = "Outclass" + classId()
-      val typ = typeTag[T]
-      val body = transfExp.toCode
-      val decls = (cspValues map {
-        case (value, CSPVar(memberName, memberCtag, memberType)) =>
-          "val %s: %s" format (memberName, manifestToString(memberType))
-      })
-      val declsStr = decls mkString ", "
-      val prefix = "class %s" format className
-      val restSourceCode =
-        """(%s) extends Compiled[%s] {
-          |  override def result = %s
-          |}""".stripMargin format (declsStr, manifestToString(typ), body)
+      val (prefix, restSourceCode, className) = compileConstlessExp(transfExp, cspValues)
       ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls.getConstructor(staticData.map(_._1.runtimeClass):_*))
     })
     buildInstance(maybeCons, staticData)
   }
 
-  /*private[expressiontree]*/ def emitSourceInternal[T: TypeTag](e: Exp[T]): (String, String, Seq[(ClassTag[_], Any)], String) = {
-    precompileReset()
-    val className = "Outclass" + classId()
-    val typ = typeTag[T]
-    val body = e.toCode
-    val declValues = (cspMap.get().toSeq map {
-      case (value, CSPVar(memberName, memberCtag, memberType)) =>
-        ("val %s: %s" format (memberName, manifestToString(memberType)), (memberCtag, value))
-    })
-    val (decls, staticData) = declValues.unzip[String, (ClassTag[_], Any)]
-    val declsStr = decls mkString ", "
-    val prefix = "class %s" format className
-    val restSourceCode =
-      """(%s) extends Compiled[%s] {
-        |  override def result = %s
-        |}""".stripMargin format (declsStr, manifestToString(typ), body)
-    (prefix, restSourceCode, staticData, className)
+  //Only for testing
+  private[expressiontree] def toCode[T: TypeTag](e: Exp[T]): String = {
+    val (transfExp, _) = extractConsts(e)
+    transfExp.toCode
   }
 
-  //Mostly for testing
-  def emitSource[T: TypeTag](e: Exp[T]): String = {
-    val res = emitSourceInternal(e)
-    res._1 + res._2
+  private[expressiontree] def emitSource[T: TypeTag](e: Exp[T]): String = {
+    val (transfExp, cspValues) = extractConsts(e)
+    val (prefix, restSourceCode, _) = compileConstlessExp(transfExp, cspValues)
+    prefix + restSourceCode
   }
 
   def buildInstance[T](maybeCons: Option[Constructor[_]], staticData: Seq[(ClassTag[_], Any)]): T = maybeCons match {

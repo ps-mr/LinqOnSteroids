@@ -15,33 +15,35 @@ import performancetests.Benchmarking
 class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
   Compile.reset()
 
+  import Compile.toCode
+
   //Correctness of code generation {{{
   if (Const.allowInlineInEval) {
     test("strings") {
-      asExp("foo").toCode should be("\"foo\"")
-      asExp('c').toCode should be("'c'")
-      asExp(1).toCode should be("1")
-      asExp(1: Byte).toCode should be("(1: Byte)")
+      toCode(asExp("foo")) should be("\"foo\"")
+      toCode(asExp('c')) should be("'c'")
+      toCode(asExp(1)) should be("1")
+      toCode(asExp(1: Byte)) should be("(1: Byte)")
     }
   }
   test("csp") {
-    asExp(List(1)).toCode should not be ("List(1)")
+    toCode(asExp(List(1))) should not be ("List(1)")
     Compile.precompileReset()
-    asExp(List(1)).toCode should be("x1")
+    toCode(asExp(List(1))) should be("x1")
   }
 
   val e = benchMark("build expression")(((asExp(1) + 2) * 3))
 
   test("code generation") {
     if (Const.allowInlineInEval) {
-      e.toCode should be("((1) + (2)) * (3)")
+      toCode(e) should be("((1) + (2)) * (3)")
     } else {
       Compile.precompileReset()
-      e.toCode should be("((x1) + (x2)) * (x3)")
+      toCode(e) should be("((x1) + (x2)) * (x3)")
     }
     Compile.precompileReset()
-    expOption2Iterable(Some(1)).toCode should be("Option.option2Iterable(x1)")
-    expOption2Iterable(Some(1)).transform(identity).toCode should be("Option.option2Iterable(x2)")
+    toCode(expOption2Iterable(Some(1))) should be("Option.option2Iterable(x1)")
+    toCode(expOption2Iterable(Some(1)).transform(identity)) should be("Option.option2Iterable(x1)")
   }
   test("output") {
     if (Const.allowInlineInEval) {
@@ -68,7 +70,7 @@ class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
 
   // Benchmark code generation {{{
   test("benchmark Exp.toCode") {
-    benchMark("convert expression to code")(e.toCode)
+    benchMark("convert expression to code")(toCode(e))
   }
   test("benchmark Compile.emitSource") {
     benchMark("Use Compile.emitSource on expression")(Compile.emitSource(e))
