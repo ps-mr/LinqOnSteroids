@@ -63,7 +63,7 @@ import collection.{Seq => CSeq}
  */
 
 object FindBugsAnalyses {
-  private def printUsage: Unit = {
+  private def printUsage(): Unit = {
     println("Usage: java … ClassHierarchy <ZIP or JAR file containing class files>+")
     println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
   }
@@ -76,9 +76,9 @@ object FindBugsAnalyses {
 
     for (arg ← args) {
       val file = new java.io.File(arg)
-      if (!file.canRead() || file.isDirectory()) {
-        println("The file: " + file + " cannot be read.");
-        printUsage
+      if (!file.canRead || file.isDirectory) {
+        println("The file: " + file + " cannot be read.")
+        printUsage()
         sys.exit(1)
       }
     }
