@@ -1,4 +1,5 @@
-package ivm.expressiontree
+package ivm
+package expressiontree
 
 import collection.mutable
 import java.util.regex.Pattern
