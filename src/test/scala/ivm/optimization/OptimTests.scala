@@ -64,7 +64,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
 
   @Test
   def testHoistFilter() {
-    def optim[T](exp: Exp[T]) = Optimization flatMapToMap (Optimization handleFilters exp)
+    def optim[T](exp: Exp[T]) = Optimization flatMapToMap (Optimization handleFilters (Optimization mapToFlatMap exp))
     val base = Vector.range(1, 6).asSmart
     val query =
       for {
