@@ -37,7 +37,7 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   /*private[ivm]*/ def visitPreorderRoots(visitor: Exp[_] => Unit) = visitPreorder(visitor, _.roots)
 
   /*private[ivm]*/ def transform(transformer: Exp[_] => Exp[_]): Exp[T] = {
-    val transformedChilds = for (c <- children) yield c.transform(transformer)
+    val transformedChilds = for (c <- children) yield c.transform(transformer)//XXX: here we call map. Consider List.mapConserve instead.
     val newself = genericConstructor(transformedChilds)
     transformer(newself).asInstanceOf[Exp[T]]
   }
