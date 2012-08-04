@@ -107,14 +107,14 @@ object Optimization {
 
   //The result should be in flatMap normal form.
   private def postIndexing[T](forIdx: Boolean, exp: Exp[T]): Exp[T] =
-    handleFilters(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
+    handleFilters(mapToFlatMap(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
       mergeFilters( //Merge filters again after indexing, since it introduces new filters.
         simplifyFilters(
           // XXX: tests if existsRenester works in this position, if it does not leave optimization
           // opportunities which require more aggressive optimizations, and in general for any negative side-effect
           // from doing this so late. Unfortunately, this must done after indexing.
           // It used instead to be called at the beginning of physicalOptimize.
-          resimplFilterIdentity(if (forIdx) exp else existsRenester(exp)))))))))))
+          resimplFilterIdentity(if (forIdx) exp else existsRenester(exp))))))))))))
 
   private[optimization] def preIndexing[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
   // downcasting exp to Exp[Nothing].
@@ -134,11 +134,9 @@ object Optimization {
   //}}}
 
   //Pipeline building blocks {{{
-  //Converts to flatMap normal form.
   def handleFilters[T](exp: Exp[T]): Exp[T] =
     mergeFilters(
-      hoistFilter( //Do this before merging filters!
-        mapToFlatMap(exp)))
+      hoistFilter(exp)) //Do this before merging filters!
 
   //Call this whenever new MapNode nodes might be created, to simplify them if needed.
   //Requires map+flatMap normal form
