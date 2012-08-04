@@ -45,7 +45,7 @@ trait Benchmarking {
 
   def benchMarkTime(name: String, silent: Boolean = false, execLoops: Int = defaultExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCoV: Option[Double] = defaultMaxCoV, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                    (toBench: => Unit) =
-    benchMarkInternal(name, silent, execLoops, minSampleLoops, maxCoV, verbose, hasConsoleOutput)(toBench)._2
+    benchMarkWithTime(name, silent, execLoops, minSampleLoops, maxCoV, verbose, hasConsoleOutput)(toBench)._2
 
   /**
    *
@@ -62,14 +62,14 @@ trait Benchmarking {
    */
   def benchMark[T](name: String, silent: Boolean = false, execLoops: Int = defaultExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCoV: Option[Double] = defaultMaxCoV, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): T =
-    benchMarkInternal(name, silent, execLoops, minSampleLoops, maxCoV, verbose, hasConsoleOutput)(toBench)._1
+    benchMarkWithTime(name, silent, execLoops, minSampleLoops, maxCoV, verbose, hasConsoleOutput)(toBench)._1
 
   /**
    * @param minSampleLoops Iterations to measure variance.
    * @param toBench code to benchmark, which is supposed to always return the same value.
    * @return the value returned by toBench
    */
-  def benchMarkInternal[T](name: String, silent: Boolean = false, execLoops: Int = defaultExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCoV: Option[Double] = defaultMaxCoV, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
+  def benchMarkWithTime[T](name: String, silent: Boolean = false, execLoops: Int = defaultExecLoops, minSampleLoops: Int = defaultMinSampleLoops, maxCoV: Option[Double] = defaultMaxCoV, verbose: Boolean = true, hasConsoleOutput: Boolean = false)
                (toBench: => T): (T, Double) = {
     def print(x: Any) = if (!silent) Console.err.print(x)
     def println(x: Any) = if (!silent) Console.err.println(x)

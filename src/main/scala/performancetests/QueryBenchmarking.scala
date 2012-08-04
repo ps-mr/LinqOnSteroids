@@ -30,15 +30,15 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
   private def doRun[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll], c: TypeTag[Coll]) = {
     if (!onlyOptimized)
       showExpNoVal(v, msg)
-//    benchMarkInternal(msg)(v.expResult().force)
-    benchMarkInternal(msg)(Compile.toValue(v).force)
+//    benchMarkWithTime(msg)(v.expResult().force)
+    benchMarkWithTime(msg)(Compile.toValue(v).force)
   }
 
   private def benchOptimize[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]]) = {
     if (!onlyOptimized)
       Optimization.optimize(v) //do it once for the logs!
     Optimization.pushEnableDebugLog(false)
-    val (optimized, optimizationTime) = benchMarkInternal(msg + " Optimization")(Optimization.optimize(v))
+    val (optimized, optimizationTime) = benchMarkWithTime(msg + " Optimization")(Optimization.optimize(v))
     Optimization.popEnableDebugLog()
     (optimized, optimizationTime)
   }
@@ -87,7 +87,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
 
     if (!onlyOptimized) {
       val (expectedRes, timeScala) =
-        benchMarkInternal(msg) { expected }
+        benchMarkWithTime(msg) { expected }
       val (resLos, timeLos) = doRun(losMsg, builtQuery)
       //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
       // list.flatMap(listEl => set(listEl))
@@ -115,7 +115,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
       }
       val msgNativeAltExtra = " - Alternative (modularized)"
       val (altNativeRes, timeAltScala) =
-        benchMarkInternal(msg + msgNativeAltExtra) { altExpected }
+        benchMarkWithTime(msg + msgNativeAltExtra) { altExpected }
       if (altNativeRes != null) {
         altNativeRes should be (resOpt)
         reportTimeRatio("native Scala version%s" format msgNativeAltExtra, timeOpt / timeAltScala)
