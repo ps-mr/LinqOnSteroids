@@ -134,10 +134,6 @@ object Optimization {
   //}}}
 
   //Pipeline building blocks {{{
-  def handleFilters[T](exp: Exp[T]): Exp[T] =
-    mergeFilters(
-      hoistFilter(exp)) //Do this before merging filters!
-
   //Call this whenever new MapNode nodes might be created, to simplify them if needed.
   //Requires map+flatMap normal form
   def handleNewMaps[T](exp: Exp[T]): Exp[T] =
@@ -165,9 +161,14 @@ object Optimization {
   private def physicalOptimize[T](exp: Exp[T]): Exp[T] =
     (cartProdToAntiJoin[T] _ compose optimizeCartProdToJoin[T] compose flatMapToMap[T])(exp)
   //cartProdToAntiJoin(optimizeCartProdToJoin(
+
   private def newHandleFilters[T](exp: Exp[T]): Exp[T] =
     (mergeFilters[T] _ compose hoistFilter[T]
       compose splitFilters[T] compose simplifyConditions[T])(exp)
+
+  def handleFilters[T](exp: Exp[T]): Exp[T] =
+    mergeFilters(
+      hoistFilter(exp)) //Do this before merging filters!
 
   //Accepts either normal form
   private def filterFusion[T](exp: Exp[T]): Exp[T] =
