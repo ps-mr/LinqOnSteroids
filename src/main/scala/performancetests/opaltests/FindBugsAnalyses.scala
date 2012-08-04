@@ -144,6 +144,14 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
     } yield MethodRecord(classFile, method, body) //MethodRecord(cfM._1, cfM._2, body)
   }
 
+  def methodBodiesInstructionsModularNative() = {
+    import dbschema._
+    for {
+      MethodRecord(classFile, method, body) ← methodBodiesModularNative()
+      instruction ← body.instructions
+    } yield (classFile, method, body, instruction) //MethodRecord(cfM._1, cfM._2, body)
+  }
+
   def methodBodiesModularSQuOpt() = {
     import BATLifting._
     import dbschema.squopt._
@@ -153,6 +161,15 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       method ← Let(cfM._2)
       body <- method.body
     } yield MethodRecord(classFile, method, body) //MethodRecord(cfM._1, cfM._2, body)
+  }
+
+  def methodBodiesInstructionsModularSQuOpt() = {
+    import BATLifting._
+    import dbschema.squopt._
+    for {
+      cfMB /*(classFile, method, body)*/ ← methodBodiesModularSQuOpt()
+      instruction ← cfMB.body.instructions
+    } yield (cfMB.classFile, cfMB.method, cfMB.body, instruction)
   }
 
   //def this() = this(Seq("src/test/resources/scalatest-1.6.1.jar"))
@@ -435,14 +452,13 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       } yield (classFile, method, instruction)).toSet
     }, {
       (for {
-        methodAndBody <- methodBodiesModularNative()
-        instruction ← methodAndBody.body.instructions
+        (classFile, method, body, instruction) <- methodBodiesInstructionsModularNative()
         if (instruction match {
           case INVOKESTATIC(ObjectType("java/lang/System"), "gc", NoArgNoRetMethodDesc) |
                INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", NoArgNoRetMethodDesc) ⇒ true
           case _ ⇒ false
         })
-      } yield (methodAndBody.classFile, methodAndBody.method, instruction)).toSet
+      } yield (classFile, method, instruction)).toSet
     }) ({
       import BATLifting._
       import InstructionLifting._
@@ -461,7 +477,7 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import InstructionLifting._
       import dbschema.squopt._
       (for {
-        methodAndBody <- methodBodiesSQuOpt()
+        methodAndBody <- methodBodiesSQuOpt() //<---
         instruction <- methodAndBody.body.instructions.typeCase(
           when[INVOKESTATIC](instr =>
             instr.declaringClass ==# ObjectType("java/lang/System") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity),
@@ -473,14 +489,26 @@ class FindBugsAnalyses(zipFiles: Seq[String]) extends FunSuite with BeforeAndAft
       import InstructionLifting._
       import dbschema.squopt._
       (for {
-        methodAndBody <- methodBodiesModularSQuOpt()
+        methodAndBody <- methodBodiesModularSQuOpt() //<--- changed
         instruction <- methodAndBody.body.instructions.typeCase(
           when[INVOKESTATIC](instr =>
             instr.declaringClass ==# ObjectType("java/lang/System") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity),
           when[INVOKEVIRTUAL](instr =>
             instr.declaringClass ==# ObjectType("java/lang/Runtime") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity))
       } yield (methodAndBody.classFile, methodAndBody.method, instruction)).toSet
-    })
+    }/*, {
+      import BATLifting._
+      import InstructionLifting._
+      import dbschema.squopt._
+      (for {
+        methodBodyInstr <- methodBodiesInstructionsModularSQuOpt() //<--- changed
+        instruction <- methodBodyInstr.body.instructions.typeCase( //How do we write typeCase on a single value? Not possible - not directly.
+          when[INVOKESTATIC](instr =>
+            instr.declaringClass ==# ObjectType("java/lang/System") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity),
+          when[INVOKEVIRTUAL](instr =>
+            instr.declaringClass ==# ObjectType("java/lang/Runtime") && instr.name ==# "gc" && instr.methodDescriptor ==# NoArgNoRetMethodDesc, identity))
+      } yield (methodBodyInstr._1, methodBodyInstr._2, instruction)).toSet
+    }*/)
   }
 
 /*
@@ -568,21 +596,29 @@ Call1('TraversableLike$toSet,
     analyzePublicFinalizer2()
   }
   def analyzePublicFinalizer2() {
+    import BATLifting._
     // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
-    benchQueryComplete("FINALIZER_NOT_PROTECTED-2") {
+    benchQueryComplete("FINALIZER_NOT_PROTECTED-2") (
       for {
         classFile ← classFiles
         method ← classFile.methods
+      } yield classFile,
+      for {
+        (classFile, method) ← methodsNative()
         if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
       } yield classFile
-    } {
-      import BATLifting._
+    ) (
       for {
         classFile ← classFiles.asSmart
         method ← classFile.methods
         if method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0
-      } yield classFile
-    }
+      } yield classFile,
+      for {
+        classFileMethod ← methodsSQuOpt()
+        method ← Let(classFileMethod._2)
+        if method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0
+      } yield classFileMethod._1
+    )
   }
 
   test("SerializableNoConstructor") {
