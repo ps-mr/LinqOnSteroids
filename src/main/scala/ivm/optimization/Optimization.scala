@@ -163,12 +163,10 @@ object Optimization {
   //cartProdToAntiJoin(optimizeCartProdToJoin(
 
   private def newHandleFilters[T](exp: Exp[T]): Exp[T] =
-    (handleFilters[T] _
-      compose splitFilters[T] compose simplifyConditions[T])(exp)
+    (handleFilters[T] _ compose splitFilters[T] compose simplifyConditions[T])(exp)
 
   def handleFilters[T](exp: Exp[T]): Exp[T] =
-    mergeFilters(
-      hoistFilter(exp)) //Do this before merging filters!
+    mergeFilters(hoistFilter(exp)) //Do this before merging filters!
 
   //Accepts either normal form
   private def filterFusion[T](exp: Exp[T]): Exp[T] =
