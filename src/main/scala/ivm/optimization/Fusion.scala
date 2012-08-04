@@ -36,16 +36,22 @@ trait Fusion {
     case e => e
   }
 
-  val mergeFilters: Exp[_] => Exp[_] = {
+  /*val mergeFilters: Exp[_] => Exp[_] = {
     case e@Filter(col, f) =>
       stripViewUntyped(col) match {
         case Filter(col2, f2) =>
           //No need to call mergeFilters again on the result, since the traversal is top-down.
-            col2 withFilter {
-              (x: Exp[_]) => And(f2(x), f(x))
-            }
+          col2 withFilter {
+            (x: Exp[_]) => And(f2(x), f(x))
+          }
         case _ => e
       }
+    case e => e
+  }*/
+  val mergeFilters: Exp[_] => Exp[_] = {
+    case Filter(Filter(col2, f2), f) =>
+      //No need to call mergeFilters again on the result, since the traversal is top-down.
+      col2 withFilter (x => And(f2(x), f(x)))
     case e => e
   }
 
