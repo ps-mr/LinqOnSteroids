@@ -23,6 +23,8 @@ libraryDependencies += "junit" % "junit" % "4.8.2" % "test->default"
 //libraryDependencies += "org.scalatest" %% "scalatest" % "1.7.1"// % "test"
 libraryDependencies += "org.scalatest" % "scalatest_2.10.0-M5" % "1.9-2.10.0-M5-B2"
 
+libraryDependencies += "com.google.guava" % "guava" % "13.0"
+
 //resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
 //libraryDependencies in ThisBuild += "de.tud.cs.st" %% "bat-core" % "1.0.0-SNAPSHOT"
