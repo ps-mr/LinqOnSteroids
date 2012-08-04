@@ -111,7 +111,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         val (resAlt, timeAlt) = doRun(altMsg, altQuery: Exp[Traversable[T]])
         //Check that we get the same result
         resAlt should be (resOpt)
-        reportTimeRatio("base embedded version - Alternative %d" format i, timeOpt / timeAlt)
+        reportTimeRatio("base embedded version - Alternative %d (non optimized)" format i, timeOpt / timeAlt)
       }
       val msgNativeAltExtra = " - Alternative (modularized)"
       val (altNativeRes, timeAltScala) =
@@ -122,9 +122,19 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         reportTimeRatio("native Scala version%s, counting optimization time" format msgNativeAltExtra, (timeOpt + optimizationTime) / timeAltScala)
       }
 
-      for ((_, altOptimized, _, i) <- optimizedQueries) {
+      for ((altMsg, altOptimized, _, i) <- optimizedQueries) {
         //Check that we get the same query by optimizing modularized queries and non-modularized ones - I expect failures here.
-        altOptimized should be (optimized)
+        if (altOptimized != optimized) {
+          import compat.Platform.EOL
+          val indent = "    "
+          Console.err.printf("altOptimized != optimized\naltOptimized = %s\noptimized = %s\nAt:\n%s\n",
+            altOptimized, optimized, new Throwable().getStackTrace mkString (indent, EOL + indent, EOL))
+          //Since the result of optimization of the modularized query is in fact different (presumably worse?),
+          //let's compare its performance to the optimized non-modular query.
+          val (resAltOpt, timeAltOpt) = doRun(altMsg, altOptimized: Exp[Traversable[T]])
+          resAltOpt should be (resOpt)
+          reportTimeRatio("base embedded version - Alternative %d (optimized)" format i, timeOpt / timeAltOpt)
+        }
       }
     }
     println("\tViolations: " + resOpt.size)
