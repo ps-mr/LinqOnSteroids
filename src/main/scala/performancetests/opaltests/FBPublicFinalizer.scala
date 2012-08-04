@@ -44,6 +44,7 @@ trait FBPublicFinalizer {
       for {
         classFile ← classFiles
         method ← classFile.methods
+        if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
       } yield classFile,
       for {
         (classFile, method) ← methodsNative()
