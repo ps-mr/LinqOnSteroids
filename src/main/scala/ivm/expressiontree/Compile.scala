@@ -1,10 +1,13 @@
 package ivm
 package expressiontree
 
-import collection.mutable
+import collection.{JavaConversions, mutable}
+import JavaConversions._
 import java.util.regex.Pattern
 import performancetests.Benchmarking
 import java.lang.reflect.Constructor
+import com.google.common.cache.CacheBuilder
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 /**
  * User: pgiarrusso
@@ -121,7 +124,36 @@ object Compile {
   // http://stackoverflow.com/questions/264582/is-there-a-softhashmap-in-java
 
   //Note: this map should be a concurrent map, not ThreadLocals!
-  private val expCodeCache = new ScalaThreadLocal(mutable.Map[Exp[_], Option[Constructor[_]]]())
+  def buildCache[K <: AnyRef, V <: AnyRef]: collection.concurrent.Map[K, V] =
+    CacheBuilder.newBuilder()
+      .maximumSize(10000).expireAfterAccess(10, TimeUnit.MINUTES)
+      .softValues()
+      .concurrencyLevel(2)
+      .build[K, V]().asMap()
+
+  def buildCache2_9[K <: AnyRef, V <: AnyRef]: mutable.ConcurrentMap[K, V] =
+    asScalaConcurrentMap(CacheBuilder.newBuilder()
+      .maximumSize(10000).expireAfterAccess(10, TimeUnit.MINUTES)
+      .softValues()
+      .concurrencyLevel(2)
+      .build[K, V]().asMap())
+
+  import collection.{JavaConversions, mutable}
+  import java.util.concurrent.ConcurrentHashMap
+
+  def buildCache2_9_simple[K <: AnyRef, V <: AnyRef]: mutable.ConcurrentMap[K, V] =
+    asScalaConcurrentMap(new ConcurrentHashMap())
+
+  def buildCache2_9_implicit[K <: AnyRef, V <: AnyRef]: mutable.ConcurrentMap[K, V] =
+    new ConcurrentHashMap[K, V]()
+
+  private val expCodeCache: collection.concurrent.Map[Exp[_], Option[Constructor[_]]] =
+    JavaConversions.mapAsScalaConcurrentMap(CacheBuilder.newBuilder()
+      .maximumSize(10000).expireAfterAccess(10, TimeUnit.MINUTES)
+      .softValues()
+      .concurrencyLevel(2)
+      .build[Exp[_], Option[Constructor[_]]]().asMap())
+    //new ScalaThreadLocal(mutable.Map[Exp[_], Option[Constructor[_]]]())
 
   //We must remove Const.toCode :-).
 
@@ -137,7 +169,7 @@ object Compile {
   }
 
   def completeReset() {
-    expCodeCache.get.clear()
+    expCodeCache.clear()
     reset()
   }
   //}}}
@@ -186,7 +218,7 @@ object Compile {
     val (transfExp, cspValues) = extractConsts(e)
     val staticData = getStaticData(cspValues)
 
-    val maybeCons = expCodeCache.get().getOrElseUpdate(transfExp, {
+    val maybeCons = expCodeCache.getOrElseUpdate(transfExp, {
       val (prefix, restSourceCode, className) = compileConstlessExp(transfExp, cspValues)
       ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls.getConstructor(staticData.map(_._1.runtimeClass):_*))
     })
