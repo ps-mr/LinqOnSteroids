@@ -40,10 +40,10 @@ trait Fusion {
     case e@Filter(col, f) =>
       stripViewUntyped(col) match {
         case Filter(col2, f2) =>
-          mergeFilters(
+          //No need to call mergeFilters again on the result, since the traversal is top-down.
             col2 withFilter {
               (x: Exp[_]) => And(f2(x), f(x))
-            })
+            }
         case _ => e
       }
     case e => e
