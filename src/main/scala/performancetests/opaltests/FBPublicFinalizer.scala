@@ -4,14 +4,9 @@ package opaltests
 import ivm._
 import expressiontree._
 import Lifting._
-import optimization.Optimization
 
 import de.tud.cs.st.bat
 import bat.resolved._
-import analyses._
-
-import reader.Java6Framework
-import analyses.ClassHierarchy
 
 import collection.immutable.Seq
 import collection.{Seq => CSeq}

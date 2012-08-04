@@ -39,9 +39,6 @@ import ivm._
 import collections.TypeMapping
 import de.tud.cs.st.bat
 import bat.resolved._
-import analyses._
-
-import reader.Java6Framework
 
 import expressiontree.{CollectionUtils, Exp, Lifting, BATLifting, Util}
 import expressiontree._ //We import this just for being able to resolve identifiers in code dumps.
