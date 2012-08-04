@@ -27,6 +27,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
   //If we're running only the optimized version, we only run it only once.
   override def debugBench = super.debugBench || onlyOptimized
 
+  private def mustModularizedOptimizeEqual = true
+
   private def doRun[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll], c: TypeTag[Coll]) = {
     if (!onlyOptimized)
       showExpNoVal(v, msg)
@@ -124,7 +126,9 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
 
       for ((altMsg, altOptimized, _, i) <- optimizedQueries) {
         //Check that we get the same query by optimizing modularized queries and non-modularized ones - I expect failures here.
-        if (altOptimized != optimized) {
+        if (mustModularizedOptimizeEqual) {
+          altOptimized should be (optimized)
+        } else if (altOptimized != optimized) {
           import compat.Platform.EOL
           val indent = "    "
           Console.err.printf("altOptimized != optimized\naltOptimized = %s\noptimized = %s\nAt:\n%s\n",
