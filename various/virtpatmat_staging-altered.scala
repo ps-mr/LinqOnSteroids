@@ -26,6 +26,8 @@ trait Intf {
  implicit def repString(x: String): Rep[String]
 
  def test = 7 match { case 5 => "foo" case _ => "bar" }
+ def test2(i: Int) = i match { case j => "foo2: " + j }
+ //def test3(i: Rep[Int]) = i match { case j => "foo3: " + j }
 }
 
 trait Impl extends Intf {
@@ -51,4 +53,6 @@ trait Impl extends Intf {
 
 object Test extends Impl with Intf with App {
   println(test)
+  println(test2(2))
+  //println(test3(3))
 }
