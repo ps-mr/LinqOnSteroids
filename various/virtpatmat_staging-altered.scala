@@ -1,5 +1,7 @@
 //Copied from ./test/files/run/virtpatmat_staging.scala in the compiler sources
 //for 2.10.0-M6.
+import language.implicitConversions
+import language.higherKinds
 trait Intf {
  type Rep[+T]
  type M[+T] = Rep[Maybe[T]]
@@ -11,7 +13,7 @@ trait Intf {
 
    def zero: M[Nothing]
    def one[T](x: Rep[T]): M[T]
-   def guard[T](cond: Rep[Boolean], then: => Rep[T]): M[T]
+   def guard[T](cond: Rep[Boolean], thenBranch: => Rep[T]): M[T]
    def isSuccess[T, U](x: Rep[T])(f: Rep[T] => M[U]): Rep[Boolean] // used for isDefinedAt
  }
 
@@ -27,7 +29,7 @@ trait Intf {
 
  def test = 7 match { case 5 => "foo" case _ => "bar" }
  def test2(i: Int) = i match { case j => "foo2: " + j }
- //def test3(i: Rep[Int]) = i match { case j => "foo3: " + j }
+ //def test3(i: Rep[Int]) = i match { case j => "foo3: " + j } //type error!
 }
 
 trait Impl extends Intf {
@@ -37,7 +39,7 @@ trait Impl extends Intf {
    def runOrElse[T, U](in: Rep[T])(matcher: Rep[T] => M[U]): Rep[U] = ("runOrElse("+ in +", ?" + matcher("?") + ")")
    def zero: M[Nothing]                                             = "zero"
    def one[T](x: Rep[T]): M[T]                                      = "one("+x.toString+")"
-   def guard[T](cond: Rep[Boolean], then: => Rep[T]): M[T]          = "guard("+cond+","+then+")"
+   def guard[T](cond: Rep[Boolean], thenBranch: => Rep[T]): M[T]    = "guard("+cond+","+thenBranch+")"
    def isSuccess[T, U](x: Rep[T])(f: Rep[T] => M[U]): Rep[Boolean]  = ("isSuccess("+x+", ?" + f("?") + ")")
  }
 
