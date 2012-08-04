@@ -159,7 +159,7 @@ trait LiftingTrait
   def Let[T](e: Exp[T]): Exp[Seq[T]] = Seq(e)
   //def Let[T](e: Exp[T]): Exp[Option[T]] = Some(e)
 
-  override def groupBySelImpl[T: TypeTag, Repr <: Traversable[T] with
+  override def groupBySelImpl[T: ClassTag: TypeTag, Repr <: Traversable[T] with
     TraversableLike[T, Repr]: TypeTag, K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
                                              g: Exp[T] => Exp[Rest])(
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =

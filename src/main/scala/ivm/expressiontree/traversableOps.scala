@@ -23,7 +23,7 @@ trait TraversableOps {
   def newUnion[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U >: T, That <: Traversable[U]](base: Exp[Repr with Traversable[T]], that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
     Union(base, that)
 
-  def groupBySelImpl[T: TypeTag, Repr <: Traversable[T] with
+  def groupBySelImpl[T: ClassTag: TypeTag, Repr <: Traversable[T] with
     TraversableLike[T, Repr]: TypeTag, K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
                                                                                                                     g: Exp[T] => Exp[Rest])(
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]]
@@ -78,6 +78,7 @@ trait TraversableOps {
     def groupBySel[K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](f: Exp[T] => Exp[K], g: Exp[T] => Exp[Rest])
                                                                                        (implicit cbf: CanBuildFrom[Repr, T, Repr],
                                                                                         cbf2: CanBuildFrom[Repr, Rest, That],
+                                                                                        cTagT: ClassTag[T],
                                                                                         tTagT: TypeTag[T],
                                                                                         tTagRepr: TypeTag[Repr]): Exp[Map[K, That]] =
       groupBySelImpl(this.t, f, g)
