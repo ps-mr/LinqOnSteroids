@@ -64,6 +64,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
 
   @Test
   def testHoistFilter() {
+    def optim[T](exp: Exp[T]) = Optimization flatMapToMap (Optimization handleFilters exp)
     val base = Vector.range(1, 6).asSmart
     val query =
       for {
@@ -71,7 +72,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
         j <- base
         if i < 3
       } yield (i, j)
-    val opt = Optimization.handleFilters(query)
+    val opt = optim(query)
     query.interpret() should be (for (i <- 1 to 2; j <- 1 to 5) yield (i, j))
     opt.interpret() should be (query.interpret())
     opt should be (
@@ -90,7 +91,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
         l <- base
         if i < 3
       } yield (i, j, l)
-    val opt2 = Optimization.handleFilters(query2)
+    val opt2 = optim(query2)
     query2.interpret() should be (for (i <- 1 to 2; j <- 1 to 5; k <- 1 to 5; l <- 1 to 5) yield (i, j, l))
     opt2 should be (
       for {
@@ -103,7 +104,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     )
     opt2.interpret() should be (query2.interpret())
 
-    val opt21 = Optimization.handleFilters(opt2)
+    val opt21 = optim(opt2)
     opt21 should be (
       for {
         i <- base
