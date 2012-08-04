@@ -73,6 +73,8 @@ trait Fusion {
   val transformedFilterToFilter: Exp[_] => Exp[_] = {
     case FlatMap(coll, fmFun@FuncExpBody(IfThenElse(test, thenBranch, elseBranch@ExpSeq(Seq())))) =>
       coll filter Fun.makefun(test, fmFun.x) flatMap Fun.makefun(thenBranch, fmFun.x)
+    case FlatMap(coll, fmFun@FuncExpBody(FlatMap(IfThenElse(test, thenBranch, elseBranch@ExpSeq(Seq())), fmFun2))) =>
+      coll filter Fun.makefun(test, fmFun.x) flatMap Fun.makefun(thenBranch flatMap fmFun2, fmFun.x)
     case e => e
   }
 
