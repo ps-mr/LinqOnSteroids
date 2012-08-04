@@ -59,7 +59,7 @@ class TransformedFuncPerfTests extends JUnitSuite with ShouldMatchersForJUnit wi
     }
   }
 
-  @Test def testTransformIdentityMap1 {
+  @Test def testTransformIdentityMap1() {
     val query = for (c <- l) yield c + 1
     testBenchmarkTransforms(query)
   }
