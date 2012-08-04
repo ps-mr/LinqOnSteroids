@@ -24,7 +24,7 @@ object OptimizationUtil {
   }
 
   //Pattern match to connect two conditions
-  object & { def unapply[A](a: A) = Some(a, a) }
+  object & { def unapply[A](a: A) = Some((a, a)) }
 
   object BaseBinding {
     def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _])] = e match {
