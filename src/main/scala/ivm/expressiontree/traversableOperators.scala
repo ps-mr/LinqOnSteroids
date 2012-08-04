@@ -125,11 +125,14 @@ case class Forall[T](coll: Exp[Traversable[T]], f: Fun[T, Boolean])
   }
 }
 
-case class IndexBy[T: TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: TypeTag, K](base: Exp[Repr], f: Exp[T => K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr]) extends Arity2OpExp[Repr,
-  T => K, immutable.Map[K, Repr], IndexBy[T, Repr, K]](base, f) {
+case class IndexBy[T: ClassTag: TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: TypeTag, K](base: Exp[Repr], f: Exp[T => K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr]) extends Arity2OpExp[Repr,
+  T => K, immutable.Map[K, Repr], IndexBy[T, Repr, K]](base, f) with PersistValue[CanBuildFrom[Repr, T, Repr]] {
   override def interpret() = CollectionUtils.groupBy(base.interpret())(f.interpret())(cbf)
   override def copy(base: Exp[Repr], f: Exp[T => K]) = IndexBy(base, f)
-  override def toCode = "ivm.expressiontree.CollectionUtils.groupBy(%s)(%s)(%s)" format (base.toCode, f.toCode, Const(cbf).toCode) //XXX Const(cbf)? That's a hack to reuse any cross-stage persistence we might get.
+  override def toCode = "ivm.expressiontree.CollectionUtils.groupBy(%s)(%s)(%s)" format (base.toCode, f.toCode, CrossStagePersistence persist cbf)
+  override def cTagT = implicitly
+  override def tTagT = implicitly
+  def valueToPersist = cbf
 }
 case class GroupBy[T, Repr <: Traversable[T] with TraversableLike[T, Repr], K](base: Exp[Repr], f: Exp[T => K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr]) extends Arity2OpExp[Repr,
   T => K, immutable.Map[K, Repr], GroupBy[T, Repr, K]](base, f) with InfixPrinting {
