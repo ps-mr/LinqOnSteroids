@@ -42,7 +42,7 @@ trait FBConfusedInheritance {
         field ← classFile.fields if field.isProtected
       } yield (classFile, field),
       for {
-        classFileField <- fieldsNative().asSmart
+        classFileField <- fieldsSQuOpt()
         classFile <- Let(classFileField._1)
         field <- Let(classFileField._2)
         if classFile.isFinal
