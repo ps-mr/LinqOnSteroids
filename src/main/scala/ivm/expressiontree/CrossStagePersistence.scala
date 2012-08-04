@@ -19,13 +19,15 @@ object CrossStagePersistence {
     name
   }
 
-  def persist[T: ClassTag: TypeTag](value: T) =
+  def persist[T: ClassTag: TypeTag](value: T): Exp[T] =
     NamedVar(CrossStagePersistence.addVar(value))
 }
 
 trait PersistValue[T] {
   this: Exp[_] =>
-  def valueToPersist: Class[_]
+  def valueToPersist: T
+  implicit def cTagT: ClassTag[T]
+  implicit def tTagT: TypeTag[T]
   protected var persistedValue: Exp[T] = _
   override def persistValues() {
     persistedValue = CrossStagePersistence persist valueToPersist
@@ -36,4 +38,6 @@ trait PersistClassS extends PersistValue[Class[_]]{
   this: Exp[_] =>
   def classS: Class[_]
   override def valueToPersist = classS
+  override def cTagT = classTag
+  override def tTagT = typeTag
 }
