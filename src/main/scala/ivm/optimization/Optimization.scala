@@ -82,11 +82,12 @@ object Optimization {
   //In fact, now beta reduction checks the inlining side conditions to guarantee idempotence. This however means that
   //we'll miss some opportunities for inlining and optimization, so maybe it should be reversed.
   //In that case, we need to call letTransformer(betaDeltaReducer(basicInlining(...))), which is however a bit wasteful.
+  //So use betaDeltaReducer(letTransformer(...)) instead, at least for now.
   def optimize[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
     checkIdempotent(exp, idxLookup, "optimize") {
       optimize(_, idxLookup = false)
     } {
-      flatMapToMap(letTransformer(betaDeltaReducer(basicInlining(optimizeBase(exp, idxLookup, forIdx = false)))))
+      flatMapToMap(betaDeltaReducer(letTransformer(optimizeBase(exp, idxLookup, forIdx = false))))
     }
 
   //The result of letTransformer is not understood by the index optimizer.
