@@ -64,9 +64,9 @@ case class TypeCase[Case, +Res](classS: Class[_], guard: Fun[Case, Boolean], f: 
 case class TypeCaseExp[BaseT, Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr], Res: TypeTag, +That /*XXX to drop*/](e: Exp[Repr with TraversableLike[BaseT, Repr]], cases: Seq[TypeCase[_ /*Case_i*/, Res]])/*(implicit protected[this] val c: CanBuildFrom[TraversableView[BaseT, Repr], Res, That])*/ extends Exp[immutable.Set[Res]] {
   override def nodeArity = 2 * cases.length + 1
   override def children = e +: (cases.flatMap /*[Exp[_], Seq[Exp[_]]] */(c => Seq[Exp[_]](c.guard, c.f)))
-  override def checkedGenericConstructor: Seq[Exp[_]] => Exp[immutable.Set[Res]] =
-    v => TypeCaseExp(
-      v.head.asInstanceOf[Exp[Repr]],
+  override def checkedGenericConstructor(v: Seq[Exp[_]]): Exp[immutable.Set[Res]] =
+    TypeCaseExp(
+    v.head.asInstanceOf[Exp[Repr]],
       (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS, guard.asInstanceOf[Fun[Any, Boolean]], f.asInstanceOf[Fun[Any, Res]])})
 
   private def checkF(v: BaseT): Res = {

@@ -60,7 +60,7 @@ abstract class Fun[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S 
   def copy[U >: T](t1: Exp[U]): Fun[S, U] = Fun.makefun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[Fun[_,_]]
   //Copied from Arity1OpTrait:
-  def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[T]])
+  def checkedGenericConstructor(v: Seq[Exp[_]]) = copy(v(0).asInstanceOf[Exp[T]])
 }
 
 // Note that giving f the type PartialFunction[Exp[S],Exp[T]] would not work, because "definedness"
@@ -74,7 +74,7 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
   def copy[U >: T](t1: Exp[Option[U]]): PartialFuncExp[S, U] = Fun.makePartialFun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[PartialFuncExp[_,_]]
   //Copied from Arity1OpTrait:
-  def checkedGenericConstructor = v => copy(v(0).asInstanceOf[Exp[Option[T]]])
+  def checkedGenericConstructor(v: Seq[Exp[_]]) = copy(v(0).asInstanceOf[Exp[Option[T]]])
   override def toCode = "Function.unlift(%s)" format (Fun(f).toCode)
 }
 

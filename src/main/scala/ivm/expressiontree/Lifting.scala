@@ -78,7 +78,7 @@ trait OptionLifting extends BaseExps {
   case class ExpOption[T](e: Option[Exp[T]]) extends Exp[Option[T]] with PrefixPrinting {
     override def children = e.toSeq
     override def nodeArity = e.size
-    override protected def checkedGenericConstructor: Seq[Exp[_]] => Exp[Option[T]] = {
+    override protected def checkedGenericConstructor(v: Seq[Exp[_]]): Exp[Option[T]] = v match {
       //Note: the length of the input sequence is checked by genericConstructor and will match the current one.
       //Knowing that does not lead to simplifying this code though.
       case Seq() =>
