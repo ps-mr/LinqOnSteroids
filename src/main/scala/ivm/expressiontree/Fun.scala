@@ -63,8 +63,8 @@ abstract class Fun[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S 
   override protected def checkedGenericConstructor(v: Seq[Exp[_]]) = copy(v(0).asInstanceOf[Exp[T]])
 }
 
-// Note that giving f the type PartialFunction[Exp[S],Exp[T]] would not work, because "definedness"
-// can only be determined during interpretation
+// Note that giving f the type PartialFunction[Exp[S],Exp[T]] would be incorrect, because "definedness"
+// can only be determined during interpretation, so we would not know how to implement isDefinedAt.
 
 case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBase[S, Option[T], PartialFunction[S, T]] {
   def interpret(): PartialFunction[S,T] =
