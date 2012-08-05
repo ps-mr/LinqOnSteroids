@@ -1,13 +1,13 @@
-scalaVersion := "2.10.0-M6"
+scalaVersion in ThisBuild := "2.10.0-M6"
 
 name := "scratch"
 
 version := "0.0"
 
-scalacOptions ++= Seq("-unchecked", "-deprecation", "-explaintypes",
+scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation", "-explaintypes",
   "-language:experimental.macros")
 
-libraryDependencies <+= scalaVersion apply ("org.scala-lang" % "scala-reflect" % _)
+libraryDependencies in ThisBuild <+= scalaVersion apply ("org.scala-lang" % "scala-reflect" % _)
 
 initialCommands in console := """
     import scala.reflect.runtime.{universe => u}
