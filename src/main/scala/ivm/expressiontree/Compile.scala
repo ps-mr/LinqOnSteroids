@@ -1,7 +1,6 @@
 package ivm
 package expressiontree
 
-import java.util.regex.Pattern
 import performancetests.Benchmarking
 import java.lang.reflect.Constructor
 
@@ -103,7 +102,9 @@ object Compile {
       str replaceAll ("""_\$\d+""", "_")
     else
       str
-    /*if (str endsWith ".type") //Workaround bug: names for singleton types are not fully qualified!
+    /*
+    import java.util.regex.Pattern
+    if (str endsWith ".type") //Workaround bug: names for singleton types are not fully qualified!
       //Remove final '$' from class name.
       m.runtimeClass.getName.replaceFirst("""\$$""", "") + ".type"
     else if (str startsWith "ivm.collections.TypeMapping[<?>, <?>, ")
