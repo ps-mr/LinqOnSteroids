@@ -1,13 +1,9 @@
 package ivm
 package expressiontree
 
-import collection.{JavaConversions, mutable}
-import JavaConversions._
 import java.util.regex.Pattern
 import performancetests.Benchmarking
 import java.lang.reflect.Constructor
-import com.google.common.cache.CacheBuilder
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 /**
  * User: pgiarrusso
@@ -120,40 +116,10 @@ object Compile {
 
   //Cache compilation results. Note: the cache does not identify alpha-equivalent expressions, but it does identify
   // expressions with the same constants!
-  // Moreover, this cache should use soft references for keys. Googling SoftHashMap gives this answer:
-  // http://stackoverflow.com/questions/264582/is-there-a-softhashmap-in-java
 
+  private val expCodeCache: collection.concurrent.Map[Exp[_], Option[Constructor[_]]] = Util.buildCache
   //Note: this map should be a concurrent map, not ThreadLocals!
-  def buildCache[K <: AnyRef, V <: AnyRef]: collection.concurrent.Map[K, V] =
-    CacheBuilder.newBuilder()
-      .maximumSize(10000).expireAfterAccess(10, TimeUnit.MINUTES)
-      .softValues()
-      .concurrencyLevel(2)
-      .build[K, V]().asMap()
-
-  def buildCache2_9[K <: AnyRef, V <: AnyRef]: mutable.ConcurrentMap[K, V] =
-    asScalaConcurrentMap(CacheBuilder.newBuilder()
-      .maximumSize(10000).expireAfterAccess(10, TimeUnit.MINUTES)
-      .softValues()
-      .concurrencyLevel(2)
-      .build[K, V]().asMap())
-
-  import collection.{JavaConversions, mutable}
-  import java.util.concurrent.ConcurrentHashMap
-
-  def buildCache2_9_simple[K <: AnyRef, V <: AnyRef]: mutable.ConcurrentMap[K, V] =
-    asScalaConcurrentMap(new ConcurrentHashMap())
-
-  def buildCache2_9_implicit[K <: AnyRef, V <: AnyRef]: mutable.ConcurrentMap[K, V] =
-    new ConcurrentHashMap[K, V]()
-
-  private val expCodeCache: collection.concurrent.Map[Exp[_], Option[Constructor[_]]] =
-    JavaConversions.mapAsScalaConcurrentMap(CacheBuilder.newBuilder()
-      .maximumSize(10000).expireAfterAccess(10, TimeUnit.MINUTES)
-      .softValues()
-      .concurrencyLevel(2)
-      .build[Exp[_], Option[Constructor[_]]]().asMap())
-    //new ScalaThreadLocal(mutable.Map[Exp[_], Option[Constructor[_]]]())
+  //new ScalaThreadLocal(mutable.Map[Exp[_], Option[Constructor[_]]]())
 
   //We must remove Const.toCode :-).
 

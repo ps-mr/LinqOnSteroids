@@ -83,6 +83,20 @@ object Util {
         ifInstanceOfBody[T, S](v, ClassUtil.boxedErasure(cS))
     }
   }
+
+  // Caches should use soft references for keys. Googling SoftHashMap gives this answer:
+  // http://stackoverflow.com/questions/264582/is-there-a-softhashmap-in-java
+  def buildCache[K <: AnyRef, V <: AnyRef]: collection.concurrent.Map[K, V] = {
+    import collection.JavaConversions
+    import com.google.common.cache.CacheBuilder
+    import java.util.concurrent.TimeUnit
+
+    JavaConversions mapAsScalaConcurrentMap CacheBuilder.newBuilder()
+      .maximumSize(10000).expireAfterAccess(10, TimeUnit.MINUTES)
+      .softValues()
+      .concurrencyLevel(2)
+      .build().asMap()
+  }
 }
 
 //Much of the following code derives from scala.math.Ordering
