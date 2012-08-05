@@ -140,11 +140,11 @@ object Macros {
           =>
             Apply(TypeApply(
               Ident(newTermName("dummy_" + member.encoded)), typeArgs), op1 :: l2)
-          case _ => tree
+          case _ => super.transform(tree)//XXX use recursion more often.
         }
       }
     }
-    c.Expr(smartTransformer.transform(expr.tree))
+    c.Expr(c.resetAllAttrs(smartTransformer.transform(expr.tree)))
     //Or maybe
     //c.Expr(c.resetAllAttrs(...)), as below?
     //https://github.com/retronym/macrocosm/blob/171be7e/src/main/scala/com/github/retronym/macrocosm/Macrocosm.scala#L171
