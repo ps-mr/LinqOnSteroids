@@ -3,11 +3,17 @@ case class Const[T](e: T) extends Exp[T]
 case class ToString[T](e: Exp[T]) extends Exp[String]
 case class AsInstanceOf[T](e: Exp[Any], t: Manifest[T]) extends Exp[T]
 case class Eq[T](a: Exp[T], b: Exp[T]) extends Exp[Boolean]
+case class Or(a: Exp[Boolean], b: Exp[Boolean]) extends Exp[Boolean]
 
 object myLib extends App {
   def dummy_toString[T](v: Exp[T]) = ToString(v)
   def dummy_toString(v: Any) = v.toString
   implicit def unit[T]: T => Exp[T] = Const(_)
+
+  implicit class BooleanOps(a: Exp[Boolean]) {
+    def ||(b: Exp[Boolean]) = Or(a, b)
+  }
+
   def asExp[T](t: Exp[T]) = t
 
   def eq(a: Any, b: Any) = a == b
@@ -46,12 +52,14 @@ object myLib extends App {
   println(eq(c1, 2))
   println(eq(1, c2))
   println(eq(c1, c2))
-//  import Macros._
-//  println("With macros: " + smart(c1.toString))
-//  println("With macros: " + smart(c1.toString()))
-//  println("With macros: " + smart(c1 == 2))
-//  //println("With macros: " + smart(c1 synchronized 2))
-//  //println("With macros: " + smart(c1.synchronized[Int](2)))
-//  println("With macros: " + smart(c1.asInstanceOf[Int]))
-//  //println("With macros: " + smart(c1.isInstanceOf[Int]))
+  import Macros._
+  println("With macros: " + smart(c1.toString))
+  println("With macros: " + smart(c1.toString + "foo"))
+  println("With macros: " + smart(c1.toString()))
+  println("With macros: " + smart(c1 == 2))
+  println("With macros: " + smart(c1 == 2 || c2 == 1))
+  //println("With macros: " + smart(c1 synchronized 2))
+  //println("With macros: " + smart(c1.synchronized[Int](2)))
+  println("With macros: " + smart(c1.asInstanceOf[Int]))
+  //println("With macros: " + smart(c1.isInstanceOf[Int]))
 }
