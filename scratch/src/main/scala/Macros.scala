@@ -113,34 +113,41 @@ object Macros {
     */
   def smart_impl(c: Context)(expr: c.Expr[Any]): c.Expr[Any] = {
     import c.universe._
-    //Main problem: we need to visit the tree recursively.
-    expr.tree match {
-      //this duplicates the check but also checks arity. Do it even more
-      //generic. Later.
-      case Apply(Select(op1, member), l @ List())
-        if (anyUnaryMethods ++ anyRefUnaryMethods ++ anyTypeUnaryMethod) contains member.decoded
-      =>
-        //Use reify and splices:
-        //reify((c.Expr[Any => Nothing](Ident(newTermName("dummy_" +
-          //member.encoded))).value)(op1))
-          ////member.encoded))).value)(op1, l.map(c.Expr[Any](_).value):_*))
-        c.Expr(Apply(Ident(newTermName("dummy_" + member.encoded)), op1 :: l))
-      case Apply(Select(op1, member), l @ List(op2)) if anyBinaryMethods contains member.decoded =>
-        c.Expr(Apply(Ident(newTermName("dummy_" + member.encoded)), op1 :: l))
-      case TypeApply(Select(op1, member), typeArgs @ List(typeArg))
-        if anyTypeUnaryMethod contains member.decoded
-      =>
-        c.Expr(Apply(TypeApply(
-          Ident(newTermName("dummy_" + member.encoded)), typeArgs), List(op1)))
-      case Apply(
-        TypeApply(Select(op1, member), typeArgs @ List(typeArg)),
-        l2 @ List(arg))
-        if anyTypeBinaryMethod contains member.decoded
-      =>
-        c.Expr(Apply(TypeApply(
-          Ident(newTermName("dummy_" + member.encoded)), typeArgs), op1 :: l2))
-      case _ => expr
+    object smartTransformer extends Transformer {
+      override def transform(tree: Tree): Tree = {
+        tree match {
+          //this duplicates the check but also checks arity. Do it even more
+          //generic. Later.
+          case Apply(Select(op1, member), l @ List())
+            if (anyUnaryMethods ++ anyRefUnaryMethods ++ anyTypeUnaryMethod) contains member.decoded
+          =>
+            //Use reify and splices:
+            //reify((c.Expr[Any => Nothing](Ident(newTermName("dummy_" +
+              //member.encoded))).value)(op1))
+              ////member.encoded))).value)(op1, l.map(c.Expr[Any](_).value):_*))
+            Apply(Ident(newTermName("dummy_" + member.encoded)), op1 :: l)
+          case Apply(Select(op1, member), l @ List(op2)) if anyBinaryMethods contains member.decoded =>
+            Apply(Ident(newTermName("dummy_" + member.encoded)), op1 :: l)
+          case TypeApply(Select(op1, member), typeArgs @ List(typeArg))
+            if anyTypeUnaryMethod contains member.decoded
+          =>
+            Apply(TypeApply(
+              Ident(newTermName("dummy_" + member.encoded)), typeArgs), List(op1))
+          case Apply(
+            TypeApply(Select(op1, member), typeArgs @ List(typeArg)),
+            l2 @ List(arg))
+            if anyTypeBinaryMethod contains member.decoded
+          =>
+            Apply(TypeApply(
+              Ident(newTermName("dummy_" + member.encoded)), typeArgs), op1 :: l2)
+          case _ => tree
+        }
+      }
     }
+    c.Expr(smartTransformer.transform(expr.tree))
+    //Or maybe
+    //c.Expr(c.resetAllAttrs(...)), as below?
+    //https://github.com/retronym/macrocosm/blob/171be7e/src/main/scala/com/github/retronym/macrocosm/Macrocosm.scala#L171
   }
 }
 
