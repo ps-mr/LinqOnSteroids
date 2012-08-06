@@ -87,7 +87,9 @@ object ScalaCompile {
       val cls: Class[_] = loader.loadClass(className)
       Some(cls)
     } else {
-      println("compilation: had errors")
+      Console.err println "compilation: had errors"
+      if (!Benchmarking.debugBench)
+        Console.err println sourceStr
       None
     }
   }
