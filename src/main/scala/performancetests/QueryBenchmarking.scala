@@ -96,11 +96,13 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
       // list.flatMap(listEl => set(listEl))
       //returns results in non-deterministic order (which is arguably a Scala bug).
       //Alter queries instead: if they are non-deterministic they should return a set.
+      //I changed my mind: we will always compare results after turning them into Sets.
+      //That's a good way to pretend we have Bag semantics.
 
       compare(timeLos, timeOpt, optimizationTime, timeScala)
 
-      resOpt should be (resLos)
-      resLos should be (expectedRes)
+      resOpt.toSet should be (resLos.toSet)
+      resLos.toSet should be (expectedRes.toSet)
 
       val optimizedQueries = for {
         (altQuery, i) <- altQueries.zipWithIndex
@@ -113,14 +115,15 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         //Check that the query produces the same result *before* optimization, and how much slower it is
         val (resAlt, timeAlt) = doRun(altMsg, altQuery: Exp[Traversable[T]])
         //Check that we get the same result
-        resAlt should be (resOpt)
+        resAlt.toSet should be (resOpt.toSet)
+        //resAlt should be (resOpt)
         reportTimeRatio("base embedded version - Alternative %d (non optimized)" format i, timeOpt / timeAlt)
       }
       val msgNativeAltExtra = " - Alternative (modularized)"
       val (altNativeRes, timeAltScala) =
         benchMarkWithTime(msg + msgNativeAltExtra) { altExpected }
       if (altNativeRes != null) {
-        altNativeRes should be (resOpt)
+        altNativeRes.toSet should be (resOpt.toSet)
         reportTimeRatio("native Scala version%s" format msgNativeAltExtra, timeOpt / timeAltScala)
         reportTimeRatio("native Scala version%s, counting optimization time" format msgNativeAltExtra, (timeOpt + optimizationTime) / timeAltScala)
       }
@@ -137,7 +140,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
           //Since the result of optimization of the modularized query is in fact different (presumably worse?),
           //let's compare its performance to the optimized non-modular query.
           val (resAltOpt, timeAltOpt) = doRun(altMsg + optimizedMsg, altOptimized: Exp[Traversable[T]])
-          resAltOpt should be (resOpt)
+          resAltOpt.toSet should be (resOpt.toSet)
+          //resAltOpt should be (resOpt)
           reportTimeRatio("base embedded version - Alternative %d (optimized)" format i, timeOpt / timeAltOpt)
         }
       }
