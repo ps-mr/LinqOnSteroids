@@ -186,6 +186,22 @@ trait FBUnusedFields {
         classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
+        unusedPrivateFields ← Let(privateFields -- (for {
+          method ← classFile.methods
+          body ← method.body
+          instruction ← body.instructions
+        } yield instruction).typeCase(
+          when[GETFIELD](asGETFIELD => asGETFIELD.declaringClass ==# declaringClass, _.name),
+          when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass ==# declaringClass, _.name))) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, unusedPrivateFields)
+    }, {
+      import BATLifting._
+      import InstructionLifting._
+      for {
+        classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration
+        declaringClass ← Let(classFile.thisClass)
+        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
         instructions ← Let(for {
           method ← classFile.methods
           body ← method.body
@@ -207,6 +223,42 @@ trait FBUnusedFields {
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
       } yield (classFile, unusedPrivateFields)
+    }, {
+      import BATLifting._
+      for {
+        cfField ← fieldsSQuOpt()
+        classFile ← Let(cfField._1)
+        field ← Let(cfField._2)
+        if !classFile.isInterfaceDeclaration
+        if field.isPrivate
+        fieldName ← Let(field.name)
+        declaringClass ← Let(classFile.thisClass)
+        privateFields ← Let(getPrivateFieldsLos(classFile))
+        usedPrivateFields ← Let(usedPrivateFieldsLos(classFile, declaringClass))
+        unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
+        if unusedPrivateFields.size > 0
+      } yield (classFile, unusedPrivateFields)
+    }, {
+      import BATLifting._
+      import InstructionLifting._
+      (for {
+        cfField ← fieldsSQuOpt()
+        classFile ← Let(cfField._1)
+        declaringClass ← Let(classFile.thisClass)
+        field ← Let(cfField._2)
+        if !classFile.isInterfaceDeclaration
+        if field.isPrivate
+        fieldName ← Let(field.name)
+        instructions ← Let(for {
+          method ← classFile.methods
+          body ← method.body
+          instruction ← body.instructions
+        } yield instruction)
+        usedPrivateFields ← Let(instructions.typeCase(
+          when[GETFIELD](asGETFIELD => asGETFIELD.declaringClass ==# declaringClass, _.name),
+          when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass ==# declaringClass, _.name)))
+        if !(usedPrivateFields contains fieldName)
+      } yield (classFile, fieldName)).indexBy(_._1).map(v => (v._1, (v._2 map (_._2)).toSet)).toVector
     })
   }
 
