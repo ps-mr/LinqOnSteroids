@@ -127,7 +127,7 @@ object Macros {
               ////member.encoded))).value)(op1, l.map(c.Expr[Any](_).value):_*))
             Apply(Ident(newTermName("dummy_" + member.encoded)), transform(op1) :: l)
           case Apply(Select(op1, member), l @ List(op2)) if anyBinaryMethods contains member.decoded =>
-            Apply(Ident(newTermName("dummy_" + member.encoded)), transform(op1) :: l)
+            Apply(Ident(newTermName("dummy_" + member.encoded)), (op1 :: l) map (transform(_)))
           case TypeApply(Select(op1, member), typeArgs @ List(typeArg))
             if anyTypeUnaryMethod contains member.decoded
           =>
@@ -139,7 +139,7 @@ object Macros {
             if anyTypeBinaryMethod contains member.decoded
           =>
             Apply(TypeApply(
-              Ident(newTermName("dummy_" + member.encoded)), typeArgs), transform(op1) :: l2 map (transform(_)))
+              Ident(newTermName("dummy_" + member.encoded)), typeArgs), (op1 :: l2) map (transform(_)))
           case _ => super.transform(tree)
         }
       }
