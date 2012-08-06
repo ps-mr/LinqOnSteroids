@@ -85,7 +85,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
     //val res = benchInterpret("%s Los" format msg, builtQuery, timeScala)
     val losMsg = "%s Los" format msg
     val (optimized, optimizationTime) = benchOptimize(losMsg, builtQuery)
-    val (resOpt, timeOpt) = doRun(losMsg + " - after optimization", optimized)
+    val optimizedMsg = " - after optimization"
+    val (resOpt, timeOpt) = doRun(losMsg + optimizedMsg, optimized)
 
     if (!onlyOptimized) {
       val (expectedRes, timeScala) =
@@ -135,7 +136,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
             altOptimized, optimized, new Throwable().getStackTrace mkString (indent, EOL + indent, EOL))
           //Since the result of optimization of the modularized query is in fact different (presumably worse?),
           //let's compare its performance to the optimized non-modular query.
-          val (resAltOpt, timeAltOpt) = doRun(altMsg, altOptimized: Exp[Traversable[T]])
+          val (resAltOpt, timeAltOpt) = doRun(altMsg + optimizedMsg, altOptimized: Exp[Traversable[T]])
           resAltOpt should be (resOpt)
           reportTimeRatio("base embedded version - Alternative %d (optimized)" format i, timeOpt / timeAltOpt)
         }
