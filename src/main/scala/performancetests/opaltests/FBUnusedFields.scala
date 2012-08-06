@@ -169,7 +169,7 @@ trait FBUnusedFields {
           }
         } yield usedPrivateField) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields)
+      } yield (classFile, unusedPrivateFields)
     }, {
       for {
         classFile ← classFiles if !classFile.isInterfaceDeclaration
@@ -178,7 +178,7 @@ trait FBUnusedFields {
         //Note that this could even allow unnesting - should we try to have this unnested?
         unusedPrivateFields = privateFields -- usedPrivateFields(classFile, declaringClass)
         if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields)
+      } yield (classFile, unusedPrivateFields)
     })({
       import BATLifting._
       import InstructionLifting._
@@ -196,7 +196,7 @@ trait FBUnusedFields {
           when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass ==# declaringClass, _.name)))
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields)
+      } yield (classFile, unusedPrivateFields)
     }, Optimization removeIdentityMaps {
       import BATLifting._
       for {
@@ -206,7 +206,7 @@ trait FBUnusedFields {
         usedPrivateFields ← Let(usedPrivateFieldsLos(classFile, declaringClass))
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
-      } yield (classFile, privateFields)
+      } yield (classFile, unusedPrivateFields)
     })
   }
 
