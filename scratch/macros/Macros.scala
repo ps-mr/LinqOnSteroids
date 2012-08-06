@@ -111,11 +111,16 @@ object Macros {
   scala> showRaw(reify(1.asInstanceOf: String).tree)
   res20: String = Typed(Select(Literal(Constant(1)), newTermName("asInstanceOf")), Ident(newTypeName("String")))
     */
+  private val macroDebug = false
   def smart_impl(c: Context)(expr: c.Expr[Any]): c.Expr[Any] = {
     import c.universe._
+    def println(x: => Any) = if (macroDebug) Predef println x
     object smartTransformer extends Transformer {
+      var level = 0
       override def transform(tree: Tree): Tree = {
-        tree match {
+        println("Level %d, tree %s" format(level, showRaw(tree)))
+        level += 1
+        val ret = tree match {
           //this duplicates the check but also checks arity. Do it even more
           //generic. Later.
           case Apply(Select(op1, member), l @ List())
@@ -125,6 +130,7 @@ object Macros {
             //reify((c.Expr[Any => Nothing](Ident(newTermName("dummy_" +
               //member.encoded))).value)(op1))
               ////member.encoded))).value)(op1, l.map(c.Expr[Any](_).value):_*))
+            println("Op1: " + showRaw(op1))
             Apply(Ident(newTermName("dummy_" + member.encoded)), transform(op1) :: l)
           case Apply(Select(op1, member), l @ List(op2)) if anyBinaryMethods contains member.decoded =>
             Apply(Ident(newTermName("dummy_" + member.encoded)), (op1 :: l) map (transform(_)))
@@ -142,8 +148,11 @@ object Macros {
               Ident(newTermName("dummy_" + member.encoded)), typeArgs), (op1 :: l2) map (transform(_)))
           case _ => super.transform(tree)
         }
+        level -= 1
+        ret
       }
     }
+    println(showRaw(expr.tree))
     c.Expr(c.resetAllAttrs(smartTransformer.transform(expr.tree)))
     //Or maybe
     //c.Expr(c.resetAllAttrs(...)), as below?
