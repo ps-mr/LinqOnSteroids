@@ -27,7 +27,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
   //If we're running only the optimized version, we only run it only once.
   override def debugBench = super.debugBench || onlyOptimized
 
-  private def mustModularizedOptimizeEqual = true
+  private def mustModularizedOptimizeEqual = false
 
   private def doRun[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll], c: TypeTag[Coll]) = {
     if (!onlyOptimized)
