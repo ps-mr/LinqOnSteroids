@@ -184,13 +184,13 @@ trait FBUnusedFields {
       import InstructionLifting._
       for {
         classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration
+        declaringClass ← Let(classFile.thisClass)
+        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
         instructions ← Let(for {
           method ← classFile.methods
           body ← method.body
           instruction ← body.instructions
         } yield instruction)
-        declaringClass ← Let(classFile.thisClass)
-        privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
         usedPrivateFields ← Let(instructions.typeCase(
           when[GETFIELD](asGETFIELD => asGETFIELD.declaringClass ==# declaringClass, _.name),
           when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass ==# declaringClass, _.name)))
