@@ -15,4 +15,7 @@ initialCommands in console := """
     import u._
     val a = 1
     val b = 2
+    import myLib._
+    import Macros._
+    val c = asExp(a)
 """
