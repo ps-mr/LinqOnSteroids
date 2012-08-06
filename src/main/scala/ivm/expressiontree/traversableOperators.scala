@@ -129,7 +129,7 @@ case class IndexBy[T: ClassTag: TypeTag, Repr <: Traversable[T] with Traversable
   T => K, immutable.Map[K, Repr], IndexBy[T, Repr, K]](base, f) with PersistValue[CanBuildFrom[Repr, T, Repr]] {
   override def interpret() = CollectionUtils.groupBy(base.interpret())(f.interpret())(cbf)
   override def copy(base: Exp[Repr], f: Exp[T => K]) = IndexBy(base, f)
-  override def toCode = "ivm.expressiontree.CollectionUtils.groupBy(%s)(%s)(%s)" format (base.toCode, f.toCode, CrossStagePersistence persist cbf)
+  override def toCode = "ivm.expressiontree.CollectionUtils.groupBy(%s)(%s)(%s)" format (base.toCode, f.toCode, persistedValue)
   override def cTagT = implicitly
   override def tTagT = implicitly
   def valueToPersist = cbf
