@@ -1,7 +1,9 @@
+import reflect.ClassTag
+
 trait Exp[+T] 
 case class Const[T](e: T) extends Exp[T]
 case class ToString[T](e: Exp[T]) extends Exp[String]
-case class AsInstanceOf[T](e: Exp[Any], t: Manifest[T]) extends Exp[T]
+case class AsInstanceOf[T](e: Exp[Any], t: ClassTag[T]) extends Exp[T]
 case class Eq[T](a: Exp[T], b: Exp[T]) extends Exp[Boolean]
 case class Or(a: Exp[Boolean], b: Exp[Boolean]) extends Exp[Boolean]
 
@@ -34,14 +36,14 @@ object myLib extends App {
   //please move soon to TypeTag, as soon as I get it.
   //Do I even need these methods to be available? What's the point of having an
   //overload for not Exp, Exp?
-  def dummy_isInstanceOf[T: Manifest](a: Any): Boolean =
-    implicitly[Manifest[T]].runtimeClass.isInstance(a)
+  def dummy_isInstanceOf[T: ClassTag](a: Any): Boolean =
+    implicitly[ClassTag[T]].runtimeClass.isInstance(a)
     //a.isInstanceOf[T] //argh...
   //def dummy_asInstanceOf[T](a: Any): T = a.asInstanceOf[T] //no warning...weird.
-  def dummy_asInstanceOf[T: Manifest](a: Any): T =
-    implicitly[Manifest[T]].runtimeClass.cast(a).asInstanceOf[T]
-  def dummy_asInstanceOf[T: Manifest](a: Exp[Any]): Exp[T] =
-    AsInstanceOf(a, implicitly[Manifest[T]])
+  def dummy_asInstanceOf[T: ClassTag](a: Any): T =
+    implicitly[ClassTag[T]].runtimeClass.cast(a).asInstanceOf[T]
+  def dummy_asInstanceOf[T: ClassTag](a: Exp[Any]): Exp[T] =
+    AsInstanceOf(a, implicitly[ClassTag[T]])
   //def dummy_asInstanceOf[T](a: Exp[Any]) = 
 
   val c1 = asExp(1)
