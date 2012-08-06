@@ -130,12 +130,11 @@ trait FBUnusedFields {
       import BATLifting._
       import InstructionLifting._
       for {
-        instructions ← Let(for { //This requires unnesting on a Let... will the optimizer manage? I suspect not, simply because the Let is there.
-        //However, it should inline the Let early because the bound variable is used only once.
+        instructions ← Let(for {
           method ← classFile.methods
           body ← method.body
           instruction ← body.instructions
-        } yield instruction)
+        } yield instruction) //XXX reuse code from methodBodiesInstructionsModularSQuOpt().
         name <- instructions.typeCase(
           when[GETFIELD](asGETFIELD => asGETFIELD.declaringClass ==# declaringClass, _.name),
           when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass ==# declaringClass, _.name))

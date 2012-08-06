@@ -109,7 +109,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
       } yield (altMsg, altOptimized, altQuery, i)
 
       for ((altMsg, altOptimized, altQuery, i) <- optimizedQueries) {
-        //Check that the query produces the same result, and how much slower it is
+        //Check that the query produces the same result *before* optimization, and how much slower it is
         val (resAlt, timeAlt) = doRun(altMsg, altQuery: Exp[Traversable[T]])
         //Check that we get the same result
         resAlt should be (resOpt)

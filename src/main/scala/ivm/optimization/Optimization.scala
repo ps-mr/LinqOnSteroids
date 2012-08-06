@@ -107,6 +107,7 @@ object Optimization {
 
   //The result should be in flatMap normal form.
   private def postIndexing[T](forIdx: Boolean, exp: Exp[T]): Exp[T] =
+  //Why is mergeFilterWithMap&what comes after done only after indexing? I guess to avoid "hiding" filters inside map operations.
     handleFilters(mapToFlatMap(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
       mergeFilters( //Merge filters again after indexing, since it introduces new filters.
         simplifyFilters(
