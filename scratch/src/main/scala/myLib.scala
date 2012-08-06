@@ -54,6 +54,7 @@ object myLib extends App {
   println(eq(c1, c2))
   import Macros._
   println("With macros: " + smart(c1.toString))
+  println("With macros: " + smart(c1.toString.toString))
   println("With macros: " + smart(c1.toString + "foo"))
   println("With macros: " + smart(c1.toString()))
   println("With macros: " + smart(c1 == 2))

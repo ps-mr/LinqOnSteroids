@@ -125,22 +125,22 @@ object Macros {
             //reify((c.Expr[Any => Nothing](Ident(newTermName("dummy_" +
               //member.encoded))).value)(op1))
               ////member.encoded))).value)(op1, l.map(c.Expr[Any](_).value):_*))
-            Apply(Ident(newTermName("dummy_" + member.encoded)), op1 :: l)
+            Apply(Ident(newTermName("dummy_" + member.encoded)), transform(op1) :: l)
           case Apply(Select(op1, member), l @ List(op2)) if anyBinaryMethods contains member.decoded =>
-            Apply(Ident(newTermName("dummy_" + member.encoded)), op1 :: l)
+            Apply(Ident(newTermName("dummy_" + member.encoded)), transform(op1) :: l)
           case TypeApply(Select(op1, member), typeArgs @ List(typeArg))
             if anyTypeUnaryMethod contains member.decoded
           =>
             Apply(TypeApply(
-              Ident(newTermName("dummy_" + member.encoded)), typeArgs), List(op1))
+              Ident(newTermName("dummy_" + member.encoded)), typeArgs), List(transform(op1)))
           case Apply(
             TypeApply(Select(op1, member), typeArgs @ List(typeArg)),
             l2 @ List(arg))
             if anyTypeBinaryMethod contains member.decoded
           =>
             Apply(TypeApply(
-              Ident(newTermName("dummy_" + member.encoded)), typeArgs), op1 :: l2)
-          case _ => super.transform(tree)//XXX use recursion more often.
+              Ident(newTermName("dummy_" + member.encoded)), typeArgs), transform(op1) :: l2 map (transform(_)))
+          case _ => super.transform(tree)
         }
       }
     }
