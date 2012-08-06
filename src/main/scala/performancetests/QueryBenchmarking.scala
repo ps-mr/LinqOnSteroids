@@ -132,8 +132,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         } else if (altOptimized != optimized) {
           import compat.Platform.EOL
           val indent = "    "
-          Console.err.printf("altOptimized != optimized\naltOptimized = %s\noptimized = %s\nAt:\n%s\n",
-            altOptimized, optimized, new Throwable().getStackTrace mkString (indent, EOL + indent, EOL))
+          Console.err.printf("### %s, after optimization, is != optimized\naltOptimized = %s\noptimized = %s\nAt:\n%s\n",
+            altMsg, altOptimized, optimized, new Throwable().getStackTrace mkString (indent, EOL + indent, EOL))
           //Since the result of optimization of the modularized query is in fact different (presumably worse?),
           //let's compare its performance to the optimized non-modular query.
           val (resAltOpt, timeAltOpt) = doRun(altMsg + optimizedMsg, altOptimized: Exp[Traversable[T]])
