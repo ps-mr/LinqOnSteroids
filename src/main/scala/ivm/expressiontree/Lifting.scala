@@ -164,9 +164,7 @@ trait LiftingTrait
                                              g: Exp[T] => Exp[Rest])(
     implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Exp[Map[K, That]] =
   {
-    val tmp: Exp[Map[K, Repr]] = t.indexBy(f)
-    //tmp.map(v => (v._1, MapNode(v._2, Fun(g)))) //This uses MapNode directly, but map could return other nodes
-    tmp.map(v => (v._1, expToTraversableLikeOps(v._2).map(g)(cbf2)))
+    t.indexBy(f).map(v => (v._1, (v._2 map g)(cbf2)))
   }
 
   // XXX: Both these and fmap should not be made available without qualification everywhere. We should just be able to
