@@ -20,7 +20,7 @@ trait FBMethodsThatCallRunFinalizersOnExit {
   this: FBAnalysesBase =>
 
   def analyzeMethodsThatCallRunFinalizersOnExit() {
-    benchQueryComplete("RUN_FINALIZERS_ON_EXIT") { // FB: DM_RUN_FINALIZERS_ON_EXIT
+    benchQueryComplete("RUN_FINALIZERS_ON_EXIT") ({ // FB: DM_RUN_FINALIZERS_ON_EXIT
       for {
         classFile ← classFiles
         method ← classFile.methods
@@ -29,7 +29,14 @@ trait FBMethodsThatCallRunFinalizersOnExit {
         instruction @ INVOKESTATIC(ObjectType(recvClassName), "runFinalizersOnExit", _/*MethodDescriptor(CSeq(BooleanType), VoidType)*/) ← body.instructions
         if recvClassName == "java/lang/System" || recvClassName == "java/lang/Runtime"
       } yield (classFile, method, instruction)
-    } {
+    },
+    for {
+      (classFile, method, body, instruction @
+        INVOKESTATIC(ObjectType(recvClassName),
+        "runFinalizersOnExit", _/*MethodDescriptor(CSeq(BooleanType), VoidType)*/)) ← methodBodiesInstructionsModularNative()
+      //the method descriptor is not checked in FindBugs - there's no need
+      if recvClassName == "java/lang/System" || recvClassName == "java/lang/Runtime"
+    } yield (classFile, method, instruction))({
       import BATLifting._
       import InstructionLifting._
 
@@ -48,6 +55,28 @@ trait FBMethodsThatCallRunFinalizersOnExit {
       // && instruction.methodDescriptor ==# MethodDescriptor(Seq(BooleanType), VoidType)
       //if desc ==# MethodDescriptor(Seq(BooleanType), VoidType)
       } yield (classFile, method, instruction)
-    }
+    }, {
+      import BATLifting._
+      import InstructionLifting._
+      import dbschema.squopt._
+
+      for {
+        cfb ← methodBodiesModularSQuOpt()
+        instruction ← cfb.body.instructions.typeCase(when[INVOKESTATIC](
+          instruction => instruction.name ==# "runFinalizersOnExit" && (instruction.declaringClass ==# ObjectType("java/lang/System") || instruction.declaringClass ==# ObjectType("java/lang/Runtime")), identity))
+      } yield (cfb.classFile, cfb.method, instruction)
+    }, {
+      import BATLifting._
+      import InstructionLifting._
+
+      for {
+        cfbi ← methodBodiesInstructionsModularSQuOpt()
+        classFile ← Let(cfbi._1)
+        method ← Let(cfbi._2)
+        body ← Let(cfbi._3)
+        instruction ← body.instructions.typeCase(when[INVOKESTATIC](
+          instruction => instruction.name ==# "runFinalizersOnExit" && (instruction.declaringClass ==# ObjectType("java/lang/System") || instruction.declaringClass ==# ObjectType("java/lang/Runtime")), identity))
+      } yield (classFile, method, instruction)
+    })
   }
 }
