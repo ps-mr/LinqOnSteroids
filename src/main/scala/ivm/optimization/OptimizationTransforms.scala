@@ -79,14 +79,18 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
     case e => e
   }
 
+  //Converts Filter nodes into WithFilter where possible without changing the type.
+  //What I did before was introducing View and Force nodes; well, it did not speed up queries.
   // Add view and force around Filter to imitate withFilter.
   // Transformation rule:
   // coll.filter(f).*map(g) -> coll.view.filter(f).*map(g).force
   // where *map stands for map or flatMap (the same on both sides).
-  //Note: this assumes that maps have been converted to flatMaps.
+  //
+  //Expects a query in flatMap normal form.
   val filterToWithFilter: Exp[_] => Exp[_] = {
     case FlatMap(Filter(coll, p), f) =>
-      (stripView(coll).view filter p flatMap f).force
+      fmap(fmap(coll, p, 'TraversableLike)('withFilter, _ withFilter _), f, 'FilterMonadic)('flatMap, _ flatMap _)
+      //WithFilter(coll, p) flatMap f //wrong return type, still view-based...
     case e => e
   }
 
