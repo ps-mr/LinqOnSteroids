@@ -132,4 +132,10 @@ trait Unnesting {
       collEp flatMap Fun.makefun(generalUnnesting(ep filter fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
     case e => e
   }
+
+  val dropUnusedBindings: Exp[_] => Exp[_] = {
+    case AnyMapBinding(coll, f @ FuncExpBody(body)) if !(body isOrContains f.x) =>
+      body
+    case e => e
+  }
 }

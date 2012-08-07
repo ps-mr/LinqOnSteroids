@@ -26,6 +26,14 @@ object OptimizationUtil {
   //Pattern match to connect two conditions
   object & { def unapply[A](a: A) = Some((a, a)) }
 
+  object AnyMapBinding {
+    def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _])] = e match {
+      case FlatMap(base, f) => Some((base, f))
+      case MapNode(base, f) => Some((base, f))
+      case _ => None
+    }
+  }
+
   object BaseBinding {
     def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _])] = e match {
       case FlatMap(base, f) => Some((base, f))
