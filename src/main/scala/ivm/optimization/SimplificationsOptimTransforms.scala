@@ -27,16 +27,17 @@ trait SimplificationsOptimTransforms {
     case e => e
   }
 
-  val simplifyForceView: Exp[_] => Exp[_] = {
+  private def Transformer(f: PartialFunction[Exp[_], Exp[_]]): PartialFunction[Exp[_], Exp[_]] = f
+  val simplifyForceView: Exp[_] => Exp[_] = Transformer {
     case View(Force(coll)) => coll
     case Force(View(coll)) => coll
-
+  } orElse (Transformer {
     //Fusion
     case Force(coll @ Force(_)) => coll
     case View(coll @ View(_)) => coll
 
     case e => e
-  }
+  })
 
   val removeTrivialFilters: Exp[_] => Exp[_] = {
     case Filter(coll, FuncExpBody(Const(true))) =>
