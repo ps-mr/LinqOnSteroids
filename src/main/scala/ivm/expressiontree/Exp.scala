@@ -17,7 +17,7 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   def nodeArity: Int
 
   /*private[ivm]*/ def children: List[Exp[_]]
-  /*private[ivm]*/ def roots: Seq[Exp[RootType]] = Seq.empty
+  /*private[ivm]*/ def roots: Seq[Exp[RootType]] = Nil
   protected def checkedGenericConstructor(v: List[Exp[_]]): Exp[T]
 
   /*private[ivm]*/ def genericConstructor(v: List[Exp[_]]): Exp[T] =
