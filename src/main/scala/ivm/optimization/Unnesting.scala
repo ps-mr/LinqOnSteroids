@@ -137,7 +137,7 @@ trait Unnesting {
   //It's important that this is applied after a full bottom-up pass of existsRenester, and not as
   //exp.transform(existsRenester orElse dropUnusedBindings).
   val dropUnusedBindings: Exp[_] => Exp[_] = {
-    case fm @ FlatMap(coll, f @ FuncExpBody(body)) if !(body isOrContains f.x) && !isCbfIdempotent(fm.c) =>
+    case fm @ FlatMap(coll, f @ FuncExpBody(body)) if !(body isOrContains f.x) && isCbfIdempotent(fm.c) =>
       if_# (coll.nonEmpty) { body } else_# { Seq.empty }
     //case MapNode(coll, f @ FuncExpBody(body)) if !(body isOrContains f.x) =>
       //Seq(body)
