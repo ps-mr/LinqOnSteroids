@@ -111,13 +111,17 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     val transformedChilds = e match {
       case FlatMap(coll: Exp[Traversable[_]], fmFun) =>
         val newEnv: List[EnvEntry] = (fmFun.x, coll) :: env
-        Seq(transformWithEnv(coll, env, transformer),
+        List(transformWithEnv(coll, env, transformer),
           // The new binding is only in scope in the _body_ of the function, not in the whole of it,
           // but it won't matter.
           transformWithEnv(fmFun, newEnv, transformer))
-      case _ => for (c <- e.children) yield transformWithEnv(c, env, transformer)
+      case _ => e.children mapConserve (c => transformWithEnv(c, env, transformer))
     }
-    val newself = e.genericConstructor(transformedChilds)
+    val newself =
+      if (transformedChilds eq e.children)
+        e
+      else
+        e genericConstructor transformedChilds
     transformer(newself, env).asInstanceOf[Exp[T]]
   }
   //Calling this app hides the existing implicit conversion.
