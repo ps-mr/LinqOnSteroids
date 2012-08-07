@@ -62,6 +62,7 @@ trait SimplificationsOptimTransforms {
       case Or(x, Const(false)) => x
       case Or(x, c@Const(true)) => c
       case Not(Not(c)) => c
+      case Not(Const(b)) => !b
       case e => e
     }
 
