@@ -118,7 +118,7 @@ trait FoldPhysicalOperators {
     case LEq(Const(1), Size(coll)) =>
       coll.nonEmpty
     case Not(Eq(Size(coll), Const(0))) =>
-      coll.nonEmpty
+      coll.nonEmpty   //This case should never trigger - the Eq node will first be transformed by the case below.
     case Eq(Size(coll), Const(0)) =>
       coll.isEmpty
     case e => e
