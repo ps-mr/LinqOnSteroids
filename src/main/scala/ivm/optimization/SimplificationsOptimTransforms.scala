@@ -110,6 +110,10 @@ trait SimplificationsOptimTransforms {
       e.metaProductElement(selected - 1)
   }
 
+  val deltaReductionIsEmpty: PartialFunction[Exp[_], Exp[_]] = {
+    case IsEmpty(ExpSeq(seq)) => seq.isEmpty
+  }
+
   val betaReduction: PartialFunction[Exp[_], Exp[_]] = {
     //To ensure termination, this must only apply if this rule changes behavior, that is, if App contains a Fun!
     //Otherwise fToFunOps will recreate a new App node.
@@ -144,5 +148,5 @@ trait SimplificationsOptimTransforms {
   //def betaDeltaReducer: Exp[_] => Exp[_] = (deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse {case e => e} //that's the shortest way of writing identity.
   //This one always terminates, as long as the involved PartialFunctions are only defined when they do transform their input.
   //TODO: write a Kleene star to encapsulate this pattern; then lookup under what name is this technique already known.
-  def betaDeltaReducer(exp: Exp[_]): Exp[_] = ((deltaReductionTuple orElse betaReduction) andThen betaDeltaReducer orElse emptyTransform)(exp)
+  def betaDeltaReducer(exp: Exp[_]): Exp[_] = ((deltaReductionTuple orElse deltaReductionIsEmpty orElse betaReduction) andThen betaDeltaReducer orElse emptyTransform)(exp)
 }
