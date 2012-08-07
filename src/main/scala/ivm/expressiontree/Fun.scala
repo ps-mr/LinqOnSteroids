@@ -30,7 +30,7 @@ abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
 
   //Note that thanks to this line and to copy(), we can perform optimization within function bodies, which is notable
   //(even if probably not a contribution)!
-  /*private[ivm]*/ override def children = Seq(body)
+  /*private[ivm]*/ override def children = body :: Nil
   //private[ivm] override def closedTermChildren: Seq[Exp[_]] = Seq()
   //Copied from Arity1OpTrait:
   override def nodeArity = 1
@@ -60,7 +60,7 @@ abstract class Fun[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S 
   def copy[U >: T](t1: Exp[U]): Fun[S, U] = Fun.makefun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[Fun[_,_]]
   //Copied from Arity1OpTrait:
-  override protected def checkedGenericConstructor(v: Seq[Exp[_]]) = copy(v(0).asInstanceOf[Exp[T]])
+  override protected def checkedGenericConstructor(v: List[Exp[_]]) = copy(v.head.asInstanceOf[Exp[T]])
 }
 
 // Note that giving f the type PartialFunction[Exp[S],Exp[T]] would be incorrect, because "definedness"
@@ -74,7 +74,7 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
   def copy[U >: T](t1: Exp[Option[U]]): PartialFuncExp[S, U] = Fun.makePartialFun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[PartialFuncExp[_,_]]
   //Copied from Arity1OpTrait:
-  override protected def checkedGenericConstructor(v: Seq[Exp[_]]) = copy(v(0).asInstanceOf[Exp[Option[T]]])
+  override protected def checkedGenericConstructor(v: List[Exp[_]]) = copy(v.head.asInstanceOf[Exp[Option[T]]])
   override def toCode = "Function.unlift(%s)" format (Fun(f).toCode)
 }
 

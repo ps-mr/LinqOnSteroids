@@ -9,8 +9,8 @@ package ivm.expressiontree
 
 trait Arity0Exp[+R] extends Exp[R] {
   override def nodeArity = 0
-  def children = Seq()
-  override protected def checkedGenericConstructor(v: Seq[Exp[_]]) = this
+  def children = Nil
+  override protected def checkedGenericConstructor(v: List[Exp[_]]) = this
 }
 
 trait Arity1OpExpTrait[T1, +R, Self <: Exp[R]] extends Arity1OpTrait[Exp[T1], R, Self] {

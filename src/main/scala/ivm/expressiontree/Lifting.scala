@@ -76,14 +76,14 @@ trait OptionLifting extends BaseExps {
   //Note: even though ExpOption does not directly contain Exp nodes, it contains them indirectly, and they also need to be
   //transformed.
   case class ExpOption[T](e: Option[Exp[T]]) extends Exp[Option[T]] with PrefixPrinting {
-    override def children = e.toSeq
+    override def children = e.toList
     override def nodeArity = e.size
-    override protected def checkedGenericConstructor(v: Seq[Exp[_]]): Exp[Option[T]] = v match {
+    override protected def checkedGenericConstructor(v: List[Exp[_]]): Exp[Option[T]] = v match {
       //Note: the length of the input sequence is checked by genericConstructor and will match the current one.
       //Knowing that does not lead to simplifying this code though.
-      case Seq() =>
+      case Nil =>
         ExpOption(None)
-      case Seq(e) =>
+      case e :: Nil =>
         ExpOption(Some(e.asInstanceOf[Exp[T]]))
     }
     override def interpret() = e.map(_.interpret())

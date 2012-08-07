@@ -44,8 +44,8 @@ trait Arity${arity}OpTrait[${paramsLoopComma("A%d <: Exp[_]")}, +R, +Self <: Exp
   this: Self =>
   ${paramsLoop("\n  ")("def " + argPfx + "%d: A%<d")}
   override def nodeArity = ${arity}
-  def children = Seq(${params})
-  override protected def checkedGenericConstructor(v: Seq[Exp[_]]) =
+  def children = List(${params})
+  override protected def checkedGenericConstructor(v: List[Exp[_]]) =
     copy(${baseParLoop(arity)(i => "v(%d).asInstanceOf[A%d]" format (i - 1, i))})
 <%--
   //Ensure that copy returns the correct type. --%>

@@ -16,11 +16,11 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
 
   def nodeArity: Int
 
-  /*private[ivm]*/ def children: Seq[Exp[_]]
+  /*private[ivm]*/ def children: List[Exp[_]]
   /*private[ivm]*/ def roots: Seq[Exp[RootType]] = Seq.empty
-  protected def checkedGenericConstructor(v: Seq[Exp[_]]): Exp[T]
+  protected def checkedGenericConstructor(v: List[Exp[_]]): Exp[T]
 
-  /*private[ivm]*/ def genericConstructor(v: Seq[Exp[_]]): Exp[T] =
+  /*private[ivm]*/ def genericConstructor(v: List[Exp[_]]): Exp[T] =
     if (v.length == nodeArity)
       checkedGenericConstructor(v)
     else
@@ -37,8 +37,12 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   /*private[ivm]*/ def visitPreorderRoots(visitor: Exp[_] => Unit) = visitPreorder(visitor, _.roots)
 
   /*private[ivm]*/ def transform(transformer: Exp[_] => Exp[_]): Exp[T] = {
-    val transformedChilds = for (c <- children) yield c.transform(transformer)//XXX: here we call map. Consider List.mapConserve instead.
-    val newself = genericConstructor(transformedChilds)
+    val transformedChilds = children mapConserve (_ transform transformer)
+    val newself =
+      if (transformedChilds eq children)
+        this
+      else
+        genericConstructor(transformedChilds)
     transformer(newself).asInstanceOf[Exp[T]]
   }
   //This could use as interface some Foldable-like stuff (or Haskell's Traversable, IIRC).
