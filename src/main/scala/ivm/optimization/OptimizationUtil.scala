@@ -75,4 +75,6 @@ object OptimizationUtil {
       case View(coll2) => coll2.asInstanceOf[Exp[T]]
       case _ => coll
     }
+
+  def Transformer(f: PartialFunction[Exp[_], Exp[_]]) = f
 }

@@ -27,7 +27,6 @@ trait SimplificationsOptimTransforms {
     case e => e
   }
 
-  private def Transformer(f: PartialFunction[Exp[_], Exp[_]]): PartialFunction[Exp[_], Exp[_]] = f
   val simplifyForceView: Exp[_] => Exp[_] = Transformer {
     case View(Force(coll)) => coll
     case Force(View(coll)) => coll
