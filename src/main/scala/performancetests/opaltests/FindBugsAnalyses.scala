@@ -91,7 +91,7 @@ object FindBugsAnalyses {
 
 class FindBugsAnalyses(val zipFiles: Seq[String])
   extends FBAnalysesBase
-  with FBUnusedFields with FBExplicitGC with FBConfusedInheritance with FBPublicFinalizer
+  with FBUnusedFields with FBExplicitGC with FBProtectedFields with FBPublicFinalizer
   with FBSerializableNoConstructor with FBCatchIllegalMonitorStateException with FBCovariantCompareToMethods
   with FBAbstractClassesThatDefinesCovariantEquals with FBMethodsThatCallRunFinalizersOnExit
   with FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking
@@ -129,7 +129,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   // it is not meant to demonstrate how to write such analyses in an efficient
   // manner.
   test("ProtectedField") {
-    analyzeConfusedInheritance()
+    analyzeProtectedFields()
   }
 
   test("UnusedFields") {
@@ -373,7 +373,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   }
 
   def analyze() {
-    analyzeConfusedInheritance()
+    analyzeProtectedFields()
     analyzeUnusedFields()
     analyzeExplicitGC()
     analyzePublicFinalizer()

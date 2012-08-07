@@ -21,10 +21,10 @@ import collection.{Seq => CSeq}
  * Date: 4/8/2012
  */
 
-trait FBConfusedInheritance {
+trait FBProtectedFields {
   this: FBAnalysesBase =>
 
-  def analyzeConfusedInheritance() {
+  def analyzeProtectedFields() {
     import BATLifting._
     // FINDBUGS: CI: Class is final but declares protected field (CI_CONFUSED_INHERITANCE) // http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/ConfusedInheritance.java
     benchQueryComplete("PROTECTED_FIELD") ( //FB:"CI_CONFUSED_INHERITANCE") {
