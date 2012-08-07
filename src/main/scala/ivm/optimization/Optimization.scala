@@ -228,7 +228,7 @@ object Optimization {
   def letTransformer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformer)
 
   //This should be called after any sort of inlining, including for instance map fusion.
-  def betaDeltaReducer[T](exp: Exp[T]): Exp[T] = /*constantFolding*/(exp.transform(OptimizationTransforms.betaDeltaReducer))
+  def betaDeltaReducer[T](exp: Exp[T]): Exp[T] = /*constantFolding*/simplifyConditions(exp.transform(OptimizationTransforms.betaDeltaReducer))
 
   def existsRenester[T](exp: Exp[T]): Exp[T] = dropUnusedBindings(exp.transform(OptimizationTransforms.existsRenester))
 
