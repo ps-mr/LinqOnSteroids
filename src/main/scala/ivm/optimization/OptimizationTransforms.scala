@@ -86,11 +86,14 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
   // coll.filter(f).*map(g) -> coll.view.filter(f).*map(g).force
   // where *map stands for map or flatMap (the same on both sides).
   //
-  //Expects a query in flatMap normal form.
+  //Expects a query in map normal form.
   val filterToWithFilter: Exp[_] => Exp[_] = {
     case FlatMap(Filter(coll, p), f) =>
       fmap(fmap(coll, p, 'TraversableLike)('withFilter, _ withFilter _), f, 'FilterMonadic)('flatMap, _ flatMap _)
       //WithFilter(coll, p) flatMap f //wrong return type, still view-based...
+    case MapNode(Filter(coll, p), f) => //Since flatMap after this query will not be transformed into maps, we need to have
+      //a separate case.
+      fmap(fmap(coll, p, 'TraversableLike)('withFilter, _ withFilter _), f, 'FilterMonadic)('map, _ map _)
     case e => e
   }
 
