@@ -190,13 +190,11 @@ object Optimization {
 
   def mergeFlatMaps[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeFlatMaps)
 
-  def mergeViews[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeViews)
-
   def sizeToEmpty[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.sizeToEmpty)
 
   def normalize[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.normalizer)
 
-  def mergeFilters[T](exp: Exp[T]): Exp[T] = mergeViews(exp.transform(OptimizationTransforms.mergeFilters))
+  def mergeFilters[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.mergeFilters)
 
   def splitFilters[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.splitFilters)
 

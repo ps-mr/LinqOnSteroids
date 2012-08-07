@@ -55,13 +55,6 @@ trait Fusion {
     case e => e
   }
 
-  //Fuse multiple views
-  val mergeViews: Exp[_] => Exp[_] = {
-    case View(coll@View(_)) =>
-      coll
-    case e => e
-  }
-
   /*
    * Consider:
    * coll1 flatMap (x1 => coll2 map (x2 => (x1, x2)) filter (pair => test(pair._1))

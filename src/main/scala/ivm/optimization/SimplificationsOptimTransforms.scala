@@ -30,6 +30,11 @@ trait SimplificationsOptimTransforms {
   val simplifyForceView: Exp[_] => Exp[_] = {
     case View(Force(coll)) => coll
     case Force(View(coll)) => coll
+
+    //Fusion
+    case Force(coll @ Force(_)) => coll
+    case View(coll @ View(_)) => coll
+
     case e => e
   }
 
