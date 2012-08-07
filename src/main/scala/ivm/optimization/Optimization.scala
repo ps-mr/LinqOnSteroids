@@ -127,7 +127,6 @@ object Optimization {
       compose basicInlining[T] //5-7s
       compose existsUnnester[T] //6s
       compose removeRedundantOption[T] compose toTypeFilter[T] compose sizeToEmpty[T]
-      compose dropUnusedBindings[T]
       compose generalUnnesting[T] //11s
       compose mapToFlatMap[T] //12-18s
       compose removeIdentityMaps[T] //40s
@@ -229,9 +228,9 @@ object Optimization {
   def letTransformer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformer)
 
   //This should be called after any sort of inlining, including for instance map fusion.
-  def betaDeltaReducer[T](exp: Exp[T]): Exp[T] = dropUnusedBindings/*constantFolding*/(exp.transform(OptimizationTransforms.betaDeltaReducer))
+  def betaDeltaReducer[T](exp: Exp[T]): Exp[T] = /*constantFolding*/(exp.transform(OptimizationTransforms.betaDeltaReducer))
 
-  def existsRenester[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.existsRenester)
+  def existsRenester[T](exp: Exp[T]): Exp[T] = dropUnusedBindings(exp.transform(OptimizationTransforms.existsRenester))
 
   def existsUnnester[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.existsUnnester)
 
