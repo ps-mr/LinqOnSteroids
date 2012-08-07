@@ -65,7 +65,7 @@ trait FBExplicitGC {
     }, {
       import BATLifting._
       import InstructionLifting._
-      import dbschema.squopt._
+      import schema.squopt._
       (for {
         methodAndBody <- methodBodiesSQuOpt() //<---
         instruction <- methodAndBody.body.instructions.typeCase(
@@ -77,7 +77,7 @@ trait FBExplicitGC {
     }, {
       import BATLifting._
       import InstructionLifting._
-      import dbschema.squopt._
+      import schema.squopt._
       (for {
         methodAndBody <- methodBodiesModularSQuOpt() //<--- changed
         instruction <- methodAndBody.body.instructions.typeCase(
@@ -89,7 +89,7 @@ trait FBExplicitGC {
     }/*, {
       import BATLifting._
       import InstructionLifting._
-      import dbschema.squopt._
+      import schema.squopt._
       (for {
         methodBodyInstr <- methodBodiesInstructionsModularSQuOpt() //<--- changed
         instruction <- methodBodyInstr.body.instructions.typeCase( //How do we write typeCase on a single value? Not possible - not directly.

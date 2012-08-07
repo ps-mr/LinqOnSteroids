@@ -69,8 +69,8 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
 
   def methodBodiesSQuOpt() = {
     import BATLifting._
-    //import dbschema._ //{squopt => _, _}
-    import dbschema.squopt._
+    //import schema._ //{squopt => _, _}
+    import schema.squopt._
     for {
       classFile ← classFiles.asSmart
       method ← classFile.methods
@@ -79,7 +79,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
   }
 
   def methodBodiesModularNative() = {
-    import dbschema._
+    import schema._
     for {
       (classFile, method) <- methodsNative()
       body <- method.body
@@ -87,7 +87,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
   }
 
   def methodBodiesInstructionsModularNative() = {
-    import dbschema._
+    import schema._
     for {
       MethodRecord(classFile, method, body) ← methodBodiesModularNative()
       instruction ← body.instructions
@@ -96,7 +96,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
 
   def methodBodiesModularSQuOpt() = {
     import BATLifting._
-    import dbschema.squopt._
+    import schema.squopt._
     for {
       cfM <- methodsSQuOpt()
       classFile <- Let(cfM._1)
@@ -107,7 +107,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
 
   def methodBodiesInstructionsModularSQuOpt() = {
     import BATLifting._
-    import dbschema.squopt._
+    import schema.squopt._
     for {
       cfMB /*(classFile, method, body)*/ ← methodBodiesModularSQuOpt()
       instruction ← cfMB.body.instructions

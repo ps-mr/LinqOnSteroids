@@ -14,7 +14,7 @@ import expressiontree.Util
 //New example, discussed with Christian.
 
 //Import most definitions from Figure 1 - Definition of the schema and of content
-import dbschema.{squopt => _, _}
+import schema.{squopt => _, _}
 class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   //Rest of Figure 1 - Definition of the schema and of content
   val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "Pearson Education", Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
@@ -68,7 +68,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   //Figure 6. Reified query in SQUOPT
   import squopt.imports._
-  import dbschema.squopt._
+  import schema.squopt._
 
   val recordsQuery = for {
    book <- books.asSmart

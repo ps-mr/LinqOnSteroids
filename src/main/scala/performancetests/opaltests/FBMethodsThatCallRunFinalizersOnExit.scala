@@ -58,7 +58,7 @@ trait FBMethodsThatCallRunFinalizersOnExit {
     }, {
       import BATLifting._
       import InstructionLifting._
-      import dbschema.squopt._
+      import schema.squopt._
 
       for {
         cfb ← methodBodiesModularSQuOpt()
