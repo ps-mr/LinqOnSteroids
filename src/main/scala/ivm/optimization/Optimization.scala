@@ -108,14 +108,14 @@ object Optimization {
   //The result should be in flatMap normal form.
   private def postIndexing[T](forIdx: Boolean, exp: Exp[T]): Exp[T] =
   //Why is mergeFilterWithMap&what comes after done only after indexing? I guess to avoid "hiding" filters inside map operations.
-    handleFilters(mapToFlatMap(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(//simplifyForceView(filterToWithFilter(
+    simplifyForceView(filterToWithFilter(handleFilters(mapToFlatMap(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(
       mergeFilters( //Merge filters again after indexing, since it introduces new filters.
         simplifyFilters(
           // XXX: tests if existsRenester works in this position, if it does not leave optimization
           // opportunities which require more aggressive optimizations, and in general for any negative side-effect
           // from doing this so late. Unfortunately, this must done after indexing.
           // It used instead to be called at the beginning of physicalOptimize.
-          resimplFilterIdentity(if (forIdx) exp else existsRenester(exp))))))))))))
+          resimplFilterIdentity(if (forIdx) exp else existsRenester(exp))))))))))))))
 
   private[optimization] def preIndexing[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
   // downcasting exp to Exp[Nothing].
