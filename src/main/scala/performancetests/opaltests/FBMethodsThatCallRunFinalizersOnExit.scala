@@ -65,7 +65,7 @@ trait FBMethodsThatCallRunFinalizersOnExit {
         instruction ← cfb.body.instructions.typeCase(when[INVOKESTATIC](
           instruction => instruction.name ==# "runFinalizersOnExit" && (instruction.declaringClass ==# ObjectType("java/lang/System") || instruction.declaringClass ==# ObjectType("java/lang/Runtime")), identity))
       } yield (cfb.classFile, cfb.method, instruction)
-    }, {
+    }/*, {
       import BATLifting._
       import InstructionLifting._
 
@@ -77,6 +77,6 @@ trait FBMethodsThatCallRunFinalizersOnExit {
         instruction ← body.instructions.typeCase(when[INVOKESTATIC](
           instruction => instruction.name ==# "runFinalizersOnExit" && (instruction.declaringClass ==# ObjectType("java/lang/System") || instruction.declaringClass ==# ObjectType("java/lang/Runtime")), identity))
       } yield (classFile, method, instruction)
-    })
+    }*/)
   }
 }
