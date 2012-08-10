@@ -52,7 +52,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
          if(first.methodDescriptor.parameterTypes.size == 1 &&
             !first.methodDescriptor.parameterTypes.head.isReferenceType &&
             second.methodDescriptor.parameterTypes.size == 0 &&
-            first.declaringClass.asInstanceOf[ObjectType].className.startsWith("java/lang") &&
+            first.declaringClass.asInstanceOf_#[ObjectType].className.startsWith("java/lang") &&
             first.declaringClass == second.declaringClass &&
             second.name.endsWith("Value") &&
             first.methodDescriptor.parameterTypes.head == second.methodDescriptor.returnType
