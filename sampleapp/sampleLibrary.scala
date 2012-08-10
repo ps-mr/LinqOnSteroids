@@ -14,6 +14,6 @@ import de.tud.cs.st.bat.resolved._
 
  */
 case class MethodRecord(classFile: ClassFile, method: Method, body: Code)
-case class BytecodeInstrWindow(finalInstrIdx: Int, instrs: Seq[Instruction], classFile: ClassFile, method: Method)
+case class BytecodeInstrWindow(instrIdxes: Seq[Int], instrs: Seq[Instruction], classFile: ClassFile, method: Method)
 
 // vim: set ts=4 sw=4 et:
