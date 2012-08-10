@@ -122,7 +122,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     } yield BytecodeInstrWindow(instrIdxes, instrs, classFile, method)
   }
 
-  def  methodBodiesInstructionsSlidingSQuOpt(len: Int): Exp[Seq[schema.BytecodeInstrWindow]] = {
+  def methodBodiesInstructionsSlidingSQuOpt(len: Int): Exp[Seq[schema.BytecodeInstrWindow]] = {
     import BATLifting._
     import schema.squopt._
     for {

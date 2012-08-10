@@ -85,6 +85,8 @@ trait OptionLifting extends BaseExps {
         ExpOption(None)
       case e :: Nil =>
         ExpOption(Some(e.asInstanceOf[Exp[T]]))
+      case _ =>
+        throw new IllegalArgumentException
     }
     override def interpret() = e.map(_.interpret())
     def prefix = e match {
