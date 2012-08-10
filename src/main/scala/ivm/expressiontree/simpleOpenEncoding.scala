@@ -222,7 +222,9 @@ trait BaseTypesOps {
   //No. Not both operands must be strings, just one is enough.
   class StringOps(t: Exp[String]) {
     def +(that: Exp[String]): Exp[String] = StringConcat(t, that)
-    def contains(that: Exp[CharSequence]) = fmap(this.t, that)('StringOps$contains, _ contains _)
+    def contains(that: Exp[CharSequence]) = fmap(this.t, that, 'StringOps)('contains, _ contains _)
+    def startsWith(that: Exp[String]) = fmap(this.t, that, 'StringOps)('startsWith, _ startsWith _)
+    def endsWith(that: Exp[String]) = fmap(this.t, that, 'StringOps)('endsWith, _ endsWith _)
   }
 
   class BooleanOps(b: Exp[Boolean]) {

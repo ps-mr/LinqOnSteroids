@@ -1,4 +1,5 @@
-package performancetests.opaltests.analyses
+package performancetests.opaltests
+package analyses
 
 
 /**
@@ -40,11 +41,12 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
     import expressiontree._
     import Lifting._
     import BATLifting._
+    import InstructionLifting._
     import ivm.expressiontree.Util.ExtraImplicits._
 
     for (classFile ← classFiles.asSmart if( classFile.majorVersion > 49);
          method ← classFile.methods if method.body.isDefined;
-         window ← withIndexSliding(method.body.get.instructions, 2);
+         window ← withIndexExp(method.body.get.instructions).sliding(2);
          first ← window.head._1.ifInstanceOf[INVOKESPECIAL];
          second ← window.last._1.ifInstanceOf[INVOKEVIRTUAL]
          if(first.methodDescriptor.parameterTypes.size == 1 &&
