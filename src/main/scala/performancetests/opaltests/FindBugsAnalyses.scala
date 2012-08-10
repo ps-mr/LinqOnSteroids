@@ -34,6 +34,7 @@
 package performancetests
 package opaltests
 
+import analyses.BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
 import ivm._
 
 import collections.TypeMapping
@@ -94,6 +95,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   with FBUnusedFields with FBExplicitGC with FBProtectedFields with FBPublicFinalizer
   with FBSerializableNoConstructor with FBCatchIllegalMonitorStateException with FBCovariantCompareToMethods
   with FBAbstractClassesThatDefinesCovariantEquals with FBMethodsThatCallRunFinalizersOnExit
+  with BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
   with FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking
 {
   import FindBugsAnalyses.QueryAnd
@@ -124,6 +126,10 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
 */
   }
 */
+
+  test("BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION") {
+    analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
+  }
 
   // The following code is meant to show how easy it is to write analyses;
   // it is not meant to demonstrate how to write such analyses in an efficient
