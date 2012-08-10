@@ -18,5 +18,10 @@ case class IfInstanceOf[T, S](x: Exp[T], classS: Class[_])(implicit val cS: Type
 
 case class IsInstanceOf[T, S](x: Exp[T])(implicit val cS: ClassTag[S], val tS: TypeTag[S]) extends Arity1OpExp[T, Boolean, IsInstanceOf[T, S]](x) {
   def copy(x: Exp[T]) = IsInstanceOf(x)
-  def interpret() = x != null && (cS.runtimeClass isInstance x)
+  def interpret() = {
+    val res = x.interpret()
+    res != null && (cS.runtimeClass isInstance res)
+  }
+}
+
 }
