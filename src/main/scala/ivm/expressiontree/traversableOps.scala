@@ -1,7 +1,7 @@
 package ivm.expressiontree
 
-import collection.generic.CanBuildFrom
-import collection.{GenTraversableView, TraversableView, TraversableViewLike, TraversableLike}
+import collection.generic.{CanBuildFrom, GenericTraversableTemplate}
+import collection.{GenTraversableView, IterableLike, TraversableView, TraversableViewLike, TraversableLike}
 import ivm.collections.TypeMapping
 
 trait TraversableOps {
@@ -114,6 +114,14 @@ trait TraversableOps {
 
     def typeCase[Res: TypeTag](cases: TypeCase[_, Res]*): Exp[Set[Res]] = TypeCaseExp(this.t, cases)
   }
+
+  class TraversableTemplateOps[T, +CC[X] <: Traversable[X] with GenericTraversableTemplate[X, CC]](protected val t: Exp[CC[T]]) {
+    def unzip[T1, T2](implicit asPair: T => (T1, T2)): Exp[(CC[T1], CC[T2])] = fmap(t, 'TraversableTemplate)('unzip, _.unzip)
+  }
+  implicit def expToTraversableTemplateOps[T, CC[X] <: Traversable[X] with GenericTraversableTemplate[X, CC]](v: Exp[CC[T]]) =
+    new TraversableTemplateOps[T, CC](v)
+  //implicit def toTraversableTemplateOps[T: TypeTag, CC[X] <: Traversable[X] with GenericTraversableTemplate[T, CC]](v: CC[T]) =
+    //expToTraversableTemplateOps(v)
 
   class TraversableViewLikeOps[
     T,
@@ -249,7 +257,14 @@ trait MapOps extends CollectionMapOps {
 }
 
 trait IterableOps {
-  this: LiftingConvs with TraversableOps =>
+  this: LiftingConvs with TraversableOps with FunctionOps =>
+  implicit def expToIterableLikeOps[T, Repr <: Iterable[T] with IterableLike[T, Repr]](v: Exp[Repr with IterableLike[T, Repr]]) =
+    new IterableLikeOps[T, Repr] {val t = v}
+  trait IterableLikeOps[T, Repr <: Iterable[T] with IterableLike[T, Repr]]
+    extends Holder[Repr] {
+    def zipWithIndex[T1 >: T, That](implicit bf: CanBuildFrom[Repr, (T1, Int), That]): Exp[That] = fmap(this.t, 'IterableLike)('zipWithIndex, _.zipWithIndex)
+    def sliding(size: Exp[Int]): Exp[Seq[Repr]] = fmap(this.t, size, 'IterableLike)('sliding, (coll, size) => (coll sliding size).toStream)
+  }
 }
 
 //Unlike for other collection, Seq by default refers to collection.Seq, not to collection.immutable.Seq
@@ -305,7 +320,7 @@ object MaybeSub extends LowPriority {
 
 import collection.{immutable, TraversableLike, mutable}
 import collection.generic.CanBuildFrom
-import mutable.{Queue, ArrayBuffer, Builder}
+import collection.mutable.{Queue, ArrayBuffer, Builder}
 
 object CollectionUtils {
   //This is equivalent to coll.collectFirst(Function.unlift(f)), but it saves the expensive Function.unlift.
