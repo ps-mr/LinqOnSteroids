@@ -15,3 +15,8 @@ case class IfInstanceOf[T, S](x: Exp[T], classS: Class[_])(implicit val cS: Type
   def interpret() =
     Util.ifInstanceOfBody(x.interpret(), classS)
 }
+
+case class IsInstanceOf[T, S](x: Exp[T])(implicit val cS: ClassTag[S], val tS: TypeTag[S]) extends Arity1OpExp[T, Boolean, IsInstanceOf[T, S]](x) {
+  def copy(x: Exp[T]) = IsInstanceOf(x)
+  def interpret() = x != null && (cS.runtimeClass isInstance x)
+}
