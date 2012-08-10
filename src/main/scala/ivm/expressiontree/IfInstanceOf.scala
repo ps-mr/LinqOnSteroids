@@ -10,12 +10,12 @@ object IfInstanceOf {
 }
 
 //Equality comparison must consider also classS. Therefore, classS must be a class parameter.
-case class IfInstanceOf[T, S](x: Exp[T], classS: Class[_])(implicit val cS: TypeTag[S]) extends Arity1OpExp[T, Option[S], IfInstanceOf[T, S]](x) with PersistClassS {
+case class IfInstanceOf[T, S](x: Exp[T], classS: Class[_])(implicit val tS: TypeTag[S]) extends Arity1OpExp[T, Option[S], IfInstanceOf[T, S]](x) with PersistClassS {
   def copy(x: Exp[T]) = IfInstanceOf(x, classS)
   def interpret() =
     Util.ifInstanceOfBody(x.interpret(), classS)
   //ifInstanceOfBody has type parameters which by default are deduced to be Nothing - and has _two_ of them. To avoid needing a TypeTag for T, use ascription on the result.
-  override def toCode = "ivm.expressiontree.Util.ifInstanceOfBody(%s, %s): Option[%s]" format (x.toCode, persistedValue, Compile manifestToString cS)
+  override def toCode = "ivm.expressiontree.Util.ifInstanceOfBody(%s, %s): Option[%s]" format (x.toCode, persistedValue, Compile manifestToString tS)
 }
 
 case class IsInstanceOf[T, S](x: Exp[T])(implicit val cS: ClassTag[S], val tS: TypeTag[S]) extends Arity1OpExp[T, Boolean, IsInstanceOf[T, S]](x) {

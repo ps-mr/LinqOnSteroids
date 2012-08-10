@@ -27,7 +27,7 @@ trait TypeFilterOptim {
     val containingX = fmFun.body.findTotFun(_.children.contains(X))
     containingX.headOption match {
       case Some(instanceOfNode@IfInstanceOf(X, _)) if containingX.forall(_ == instanceOfNode) =>
-        implicit val classTagS = instanceOfNode.cS
+        implicit val classTagS = instanceOfNode.tS
         if (containingXParent.forall(_ == (instanceOfNode: Exp[Iterable[_]]))) {
           val v = Fun.gensym()
           val transformed = fmFun.body.substSubTerm(containingXParent.head, Seq(v))
