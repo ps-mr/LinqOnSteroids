@@ -379,6 +379,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   }
 
   def analyze() {
+    analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
     analyzeProtectedFields()
     analyzeUnusedFields()
     analyzeExplicitGC()
