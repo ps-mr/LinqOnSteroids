@@ -84,23 +84,33 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
   }
 
 
-  /*
-    def analyzeSQuOptWithAbstractions() {
-      for ((classFile, method, Seq((INVOKESPECIAL(firstReceiver, _, MethodDescriptor(Seq(paramType), _)), _),
-                                   (INVOKEVIRTUAL(secondReceiver, name, MethodDescriptor(Seq(), returnType)), idx)
-                                  )) ← methodBodiesInstructionsSlidingSQuOpt(2)
-           if (classFile.majorVersion > 49 &&
-               method.body.isDefined
-               ! paramType.isReferenceType &&
-               firstReceiver.asInstanceOf[ObjectType].className.startsWith("java/lang") &&
-               firstReceiver == secondReceiver &&
-               name.endsWith("Value") &&
-               returnType != paramType // coercion to another type performed
-              )
+  def analyzeSQuOptWithAbstractions() {
+      import de.tud.cs.st.bat.resolved._
+      import ivm._
+      import expressiontree._
+      import Lifting._
+      import BATLifting._
+      import InstructionLifting._
+      import ivm.expressiontree.Util.ExtraImplicits._
+      import schema.squopt._
+
+      for (window ← methodBodiesInstructionsSlidingSQuOpt(2);
+           first ← window.instrs.head.ifInstanceOf[INVOKESPECIAL];
+           second ← window.instrs.last.ifInstanceOf[INVOKEVIRTUAL]
+           if(
+              window.classFile.majorVersion > 49 &&
+              window.method.body.isDefined &&
+              first.methodDescriptor.parameterTypes.size ==# 1 &&
+              !first.methodDescriptor.parameterTypes.head.isReferenceType &&
+              second.methodDescriptor.parameterTypes.size ==# 0 &&
+              first.declaringClass.asInstanceOf_#[ObjectType].className.startsWith("java/lang") &&
+              first.declaringClass ==# second.declaringClass &&
+              second.name.endsWith("Value") &&
+              first.methodDescriptor.parameterTypes.head ==# second.methodDescriptor.returnType
+             )
       ) yield {
-        (classFile, method, idx)
+        (window.classFile, window.method, window.instrIdxes.last)
       }
     }
-  */
 
 }
