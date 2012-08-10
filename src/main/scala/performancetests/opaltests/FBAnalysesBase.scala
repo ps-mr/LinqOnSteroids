@@ -113,4 +113,20 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       instruction ← cfMB.body.instructions
     } yield (cfMB.classFile, cfMB.method, cfMB.body, instruction)
   }
+
+  def  methodBodiesInstructionsSlidingNative(len: Int) = {
+    import schema._
+    for {
+      MethodRecord(classFile, method, body) ← methodBodiesModularNative()
+      window ← body.instructions.zipWithIndex.filter(_._1 != null).sliding(len)
+    } yield (classFile, method, window)
+  }
+
+  def  methodBodiesInstructionsSlidingSQuOpt(len: Int) = {
+    import schema._
+    for {
+      MethodRecord(classFile, method, body) ← methodBodiesModularSQuOpt()
+      window ← body.instructions.zipWithIndex.filter(_._1 != null).sliding(len)
+    } yield (classFile, method, window)
+  }
 }
