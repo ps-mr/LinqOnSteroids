@@ -118,7 +118,8 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
     benchQueryComplete("BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION")(
       analyzeBaseWithoutAbstractions(),
       analyzeBaseWithAbstractions())(
-      analyzeSQuOptWithoutAbstractions()
+      analyzeSQuOptWithoutAbstractions(),
+      analyzeSQuOptWithAbstractions()
     )
   }
 }
