@@ -93,6 +93,8 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
 
   final def !=#[S >: T](that: Exp[S]): Exp[Boolean] = Not(this ==# that)
   final def !=#(that: Null): Exp[Boolean] = Not(this ==# that)
+
+  final def isInstanceOf_#[S: ClassTag: TypeTag]: Exp[Boolean] = IsInstanceOf[T, S](this)
 }
 
 /*private[ivm]*/ object Exp {
