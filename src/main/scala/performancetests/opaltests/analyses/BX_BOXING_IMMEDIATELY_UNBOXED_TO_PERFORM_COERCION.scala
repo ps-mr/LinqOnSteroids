@@ -49,13 +49,13 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
          window ← withIndexExp(method.body.get.instructions).sliding(2);
          first ← window.head._1.ifInstanceOf[INVOKESPECIAL];
          second ← window.last._1.ifInstanceOf[INVOKEVIRTUAL]
-         if(first.methodDescriptor.parameterTypes.size == 1 &&
+         if(first.methodDescriptor.parameterTypes.size ==# 1 &&
             !first.methodDescriptor.parameterTypes.head.isReferenceType &&
-            second.methodDescriptor.parameterTypes.size == 0 &&
+            second.methodDescriptor.parameterTypes.size ==# 0 &&
             first.declaringClass.asInstanceOf_#[ObjectType].className.startsWith("java/lang") &&
-            first.declaringClass == second.declaringClass &&
+            first.declaringClass ==# second.declaringClass &&
             second.name.endsWith("Value") &&
-            first.methodDescriptor.parameterTypes.head == second.methodDescriptor.returnType
+            first.methodDescriptor.parameterTypes.head ==# second.methodDescriptor.returnType
            )
     ) yield {
       (classFile, method, window.last._2)
