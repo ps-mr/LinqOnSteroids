@@ -35,7 +35,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
   }
 
 
-  def analyzeSQuOptWithoutAbstractions() {
+  def analyzeSQuOptWithoutAbstractions() = {
     import de.tud.cs.st.bat.resolved._
     import ivm._
     import expressiontree._
@@ -84,7 +84,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
   }
 
 
-  def analyzeSQuOptWithAbstractions() {
+  def analyzeSQuOptWithAbstractions() = {
       import de.tud.cs.st.bat.resolved._
       import ivm._
       import expressiontree._
