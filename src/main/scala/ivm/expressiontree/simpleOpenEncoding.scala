@@ -163,8 +163,8 @@ trait TupleOps extends AutoTupleOps {
 }
 
 trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
-  implicit def toIfInstanceOfOps[T](t: Exp[T]) = new toIfInstanceOfOps(t)
-  class toIfInstanceOfOps[T](t: Exp[T]) {
+  implicit def toIfInstanceOfOps[T](t: Exp[T]) = new IfInstanceOfOps(t)
+  class IfInstanceOfOps[T](t: Exp[T]) {
     def ifInstanceOf[S: ClassTag: TypeTag]: Exp[Option[S]] = IfInstanceOf(t)
   }
 }
