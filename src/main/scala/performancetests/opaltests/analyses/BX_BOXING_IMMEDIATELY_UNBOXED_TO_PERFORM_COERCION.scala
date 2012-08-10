@@ -1,8 +1,5 @@
 package performancetests.opaltests.analyses
 
-import de.tud.cs.st.bat.resolved._
-import performancetests.opaltests.FBAnalysesBase
-import schema.BytecodeInstrWindow
 
 /**
  *
@@ -12,35 +9,16 @@ import schema.BytecodeInstrWindow
  *
  */
 trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
-  this: FBAnalysesBase =>
+  this: performancetests.opaltests.FBAnalysesBase =>
 
   import BaseAnalyses._
 
   def analyzeBaseWithoutAbstractions() = {
+    import de.tud.cs.st.bat.resolved._
     for (classFile ← classFiles if classFile.majorVersion > 49;
          method ← classFile.methods if method.body.isDefined;
          Seq(
-         (INVOKESPECIAL(firstReceiver, _, de.tud.cs.st.bat.resolved.MethodDescriptor(Seq(paramType), _)), _),
-         (INVOKEVIRTUAL(secondReceiver, name, de.tud.cs.st.bat.resolved.MethodDescriptor(Seq(), returnType)), idx)
-            ) ← withIndex(method.body.get.instructions).sliding(2)
-         if (
-            !paramType.isReferenceType &&
-            firstReceiver.asInstanceOf[ObjectType].className.startsWith("java/lang") &&
-            firstReceiver == secondReceiver &&
-            name.endsWith("Value") &&
-            returnType != paramType // coercion to another type performed
-            )
-    ) yield {
-      (classFile, method, idx)
-    }
-  }
-
-  /*
-  def analyzeSQuOptWithoutAbstractions() {
-    for (classFile ← classFiles.asSmart if( classFile.majorVersion > 49);
-         method ← classFile.methods if method.body.isDefined;
-         Seq(
-         (INVOKESPECIAL(firstReceiver, _, MethodDescriptor(Seq(paramType), _)), _),
+         (INVOKESPECIAL(firstReceiver, _,MethodDescriptor(Seq(paramType), _)), _),
          (INVOKEVIRTUAL(secondReceiver, name, MethodDescriptor(Seq(), returnType)), idx)
             ) ← withIndex(method.body.get.instructions).sliding(2)
          if (
@@ -54,9 +32,38 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
       (classFile, method, idx)
     }
   }
-  */
+
+
+  def analyzeSQuOptWithoutAbstractions() {
+    import de.tud.cs.st.bat.resolved._
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import BATLifting._
+    import ivm.expressiontree.Util.ExtraImplicits._
+
+    for (classFile ← classFiles.asSmart if( classFile.majorVersion > 49);
+         method ← classFile.methods if method.body.isDefined;
+         window ← withIndexSliding(method.body.get.instructions, 2);
+         first ← window.head._1.ifInstanceOf[INVOKESPECIAL];
+         second ← window.last._1.ifInstanceOf[INVOKEVIRTUAL]
+         if(first.methodDescriptor.parameterTypes.size == 1 &&
+            !first.methodDescriptor.parameterTypes.head.isReferenceType &&
+            second.methodDescriptor.parameterTypes.size == 0 &&
+            first.declaringClass.asInstanceOf[ObjectType].className.startsWith("java/lang") &&
+            first.declaringClass == second.declaringClass &&
+            second.name.endsWith("Value") &&
+            first.methodDescriptor.parameterTypes.head == second.methodDescriptor.returnType
+           )
+    ) yield {
+      (classFile, method, window.last._2)
+    }
+  }
+
 
   def analyzeBaseWithAbstractions() = {
+    import de.tud.cs.st.bat.resolved._
+    import schema._
     for (BytecodeInstrWindow(Seq(_, idx),
                              Seq(INVOKESPECIAL(firstReceiver, _, de.tud.cs.st.bat.resolved.MethodDescriptor(Seq(paramType), _)),
                                  INVOKEVIRTUAL(secondReceiver, name, de.tud.cs.st.bat.resolved.MethodDescriptor(Seq(), returnType))),

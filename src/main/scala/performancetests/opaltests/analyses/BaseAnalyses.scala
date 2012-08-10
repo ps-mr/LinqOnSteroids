@@ -2,6 +2,7 @@ package performancetests.opaltests.analyses
 
 import de.tud.cs.st.bat.resolved._
 import analyses.{Project, ClassHierarchy}
+import ivm.expressiontree.Exp
 
 /**
  *
@@ -110,5 +111,12 @@ object BaseAnalyses {
     instructions.zipWithIndex.filter {
       case (instr, _) => instr != null
     }
+  }
+
+  /**
+   * Returns a filtered sequence of instructions without the bytecode padding
+   */
+  def withIndexSliding(instructions: Exp[Seq[Instruction]], size : Int): Exp[Seq[Seq[(Instruction, Int)]]] = {
+      null
   }
 }
