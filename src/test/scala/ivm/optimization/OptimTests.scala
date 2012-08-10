@@ -173,7 +173,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
       y <- (1 to 10).asSmart
       if y % 2 ==# 0
     } yield (x, 1 + y)).optimize
-    Optimization.preIndexing(Yquery) should be (expected)
+    Optimization filterToWithFilter (Optimization preIndexing Yquery) should be (expected)
     Yquery.optimize should be (expected)
   }
 

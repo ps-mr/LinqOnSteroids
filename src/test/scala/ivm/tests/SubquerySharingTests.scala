@@ -36,7 +36,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     Optimization.removeIndex(s1)
   }
 
-  def shareSubqueriesOpt[T](x: Exp[T]) = Optimization.simplifyFilters(Optimization.shareSubqueries(x))
+  def shareSubqueriesOpt[T](x: Exp[T]) = Optimization filterToWithFilter (Optimization simplifyFilters (Optimization shareSubqueries x))
 
   def indexingTest[T, U: TypeTag, TupleT: TypeTag](query: Exp[Seq[T]], idx: Exp[Map[U, TupleT]], fullOptim: Boolean = true)(expectedOptQueryProducer: Exp[Map[U, TupleT]] => Exp[Traversable[T]]) {
     val idxRes = idx.interpret()
@@ -53,7 +53,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
         constantFolding(shareSubqueriesOpt(query))
     Optimization.removeIndex(idx)
 
-    optQuery should be (constantFolding(expectedOptQuery))
+    optQuery should be (Optimization filterToWithFilter (constantFolding(expectedOptQuery)))
     //We assumed that if optQuery == expectedOptQuery, then optQuery.interpret() == expectedOptQuery.interpret() == query.interpret()
     //but manifests could be different!
     optQuery.interpret() should be (expectedOptQuery.interpret())
