@@ -1,7 +1,7 @@
 package performancetests.opaltests.analyses
 
 import de.tud.cs.st.bat.resolved._
-import analyses.ClassHierarchy
+import analyses.{Project, ClassHierarchy}
 
 /**
  *
@@ -37,9 +37,9 @@ object BaseAnalyses {
   /**
    * Returns true if the method is also declared in the superclass; regardless of abstract or interface methods
    */
-  def isOverride(classHierarchy : ClassHierarchy)(classFile: ClassFile)(method: Method): Boolean = {
+  def isOverride(project : Project)(classFile: ClassFile)(method: Method): Boolean = {
     // TODO we could also check for an @Override annotation
-    val superMethods = (for (superClass ← classHierarchy.superclasses(classFile.thisClass).getOrElse(Set());
+    val superMethods = (for (superClass ← project.classHierarchy.superclasses(classFile.thisClass).getOrElse(Set());
                              (_, method) ← project.lookupMethodDeclaration(superClass, method.name, method.descriptor)
     ) yield {
       method
@@ -72,10 +72,10 @@ object BaseAnalyses {
   /**
    * Returns the super constructor called in the given constructor or None
    */
-  def calledSuperConstructor(classHierarchy : ClassHierarchy)
+  def calledSuperConstructor(project : Project)
                             (classFile: ClassFile,
                              constructor: Method): Option[(ClassFile, Method)] = {
-    val superClasses = classHierarchy.superclasses(classFile.thisClass)
+    val superClasses = project.classHierarchy.superclasses(classFile.thisClass)
     if (!superClasses.isDefined) {
       return None
     }
