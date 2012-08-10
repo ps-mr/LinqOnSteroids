@@ -114,19 +114,20 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     } yield (cfMB.classFile, cfMB.method, cfMB.body, instruction)
   }
 
-  def methodBodiesInstructionsSlidingNative(len: Int) = {
+  def methodBodiesInstructionsSlidingNative(len: Int): Seq[schema.BytecodeInstrWindow] = {
     import schema._
     for {
       MethodRecord(classFile, method, body) ← methodBodiesModularNative()
-      (instrs, instrIdxes) ← body.instructions.zipWithIndex.filter(_._1 != null).toSeq.sliding(len).toSeq.map(_.unzip)
+      (instrs, instrIdxes) ← body.instructions.zipWithIndex.filter(_._1 != null).toSeq.sliding(len).toStream.map(_.unzip)
     } yield BytecodeInstrWindow(instrIdxes, instrs, classFile, method)
   }
 
-  /*def  methodBodiesInstructionsSlidingSQuOpt(len: Int) = {
-    import schema._
+  def  methodBodiesInstructionsSlidingSQuOpt(len: Int): Exp[Seq[schema.BytecodeInstrWindow]] = {
+    import BATLifting._
+    import schema.squopt._
     for {
-      MethodRecord(classFile, method, body) ← methodBodiesModularSQuOpt()
-      window ← body.instructions.zipWithIndex.filter(_._1 != null).sliding(len)
-    } yield (classFile, method, window)
-  }*/
+      methodRecord ← methodBodiesModularSQuOpt()
+      window ← methodRecord.body.instructions.zipWithIndex.filter(_._1 != null).toSeq.sliding(len).map(_.unzip)
+    } yield BytecodeInstrWindow(window._2, window._1, methodRecord.classFile, methodRecord.method)
+  }
 }
