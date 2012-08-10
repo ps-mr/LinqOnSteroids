@@ -24,4 +24,7 @@ case class IsInstanceOf[T, S](x: Exp[T])(implicit val cS: ClassTag[S], val tS: T
   }
 }
 
+case class AsInstanceOf[T, S](x: Exp[T])(implicit val cS: ClassTag[S], val tS: TypeTag[S]) extends Arity1OpExp[T, S, AsInstanceOf[T, S]](x) {
+  def copy(x: Exp[T]) = AsInstanceOf(x)
+  def interpret() = (cS.runtimeClass cast x.interpret()).asInstanceOf[S]
 }
