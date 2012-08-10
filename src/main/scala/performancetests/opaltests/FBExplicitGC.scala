@@ -11,7 +11,7 @@ import bat.resolved._
 import analyses._
 
 import reader.Java6Framework
-import analyses.ClassHierarchy
+import bat.resolved.analyses.ClassHierarchy
 
 import collection.immutable.Seq
 import collection.{Seq => CSeq}
