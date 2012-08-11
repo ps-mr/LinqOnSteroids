@@ -216,7 +216,7 @@ object Benchmarking {
   //Hence, this precondition does not violate the LSP.
   trait VarianceNsec2Msec extends IVarianceCalc {
     def avgMs = avg / math.pow(10, 6)
-    def devStdMs = devStd
+    def devStdMs = devStd / math.pow(10, 6)
     def stdErrMs = stdErr / math.pow(10, 6)
   }
 
