@@ -66,7 +66,8 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
                                  INVOKEVIRTUAL(secondReceiver, name, MethodDescriptor(Seq(), returnType))),
                              classFile,
                              method) ← methodBodiesInstructionsSlidingNative(2)
-         if !paramType.isReferenceType &&
+         if classFile.majorVersion > 49 &&
+            !paramType.isReferenceType &&
             firstReceiver.asInstanceOf[ObjectType].className.startsWith("java/lang") &&
             firstReceiver == secondReceiver &&
             name.endsWith("Value") &&
