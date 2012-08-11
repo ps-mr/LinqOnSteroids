@@ -32,8 +32,9 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
   private def doRun[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll], c: TypeTag[Coll]) = {
     if (!onlyOptimized)
       showExpNoVal(v, msg)
-//    benchMarkWithTime(msg)(v.expResult().force)
-    benchMarkWithTime(msg)(Compile.toValue(v).force)
+    val res = benchMarkWithTime(msg)(Compile.toValue(v).force)
+    //res._1 should be (v.expResult().force)
+    res
   }
 
   private def benchOptimize[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]]) = {
