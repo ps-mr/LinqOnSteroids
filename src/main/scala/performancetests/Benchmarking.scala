@@ -31,7 +31,7 @@ trait Benchmarking {
   protected val rememberedSampleLoops = 50
 
   /** How many benchmark iterations at most should be performed? Called q in the paper. */
-  protected val maxLoops = 1000
+  protected val maxLoops = 100
 
   protected val printAllData = false
 
