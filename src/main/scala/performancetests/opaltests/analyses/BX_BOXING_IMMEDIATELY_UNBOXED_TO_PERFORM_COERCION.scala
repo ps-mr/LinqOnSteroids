@@ -16,22 +16,19 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
 
   def analyzeBaseWithoutAbstractions() = {
     import de.tud.cs.st.bat.resolved._
-    for (classFile ← classFiles if classFile.majorVersion > 49;
-         method ← classFile.methods if method.body.isDefined;
+    for {classFile ← classFiles if classFile.majorVersion > 49
+         method ← classFile.methods if method.body.isDefined
          Seq(
          (INVOKESPECIAL(firstReceiver, _,MethodDescriptor(Seq(paramType), _)), _),
          (INVOKEVIRTUAL(secondReceiver, name, MethodDescriptor(Seq(), returnType)), idx)
-            ) ← withIndex(method.body.get.instructions).sliding(2)
-         if (
-            !paramType.isReferenceType &&
+         ) ← withIndex(method.body.get.instructions).sliding(2)
+         if !paramType.isReferenceType &&
             firstReceiver.asInstanceOf[ObjectType].className.startsWith("java/lang") &&
             firstReceiver == secondReceiver &&
             name.endsWith("Value") &&
             returnType != paramType // coercion to another type performed
-            )
-    ) yield {
+    } yield
       (classFile, method, idx)
-    }
   }
 
 
@@ -44,22 +41,20 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
     import InstructionLifting._
     import ivm.expressiontree.Util.ExtraImplicits._
 
-    for (classFile ← classFiles.asSmart if( classFile.majorVersion > 49);
-         method ← classFile.methods if method.body.isDefined;
-         window ← withIndexExp(method.body.get.instructions).sliding(2);
-         first ← window.head._1.ifInstanceOf[INVOKESPECIAL];
+    for {classFile ← classFiles.asSmart if classFile.majorVersion > 49
+         method ← classFile.methods if method.body.isDefined
+         window ← withIndexExp(method.body.get.instructions).sliding(2)
+         first ← window.head._1.ifInstanceOf[INVOKESPECIAL]
          second ← window.last._1.ifInstanceOf[INVOKEVIRTUAL]
-         if(first.methodDescriptor.parameterTypes.size ==# 1 &&
+         if first.methodDescriptor.parameterTypes.size ==# 1 &&
             !first.methodDescriptor.parameterTypes.head.isReferenceType &&
             second.methodDescriptor.parameterTypes.size ==# 0 &&
             first.declaringClass.asInstanceOf_#[ObjectType].className.startsWith("java/lang") &&
             first.declaringClass ==# second.declaringClass &&
             second.name.endsWith("Value") &&
             first.methodDescriptor.parameterTypes.head ==# second.methodDescriptor.returnType
-           )
-    ) yield {
+    } yield
       (classFile, method, window.last._2)
-    }
   }
 
 
@@ -67,20 +62,17 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
     import de.tud.cs.st.bat.resolved._
     import schema._
     for (BytecodeInstrWindow(Seq(_, idx),
-                             Seq(INVOKESPECIAL(firstReceiver, _, de.tud.cs.st.bat.resolved.MethodDescriptor(Seq(paramType), _)),
-                                 INVOKEVIRTUAL(secondReceiver, name, de.tud.cs.st.bat.resolved.MethodDescriptor(Seq(), returnType))),
+                             Seq(INVOKESPECIAL(firstReceiver, _, MethodDescriptor(Seq(paramType), _)),
+                                 INVOKEVIRTUAL(secondReceiver, name, MethodDescriptor(Seq(), returnType))),
                              classFile,
                              method) ← methodBodiesInstructionsSlidingNative(2)
-         if (
-            !paramType.isReferenceType &&
+         if !paramType.isReferenceType &&
             firstReceiver.asInstanceOf[ObjectType].className.startsWith("java/lang") &&
             firstReceiver == secondReceiver &&
             name.endsWith("Value") &&
             returnType != paramType // coercion to another type performed
-            )
-    ) yield {
+    ) yield
       (classFile, method, idx)
-    }
   }
 
 
@@ -94,10 +86,10 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
       import ivm.expressiontree.Util.ExtraImplicits._
       import schema.squopt._
 
-      for (window ← methodBodiesInstructionsSlidingSQuOpt(2);
-           first ← window.instrs.head.ifInstanceOf[INVOKESPECIAL];
+      for {window ← methodBodiesInstructionsSlidingSQuOpt(2)
+           first ← window.instrs.head.ifInstanceOf[INVOKESPECIAL]
            second ← window.instrs.last.ifInstanceOf[INVOKEVIRTUAL]
-           if(
+           if
               window.classFile.majorVersion > 49 &&
               window.method.body.isDefined &&
               first.methodDescriptor.parameterTypes.size ==# 1 &&
@@ -107,10 +99,8 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
               first.declaringClass ==# second.declaringClass &&
               second.name.endsWith("Value") &&
               first.methodDescriptor.parameterTypes.head ==# second.methodDescriptor.returnType
-             )
-      ) yield {
+      } yield
         (window.classFile, window.method, window.instrIdxes.last)
-      }
     }
 
 
