@@ -105,7 +105,7 @@ trait Benchmarking {
     else
       print(" starting benchmarking...")
 
-    val stats = new VarianceCalc(rememberedSampleLoops)
+    val stats = new VarianceCalc(rememberedSampleLoops) with VarianceNsec2Msec
     val values = ArrayBuffer[Long]()
     var lastPrintTime = System.nanoTime()
 
@@ -208,9 +208,16 @@ object Benchmarking {
 
     def samples: Seq[Long]
 
+    def devStd = math.sqrt(variance)
+    def stdErr = devStd / math.sqrt(count.toDouble)
+  }
+
+  //This class adds the contract that samples are in nanoseconds - but that is only a preconditions for its new methods.
+  //Hence, this precondition does not violate the LSP.
+  trait VarianceNsec2Msec extends IVarianceCalc {
     def avgMs = avg / math.pow(10, 6)
-    def devStdMs = math.sqrt(variance) / math.pow(10, 6)
-    def stdErrMs = devStdMs / math.sqrt(count.toDouble)
+    def devStdMs = devStd
+    def stdErrMs = stdErr / math.pow(10, 6)
   }
 
   class VarianceCalc(nSamples: Int) extends IVarianceCalc {
