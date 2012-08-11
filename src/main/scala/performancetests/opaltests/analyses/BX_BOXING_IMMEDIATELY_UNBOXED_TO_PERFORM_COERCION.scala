@@ -16,7 +16,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
 
   def analyzeBaseWithoutAbstractions() = {
     import de.tud.cs.st.bat.resolved._
-    for {classFile ← classFiles if classFile.majorVersion > 49
+    for {classFile ← classFiles if classFile.majorVersion >= 49
          method ← classFile.methods if method.body.isDefined
          Seq(
          (INVOKESPECIAL(firstReceiver, _,MethodDescriptor(Seq(paramType), _)), _),
@@ -41,7 +41,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
     import InstructionLifting._
     import ivm.expressiontree.Util.ExtraImplicits._
 
-    for {classFile ← classFiles.asSmart if classFile.majorVersion > 49
+    for {classFile ← classFiles.asSmart if classFile.majorVersion >= 49
          method ← classFile.methods if method.body.isDefined
          window ← withIndexExp(method.body.get.instructions).sliding(2)
          first ← window.head._1.ifInstanceOf[INVOKESPECIAL]
@@ -66,7 +66,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
                                  INVOKEVIRTUAL(secondReceiver, name, MethodDescriptor(Seq(), returnType))),
                              classFile,
                              method) ← methodBodiesInstructionsSlidingNative(2)
-         if classFile.majorVersion > 49 &&
+         if classFile.majorVersion >= 49 &&
             !paramType.isReferenceType &&
             firstReceiver.asInstanceOf[ObjectType].className.startsWith("java/lang") &&
             firstReceiver == secondReceiver &&
@@ -91,7 +91,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
            first ← window.instrs.head.ifInstanceOf[INVOKESPECIAL]
            second ← window.instrs.last.ifInstanceOf[INVOKEVIRTUAL]
            if
-              window.classFile.majorVersion > 49 &&
+              window.classFile.majorVersion >= 49 &&
               first.methodDescriptor.parameterTypes.size ==# 1 &&
               !first.methodDescriptor.parameterTypes.head.isReferenceType &&
               second.methodDescriptor.parameterTypes.size ==# 0 &&
