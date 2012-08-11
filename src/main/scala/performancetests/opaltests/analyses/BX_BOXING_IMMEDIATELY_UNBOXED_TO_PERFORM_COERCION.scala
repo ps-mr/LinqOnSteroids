@@ -52,7 +52,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
             first.declaringClass.asInstanceOf_#[ObjectType].className.startsWith("java/lang") &&
             first.declaringClass ==# second.declaringClass &&
             second.name.endsWith("Value") &&
-            first.methodDescriptor.parameterTypes.head ==# second.methodDescriptor.returnType
+            first.methodDescriptor.parameterTypes.head !=# second.methodDescriptor.returnType
     } yield
       (classFile, method, window.last._2)
   }
@@ -97,7 +97,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
               first.declaringClass.asInstanceOf_#[ObjectType].className.startsWith("java/lang") &&
               first.declaringClass ==# second.declaringClass &&
               second.name.endsWith("Value") &&
-              first.methodDescriptor.parameterTypes.head ==# second.methodDescriptor.returnType
+              first.methodDescriptor.parameterTypes.head !=# second.methodDescriptor.returnType
       } yield
         (window.classFile, window.method, window.instrIdxes.last)
     }
