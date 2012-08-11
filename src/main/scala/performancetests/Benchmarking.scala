@@ -123,7 +123,7 @@ trait Benchmarking {
         System.gc()
       i += 1
       if (after - lastPrintTime > minIterationIntervalNanoSec) {
-        println("Iteration %d, used memory %,d".format(i, gcAndSnapshotUsedMemory() - memoryBefore))
+        println("Iteration %d, used memory %,d, current avg %,f".format(i, gcAndSnapshotUsedMemory() - memoryBefore, stats.avg))
         lastPrintTime = after
       }
       //If debugBench, we never want to reiterate a benchmark.
