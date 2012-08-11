@@ -92,7 +92,6 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
            second ← window.instrs.last.ifInstanceOf[INVOKEVIRTUAL]
            if
               window.classFile.majorVersion > 49 &&
-              window.method.body.isDefined &&
               first.methodDescriptor.parameterTypes.size ==# 1 &&
               !first.methodDescriptor.parameterTypes.head.isReferenceType &&
               second.methodDescriptor.parameterTypes.size ==# 0 &&
