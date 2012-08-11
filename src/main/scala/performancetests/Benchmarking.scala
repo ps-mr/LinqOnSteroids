@@ -123,7 +123,7 @@ trait Benchmarking {
         System.gc()
       i += 1
       if (after - lastPrintTime > minIterationIntervalNanoSec) {
-        println("Iteration %d, used memory %,d, current avg %,f ms".format(i, gcAndSnapshotUsedMemory() - memoryBefore, stats.avg / math.pow(10, 6)))
+        println("Iteration %d, used memory %,d, current avg %,f ms".format(i, gcAndSnapshotUsedMemory() - memoryBefore, stats.avgMs))
         lastPrintTime = after
       }
       //If debugBench, we never want to reiterate a benchmark.
@@ -132,10 +132,10 @@ trait Benchmarking {
 
     if (!hasConsoleOutput)
       print(" ended benchmarking, name = %s, needed iterations = %d, time = " format (name, stats.iterations))
-    val avgMs = stats.avg / math.pow(10, 6)
-    val devStdMs = math.sqrt(stats.variance) / math.pow(10, 6)
+    val avgMs = stats.avgMs
+    val devStdMs = stats.devStdMs
     //The error of the measured average as an estimator of the average of the underlying random variable
-    val stdErrMs = devStdMs / math.sqrt(stats.count.toDouble)
+    val stdErrMs = stats.stdErrMs
 
     if (verbose) {
       if (hasConsoleOutput)
@@ -207,6 +207,10 @@ object Benchmarking {
       math.sqrt(variance) / avg
 
     def samples: Seq[Long]
+
+    def avgMs = avg / math.pow(10, 6)
+    def devStdMs = math.sqrt(variance) / math.pow(10, 6)
+    def stdErrMs = devStdMs / math.sqrt(count.toDouble)
   }
 
   class VarianceCalc(nSamples: Int) extends IVarianceCalc {
