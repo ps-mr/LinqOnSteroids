@@ -90,8 +90,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
       for {window ← methodBodiesInstructionsSlidingSQuOpt(2)
            first ← window.instrs.head.ifInstanceOf[INVOKESPECIAL]
            second ← window.instrs.last.ifInstanceOf[INVOKEVIRTUAL]
-           if
-              window.classFile.majorVersion >= 49 &&
+           if window.classFile.majorVersion >= 49 &&
               first.methodDescriptor.parameterTypes.size ==# 1 &&
               !first.methodDescriptor.parameterTypes.head.isReferenceType &&
               second.methodDescriptor.parameterTypes.size ==# 0 &&
