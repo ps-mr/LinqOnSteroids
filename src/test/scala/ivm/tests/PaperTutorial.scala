@@ -170,20 +170,26 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   val measurements = Seq(1.5, 3.0)
 
+  def convFromBase[T <% U, U: ClassTag: TypeTag](t: T): Exp[U] = asExp[U](t: U)
+
+  implicit def expInt2Double[T](t: Exp[Int]): Exp[Double] =
+    convLift(t, 'Int2Double, "Int.int2double")
+  implicit def int2ExpDouble = convFromBase[Int, Double](_)
+
   //From Sec. IV
   abstract class DataProcessingStep {
     def process(values: Exp[Seq[Double]]): Exp[Seq[Double]]
   }
   class ADataProcessingStepImpl extends DataProcessingStep {
     override def process(values: Exp[Seq[Double]]) =
-      for (i <- values) yield i + 1.0 // /values.sum
+      for (i <- values) yield i + 1 // /values.sum
   }
 
   class Client(processor: DataProcessingStep) {
     def toPercentage(data: Exp[Seq[Double]]): Exp[Seq[Double]] =
       for {
         j <- processor.process(data)
-      } yield j * 100.0 //XXX We need to lift implicit numeric conversions, e.g. Int -> Exp[Double].
+      } yield j * 100
   }
 
   val query = new Client(new ADataProcessingStepImpl).toPercentage(measurements)
