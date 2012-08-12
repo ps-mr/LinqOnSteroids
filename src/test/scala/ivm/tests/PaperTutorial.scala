@@ -5,6 +5,7 @@ import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
 import optimization.Optimization
 import expressiontree.Util
+import expressiontree.{ClassTag, TypeTag}
 
 /**
  * User: pgiarrusso
@@ -165,5 +166,32 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
     if (!doIndex)
       processedRecordsQueryOptRes should be (processedQueryExpectedOptimRes)
     //if doIndex, the expression tree will have another form.
+  }
+
+  val measurements = Seq(1.5, 3.0)
+
+  //From Sec. IV
+  abstract class DataProcessingStep {
+    def process(values: Exp[Seq[Double]]): Exp[Seq[Double]]
+  }
+  class ADataProcessingStepImpl extends DataProcessingStep {
+    override def process(values: Exp[Seq[Double]]) =
+      for (i <- values) yield i + 1.0 // /values.sum
+  }
+
+  class Client(processor: DataProcessingStep) {
+    def toPercentage(data: Exp[Seq[Double]]): Exp[Seq[Double]] =
+      for {
+        j <- processor.process(data)
+      } yield j * 100.0 //XXX We need to lift implicit numeric conversions, e.g. Int -> Exp[Double].
+  }
+
+  val query = new Client(new ADataProcessingStepImpl).toPercentage(measurements)
+
+  test("foo") {
+    println(query)
+    println(query.optimize)
+    println(query.interpret())
+    println(query.optimize.interpret())
   }
 }
