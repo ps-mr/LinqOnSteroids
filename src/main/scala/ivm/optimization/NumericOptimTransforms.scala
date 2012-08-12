@@ -78,7 +78,7 @@ trait NumericOptimTransforms {
         l match {
           case Const(a) => //R1
             a * rV
-          case Plus(Const(a), b) => //R9 - must be before R2!
+          case Times(Const(a), b) => //R9 - must be before R2!
             buildProd(a * rV, b)
           case _ => //R2 - must be after R1!
             buildProd(r, l)
