@@ -170,12 +170,6 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   val measurements = Seq(1.5, 3.0)
 
-  def convFromBase[T <% U, U: ClassTag: TypeTag](t: T): Exp[U] = asExp[U](t: U)
-
-  implicit def expInt2Double[T](t: Exp[Int]): Exp[Double] =
-    convLift(t, 'Int2Double, "Int.int2double")
-  implicit def int2ExpDouble = convFromBase[Int, Double](_)
-
   //From Sec. IV
   abstract class DataProcessingStep {
     def process(values: Exp[Seq[Double]]): Exp[Seq[Double]]
