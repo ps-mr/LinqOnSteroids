@@ -176,19 +176,17 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   }
   class ADataProcessingStepImpl extends DataProcessingStep {
     override def process(values: Exp[Seq[Double]]) =
-      for (i <- values) yield i + 1 // /values.sum
+      for (i <- values) yield i + 1.0 // /values.sum
   }
 
   class Client(processor: DataProcessingStep) {
     def toPercentage(data: Exp[Seq[Double]]): Exp[Seq[Double]] =
-      for {
-        j <- processor.process(data)
-      } yield j * 100
+      for (j <- processor.process(data)) yield j * 100.0
   }
 
   val query = new Client(new ADataProcessingStepImpl).toPercentage(measurements)
 
-  test("foo") {
+  test("show representation") {
     println(query)
     val optim = query.optimize
     println(optim)
