@@ -157,7 +157,7 @@ trait TupleOps extends AutoTupleOps {
   //implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): LiftTuple2[A, B] = LiftTuple2[A, B](pair._1, pair._2)
 
   //To "unlift" a pair, here's my first solution:
-  /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Tuple2Proj1(pair), Tuple2Proj2(pair))
+  /*implicit*/ def unliftPair[A, B](pair: Exp[(A, B)]): (Exp[A], Exp[B]) = (Product2Proj1(pair), Product2Proj2(pair))
   //
   //The second one is just pimp-my-library.
 }

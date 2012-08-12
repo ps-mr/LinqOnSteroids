@@ -81,6 +81,16 @@ case class Call${arity}[${tparams}, Res](/*val*/ name: Symbol, restId: Symbol, c
 //////////////////////////////////////////
 // SUPPORT FOR TUPLES OF ARITY ${arity} //
 //////////////////////////////////////////
+<%-- XXX: share code between the two following classes, too much code is duplicated (also in the output). --%>
+case class LiftProduct${arity}[${tparams}](${paramsDeclOverride}) extends Arity${arity}OpExp[${tparams}, Product${arity}[${tparams}], LiftProduct${arity}[${tparams}]](${params}) with ExpProduct with PrefixPrinting {
+  def copy(${paramsDecl}) = LiftProduct${arity}(${params})
+  def interpret() = (${interpretParams})
+  def metaProductArity: Int = ${arity}
+  def metaProductElement(n: Int): Exp[Any] = (n: @switch) match {
+    ${baseParLoop(arity)(i => "case %d => %s%d" format (i - 1, argPfx, i), "\n    ")}
+  }
+  def prefix = ""
+}
 
 case class LiftTuple${arity}[${tparams}](${paramsDeclOverride}) extends Arity${arity}OpExp[${tparams}, (${tparams}), LiftTuple${arity}[${tparams}]](${params}) with ExpProduct with PrefixPrinting {
   def copy(${paramsDecl}) = LiftTuple${arity}(${params})
@@ -93,11 +103,11 @@ case class LiftTuple${arity}[${tparams}](${paramsDeclOverride}) extends Arity${a
 }
 
 #for (i <- 1 to arity)
-case class Tuple${arity}Proj${i}[${tparams}](p: Exp[(${tparams})]) extends Arity1OpExp[(${tparams}), A${i}, Tuple${arity}Proj${i}[${tparams}]](p) with
-  ExpSelection[(${tparams})] with InfixPrinting
+case class Product${arity}Proj${i}[${tparams}](p: Exp[Product${arity}[${tparams}]]) extends Arity1OpExp[Product${arity}[${tparams}], A${i}, Product${arity}Proj${i}[${tparams}]](p) with
+  ExpSelection[Product${arity}[${tparams}]] with InfixPrinting
 {
-  val body: (Int, Int, Exp[(${tparams})]) = (${arity}, ${i}, p)
-  def copy(p: Exp[(${tparams})]) = Tuple${arity}Proj${i}(p)
+  val body: (Int, Int, Exp[Product${arity}[${tparams}]]) = (${arity}, ${i}, p)
+  def copy(p: Exp[Product${arity}[${tparams}]]) = Product${arity}Proj${i}(p)
   def interpret() = p.interpret()._${i}
   def operator = "_${i}"
 }
@@ -119,22 +129,25 @@ trait AutoTupleOps {
   implicit def tuple${arity}ToTuple${arity}Exp[${tparams}](tuple: (${paramsLoopComma("Exp[" + tpPfx + "%d]")})): LiftTuple${arity}[${tparams}] =
     LiftTuple${arity}[${tparams}](${paramsLoopComma("tuple._%d")})
 
-  class Tuple${arity}Ops[${tparams}](p: Exp[(${tparams})]) {
+  implicit def product${arity}ToProduct${arity}Exp[${tparams}](tuple: Product${arity}[${paramsLoopComma("Exp[" + tpPfx + "%d]")}]): LiftProduct${arity}[${tparams}] =
+    LiftProduct${arity}[${tparams}](${paramsLoopComma("tuple._%d")})
+
+  class Product${arity}Ops[${tparams}](p: Exp[Product${arity}[${tparams}]]) {
 <% foreachParam("\n    ") { %>
     def _${pIdx}: Exp[${tpPfx}${pIdx}] = p match {
       case LiftTuple${arity}(${params}) => ${argPfx}${pIdx}
-      case _ => Tuple${arity}Proj${pIdx}(p)
+      case _ => Product${arity}Proj${pIdx}(p)
     }
 
 <% } %>
     def metaProductArity: Int = ${arity}
 
     def metaProductElement(n: Int): Exp[Any] = (n: @switch) match {
-      ${baseParLoop(arity)(i => "case %d => Tuple%dProj%d(p)" format (i - 1, arity, i), "\n      ")}
+      ${baseParLoop(arity)(i => "case %d => Product%dProj%d(p)" format (i - 1, arity, i), "\n      ")}
     }
   }
 
-  implicit def toTuple${arity}Ops[${tparams}](e: Exp[(${tparams})]): Tuple${arity}Ops[${tparams}] = new Tuple${arity}Ops(e)
+  implicit def toProduct${arity}Ops[${tparams}](e: Exp[Product${arity}[${tparams}]]): Product${arity}Ops[${tparams}] = new Product${arity}Ops(e)
 #end
 }
 
@@ -161,7 +174,7 @@ object TupleSupport extends AutoTupleOps with LiftingConvs {
   def projectionTo[T](e: Var, arity: Int, idx: Int): Exp[T] =
     ((arity: @switch) match {
 #for (arity <- minTupleArity to maxArity)
-      case ${arity} => toTuple${arity}Ops(e.asInstanceOf[Exp[(${nothingN(arity)})]]).metaProductElement(idx)
+      case ${arity} => toProduct${arity}Ops(e.asInstanceOf[Exp[(${nothingN(arity)})]]).metaProductElement(idx)
 #end
     }).asInstanceOf[Exp[T]]
 }
@@ -176,7 +189,7 @@ object TupleSupport2 {
 #for (arity <- minTupleArity to maxArity)
       case ${arity} =>
         (idx: @switch) match {
-          ${baseParLoop(arity)(i => "case %d => Tuple%dProj%d(e.asInstanceOf[Exp[(%s)]])" format (i - 1, arity, i, nothingN(arity)), "\n          ")}
+          ${baseParLoop(arity)(i => "case %d => Product%dProj%d(e.asInstanceOf[Exp[(%s)]])" format (i - 1, arity, i, nothingN(arity)), "\n          ")}
         }
 #end
     }

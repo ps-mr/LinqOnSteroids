@@ -112,7 +112,7 @@ object FunInterp {
 }
 
 class FunInterp2[S1, S2, T](val foasBody: Exp[T], v1: TypedVar[S1], v2: TypedVar[S2])
-  extends Fun[(S1, S2), T](p => foasBody.substSubTerm(v1, Tuple2Proj1(p)).substSubTerm(v2, Tuple2Proj2(p)))
+  extends Fun[(S1, S2), T](p => foasBody.substSubTerm(v1, Product2Proj1(p)).substSubTerm(v2, Product2Proj2(p)))
 {
   override def arrowString = "=i=>"
   override def interpret() = {
