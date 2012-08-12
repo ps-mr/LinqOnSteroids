@@ -196,8 +196,10 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   test("foo") {
     println(query)
-    println(query.optimize)
-    println(query.interpret())
-    println(query.optimize.interpret())
+    val optim = query.optimize
+    println(optim)
+    val res = query.interpret()
+    println(res)
+    query.optimize.interpret() should be (res)
   }
 }
