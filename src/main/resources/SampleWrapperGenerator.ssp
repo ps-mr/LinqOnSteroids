@@ -8,7 +8,7 @@ import OverloadHack._
 
 
 package object squopt {<%
-  for(c <- List("Author", "Book", "Result", "MethodRecord", "BytecodeInstrWindow")) {
+  for(c <- List("Author", "Book", "Result", "FieldRecord", "MethodRecord", "ConcreteMethodRecord", "BytecodeInstr", "BytecodeInstrWindow")) {
     render("WrappedClassInlined.ssp", Map("classFile" -> ("schema." + c)))
     //Won't work, since String is a purely Java class, hence has no Scala reflection info. We'd need to duplicate what we
     //did for Java classes.

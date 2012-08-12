@@ -38,33 +38,38 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
   println("Numer of methods: " + methodsSQuOpt().interpret().size)
 
 
-  def fieldsNative() =
+  def fieldsNative() = {
+    import schema._
     for {
       classFile ← classFiles
       field ← classFile.fields
-    } yield (classFile, field)
+    } yield FieldRecord(classFile, field)
+  }
 
   def fieldsSQuOpt() = {
     import BATLifting._
+    import schema.squopt._
     for {
       classFile ← classFiles.asSmart
       field ← classFile.fields
-    } yield (classFile, field)
+    } yield FieldRecord(classFile, field)
   }
 
   def methodsNative() = {
+    import schema._
     for {
       classFile ← classFiles
       method ← classFile.methods
-    } yield (classFile, method)
+    } yield MethodRecord(classFile, method)
   }
 
   def methodsSQuOpt() = {
     import BATLifting._
+    import schema.squopt._
     for {
       classFile ← classFiles.asSmart
       method ← classFile.methods
-    } yield (classFile, method)
+    } yield MethodRecord(classFile, method)
   }
 
   def methodBodiesSQuOpt() = {
@@ -75,23 +80,23 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       classFile ← classFiles.asSmart
       method ← classFile.methods
       body ← method.body
-    } yield MethodRecord(classFile, method, body)
+    } yield ConcreteMethodRecord(classFile, method, body)
   }
 
   def methodBodiesModularNative() = {
     import schema._
     for {
-      (classFile, method) <- methodsNative()
+      MethodRecord(classFile, method) <- methodsNative()
       body <- method.body
-    } yield MethodRecord(classFile, method, body) //MethodRecord(cfM._1, cfM._2, body)
+    } yield ConcreteMethodRecord(classFile, method, body) //ConcreteMethodRecord(cfM._1, cfM._2, body)
   }
 
   def methodBodiesInstructionsModularNative() = {
     import schema._
     for {
-      MethodRecord(classFile, method, body) ← methodBodiesModularNative()
+      ConcreteMethodRecord(classFile, method, body) ← methodBodiesModularNative()
       instruction ← body.instructions
-    } yield (classFile, method, body, instruction) //MethodRecord(cfM._1, cfM._2, body)
+    } yield (classFile, method, body, instruction) //ConcreteMethodRecord(cfM._1, cfM._2, body)
   }
 
   def methodBodiesModularSQuOpt() = {
@@ -99,17 +104,15 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     import schema.squopt._
     for {
       cfM <- methodsSQuOpt()
-      classFile <- Let(cfM._1)
-      method ← Let(cfM._2)
-      body <- method.body
-    } yield MethodRecord(classFile, method, body) //MethodRecord(cfM._1, cfM._2, body)
+      body <- cfM.method.body
+    } yield ConcreteMethodRecord(cfM.classFile, cfM.method, body) //ConcreteMethodRecord(cfM._1, cfM._2, body)
   }
 
   def methodBodiesInstructionsModularSQuOpt() = {
     import BATLifting._
     import schema.squopt._
     for {
-      cfMB /*(classFile, method, body)*/ ← methodBodiesModularSQuOpt()
+      cfMB ← methodBodiesModularSQuOpt()
       instruction ← cfMB.body.instructions
     } yield (cfMB.classFile, cfMB.method, cfMB.body, instruction)
   }
@@ -117,7 +120,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
   def methodBodiesInstructionsSlidingNative(len: Int): Seq[schema.BytecodeInstrWindow] = {
     import schema._
     for {
-      MethodRecord(classFile, method, body) ← methodBodiesModularNative()
+      ConcreteMethodRecord(classFile, method, body) ← methodBodiesModularNative()
       (instrs, instrIdxes) ← body.instructions.zipWithIndex.filter(_._1 != null).toSeq.sliding(len).toStream.map(_.unzip)
     } yield BytecodeInstrWindow(instrIdxes, instrs, classFile, method)
   }

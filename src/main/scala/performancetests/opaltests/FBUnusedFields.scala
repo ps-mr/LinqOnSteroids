@@ -225,32 +225,31 @@ trait FBUnusedFields {
       } yield (classFile, unusedPrivateFields)
     }, {
       import BATLifting._
+      import schema.squopt._
       for {
-        cfField ← fieldsSQuOpt()
-        classFile ← Let(cfField._1)
-        field ← Let(cfField._2)
-        if !classFile.isInterfaceDeclaration
-        if field.isPrivate
-        fieldName ← Let(field.name)
-        declaringClass ← Let(classFile.thisClass)
-        privateFields ← Let(getPrivateFieldsLos(classFile))
-        usedPrivateFields ← Let(usedPrivateFieldsLos(classFile, declaringClass))
+        fieldRecord ← fieldsSQuOpt()
+        if !fieldRecord.classFile.isInterfaceDeclaration
+        if fieldRecord.field.isPrivate
+        fieldName ← Let(fieldRecord.field.name)
+        declaringClass ← Let(fieldRecord.classFile.thisClass)
+        privateFields ← Let(getPrivateFieldsLos(fieldRecord.classFile))
+        usedPrivateFields ← Let(usedPrivateFieldsLos(fieldRecord.classFile, declaringClass))
         unusedPrivateFields ← Let(privateFields -- usedPrivateFields) //for (field ← privateFields if !usedPrivateFields.contains(field)) yield field
         if unusedPrivateFields.size > 0
-      } yield (classFile, unusedPrivateFields)
+      } yield (fieldRecord.classFile, unusedPrivateFields)
     }, {
       import BATLifting._
       import InstructionLifting._
+      import schema.squopt._
+
       (for {
-        cfField ← fieldsSQuOpt()
-        classFile ← Let(cfField._1)
-        declaringClass ← Let(classFile.thisClass)
-        field ← Let(cfField._2)
-        if !classFile.isInterfaceDeclaration
-        if field.isPrivate
-        fieldName ← Let(field.name)
+        fieldRecord ← fieldsSQuOpt()
+        declaringClass ← Let(fieldRecord.classFile.thisClass)
+        if !fieldRecord.classFile.isInterfaceDeclaration
+        if fieldRecord.field.isPrivate
+        fieldName ← Let(fieldRecord.field.name)
         instructions ← Let(for {
-          method ← classFile.methods
+          method ← fieldRecord.classFile.methods
           body ← method.body
           instruction ← body.instructions
         } yield instruction)
@@ -258,7 +257,7 @@ trait FBUnusedFields {
           when[GETFIELD](asGETFIELD => asGETFIELD.declaringClass ==# declaringClass, _.name),
           when[GETSTATIC](asGETSTATIC => asGETSTATIC.declaringClass ==# declaringClass, _.name)))
         if !(usedPrivateFields contains fieldName)
-      } yield (classFile, fieldName)).indexBy(_._1).map(v => (v._1, (v._2 map (_._2)).toSet)).toVector
+      } yield (fieldRecord.classFile, fieldName)).indexBy(_._1).map(v => (v._1, (v._2 map (_._2)).toSet)).toVector
     })
   }
 

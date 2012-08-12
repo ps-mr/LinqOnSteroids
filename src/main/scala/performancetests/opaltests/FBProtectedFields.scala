@@ -31,23 +31,23 @@ trait FBProtectedFields {
       for {
         classFile ← classFiles if classFile.isFinal
         field ← classFile.fields if field.isProtected
-      } yield (classFile, field),
+      } yield (classFile, field), {
+      import schema._
       for {
-        (classFile, field) <- fieldsNative() if classFile.isFinal
+        FieldRecord(classFile, field) <- fieldsNative() if classFile.isFinal
         if field.isProtected
       } yield (classFile, field)
-    ) (
+    }) (
       for {
         classFile ← classFiles.asSmart if classFile.isFinal
         field ← classFile.fields if field.isProtected
-      } yield (classFile, field),
+      } yield (classFile, field), {
+      import schema.squopt._
       for {
-        classFileField <- fieldsSQuOpt()
-        classFile <- Let(classFileField._1)
-        field <- Let(classFileField._2)
-        if classFile.isFinal
-        if field.isProtected
-      } yield (classFile, field)
-    )
+        fieldRecord <- fieldsSQuOpt()
+        if fieldRecord.classFile.isFinal
+        if fieldRecord.field.isProtected
+      } yield (fieldRecord.classFile, fieldRecord.field)
+    })
   }
 }

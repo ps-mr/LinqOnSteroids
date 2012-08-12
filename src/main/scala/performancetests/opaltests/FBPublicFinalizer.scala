@@ -45,22 +45,23 @@ trait FBPublicFinalizer {
         classFile ← classFiles
         method ← classFile.methods
         if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
-      } yield classFile,
+      } yield classFile, {
+      import schema._
       for {
-        (classFile, method) ← methodsNative()
+        MethodRecord(classFile, method) ← methodsNative()
         if method.name == "finalize" && method.isPublic && method.descriptor.returnType == VoidType && method.descriptor.parameterTypes.size == 0
       } yield classFile
-    ) (
+    }) (
       for {
         classFile ← classFiles.asSmart
         method ← classFile.methods
         if method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0
-      } yield classFile,
+      } yield classFile, {
+      import schema.squopt._
       for {
-        classFileMethod ← methodsSQuOpt()
-        method ← Let(classFileMethod._2)
-        if method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0
-      } yield classFileMethod._1
-    )
+        methodRecord ← methodsSQuOpt()
+        if methodRecord.method.name ==# "finalize" && methodRecord.method.isPublic && methodRecord.method.descriptor.returnType ==# VoidType && methodRecord.method.descriptor.parameterTypes.size ==# 0
+      } yield methodRecord.classFile
+    })
   }
 }
