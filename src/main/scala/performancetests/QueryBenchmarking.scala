@@ -33,7 +33,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
     if (!onlyOptimized)
       showExpNoVal(v, msg)
     val res = benchMarkWithTime(msg)(Compile.toValue(v).force)
-    //res._1 should be (v.expResult().force)
+    //res._1 should be (v.value().force)
     res
   }
 

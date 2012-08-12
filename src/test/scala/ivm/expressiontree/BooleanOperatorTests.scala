@@ -33,6 +33,6 @@ class BooleanOperatorTests extends JUnitSuite with ShouldMatchersForJUnit {
       //This line executes correctly only if And is short-circuiting, as it should be.
       if v.isDefined && v.get ==# 1
     } yield v.get
-    query.expResult() should be (Traversable(1))
+    query.value() should be (Traversable(1))
   }
 }

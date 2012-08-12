@@ -92,10 +92,10 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
     val base = asExp(Seq(1))
     val query1 = for (i <- base.typeFilter[Int] if i % 2 ==# 0) yield i
     val query2 = for (i <- base.typeFilter[Int] if i % 2 ==# 1) yield i
-    query1.expResult() should be (Seq())
-    query2.expResult() should be (Seq(1))
+    query1.value() should be (Seq())
+    query2.value() should be (Seq(1))
     val query21 = for (i <- base; iCast <- i.ifInstanceOf[Int] if iCast % 2 ==# 1) yield iCast
-    query21.expResult() should be (Seq(1))
+    query21.value() should be (Seq(1))
     val query21ExpectedOpt = for (i <- base.typeFilter[Int]; iCast <- Let(i) if iCast % 2 ==# 1) yield iCast
     Optimization.toTypeFilter(query21) should be (query21ExpectedOpt)
   }

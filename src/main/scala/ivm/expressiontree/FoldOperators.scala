@@ -282,25 +282,25 @@ object FoldOperatorsMain {
       println(query)
       for (n <- 0 to (4, 2)) {
         incBuf += n
-        assert(query.expResult == incBuf.forall(_ % 2 == 0))
-        assert(query2.expResult == incBuf.exists(_ % 2 == 0))
-        println("%s, forall even: %s, exists even: %s" format (incBuf, query.expResult(), query2.expResult()))
+        assert(query.value == incBuf.forall(_ % 2 == 0))
+        assert(query2.value == incBuf.exists(_ % 2 == 0))
+        println("%s, forall even: %s, exists even: %s" format (incBuf, query.value(), query2.value()))
       }
       for (n <- 1 to (5, 2)) {
         incBuf += n
-        assert(query.expResult == incBuf.forall(_ % 2 == 0))
-        assert(query2.expResult == incBuf.exists(_ % 2 == 0))
-        println("%s, forall even: %s, exists even: %s" format (incBuf, query.expResult(), query2.expResult()))
+        assert(query.value == incBuf.forall(_ % 2 == 0))
+        assert(query2.value == incBuf.exists(_ % 2 == 0))
+        println("%s, forall even: %s, exists even: %s" format (incBuf, query.value(), query2.value()))
       }
       incBuf.clear()
-      assert(query.expResult == incBuf.forall(_ % 2 == 0))
-      assert(query2.expResult == incBuf.exists(_ % 2 == 0))
-      println("%s, forall even: %s, exists even: %s" format (incBuf, query.expResult(), query2.expResult()))
+      assert(query.value == incBuf.forall(_ % 2 == 0))
+      assert(query2.value == incBuf.exists(_ % 2 == 0))
+      println("%s, forall even: %s, exists even: %s" format (incBuf, query.value(), query2.value()))
       for (n <- 1 to 5) {
         incBuf += (math.random * 4).toInt
-        assert(query.expResult == incBuf.forall(_ % 2 == 0))
-        assert(query2.expResult == incBuf.exists(_ % 2 == 0))
-        println("%s, forall even: %s, exists even: %s" format (incBuf, query.expResult(), query2.expResult()))
+        assert(query.value == incBuf.forall(_ % 2 == 0))
+        assert(query2.value == incBuf.exists(_ % 2 == 0))
+        println("%s, forall even: %s, exists even: %s" format (incBuf, query.value(), query2.value()))
       }
     }
   }

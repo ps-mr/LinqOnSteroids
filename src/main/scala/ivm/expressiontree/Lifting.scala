@@ -120,7 +120,7 @@ trait ExpSugar extends ConversionDisabler2 {
   class UnconvertedExp[+T](val v: T)
 
   //This way, using Query verifies that it's argument is of type Exp[Traversable[T]] without needing to convert it. We could
-  //maybe also restrict the result of Query so that only expResult() can be called on it.
+  //maybe also restrict the result of Query so that only value() can be called on it.
   //
   //implicit def toQuery[T](t: Exp[Traversable[T]]) = new UnconvertedExp(t)
   //We can use this stronger version:

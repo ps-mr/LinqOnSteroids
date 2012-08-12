@@ -100,13 +100,13 @@ case class Forall[T](coll: Exp[Traversable[T]], f: Fun[T, Boolean])
   override def interpret() = {
     //XXX: we should get the initial status otherwise.
     countFalse = coll.interpret().count(x => !f.interpret()(x))
-    expResult()
+    value()
   }
 
   override def copy(coll: Exp[Traversable[T]]) = Forall(coll, f)
 
-  override def cache = Some(expResult()) //We probably need to make the cache _field_ optional.
-  override def expResult() = countFalse == 0 //The result is always valid here.
+  override def cache = Some(value()) //We probably need to make the cache _field_ optional.
+  override def value() = countFalse == 0 //The result is always valid here.
 
   override def notifyEv(pub: Traversable[T], evt: Message[Traversable[T]]) {
     evt match {

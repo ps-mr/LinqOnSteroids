@@ -12,7 +12,7 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   def interpret(): T
 
   //This method returns the cached value (if any) or invokes interpret().
-  def expResult(): T = interpret()
+  def value(): T = interpret()
 
   def nodeArity: Int
 

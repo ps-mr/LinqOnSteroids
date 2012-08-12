@@ -16,6 +16,6 @@ class FixpointTest extends JUnitSuite with ShouldMatchersForJUnit {
   }
 
   @Test def transClosure() {
-    TransitiveClosure(Const(List(1 -> 2, 2 -> 3))).expResult() should be (Set((1,2), (2,3), (1,3)))
+    TransitiveClosure(Const(List(1 -> 2, 2 -> 3))).value() should be (Set((1,2), (2,3), (1,3)))
   }
 }
