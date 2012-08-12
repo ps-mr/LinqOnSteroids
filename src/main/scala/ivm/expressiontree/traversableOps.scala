@@ -112,6 +112,11 @@ trait TraversableOps {
     def toVector = fmap(this.t, 'TraversableLike)('toVector, _.toVector)
     def flatten[U](implicit asTraversable: T => TraversableOnce[U]) = fmap(this.t, 'TraversableLikeOps)('flatten, _.flatten)
 
+    def foldLeft[U](z: Exp[U])(op: Exp[(U, T)] => Exp[U]): Exp[U] = fmap(this.t, z, Fun(op), 'TraversableLike)('foldLeft, (base, z, op) => base.foldLeft(z)(Function.untupled(op)))
+
+    def sum[U >: T: ClassTag: TypeTag](implicit num: Numeric[U]): Exp[U] = foldLeft(pure(num.zero))(app(pure((num.plus _).tupled)))
+    def product[U >: T: ClassTag: TypeTag](implicit num: Numeric[U]): Exp[U] = foldLeft(pure(num.one))(app(pure((num.times _).tupled)))
+
     def typeCase[Res: TypeTag](cases: TypeCase[_, Res]*): Exp[Set[Res]] = TypeCaseExp(this.t, cases)
   }
 
