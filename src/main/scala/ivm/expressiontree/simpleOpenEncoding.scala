@@ -27,17 +27,34 @@ trait ConversionDisabler {
   implicit def noPureForExp[T](t: Exp[T]): Exp[Exp[T]] = null
 }
 
-trait LiftingConvs extends ConversionDisabler {
+trait ConversionHelpers {
+  def pureExpl[T: ClassTag: TypeTag](t: T): Exp[T] = Const(t)
+
+  //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
+  //parameter of Exp here.
+  def asExp[T](t: Exp[T]) = t
+
+  //Use something derived from the above to lift other implicit conversions.
+  def convLift[T, U](t: Exp[T], name: Symbol, prefix: String)(implicit conv: T => U): Exp[U] =
+    new GlobalFuncCall1(name, prefix, conv, t)
+  def convFromBase[T <% U, U: ClassTag: TypeTag](t: T): Exp[U] = pureExpl(t: U)
+
+}
+
+//Conversions which should have lower priority than pure.
+trait ExtraConversions extends ConversionHelpers {
+//  implicit def int2ExpDouble(t: Int) = convFromBase[Int, Double](t)
+//  implicit def int2ExpLong(t: Int) = convFromBase[Int, Long](t)
+//  implicit def int2ExpFloat(t: Int) = convFromBase[Int, Float](t)
+}
+
+trait LiftingConvs extends ConversionDisabler with ExtraConversions {
   //The following variant would avoid ugliness like:
   //implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
   //but it does not work (bug https://issues.scala-lang.org/browse/SI-3346).
   //implicit def pure[T, U <% T](t: U): Exp[T] = Const(t)
   //So let's keep it simple.
-  implicit def pure[T: ClassTag: TypeTag](t: T): Exp[T] = Const(t)
-
-  //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
-  //parameter of Exp here.
-  def asExp[T](t: Exp[T]) = t
+  implicit def pure[T: ClassTag: TypeTag](t: T): Exp[T] = pureExpl(t)
 
   class WithAsSmartCollection[T](t: T) {
     def asSmart(implicit conv: T => Exp[T]) = conv(t)
@@ -100,11 +117,6 @@ trait FunctionOps extends AutoFunctionOps {
   //Not even this version is applied implicitly:
   implicit def liftConv[T, U](t: Exp[T])(implicit conv: T => U): Exp[U] = convLift(t, 'liftConvXXX)
   */
-
-  //Use something derived from the above to lift other implicit conversions.
-  def convLift[T, U](t: Exp[T], name: Symbol, prefix: String)(implicit conv: T => U): Exp[U] =
-    new GlobalFuncCall1(name, prefix, conv, t)
-  def convFromBase[T <% U, U: ClassTag: TypeTag](t: T): Exp[U] = asExp[U](t: U)
 
   //Should we add this?
   implicit def funcExp[S, T](f: Exp[S] => Exp[T]) = Fun(f)
