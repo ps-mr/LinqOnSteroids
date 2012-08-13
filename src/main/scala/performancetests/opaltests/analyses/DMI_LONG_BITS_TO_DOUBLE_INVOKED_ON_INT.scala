@@ -16,8 +16,6 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
 
     import ivm.expressiontree.Exp
 
-    import BaseAnalyses.withIndex
-
     val doubleClass = ObjectType("java/lang/Double")
 
     val longBitsToDoubleDescriptor = MethodDescriptor(List(LongType), DoubleType)
