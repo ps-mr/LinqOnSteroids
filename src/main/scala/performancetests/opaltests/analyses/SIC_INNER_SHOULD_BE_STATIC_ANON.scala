@@ -142,10 +142,6 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
       ) yield 1).sum > 1
     }
 
-
-
-
-
     def analyzeBaseWithoutAbstractions() = {
       val readFields = BaseAnalyses.readFields(classFiles).map(_._2)
       for (classFile ← classFiles
@@ -181,5 +177,50 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
               )
       ) yield
         (classFile)
+    }
+
+
+    def analyzeBaseWithAbstractions() = {
+      val readFields = BaseAnalyses.readFields(classFiles).map(_._2)
+      for (schema.FieldRecord(classFile, field) ← fieldsNative
+           if (isAnonymousInnerClass(classFile) &&
+               canConvertToStaticInnerClass(classFile) &&
+               isOuterThisField(field) &&
+               !readFields.contains((classFile.thisClass, field.name, field.fieldType)) &&
+               !constructorReadsOuterThisField(classFile)
+              )
+      ) yield
+        (classFile)
+    }
+
+    def analyzeSQuOptWithAbstractions() = {
+        import de.tud.cs.st.bat.resolved._
+        import ivm._
+        import expressiontree._
+        import Lifting._
+        import BATLifting._
+        import performancetests.opaltests.InstructionLifting._
+        import ivm.expressiontree.Util.ExtraImplicits._
+        import schema.squopt._
+        val readFields = BaseAnalyses.readFields(classFiles.asSmart).map(_._2)
+        for (fieldRecord ← fieldsSQuOpt
+             if (isAnonymousInnerClass(fieldRecord.classFile) &&
+                 canConvertToStaticInnerClass(fieldRecord.classFile) &&
+                 isOuterThisField(fieldRecord.field) &&
+                 !readFields.contains((fieldRecord.classFile.thisClass, fieldRecord.field.name, fieldRecord.field.fieldType)) &&
+                 !constructorReadsOuterThisField(fieldRecord.classFile)
+                )
+        ) yield
+          (fieldRecord.classFile)
+      }
+
+
+    def analyzeSIC_INNER_SHOULD_BE_STATIC_ANON() {
+      benchQueryComplete("SIC_INNER_SHOULD_BE_STATIC_ANON")(
+        analyzeBaseWithoutAbstractions(),
+        analyzeBaseWithAbstractions())(
+        analyzeSQuOptWithoutAbstractions(),
+        analyzeSQuOptWithAbstractions()
+      )
     }
 }
