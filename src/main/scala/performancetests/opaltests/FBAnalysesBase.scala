@@ -55,6 +55,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     } yield FieldRecord(classFile, field)
   }
 
+
   def methodsNative() = {
     import schema._
     for {
@@ -72,6 +73,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     } yield MethodRecord(classFile, method)
   }
 
+
   def methodBodiesSQuOpt() = {
     import BATLifting._
     //import schema._ //{squopt => _, _}
@@ -83,20 +85,13 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     } yield ConcreteMethodRecord(classFile, method, body)
   }
 
+
   def methodBodiesModularNative() = {
     import schema._
     for {
       MethodRecord(classFile, method) <- methodsNative()
       body <- method.body
     } yield ConcreteMethodRecord(classFile, method, body) //ConcreteMethodRecord(cfM._1, cfM._2, body)
-  }
-
-  def methodBodiesInstructionsModularNative() = {
-    import schema._
-    for {
-      ConcreteMethodRecord(classFile, method, body) ← methodBodiesModularNative()
-      instruction ← body.instructions
-    } yield (classFile, method, body, instruction) //ConcreteMethodRecord(cfM._1, cfM._2, body)
   }
 
   def methodBodiesModularSQuOpt() = {
@@ -108,6 +103,15 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     } yield ConcreteMethodRecord(cfM.classFile, cfM.method, body) //ConcreteMethodRecord(cfM._1, cfM._2, body)
   }
 
+
+  def methodBodiesInstructionsModularNative() = {
+    import schema._
+    for {
+      ConcreteMethodRecord(classFile, method, body) ← methodBodiesModularNative()
+      instruction ← body.instructions
+    } yield (classFile, method, body, instruction) //ConcreteMethodRecord(cfM._1, cfM._2, body)
+  }
+
   def methodBodiesInstructionsModularSQuOpt() = {
     import BATLifting._
     import schema.squopt._
@@ -116,6 +120,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       instruction ← cfMB.body.instructions
     } yield (cfMB.classFile, cfMB.method, cfMB.body, instruction)
   }
+
 
   def methodBodiesInstructionsSlidingNative(len: Int): Seq[schema.BytecodeInstrWindow] = {
     import schema._
