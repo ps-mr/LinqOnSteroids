@@ -16,7 +16,8 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
 
   def analyzeBaseWithoutAbstractions() = {
     import de.tud.cs.st.bat.resolved._
-    for {classFile ← classFiles if classFile.majorVersion >= 49
+    for {
+         classFile ← classFiles if classFile.majorVersion >= 49
          method ← classFile.methods if method.body.isDefined
          Seq(
          (INVOKESPECIAL(firstReceiver, _,MethodDescriptor(Seq(paramType), _)), _),
@@ -41,7 +42,8 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
     import InstructionLifting._
     import ivm.expressiontree.Util.ExtraImplicits._
 
-    for {classFile ← classFiles.asSmart if classFile.majorVersion >= 49
+    for {
+         classFile ← classFiles.asSmart if classFile.majorVersion >= 49
          method ← classFile.methods if method.body.isDefined
          window ← withIndexExp(method.body.get.instructions).sliding(2)
          first ← window.head._1.ifInstanceOf[INVOKESPECIAL]
@@ -61,7 +63,8 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
   def analyzeBaseWithAbstractions() = {
     import de.tud.cs.st.bat.resolved._
     import schema._
-    for (BytecodeInstrWindow(Seq(_, idx),
+    for (
+         BytecodeInstrWindow(Seq(_, idx),
                              Seq(INVOKESPECIAL(firstReceiver, _, MethodDescriptor(Seq(paramType), _)),
                                  INVOKEVIRTUAL(secondReceiver, name, MethodDescriptor(Seq(), returnType))),
                              classFile,
@@ -87,7 +90,8 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
       import ivm.expressiontree.Util.ExtraImplicits._
       import schema.squopt._
 
-      for {window ← methodBodiesInstructionsSlidingSQuOpt(2)
+      for {
+           window ← methodBodiesInstructionsSlidingSQuOpt(2)
            first ← window.instrs.head.ifInstanceOf[INVOKESPECIAL]
            second ← window.instrs.last.ifInstanceOf[INVOKEVIRTUAL]
            if window.classFile.majorVersion >= 49 &&
