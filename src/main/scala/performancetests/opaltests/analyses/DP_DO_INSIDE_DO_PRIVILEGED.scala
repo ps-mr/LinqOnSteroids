@@ -29,9 +29,8 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
          method ← classFile.methods if method.body.isDefined;
          (INVOKEVIRTUAL(receiver, "setAccessible", _), idx) ← withIndex(method.body.get.instructions)
          if (receiver == reflectionField || receiver == reflectionMethod)
-    ) yield {
+    ) yield
       (classFile, method, idx)
-    }
   }
 
 
@@ -52,9 +51,8 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
             (invoke.declaringClass ==# reflectionField || invoke.declaringClass ==# reflectionMethod) &&
             invoke.name ==# "setAccessible"
             )
-    ) yield {
+    ) yield
       (classFile, method, instructionWithIndex._2)
-    }
   }
 
 
@@ -80,14 +78,14 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
     import ivm.expressiontree.Util.ExtraImplicits._
     import schema.squopt._
 
-    for (
-      instructionWithIndex ← methodBodiesInstructionsIndexedModularNative;
+    for  {
+      instructionWithIndex ← methodBodiesInstructionsIndexedModularSQuOpt
       invoke ← instructionWithIndex.instruction.ifInstanceOf[INVOKEVIRTUAL]
-      if (!instructionWithIndex.classFile.interfaces.exists((t) =>  {(t ==# priviledgedAction) || (t ==# priviledgedExceptionAction)}) &&
+      if (!instructionWithIndex.classFile.interfaces.exists((t) =>  (t ==# priviledgedAction) || (t ==# priviledgedExceptionAction)) &&
          (invoke.declaringClass ==# reflectionField || invoke.declaringClass ==# reflectionMethod) &&
          invoke.name ==# "setAccessible"
          )
-    ) yield
+    } yield
       (instructionWithIndex.classFile, instructionWithIndex.method, instructionWithIndex.index)
   }
 
