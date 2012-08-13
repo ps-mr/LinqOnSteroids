@@ -130,7 +130,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     import schema.squopt._
     for {
       methodRecord ← methodBodiesModularSQuOpt()
-      window ← methodRecord.body.instructions.zipWithIndex.filter(_._1 != null).toSeq.sliding(len).map(_.unzip)
+      window ← methodRecord.body.instructions.zipWithIndex.filter(_._1 !=# null).toSeq.sliding(len).map(_.unzip)
     } yield BytecodeInstrWindow(window._2, window._1, methodRecord.classFile, methodRecord.method)
   }
 }
