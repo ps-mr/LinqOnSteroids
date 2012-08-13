@@ -34,6 +34,35 @@ object BaseAnalyses {
     }).toSet
   }
 
+  import ivm.expressiontree.Exp
+
+  def readFields(classFiles: Exp[Traversable[ClassFile]]): Exp[scala.collection.immutable.Set[((Exp[ClassFile], Exp[Method]), (Exp[ObjectType], Exp[String], Exp[FieldType]))]] = {
+    import de.tud.cs.st.bat.resolved._
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import BATLifting._
+    import performancetests.opaltests.InstructionLifting._
+    import ivm.expressiontree.Util.ExtraImplicits._
+    (for (classFile ← classFiles if !classFile.isInterfaceDeclaration;
+          method ← classFile.methods if method.body.isDefined;
+          instruction ← method.body.get.instructions
+          if ( instruction.isInstanceOf_#[GETFIELD] || instruction.isInstanceOf_#[GETSTATIC])
+    ) yield {
+      if( instruction.isInstanceOf_#[GETFIELD].value ){ // TODO: added a _.value is this correct?
+         val instr = instruction.asInstanceOf_#[GETFIELD]
+        ((classFile, method), (instr.declaringClass, instr.name, instr.fieldType))
+      }
+      else if( instruction.isInstanceOf_#[GETFIELD].value) // TODO: added a _.value is this correct?
+      {
+        val instr = instruction.asInstanceOf_#[GETFIELD]
+        ((classFile, method), (instr.declaringClass, instr.name, instr.fieldType))
+      }
+      else
+        null
+    }).toSet
+  }
+
   /**
    * Returns true if the method is also declared in the superclass; regardless of abstract or interface methods
    */
