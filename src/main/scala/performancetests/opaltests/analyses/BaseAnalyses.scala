@@ -36,8 +36,9 @@ object BaseAnalyses {
 
   import ivm.expressiontree.Exp
 
+  //Nested tuples don't work so well. Note the use of asExp below:
   //Exp[scala.collection.immutable.Set[Exp[Exp[((Exp[ClassFile], Exp[Method])], Exp[(Exp[ObjectType], Exp[String], Exp[FieldType])])]]]
-  def readFields(classFiles: Exp[Traversable[ClassFile]]) = {
+  def readFields(classFiles: Exp[Traversable[ClassFile]]): Exp[Set[((ClassFile, Method), (ObjectType, String, FieldType))]] = {
     import de.tud.cs.st.bat.resolved._
     import ivm._
     import expressiontree._
@@ -49,16 +50,15 @@ object BaseAnalyses {
           instruction ← method.body.get.instructions
           if (instruction.isInstanceOf_#[GETFIELD] || instruction.isInstanceOf_#[GETSTATIC])
     ) yield {
-      if (instruction.isInstanceOf_#[GETFIELD].value) { // TODO: added a _.value is this correct?
+      if_# (instruction.isInstanceOf_#[GETFIELD]) {
         val instr = instruction.asInstanceOf_#[GETFIELD]
-        ((classFile, method), (instr.declaringClass, instr.name, instr.fieldType))
-      }
-      else if (instruction.isInstanceOf_#[GETFIELD].value) { // TODO: added a _.value is this correct?
+        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType)))
+      } else_# if_# (instruction.isInstanceOf_#[GETFIELD]) {
         val instr = instruction.asInstanceOf_#[GETFIELD]
-        ((classFile, method), (instr.declaringClass, instr.name, instr.fieldType))
-      }
-      else
+        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType)))
+      } else_# {
         null
+      }
     }).toSet
   }
 
@@ -246,5 +246,6 @@ object BaseAnalyses {
     import ivm.expressiontree.{Exp, Lifting}
     import Lifting._
     instructions.zipWithIndex.filter(_._1 !=# null).toSeq // TODO I had to add toSeq; why did this compile earlier
+    //PG: I'm confused - I can omit the toSeq even now, and everything just compiles.
   }
 }
