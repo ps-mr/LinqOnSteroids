@@ -53,7 +53,7 @@ object BaseAnalyses {
         val instr = instruction.asInstanceOf_#[GETFIELD]
         ((classFile, method), (instr.declaringClass, instr.name, instr.fieldType))
       }
-      else if (instruction.isInstanceOf_#[GETFIELD].value) { // TODO: added a _.value is this correct? {
+      else if (instruction.isInstanceOf_#[GETFIELD].value) { // TODO: added a _.value is this correct?
         val instr = instruction.asInstanceOf_#[GETFIELD]
         ((classFile, method), (instr.declaringClass, instr.name, instr.fieldType))
       }
@@ -65,6 +65,30 @@ object BaseAnalyses {
   // TODO this should be indexed
   def getClassFile(classFiles: Traversable[ClassFile])(t: ObjectType): Option[ClassFile] = {
     (for (classFile ← classFiles if classFile.thisClass == t) yield classFile).headOption
+  }
+
+  def getClassFile(classFiles: Exp[Traversable[ClassFile]])(t: Exp[ObjectType]) : Exp[Option[Exp[ClassFile]]] = {
+    import de.tud.cs.st.bat.resolved._
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import BATLifting._
+    import performancetests.opaltests.InstructionLifting._
+    import ivm.expressiontree.Util.ExtraImplicits._
+    val list = for (classFile ← classFiles if classFile.thisClass ==# t) yield {classFile}
+    // TODO: implement this
+    /*
+    if(list.isEmpty.value)  // TODO: added a _.value is this correct?
+    {
+        None.asSmart
+    }
+    else
+    {
+        Some[Exp[ClassFile]](list.head).asSmart
+    }
+    //list.headOption // TODO .headOption is not defined
+    */
+    null
   }
 
   // TODO this should be indexed
@@ -84,6 +108,32 @@ object BaseAnalyses {
     }
   }
 
+  def getMethodDeclaration(classFiles: Exp[Traversable[ClassFile]])(receiver: Exp[ObjectType],
+                                                               methodName: Exp[String],
+                                                               methodDescriptor: Exp[MethodDescriptor]): Exp[Option[(ClassFile, Method)]] = {
+    import de.tud.cs.st.bat.resolved._
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import BATLifting._
+    import performancetests.opaltests.InstructionLifting._
+    // TODO implement this
+    /*
+    val classFileLookup = getClassFile(classFiles)(receiver)
+    for (classFile ← classFileLookup;
+         methodDecl = (
+                      for (method ← classFile.methods
+                           if method.name ==# methodName &&
+                              method.descriptor ==# methodDescriptor) yield (classFile, method)
+                      ).headOption
+         if methodDecl.isDefined
+    ) yield {
+      methodDecl.get
+    }
+    */
+    null
+  }
+
   /**
    * Returns true if the method is also declared in the superclass; regardless of abstract or interface methods
    */
@@ -95,6 +145,25 @@ object BaseAnalyses {
     })
     superMethods.size > 0
 
+  }
+
+  def isOverrideExp(classFiles: Exp[Seq[ClassFile]], classHierarchy: Exp[ClassHierarchy])(classFile: Exp[ClassFile])(method: Exp[Method]): Exp[Boolean] = {
+    import de.tud.cs.st.bat.resolved._
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import BATLifting._
+    import performancetests.opaltests.InstructionLifting._
+    // TODO implement this
+    /*
+    val superMethods = (for (superClass ← classHierarchy.superclasses(classFile.thisClass).getOrElse(Set());
+                             methodDecl ← getMethodDeclaration(classFiles)(superClass, method.name, method.descriptor)
+    ) yield {
+      methodDecl
+    })
+    superMethods.size > 0
+    */
+    null
   }
 
 
@@ -135,6 +204,13 @@ object BaseAnalyses {
 
                                                                                         }
     getMethodDeclaration(classFiles)(targetType, name, desc)
+  }
+
+  def calledSuperConstructorExp(classFiles: Exp[Traversable[ClassFile]], classHierarchy: Exp[ClassHierarchy])
+                            (classFile: Exp[ClassFile],
+                             constructor: Exp[Method]): Exp[Option[(ClassFile, Method)]] = {
+    // TODO implement this
+    null
   }
 
   def calls(sourceMethod: Method, targetClass: ClassFile, targetMethod: Method): Boolean = {
