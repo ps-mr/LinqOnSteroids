@@ -126,7 +126,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     import schema._
     for {
       ConcreteMethodRecord(classFile, method, body) ← methodBodiesModularNative()
-      (instrs, instrIdxes) ← body.instructions.zipWithIndex.filter(_._1 != null).toSeq.sliding(len).toStream.map(_.unzip)
+      (instrs, instrIdxes) ← body.instructions.zipWithIndex.filter(_._1 != null).sliding(len).map(_.unzip)
     } yield BytecodeInstrWindow(instrIdxes, instrs, classFile, method)
   }
 
@@ -135,7 +135,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     import schema.squopt._
     for {
       methodRecord ← methodBodiesModularSQuOpt()
-      window ← methodRecord.body.instructions.zipWithIndex.filter(_._1 !=# null).toSeq.sliding(len).map(_.unzip)
+      window ← methodRecord.body.instructions.zipWithIndex.filter(_._1 !=# null).sliding(len).map(_.unzip)
     } yield BytecodeInstrWindow(window._2, window._1, methodRecord.classFile, methodRecord.method)
   }
 }
