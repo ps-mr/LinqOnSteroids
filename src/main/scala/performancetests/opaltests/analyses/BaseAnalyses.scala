@@ -37,7 +37,6 @@ object BaseAnalyses {
   import ivm.expressiontree.Exp
 
   //Nested tuples don't work so well. Note the use of asExp below:
-  //Exp[scala.collection.immutable.Set[Exp[Exp[((Exp[ClassFile], Exp[Method])], Exp[(Exp[ObjectType], Exp[String], Exp[FieldType])])]]]
   def readFields(classFiles: Exp[Traversable[ClassFile]]): Exp[Set[((ClassFile, Method), (ObjectType, String, FieldType))]] = {
     import de.tud.cs.st.bat.resolved._
     import ivm._
