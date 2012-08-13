@@ -1,8 +1,5 @@
 package performancetests.opaltests.analyses
 
-import de.tud.cs.st.bat.resolved._
-import de.tud.cs.st.bat.resolved.analyses.BaseAnalyses._
-
 /**
  *
  * Author: Ralf Mitschke
@@ -12,6 +9,8 @@ import de.tud.cs.st.bat.resolved.analyses.BaseAnalyses._
  */
 trait DP_DO_INSIDE_DO_PRIVILEGED {
   this: performancetests.opaltests.FBAnalysesBase =>
+
+  import de.tud.cs.st.bat.resolved.ObjectType
 
   val reflectionField = ObjectType("java/lang/reflect/Field")
 
@@ -45,7 +44,7 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
     import BATLifting._
 
     for (classFile ← classFiles.asSmart
-         if !classFile.interfaces.exists((t) => t == priviledgedAction || t == priviledgedExceptionAction);
+         if !classFile.interfaces.exists((t) => (t ==# priviledgedAction) || (t ==# priviledgedExceptionAction));
          method ← classFile.methods if method.body.isDefined;
          instructionWithIndex ← withIndexExp(method.body.get.instructions);
          invoke ← instructionWithIndex._1.ifInstanceOf[INVOKEVIRTUAL]
@@ -84,7 +83,7 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
     for (
       instructionWithIndex ← methodBodiesInstructionsIndexedModularNative;
       invoke ← instructionWithIndex.instruction.ifInstanceOf[INVOKEVIRTUAL]
-      if (!instructionWithIndex.classFile.interfaces.exists((t) => t ==# priviledgedAction || t ==# priviledgedExceptionAction) &&
+      if (!instructionWithIndex.classFile.interfaces.exists((t) =>  {(t ==# priviledgedAction) || (t ==# priviledgedExceptionAction)}) &&
          (invoke.declaringClass ==# reflectionField || invoke.declaringClass ==# reflectionMethod) &&
          invoke.name ==# "setAccessible"
          )

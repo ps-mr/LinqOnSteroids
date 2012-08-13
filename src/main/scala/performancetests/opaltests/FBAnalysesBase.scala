@@ -122,6 +122,23 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
   }
 
 
+  def methodBodiesInstructionsIndexedModularNative() : Seq[schema.BytecodeInstrIndexed] = {
+    import schema._
+    for {
+      ConcreteMethodRecord(classFile, method, body) ← methodBodiesModularNative()
+      (instruction, instrIdx) ← body.instructions.zipWithIndex.filter(_._1 != null)
+    } yield BytecodeInstrIndexed(classFile, method, instruction, instrIdx) //ConcreteMethodRecord(cfM._1, cfM._2, body)
+  }
+
+  def methodBodiesInstructionsIndexedModularSQuOpt() :  Exp[Seq[schema.BytecodeInstrIndexed]] = {
+    import BATLifting._
+    import schema.squopt._
+    for {
+      methodRecord ← methodBodiesModularSQuOpt()
+      indexedInstr ← methodRecord.body.instructions.zipWithIndex.filter(_._1 !=# null)
+    } yield BytecodeInstrIndexed(methodRecord.classFile, methodRecord.method, indexedInstr._1, indexedInstr._2)
+  }
+
   def methodBodiesInstructionsSlidingNative(len: Int): Seq[schema.BytecodeInstrWindow] = {
     import schema._
     for {
