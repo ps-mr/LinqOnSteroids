@@ -9,7 +9,17 @@ name := "LinqOnSteroids"
 version := "0.3-SNAPSHOT"
 
 //scalaVersion in ThisBuild := "2.9.2"
-scalaVersion in ThisBuild := "2.10.0-M5"
+
+scalaVersion in ThisBuild := "2.10.0-M6"
+
+//resolvers in ThisBuild += Resolver.sonatypeRepo("snapshots")
+
+//scalaVersion in ThisBuild := "2.10.0-SNAPSHOT"
+
+////Alternative resolver setup:
+////DefaultOptions.addResolvers
+////resolvers in ThisBuild += ScalaToolsSnapshots
+////resolvers in ThisBuild += "sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
 parallelExecution in Test := false
 
@@ -21,7 +31,8 @@ libraryDependencies += "junit" % "junit" % "4.8.2" % "test->default"
 
 //We can't restrict this to "test" as long as FindBugsAnalysis is in main, including its "testing" part.
 //libraryDependencies += "org.scalatest" %% "scalatest" % "1.7.1"// % "test"
-libraryDependencies <+= scalaVersion (ver => "org.scalatest" % ("scalatest_" + ver) % ("1.9-%s-B2" format ver))
+//libraryDependencies <+= scalaVersion (ver => "org.scalatest" % ("scalatest_" + ver) % ("1.9-%s-B2" format ver))
+libraryDependencies += "org.scalatest" % ("scalatest_" + "2.10.0-M6") % ("1.9-%s-B2" format "2.10.0-M6")
 
 libraryDependencies += "com.google.guava" % "guava" % "13.0"
 
@@ -34,6 +45,8 @@ libraryDependencies += "com.google.code.findbugs" % "jsr305" % "1.3.9"
 //libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
+
+//scalacOptions ++= Seq("-Xprint:typer")
 
 scalacOptions ++= Seq("-feature", "-language:implicitConversions",
   "-language:higherKinds", "-language:existentials")
