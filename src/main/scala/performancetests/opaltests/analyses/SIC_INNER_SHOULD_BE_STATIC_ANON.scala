@@ -45,7 +45,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
           import BATLifting._
           import performancetests.opaltests.InstructionLifting._
       val name = classFile.thisClass.className
-      math.max(name.value.lastIndexOf('$'), name.value.lastIndexOf('+')) // TODO: added a _.value is this correct?
+      expMath.max(name.lastIndexOf('$'), name.lastIndexOf('+'))
     }
 
     /**
@@ -82,7 +82,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
           import performancetests.opaltests.InstructionLifting._
       val lastSpecialChar = lastIndexOfInnerClassEncoding(classFile)
       isInnerClass(classFile) &&
-      Character.isDigit(classFile.thisClass.className.value.charAt(lastSpecialChar.value + 1)) // TODO: added a _.value is this correct?
+      expCharacter.isDigit(classFile.thisClass.className.charAt(lastSpecialChar + 1))
     }
 
 

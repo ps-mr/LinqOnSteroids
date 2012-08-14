@@ -92,6 +92,13 @@ trait FunctionOps extends AutoFunctionOps {
   // Unused!
   def fmap[Res](id: Symbol, callfunc: () => Res) = new Call0(id, Symbol(""), callfunc)
 
+  def globalFmap[A0, Res](t: Exp[A0])
+                   (name: Symbol, prefix: String, f: A0 => Res): Exp[Res] =
+    new GlobalFuncCall1(name, prefix, f, t)
+
+  def globalFmap[A0, A1, Res](t: Exp[A0], t2: Exp[A1])
+                   (name: Symbol, prefix: String, f: (A0, A1) => Res): Exp[Res] =
+    new GlobalFuncCall2(name, prefix, f, t, t2)
   /*
   // these functions are explicitly not implicit :)
   def fmap[A0, Res](t: Exp[A0])
@@ -225,6 +232,15 @@ trait NumOps {
 trait BaseTypesOps {
   this: LiftingConvs with FunctionOps =>
 
+  object expMath {
+    def max(a: Exp[Int], b: Exp[Int]) = globalFmap(a, b)('math_max, "math.max", math.max(_, _))
+      // new GlobalFuncCall2('math_max, "math.max", (a: Int, b: Int) => math.max(a, b), a, b)
+  }
+
+  object expCharacter {
+    def isDigit(ch: Exp[Char]) = globalFmap(ch)('math_max, "Character.isDigit", Character isDigit _)
+  }
+
   class OrderingOps[T: Ordering](t: Exp[T]) {
     def <=(that: Exp[T]): Exp[Boolean] = LEq(this.t, that)
     def <(that: Exp[T]): Exp[Boolean] = Less(this.t, that)
@@ -238,6 +254,9 @@ trait BaseTypesOps {
     def contains(that: Exp[CharSequence]) = fmap(this.t, that, 'StringOps)('contains, _ contains _)
     def startsWith(that: Exp[String]) = fmap(this.t, that, 'StringOps)('startsWith, _ startsWith _)
     def endsWith(that: Exp[String]) = fmap(this.t, that, 'StringOps)('endsWith, _ endsWith _)
+    def lastIndexOf(ch: Char): Exp[Int] = lastIndexOf(ch.toInt)
+    def lastIndexOf(ch: Exp[Int]): Exp[Int] = fmap(this.t, ch, 'StringOps)('lastIndexOf, _ lastIndexOf _)
+    def charAt(idx: Exp[Int]) = fmap(this.t, idx, 'StringOps)('charAt, _ charAt _ )
   }
 
   class BooleanOps(b: Exp[Boolean]) {
