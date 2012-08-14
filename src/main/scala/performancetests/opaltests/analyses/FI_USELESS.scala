@@ -44,7 +44,7 @@ trait FI_USELESS {
 
   private val finalizeMethodDescriptor = MethodDescriptor(Seq(), VoidType)
 
-  def analyzeBaseWithoutAbstractions() = {
+  private def analyzeBaseWithoutAbstractions() = {
       for { classFile ← classFiles
             if !classFile.isInterfaceDeclaration // performance optimization
             method@Method(_, "finalize",`finalizeMethodDescriptor`, _) ← classFile.methods
@@ -58,7 +58,7 @@ trait FI_USELESS {
       } yield (classFile, method)
   }
 
-   def analyzeSQuOptWithoutAbstractions() = {
+   private def analyzeSQuOptWithoutAbstractions() = {
       import ivm._
       import expressiontree._
       import Lifting._
@@ -79,7 +79,7 @@ trait FI_USELESS {
       } yield (classFile, method)
   }
 
-    def analyzeBaseWithAbstractions() = {
+    private def analyzeBaseWithAbstractions() = {
       for { schema.ConcreteMethodRecord(classFile, method@Method(_, "finalize",`finalizeMethodDescriptor`, _), body) ← methodBodiesModularNative
             if !classFile.isInterfaceDeclaration && // performance optimization
                body.instructions.length == 5 &&
@@ -91,7 +91,7 @@ trait FI_USELESS {
       } yield (classFile, method)
     }
 
-    def analyzeSQuOptWithAbstractions() = {
+    private def analyzeSQuOptWithAbstractions() = {
       import de.tud.cs.st.bat.resolved._
       import ivm._
       import expressiontree._
