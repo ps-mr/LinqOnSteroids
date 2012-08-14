@@ -41,7 +41,7 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
            method ← classFile.methods if method.body.isDefined
            window ← withIndexSQuOpt(method.body.get.instructions).sliding(2)
            second ← window.last._1.ifInstanceOf[INVOKESTATIC]
-           if // window.head._1.isInstanceOf_#[I2L] && // TODO type I2L not found (why ???)
+           if  window.head._1 ==# I2L &&
                 second.declaringClass ==# doubleClass &&
                 second.name ==# "longBitsToDouble" &&
                 second.methodDescriptor ==# longBitsToDoubleDescriptor
@@ -70,11 +70,10 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
         import schema.squopt._
         for ( window ← methodBodiesInstructionsSlidingSQuOpt(3);
               second ← window.instrs.last.ifInstanceOf[INVOKESTATIC]
-               if(  //window.instrs.head.isInstanceOf_#[I2L] && // TODO type I2L not found (why ???)
+               if   window.instrs.head ==# I2L &&
                     second.declaringClass ==# doubleClass &&
                     second.name ==# "longBitsToDouble" &&
                     second.methodDescriptor ==# longBitsToDoubleDescriptor
-                  )
          ) yield
             (window.classFile, window.method, window.instrIdxes.last)
 
