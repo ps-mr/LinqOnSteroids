@@ -12,22 +12,18 @@ import de.tud.cs.st.bat.resolved._
 trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
     this: performancetests.opaltests.FBAnalysesBase =>
 
-    import BaseAnalyses._
-
     private def analyzeBaseWithoutAbstractions() = {
-      val isOverride = BaseAnalyses.isOverride(classFiles, classHierarchy) _
-      val calledSuperConstructor = BaseAnalyses.calledSuperConstructor(classFiles, classHierarchy) _
       for (classFile ← classFiles;
            method ← classFile.methods if (
                                          method.body.isDefined &&
                                          method.name != "<init>" &&
                                          !method.isStatic &&
-                                         isOverride(classFile)(method));
+                                         isOverrideNative(classFile)(method));
            (GETFIELD(declaringClass, name, fieldType), idx) ← withIndexNative(method.body.get.instructions);
            constructor ← classFile.constructors
-           if declaresField(classFile)(name, fieldType);
-           (superClass, superConstructor) ← calledSuperConstructor(classFile, constructor)
-           if (calls(superConstructor, superClass, method))
+           if declaresFieldNative(classFile)(name, fieldType);
+           (superClass, superConstructor) ← calledSuperConstructorNative(classFile, constructor)
+           if (callsNative(superConstructor, superClass, method))
 
       ) yield
         (classFile,method, declaringClass, name, fieldType, idx)
@@ -43,8 +39,6 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
         import performancetests.opaltests.InstructionLifting._
         import ivm.expressiontree.Util.ExtraImplicits._
         import schema.squopt._
-      val isOverride = BaseAnalyses.isOverrideExp(classFiles.asSmart, classHierarchy.asSmart) _   // TODO does not type correctly
-      val calledSuperConstructor = BaseAnalyses.calledSuperConstructorExp(classFiles.asSmart, classHierarchy.asSmart) _  // TODO does not type correctly
       for {classFile ← classFiles.asSmart
            method ← classFile.methods if (
                                          method.body.isDefined &&
@@ -63,18 +57,16 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
 */
 
     private def analyzeBaseWithAbstractions() = {
-        val isOverride = BaseAnalyses.isOverride(classFiles, classHierarchy) _
-        val calledSuperConstructor = BaseAnalyses.calledSuperConstructor(classFiles, classHierarchy) _
         for (schema.BytecodeInstrIndexed(classFile, method,
              GETFIELD(declaringClass, name, fieldType), idx) ← methodBodiesInstructionsIndexedModularNative
              if method.body.isDefined &&
                 method.name != "<init>" &&
                 !method.isStatic &&
-                isOverride(classFile)(method);
+                isOverrideNative(classFile)(method);
              constructor ← classFile.constructors
-             if declaresField(classFile)(name, fieldType);
-             (superClass, superConstructor) ← calledSuperConstructor(classFile, constructor)
-             if (calls(superConstructor, superClass, method))
+             if declaresFieldNative(classFile)(name, fieldType);
+             (superClass, superConstructor) ← calledSuperConstructorNative(classFile, constructor)
+             if (callsNative(superConstructor, superClass, method))
 
         ) yield
           (classFile,method, declaringClass, name, fieldType, idx)
@@ -90,8 +82,6 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
             import performancetests.opaltests.InstructionLifting._
             import ivm.expressiontree.Util.ExtraImplicits._
             import schema.squopt._
-          val isOverride = BaseAnalyses.isOverrideExp(classFiles.asSmart, classHierarchy.asSmart) _   // TODO does not type correctly
-          val calledSuperConstructor = BaseAnalyses.calledSuperConstructorExp(classFiles.asSmart, classHierarchy.asSmart) _  // TODO does not type correctly
           for { instructionWithIndex ← methodBodiesInstructionsIndexedModularSQuOpt
                 getField ← instructionWithIndex.instruction.asInstanceOf_#[GETFIELD]
                 if(  instructionWithIndex.method.body.isDefined &&
