@@ -88,7 +88,7 @@ trait SE_BAD_FIELD_INNER_CLASS {
     }
   }
 
-  def analyzeBaseWithAbstractions() = {
+  private def analyzeBaseWithAbstractions() = {
     val serializableClasses = classHierarchy.subclasses(serializable).getOrElse(Set.empty)
     for(  objectType ← serializableClasses;
           classFile = getClassFile(objectType);

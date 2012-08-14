@@ -101,6 +101,8 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   with analyses.MS_PKGPROTECT
   with analyses.MS_SHOULD_BE_FINAL
   with analyses.SE_BAD_FIELD_INNER_CLASS
+  with analyses.SIC_INNER_SHOULD_BE_STATIC_ANON
+  with analyses.SW_SWING_METHODS_INVOKED_IN_SWING_THREAD
   with FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking
 {
   import FindBugsAnalyses.QueryAnd
@@ -160,6 +162,15 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   test("SE_BAD_FIELD_INNER_CLASS") {
     analyzeSE_BAD_FIELD_INNER_CLASS()
   }
+
+  test("SIC_INNER_SHOULD_BE_STATIC_ANON") {
+    analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
+  }
+
+  test("SW_SWING_METHODS_INVOKED_IN_SWING_THREAD") {
+    analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD()
+  }
+
 
 
 
@@ -415,10 +426,11 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
     analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
     analyzeDP_DO_INSIDE_DO_PRIVILEGED()
     analyzeFI_USELESS()
-    // analyzeMS_PKGPROTECT() // TODO still has a TODO
-    analyzeMS_SHOULD_BE_FINAL()
-    analyzeSE_BAD_FIELD_INNER_CLASS()
-
+    // analyzeMS_PKGPROTECT() // still has a TODO
+    // analyzeMS_SHOULD_BE_FINAL()  // still has a TODO
+    // analyzeSE_BAD_FIELD_INNER_CLASS() // still has a TODO
+    // analyzeSIC_INNER_SHOULD_BE_STATIC_ANON // still has a TODO
+    // analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD // still has TODO
     analyzeProtectedFields()
     analyzeUnusedFields()
     analyzeExplicitGC()
