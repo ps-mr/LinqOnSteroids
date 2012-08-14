@@ -252,28 +252,17 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       import Lifting._
       import BATLifting._
       import performancetests.opaltests.InstructionLifting._
+      val classFileLookup : Exp[Option[ClassFile]] = getClassFileSQuOpt.get(receiver)
 
-      val classFileLookup = getClassFileSQuOpt.get(receiver)
-      /*
-      for (classFile ← classFileLookup;
-           methodDecl ← Let((
-                        for (method ← classFile.methods
-                             if method.name ==# methodName &&
-                                method.descriptor ==# methodDescriptor) yield (classFile, method)
-                        ).headOption)
-           if methodDecl.isDefined
-      ) yield {
-        methodDecl
+      if_# (!classFileLookup.isDefined) {
+                                       return None
+      } else_# {
+          val classFile = classFileLookup.get
+          (for (method ← classFile.methods
+               if method.name ==# methodName && method.descriptor ==# methodDescriptor
+               ) yield (classFile, method)
+          ).headOption
       }
-      */
-
-      for (classFile ← classFileLookup;
-           methodDecl ← (
-                for (method ← classFile.methods
-                      if method.name ==# methodName &&
-                      method.descriptor ==# methodDescriptor) yield (classFile, method)
-                ).headOption
-          ) yield methodDecl
     }
 
   /**
@@ -350,16 +339,24 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     import Lifting._
     import BATLifting._
     import performancetests.opaltests.InstructionLifting._
-    val superClasses : Exp[Option[Seq[ObjectType]]] = null // classHierarchySQuOpt.superclasses.get(classFile.thisClass)
+
+
+    val classType : Exp[ObjectType] =classFile.thisClass
+    val superClasses : Exp[Option[Set[ObjectType]]] = classHierarchySQuOpt.superclasses(classType)
     if_# (!superClasses.isDefined) {
       return None
     } else_# {
-      val methodCall : Exp[INVOKESPECIAL] = null
-      /* constructor.body.get.instructions.collectFirst {
+      // TODO requires collectFirst
+      //[error] D:\workspace\LinqOnSteroids\src\main\scala\performancetests\opaltests\FBAnalysesBase.scala:349: value collectFirst is not a member of ivm.expressiontree.Exp[Seq[de.tud.cs.st.bat.resolved.Instruction]]
+      val methodCall : Exp[Option[INVOKESPECIAL]] = None /* constructor.body.get.instructions.collectFirst {
           def isDefinedAt(x:Instruction) = x.isInstanceOf_#[INVOKESPECIAL] &&  superClasses.get.contains(x.asInstanceOf_#[INVOKESPECIAL].declaringClass.asInstanceOf_#[ObjectType])
           def apply(x:Instruction) = x.asInstanceOf_#[INVOKESPECIAL]
       }*/
-      getMethodDeclarationSQuOpt(methodCall.declaringClass.asInstanceOf_#[ObjectType], methodCall.name, methodCall.methodDescriptor)
+      if_# (!methodCall.isDefined) {
+        return None
+      } else_# {
+        return getMethodDeclarationSQuOpt(methodCall.get.declaringClass.asInstanceOf_#[ObjectType], methodCall.get.name, methodCall.get.methodDescriptor)
+      }
     }
   }
 
