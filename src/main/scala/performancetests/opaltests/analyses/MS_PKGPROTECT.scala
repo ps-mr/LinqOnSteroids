@@ -54,7 +54,7 @@ trait MS_PKGPROTECT{
           (classFile, field)
     }
 
-/*
+
     private def analyzeSQuOptWithoutAbstractions() = {
       import de.tud.cs.st.bat.resolved._
       import ivm._
@@ -77,12 +77,12 @@ trait MS_PKGPROTECT{
                  !field.isVolatile &&
                  (field.isPublic || field.isProtected) &&
                  (isArray(field.fieldType) || isHashTable(field.fieldType)) &&
-                 !readFieldsFromPackage.exists(entry => entry._2 ==(classFile.thisClass, field.name, field.fieldType) && entry._1 != classFile.thisClass.packageName)
+                 !readFieldsFromPackage.exists(entry => entry._2 ==#(classFile.thisClass, field.name, field.fieldType) && entry._1 != classFile.thisClass.packageName)
                 )
         ) yield
           (classFile, field)
     }
-*/
+
 
     private def analyzeBaseWithAbstractions() = {
       import de.tud.cs.st.bat.resolved._
@@ -102,7 +102,7 @@ trait MS_PKGPROTECT{
         (classFile, field)
     }
 
-/*
+
     private def analyzeSQuOptWithAbstractions() = {
         import de.tud.cs.st.bat.resolved._
         import ivm._
@@ -122,14 +122,14 @@ trait MS_PKGPROTECT{
                    !fieldRecord.field.isVolatile &&
                    (fieldRecord.field.isPublic || fieldRecord.field.isProtected) &&
                    (isArray(fieldRecord.field.fieldType) || isHashTable(fieldRecord.field.fieldType)) &&
-                   !readFieldsFromPackage.exists(entry => entry._2 ==(fieldRecord.classFile.thisClass, fieldRecord.field.name, fieldRecord.field.fieldType) && entry._1 != fieldRecord.classFile.thisClass.packageName)
+                   !readFieldsFromPackage.exists(entry => entry._2 ==#(fieldRecord.classFile.thisClass, fieldRecord.field.name, fieldRecord.field.fieldType) && entry._1 != fieldRecord.classFile.thisClass.packageName)
                   )
         ) yield
           (fieldRecord.classFile, fieldRecord.field)
       }
-*/
 
-/*
+
+
     def analyzeMS_PKGPROTECT() {
       benchQueryComplete("MS_PKGPROTECT")(
         analyzeBaseWithoutAbstractions(),
@@ -138,5 +138,5 @@ trait MS_PKGPROTECT{
         analyzeSQuOptWithAbstractions()
       )
     }
-*/
+
 }
