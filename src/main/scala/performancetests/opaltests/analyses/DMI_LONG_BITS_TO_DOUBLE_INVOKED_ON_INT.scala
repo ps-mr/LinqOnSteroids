@@ -26,7 +26,7 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
            Seq(
            (I2L, _),
            (INVOKESTATIC(`doubleClass`, "longBitsToDouble", `longBitsToDoubleDescriptor`), idx)
-              ) ← withIndex(method.body.get.instructions).sliding(2)
+              ) ← withIndexNative(method.body.get.instructions).sliding(2)
       ) yield
         (classFile, method, idx)
     }
@@ -41,7 +41,7 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
       import ivm.expressiontree.Util.ExtraImplicits._
       for (classFile ← classFiles.asSmart;
            method ← classFile.methods if method.body.isDefined;
-           window ← withIndexExp(method.body.get.instructions).sliding(2);
+           window ← withIndexSQuOpt(method.body.get.instructions).sliding(2);
            //[error] D:\workspace\LinqOnSteroids\src\main\scala\performancetests\opaltests\analyses\DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT.scala:46: value filter is not a member of ivm.expressiontree.Exp[de.tud.cs.st.bat.resolved.INVOKESTATIC]
            //[error]            second ? window.last._1.asInstanceOf_#[INVOKESTATIC]
            second ← window.last._1.asInstanceOf_#[INVOKESTATIC]

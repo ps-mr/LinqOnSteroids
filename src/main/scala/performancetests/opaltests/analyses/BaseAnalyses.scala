@@ -2,7 +2,7 @@ package performancetests.opaltests.analyses
 
 import de.tud.cs.st.bat.resolved._
 import analyses.ClassHierarchy
-
+  import ivm.expressiontree.Exp
 /**
  *
  * Author: Ralf Mitschke
@@ -11,89 +11,14 @@ import analyses.ClassHierarchy
  *
  */
 object BaseAnalyses {
-  /**
-   * Returns all declared fields ever read by any method in any analyzed class
-   * as tuple (from,field) = ((classFile,Method)(declaringClass, name, fieldType))
-   */
-  def readFields(classFiles: Traversable[ClassFile]): Set[((ClassFile, Method), (ObjectType, String, Type))] = {
-    (for (classFile ← classFiles if !classFile.isInterfaceDeclaration;
-          method ← classFile.methods if method.body.isDefined;
-          instruction ← method.body.get.instructions
-          if (
-             instruction match {
-               case _: GETFIELD  ⇒ true
-               case _: GETSTATIC ⇒ true
-               case _            ⇒ false
-             }
-             )
-    ) yield {
-      instruction match {
-        case GETFIELD(declaringClass, name, fieldType)  ⇒ ((classFile, method), (declaringClass, name, fieldType))
-        case GETSTATIC(declaringClass, name, fieldType) ⇒ ((classFile, method), (declaringClass, name, fieldType))
-      }
-    }).toSet
-  }
 
-  import ivm.expressiontree.Exp
 
-  //Nested tuples don't work so well. Note the use of asExp below:
-  def readFields(classFiles: Exp[Traversable[ClassFile]]): Exp[Set[((ClassFile, Method), (ObjectType, String, FieldType))]] = {
-    import de.tud.cs.st.bat.resolved._
-    import ivm._
-    import expressiontree._
-    import Lifting._
-    import BATLifting._
-    import performancetests.opaltests.InstructionLifting._
-    (for (classFile ← classFiles if !classFile.isInterfaceDeclaration;
-          method ← classFile.methods if method.body.isDefined;
-          instruction ← method.body.get.instructions
-          if (instruction.isInstanceOf_#[GETFIELD] || instruction.isInstanceOf_#[GETSTATIC])
-    ) yield {
-      if_# (instruction.isInstanceOf_#[GETFIELD]) {
-        val instr = instruction.asInstanceOf_#[GETFIELD]
-        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType)))
-      } else_# if_# (instruction.isInstanceOf_#[GETFIELD]) {
-        val instr = instruction.asInstanceOf_#[GETFIELD]
-        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType)))
-      } else_# {
-        null
-      }
-    }).toSet
-  }
-
-  // TODO this should be indexed
-  def getClassFile(classFiles: Traversable[ClassFile])(t: ObjectType): Option[ClassFile] = {
-    (for (classFile ← classFiles if classFile.thisClass == t) yield classFile).headOption
-  }
-
-  def getClassFile(classFiles: Exp[Traversable[ClassFile]])(t: Exp[ObjectType]) : Exp[Option[Exp[ClassFile]]] = {
-    import de.tud.cs.st.bat.resolved._
-    import ivm._
-    import expressiontree._
-    import Lifting._
-    import BATLifting._
-    import performancetests.opaltests.InstructionLifting._
-    import ivm.expressiontree.Util.ExtraImplicits._
-    val list = for (classFile ← classFiles if classFile.thisClass ==# t) yield {classFile}
-    // TODO: implement this
-    /*
-    if(list.isEmpty.value)  // TODO: added a _.value is this correct?
-    {
-        None.asSmart
-    }
-    else
-    {
-        Some[Exp[ClassFile]](list.head).asSmart
-    }
-    //list.headOption // TODO .headOption is not defined
-    */
-    null
-  }
 
   // TODO this should be indexed
   def getMethodDeclaration(classFiles: Traversable[ClassFile])(receiver: ObjectType,
                                                                methodName: String,
                                                                methodDescriptor: MethodDescriptor): Option[(ClassFile, Method)] = {
+      /*
     val classFileLookup = getClassFile(classFiles)(receiver)
     for (classFile ← classFileLookup;
          methodDecl = (
@@ -105,6 +30,8 @@ object BaseAnalyses {
         ) yield {
         methodDecl.get
     }
+    */
+    null
   }
 
   def getMethodDeclaration(classFiles: Exp[Traversable[ClassFile]])(receiver: Exp[ObjectType],
@@ -227,24 +154,5 @@ object BaseAnalyses {
                                               }
   }
 
-  /**
-   * Returns a filtered sequence of instructions without the bytecode padding
-   */
-  def withIndex(instructions: Array[Instruction]): Seq[(Instruction, Int)] = {
-    instructions.zipWithIndex.filter {
-                                       case (instr, _) => instr != null
-                                     }
-  }
 
-
-
-  /**
-   * Returns a filtered sequence of instructions without the bytecode padding
-   */
-  def withIndexExp(instructions: Exp[Seq[Instruction]]): Exp[Seq[(Instruction, Int)]] = {
-    import ivm.expressiontree.{Exp, Lifting}
-    import Lifting._
-    instructions.zipWithIndex.filter(_._1 !=# null).toSeq // TODO I had to add toSeq; why did this compile earlier
-    //PG: I'm confused - I can omit the toSeq even now, and everything just compiles.
-  }
 }

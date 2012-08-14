@@ -12,8 +12,6 @@ package analyses
 trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
   this: performancetests.opaltests.FBAnalysesBase =>
 
-  import BaseAnalyses._
-
   def analyzeBaseWithoutAbstractions() = {
     import de.tud.cs.st.bat.resolved._
     for {
@@ -22,7 +20,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
          Seq(
          (INVOKESPECIAL(firstReceiver, _,MethodDescriptor(Seq(paramType), _)), _),
          (INVOKEVIRTUAL(secondReceiver, name, MethodDescriptor(Seq(), returnType)), idx)
-         ) ← withIndex(method.body.get.instructions).sliding(2)
+         ) ← withIndexNative(method.body.get.instructions).sliding(2)
          if !paramType.isReferenceType &&
             firstReceiver.asInstanceOf[ObjectType].className.startsWith("java/lang") &&
             firstReceiver == secondReceiver &&
@@ -45,7 +43,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
     for {
          classFile ← classFiles.asSmart if classFile.majorVersion >= 49
          method ← classFile.methods if method.body.isDefined
-         window ← withIndexExp(method.body.get.instructions).sliding(2)
+         window ← withIndexSQuOpt(method.body.get.instructions).sliding(2)
          first ← window.head._1.ifInstanceOf[INVOKESPECIAL]
          second ← window.last._1.ifInstanceOf[INVOKEVIRTUAL]
          if first.methodDescriptor.parameterTypes.size ==# 1 &&

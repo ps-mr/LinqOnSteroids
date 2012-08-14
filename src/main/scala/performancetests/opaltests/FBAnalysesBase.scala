@@ -30,9 +30,13 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
   }
   val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
 
+  val getClassFileSQuOpt = getClassFile.asSmart
+
   // Now the classHierarchy is built functionally - hence, the result could be incrementally maintained (at least for the
   // addition of classes).
   val classHierarchy = (new ClassHierarchy /: classFiles)(_ + _)
+
+  val classHierarchySQuOpt = classHierarchy.asSmart
 
   println("Number of class files: " + classFiles.length)
   println("Numer of methods: " + methodsSQuOpt().interpret().size)
@@ -154,5 +158,75 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       methodRecord ← methodBodiesModularSQuOpt()
       window ← methodRecord.body.instructions.zipWithIndex.filter(_._1 !=# null).sliding(len).map(_.unzip)
     } yield BytecodeInstrWindow(window._2, window._1, methodRecord.classFile, methodRecord.method)
+  }
+
+ /**
+   * Returns all declared fields ever read by any method in any analyzed class
+   * as tuple (from,field) = ((classFile,Method)(declaringClass, name, fieldType))
+   */
+  def readFieldsNative: Set[((ClassFile, Method), (ObjectType, String, Type))] = {
+    (for (classFile ← classFiles if !classFile.isInterfaceDeclaration;
+          method ← classFile.methods if method.body.isDefined;
+          instruction ← method.body.get.instructions
+          if (
+             instruction match {
+               case _: GETFIELD  ⇒ true
+               case _: GETSTATIC ⇒ true
+               case _            ⇒ false
+             }
+             )
+    ) yield {
+      instruction match {
+        case GETFIELD(declaringClass, name, fieldType)  ⇒ ((classFile, method), (declaringClass, name, fieldType))
+        case GETSTATIC(declaringClass, name, fieldType) ⇒ ((classFile, method), (declaringClass, name, fieldType))
+      }
+    }).toSet
+  }
+
+
+
+  //Nested tuples don't work so well. Note the use of asExp below:
+  def readFieldsSQuOpt: Exp[Set[((ClassFile, Method), (ObjectType, String, FieldType))]] = {
+    import de.tud.cs.st.bat.resolved._
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import BATLifting._
+    import performancetests.opaltests.InstructionLifting._
+    (for (classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration;
+          method ← classFile.methods if method.body.isDefined;
+          instruction ← method.body.get.instructions
+          if (instruction.isInstanceOf_#[GETFIELD] || instruction.isInstanceOf_#[GETSTATIC])
+    ) yield {
+      if_# (instruction.isInstanceOf_#[GETFIELD]) {
+        val instr = instruction.asInstanceOf_#[GETFIELD]
+        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType)))
+      } else_# if_# (instruction.isInstanceOf_#[GETFIELD]) {
+        val instr = instruction.asInstanceOf_#[GETFIELD]
+        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType)))
+      } else_# {
+        null
+      }
+    }).toSet
+  }
+
+  /**
+   * Returns a filtered sequence of instructions without the bytecode padding
+   */
+  def withIndexNative(instructions: Array[Instruction]): scala.collection.Seq[(Instruction, Int)] = {
+    instructions.zipWithIndex.filter { case (instr, _) => instr != null }
+  }
+
+
+
+  /**
+   * Returns a filtered sequence of instructions without the bytecode padding
+   */
+  def withIndexSQuOpt(instructions: Exp[scala.collection.Seq[Instruction]]): Exp[scala.collection.Seq[(Instruction, Int)]] = {
+    import ivm.expressiontree.{Exp, Lifting}
+    import Lifting._
+    instructions.zipWithIndex.filter(_._1 !=# null)
+    //.toSeq // RM: Okay this was an IDE Problem of IntelliJ
+    //PG: I'm confused - I can omit the toSeq even now, and everything just compiles.
   }
 }

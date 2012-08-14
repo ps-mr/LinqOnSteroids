@@ -13,8 +13,6 @@ import de.tud.cs.st.bat.resolved._
 trait MS_PKGPROTECT{
     this: performancetests.opaltests.FBAnalysesBase =>
 
-    import BaseAnalyses._
-
     import ivm.expressiontree.Exp
 
     val hashTableType = ObjectType("java/util/Hashtable")
@@ -41,8 +39,7 @@ trait MS_PKGPROTECT{
 
 
     def analyzeBaseWithoutAbstractions() = {
-        val readFieldsFromPackage = BaseAnalyses.readFields(classFiles)
-                              .map(entry => (entry._1._1.thisClass.packageName, entry._2))
+        val readFieldsFromPackage = readFieldsNative.map(entry => (entry._1._1.thisClass.packageName, entry._2))
         for (classFile ← classFiles if (!classFile.isInterfaceDeclaration);
              field ← classFile.fields
              if (field.isFinal &&
@@ -70,7 +67,7 @@ trait MS_PKGPROTECT{
       //[error] D:\workspace\LinqOnSteroids\src\main\scala\performancetests\opaltests\analyses\MS_PKGPROTECT.scala:71: value thisClass is not a member of ivm.expressiontree.Exp[ivm.expressiontree.Exp[de.tud.cs.st.bat.resolved.ClassFile]]
       //[error]                               .map(entry => (entry._1._1.thisClass.packageName, entry._2))
       //[error]                                                          ^
-        val readFieldsFromPackage = BaseAnalyses.readFields(classFiles.asSmart)
+        val readFieldsFromPackage = readFieldsSQuOpt
                               .map(entry => (entry._1._1.thisClass.packageName, entry._2))
         for (classFile ← classFiles.asSmart if (!classFile.isInterfaceDeclaration);
              field ← classFile.fields
@@ -90,8 +87,7 @@ trait MS_PKGPROTECT{
     def analyzeBaseWithAbstractions() = {
       import de.tud.cs.st.bat.resolved._
       import schema._
-      val readFieldsFromPackage = BaseAnalyses.readFields(classFiles)
-                            .map(entry => (entry._1._1.thisClass.packageName, entry._2))
+      val readFieldsFromPackage = readFieldsNative.map(entry => (entry._1._1.thisClass.packageName, entry._2))
       for (
            FieldRecord(classFile, field) ← fieldsNative
              if (field.isFinal &&
@@ -116,7 +112,7 @@ trait MS_PKGPROTECT{
         import performancetests.opaltests.InstructionLifting._
         import ivm.expressiontree.Util.ExtraImplicits._
         import schema.squopt._
-        val readFieldsFromPackage = BaseAnalyses.readFields(classFiles.asSmart)
+        val readFieldsFromPackage = readFieldsSQuOpt
                               .map(entry => (entry._1._1.thisClass.packageName, entry._2))
         for (
              fieldRecord ← fieldsSQuOpt

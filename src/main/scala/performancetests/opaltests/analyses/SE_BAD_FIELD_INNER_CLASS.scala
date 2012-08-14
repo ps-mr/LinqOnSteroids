@@ -44,24 +44,30 @@ import de.tud.cs.st.bat.resolved._
 trait SE_BAD_FIELD_INNER_CLASS {
    this: performancetests.opaltests.FBAnalysesBase =>
 
-  import BaseAnalyses._
-
-  import de.tud.cs.st.bat.ACC_STATIC
+  import ivm.expressiontree.Exp
 
   val serializable = ObjectType("java/io/Serializable")
 
+  def hasStaticModifier(modifiers : Int) : Boolean = de.tud.cs.st.bat.ACC_STATIC.element_of(modifiers)
+
+  def hasStaticModifier(modifiers : Exp[Int]) : Exp[Boolean] = {
+      //TODO how do I define bitwise and operation? "&"
+      //modifiers & de.tud.cs.st.bat.ACC_STATIC.mask) != 0
+      null
+  }
 
   def analyzeBaseWithoutAbstractions() = {
-    for {
-      objectTypes ← classHierarchy.subclasses(serializable).toSeq
-      objectType ← objectTypes
-      classFile = getClassFile(objectType)
-      (outerType, thisInnerClassesAccessFlags) ← classFile.outerType if !ACC_STATIC.element_of(thisInnerClassesAccessFlags)
-      if !classHierarchy.isSubtypeOf(outerType, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */)
-    } yield {
+    val serializableClasses = classHierarchy.subclasses(serializable).getOrElse(Set.empty)
+    for(  objectType ← serializableClasses;
+          classFile = getClassFile(objectType);
+          (outerType, thisInnerClassesAccessFlags) ← classFile.outerType
+          if !hasStaticModifier(thisInnerClassesAccessFlags) &&
+             !classHierarchy.isSubtypeOf(outerType, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */)
+    ) yield {
       (objectType, outerType)
     }
   }
+
 
 /*
   def analyzeSQuOptWithoutAbstractions() = {
@@ -69,16 +75,16 @@ trait SE_BAD_FIELD_INNER_CLASS {
     import expressiontree._
     import Lifting._
     import BATLifting._
-    import InstructionLifting._  //TODO import not found (???)
+    import performancetests.opaltests.InstructionLifting._
     import ivm.expressiontree.Util.ExtraImplicits._
-    for {
-      objectTypes ← classHierarchy.asSmart.subclasses(serializable).toSeq //TODO toSeq not found
-      objectType ← objectTypes
-      classFile = getClassFile(objectType)
-      (outerType, thisInnerClassesAccessFlags) ← classFile.outerType if !ACC_STATIC.element_of(thisInnerClassesAccessFlags)
-      if !classHierarchy.asSmart.isSubtypeOf(outerType, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */)
-    } yield {
-      (objectType, outerType)
+    val serializableClasses = classHierarchySQuOpt.subclasses(serializable).getOrElse(Set.empty)
+    for(  objectType ← serializableClasses;
+          classFile = getClassFileSQuOpt(objectType);
+           outerClassEntry ← classFile.outerType
+           if !hasStaticModifier(outerClassEntry._2) &&
+              !classHierarchySQuOpt.isSubtypeOf(outerClassEntry._1, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */)
+    ) yield {
+      (objectType, outerClassEntry._1)
     }
   }
 */

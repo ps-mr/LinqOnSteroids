@@ -23,7 +23,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
                                          method.name != "<init>" &&
                                          !method.isStatic &&
                                          isOverride(classFile)(method));
-           (GETFIELD(declaringClass, name, fieldType), idx) ← withIndex(method.body.get.instructions);
+           (GETFIELD(declaringClass, name, fieldType), idx) ← withIndexNative(method.body.get.instructions);
            constructor ← classFile.constructors
            if declaresField(classFile)(name, fieldType);
            (superClass, superConstructor) ← calledSuperConstructor(classFile, constructor)
@@ -51,7 +51,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
                                          method.name != "<init>" &&
                                          !method.isStatic &&
                                          isOverride(classFile)(method))
-           instruction ← withIndexExp(method.body.get.instructions)
+           instruction ← withIndexSQuOpt(method.body.get.instructions)
            getField ← instruction._1.asInstanceOf_#[GETFIELD]
            constructor ← classFile.constructors
            if declaresField(classFile)(getField.name, getField.fieldType);

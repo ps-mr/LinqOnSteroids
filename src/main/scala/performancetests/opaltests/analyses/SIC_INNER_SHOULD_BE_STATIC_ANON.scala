@@ -13,8 +13,6 @@ import de.tud.cs.st.bat.resolved._
 trait SIC_INNER_SHOULD_BE_STATIC_ANON{
     this: performancetests.opaltests.FBAnalysesBase =>
 
-    import BaseAnalyses._
-
     import ivm.expressiontree.Exp
 
     val withinAnonymousClass = Pattern.compile("[$][0-9].*[$]")
@@ -143,7 +141,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
     }
 
     def analyzeBaseWithoutAbstractions() = {
-      val readFields = BaseAnalyses.readFields(classFiles).map(_._2)
+      val readFields = readFieldsNative.map(_._2)
       for (classFile ← classFiles
            if (isAnonymousInnerClass(classFile) &&
                canConvertToStaticInnerClass(classFile)
@@ -165,7 +163,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
       import BATLifting._
       import performancetests.opaltests.InstructionLifting._
       import ivm.expressiontree.Util.ExtraImplicits._
-      val readFields = BaseAnalyses.readFields(classFiles.asSmart).map(_._2)
+      val readFields = readFieldsSQuOpt.map(_._2)
       for (classFile ← classFiles.asSmart
            if (isAnonymousInnerClass(classFile) &&
                canConvertToStaticInnerClass(classFile)
@@ -181,7 +179,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
 
 
     def analyzeBaseWithAbstractions() = {
-      val readFields = BaseAnalyses.readFields(classFiles).map(_._2)
+      val readFields = readFieldsNative.map(_._2)
       for (schema.FieldRecord(classFile, field) ← fieldsNative
            if (isAnonymousInnerClass(classFile) &&
                canConvertToStaticInnerClass(classFile) &&
@@ -202,7 +200,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
         import performancetests.opaltests.InstructionLifting._
         import ivm.expressiontree.Util.ExtraImplicits._
         import schema.squopt._
-        val readFields = BaseAnalyses.readFields(classFiles.asSmart).map(_._2)
+        val readFields = readFieldsSQuOpt.map(_._2)
         for (fieldRecord ← fieldsSQuOpt
              if (isAnonymousInnerClass(fieldRecord.classFile) &&
                  canConvertToStaticInnerClass(fieldRecord.classFile) &&

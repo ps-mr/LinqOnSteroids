@@ -27,7 +27,7 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
     for (classFile ← classFiles
          if !classFile.interfaces.exists((t) => t == priviledgedAction || t == priviledgedExceptionAction);
          method ← classFile.methods if method.body.isDefined;
-         (INVOKEVIRTUAL(receiver, "setAccessible", _), idx) ← withIndex(method.body.get.instructions)
+         (INVOKEVIRTUAL(receiver, "setAccessible", _), idx) ← withIndexNative(method.body.get.instructions)
          if (receiver == reflectionField || receiver == reflectionMethod)
     ) yield
       (classFile, method, idx)
@@ -45,7 +45,7 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
     for (classFile ← classFiles.asSmart
          if !classFile.interfaces.exists((t) => (t ==# priviledgedAction) || (t ==# priviledgedExceptionAction));
          method ← classFile.methods if method.body.isDefined;
-         instructionWithIndex ← withIndexExp(method.body.get.instructions);
+         instructionWithIndex ← withIndexSQuOpt(method.body.get.instructions);
          invoke ← instructionWithIndex._1.ifInstanceOf[INVOKEVIRTUAL]
          if (
             (invoke.declaringClass ==# reflectionField || invoke.declaringClass ==# reflectionMethod) &&

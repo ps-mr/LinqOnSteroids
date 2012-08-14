@@ -50,7 +50,7 @@ trait ITA_INEFFICIENT_TO_ARRAY{
       for (classFile ← classFiles;
            method ← classFile.methods if method.body.isDefined;
            Seq((ICONST_0, _), (ANEWARRAY(_), _), (instr, idx)) ←
-              withIndex(method.body.get.instructions).sliding(3) if (
+              withIndexNative(method.body.get.instructions).sliding(3) if (
                    instr match {
                      case INVOKEINTERFACE(targetType, "toArray", `toArrayDescriptor`)
                        if (isCollectionType(targetType)) => true
@@ -71,7 +71,7 @@ trait ITA_INEFFICIENT_TO_ARRAY{
       import ivm.expressiontree.Util.ExtraImplicits._
       for (classFile ← classFiles.asSmart;
            method ← classFile.methods if method.body.isDefined;
-           instructionsWithIndex ← withIndexExp(method.body.get.instructions).sliding(3)
+           instructionsWithIndex ← withIndexSQuOpt(method.body.get.instructions).sliding(3)
            if // instructionsWithIndex(0)._1.isInstanceOf_#[ICONST_0] && // TODO type ICONST_0 not found (why ???)
               instructionsWithIndex(1)._1.isInstanceOf_#[ANEWARRAY] &&
               (
