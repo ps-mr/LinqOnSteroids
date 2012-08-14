@@ -73,9 +73,13 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
    * @tparam Coll
    * @return
    */
-  def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
+   //Since 2.10.0-M6, Coll is deduced to be Traversable[Nothing].
+  //def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
+                                                   //(expected: => Traversable[T], altExpected: => Traversable[T] = null /* Tried using OptParam here with */)
+                                                   //(query: => Exp[Coll], altQueries: Exp[Coll]*)(implicit cm: TypeTag[Traversable[T]])
+  def benchQueryComplete[T](msg: String)
                                                    (expected: => Traversable[T], altExpected: => Traversable[T] = null /* Tried using OptParam here with */)
-                                                   (query: => Exp[Coll], altQueries: Exp[Coll]*)(implicit cm: TypeTag[Traversable[T]])
+                                                   (query: => Exp[Traversable[T]], altQueries: Exp[Traversable[T]]*)(implicit cm: TypeTag[Traversable[T]])
                                                    /*(implicit f: Forceable[T, Coll])*/ = {
     //Those versions don't work - bug https://issues.scala-lang.org/browse/SI-5642.
     //val builtQuery: Exp[Coll with Traversable[T]] = benchMark("%s Los Setup" format msg, silent = true)(Query[T, Coll](query))
