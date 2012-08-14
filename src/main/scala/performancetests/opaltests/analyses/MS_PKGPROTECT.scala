@@ -15,13 +15,13 @@ trait MS_PKGPROTECT{
 
     import ivm.expressiontree.Exp
 
-    val hashTableType = ObjectType("java/util/Hashtable")
+    private val hashTableType = ObjectType("java/util/Hashtable")
 
-    def isHashTable(t: FieldType) = t == hashTableType
+    private def isHashTable(t: FieldType) = t == hashTableType
 
-    def isArray(t: FieldType) = t.isArrayType
+    private def isArray(t: FieldType) = t.isArrayType
 
-    def isHashTable(t: ivm.expressiontree.Exp[FieldType]) = {
+    private def isHashTable(t: ivm.expressiontree.Exp[FieldType]) = {
         import ivm._
         import expressiontree._
         import Lifting._
@@ -29,7 +29,7 @@ trait MS_PKGPROTECT{
         t ==# hashTableType
     }
 
-    def isArray(t:  ivm.expressiontree.Exp[FieldType]) = {
+    private def isArray(t:  ivm.expressiontree.Exp[FieldType]) = {
         import ivm._
         import expressiontree._
         import Lifting._
@@ -38,7 +38,7 @@ trait MS_PKGPROTECT{
     }
 
 
-    def analyzeBaseWithoutAbstractions() = {
+    private def analyzeBaseWithoutAbstractions() = {
         val readFieldsFromPackage = readFieldsNative.map(entry => (entry._1._1.thisClass.packageName, entry._2))
         for (classFile ← classFiles if (!classFile.isInterfaceDeclaration);
              field ← classFile.fields
@@ -55,7 +55,7 @@ trait MS_PKGPROTECT{
     }
 
 /*
-    def analyzeSQuOptWithoutAbstractions() = {
+    private def analyzeSQuOptWithoutAbstractions() = {
       import de.tud.cs.st.bat.resolved._
       import ivm._
       import expressiontree._
@@ -84,7 +84,7 @@ trait MS_PKGPROTECT{
     }
 */
 
-    def analyzeBaseWithAbstractions() = {
+    private def analyzeBaseWithAbstractions() = {
       import de.tud.cs.st.bat.resolved._
       import schema._
       val readFieldsFromPackage = readFieldsNative.map(entry => (entry._1._1.thisClass.packageName, entry._2))
@@ -103,7 +103,7 @@ trait MS_PKGPROTECT{
     }
 
 /*
-    def analyzeSQuOptWithAbstractions() = {
+    private def analyzeSQuOptWithAbstractions() = {
         import de.tud.cs.st.bat.resolved._
         import ivm._
         import expressiontree._

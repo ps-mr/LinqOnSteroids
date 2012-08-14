@@ -46,17 +46,17 @@ trait SE_BAD_FIELD_INNER_CLASS {
 
   import ivm.expressiontree.Exp
 
-  val serializable = ObjectType("java/io/Serializable")
+  private val serializable = ObjectType("java/io/Serializable")
 
-  def hasStaticModifier(modifiers : Int) : Boolean = de.tud.cs.st.bat.ACC_STATIC.element_of(modifiers)
+  private def hasStaticModifier(modifiers : Int) : Boolean = de.tud.cs.st.bat.ACC_STATIC.element_of(modifiers)
 
-  def hasStaticModifier(modifiers : Exp[Int]) : Exp[Boolean] = {
+  private def hasStaticModifier(modifiers : Exp[Int]) : Exp[Boolean] = {
       //TODO how do I define bitwise and operation? "&"
       //modifiers & de.tud.cs.st.bat.ACC_STATIC.mask) != 0
       null
   }
 
-  def analyzeBaseWithoutAbstractions() = {
+  private def analyzeBaseWithoutAbstractions() = {
     val serializableClasses = classHierarchy.subclasses(serializable).getOrElse(Set.empty)
     for(  objectType ← serializableClasses;
           classFile = getClassFile(objectType);
@@ -70,7 +70,7 @@ trait SE_BAD_FIELD_INNER_CLASS {
 
 
 /*
-  def analyzeSQuOptWithoutAbstractions() = {
+  private def analyzeSQuOptWithoutAbstractions() = {
     import ivm._
     import expressiontree._
     import Lifting._

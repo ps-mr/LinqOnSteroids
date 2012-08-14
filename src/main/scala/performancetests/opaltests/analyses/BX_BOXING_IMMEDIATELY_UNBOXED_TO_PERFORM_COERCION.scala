@@ -12,7 +12,7 @@ package analyses
 trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
   this: performancetests.opaltests.FBAnalysesBase =>
 
-  def analyzeBaseWithoutAbstractions() = {
+  private def analyzeBaseWithoutAbstractions() = {
     import de.tud.cs.st.bat.resolved._
     for {
          classFile ← classFiles if classFile.majorVersion >= 49
@@ -31,7 +31,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
   }
 
 
-  def analyzeSQuOptWithoutAbstractions() = {
+  private def analyzeSQuOptWithoutAbstractions() = {
     import de.tud.cs.st.bat.resolved._
     import ivm._
     import expressiontree._
@@ -58,7 +58,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
   }
 
 
-  def analyzeBaseWithAbstractions() = {
+  private def analyzeBaseWithAbstractions() = {
     import de.tud.cs.st.bat.resolved._
     import schema._
     for (
@@ -78,7 +78,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
   }
 
 
-  def analyzeSQuOptWithAbstractions() = {
+  private def analyzeSQuOptWithAbstractions() = {
       import de.tud.cs.st.bat.resolved._
       import ivm._
       import expressiontree._
@@ -108,7 +108,8 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
   def analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION() {
     benchQueryComplete("BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION")(
       analyzeBaseWithoutAbstractions(),
-      analyzeBaseWithAbstractions())(
+      analyzeBaseWithAbstractions()
+      )(
       analyzeSQuOptWithoutAbstractions(),
       analyzeSQuOptWithAbstractions()
     )

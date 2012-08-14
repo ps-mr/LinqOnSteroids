@@ -12,8 +12,6 @@ import de.tud.cs.st.bat.resolved._
 trait ITA_INEFFICIENT_TO_ARRAY{
     this: performancetests.opaltests.FBAnalysesBase =>
 
-    import BaseAnalyses._
-
     import ivm.expressiontree.Exp
 
     val objectArrayType = ArrayType(ObjectType("java/lang/Object"))

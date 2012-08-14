@@ -15,16 +15,16 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
 
     import ivm.expressiontree.Exp
 
-    val withinAnonymousClass = Pattern.compile("[$][0-9].*[$]")
+    private val withinAnonymousClass = Pattern.compile("[$][0-9].*[$]")
 
     /**
      * A heuristic for determining whether an inner class is inside an anonymous inner class based on the class name
      */
-    def isWithinAnonymousInnerClass(classFile: ClassFile): Boolean = {
+    private def isWithinAnonymousInnerClass(classFile: ClassFile): Boolean = {
       withinAnonymousClass.matcher(classFile.thisClass.className).find()
     }
 
-    def isWithinAnonymousInnerClass(classFile: Exp[ClassFile]): Exp[Boolean] = {
+    private def isWithinAnonymousInnerClass(classFile: Exp[ClassFile]): Exp[Boolean] = {
           import ivm._
           import expressiontree._
           import Lifting._
@@ -33,12 +33,12 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
       withinAnonymousClass.matcher(classFile.thisClass.className.value).find() // TODO: added a _.value is this correct?
     }
 
-    def lastIndexOfInnerClassEncoding(classFile: ClassFile): Int = {
+    private def lastIndexOfInnerClassEncoding(classFile: ClassFile): Int = {
       val name = classFile.thisClass.className
       math.max(name.lastIndexOf('$'), name.lastIndexOf('+'))
     }
 
-    def lastIndexOfInnerClassEncoding(classFile: Exp[ClassFile]): Exp[Int] = {
+    private def lastIndexOfInnerClassEncoding(classFile: Exp[ClassFile]): Exp[Int] = {
           import ivm._
           import expressiontree._
           import Lifting._
@@ -51,11 +51,11 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
     /**
      * A heuristic for determining inner classes by the encoding in the name
      */
-    def isInnerClass(classFile: ClassFile): Boolean = {
+    private def isInnerClass(classFile: ClassFile): Boolean = {
       lastIndexOfInnerClassEncoding(classFile) >= 0
     }
 
-    def isInnerClass(classFile: Exp[ClassFile]): Exp[Boolean] = {
+    private def isInnerClass(classFile: Exp[ClassFile]): Exp[Boolean] = {
           import ivm._
           import expressiontree._
           import Lifting._
@@ -67,14 +67,14 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
     /**
      * A heuristic for determining anonymous inner classes by the encoding in the name
      */
-    def isAnonymousInnerClass(classFile: ClassFile): Boolean = {
+    private def isAnonymousInnerClass(classFile: ClassFile): Boolean = {
       val lastSpecialChar = lastIndexOfInnerClassEncoding(classFile)
       isInnerClass(classFile) &&
       Character.isDigit(classFile.thisClass.className.charAt(lastSpecialChar + 1))
     }
 
 
-    def isAnonymousInnerClass(classFile: Exp[ClassFile]): Exp[Boolean] = {
+    private def isAnonymousInnerClass(classFile: Exp[ClassFile]): Exp[Boolean] = {
           import ivm._
           import expressiontree._
           import Lifting._
@@ -89,11 +89,11 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
     /**
      * A heuristic for determining whether an inner class can be made static
      */
-    def canConvertToStaticInnerClass(classFile: ClassFile): Boolean = {
+    private def canConvertToStaticInnerClass(classFile: ClassFile): Boolean = {
       !isWithinAnonymousInnerClass(classFile)
     }
 
-    def canConvertToStaticInnerClass(classFile: Exp[ClassFile]): Exp[Boolean] = {
+    private def canConvertToStaticInnerClass(classFile: Exp[ClassFile]): Exp[Boolean] = {
           import ivm._
           import expressiontree._
           import Lifting._
@@ -105,11 +105,11 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
     /**
      * A heuristic for determining whether the field points to the enclosing instance
      */
-    def isOuterThisField(field: Field): Boolean = {
+    private def isOuterThisField(field: Field): Boolean = {
       field.name.startsWith("this$") || field.name.startsWith("this+")
     }
 
-    def isOuterThisField(field: Exp[Field]): Exp[Boolean] = {
+    private def isOuterThisField(field: Exp[Field]): Exp[Boolean] = {
           import ivm._
           import expressiontree._
           import Lifting._
@@ -123,13 +123,13 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
      * The count must be greater than 1, because the variable will be read once for storing it
      * into the field reference for the outer this instance.
      */
-    def constructorReadsOuterThisField(classFile: ClassFile): Boolean = {
+    private def constructorReadsOuterThisField(classFile: ClassFile): Boolean = {
       (for (method ← classFile.constructors if (method.name == "<init>") && method.body.isDefined;
             instr ← method.body.get.instructions if (instr.isInstanceOf[ALOAD_1.type])
       ) yield 1).sum > 1
     }
 
-    def constructorReadsOuterThisField(classFile: Exp[ClassFile]): Exp[Boolean] = {
+    private def constructorReadsOuterThisField(classFile: Exp[ClassFile]): Exp[Boolean] = {
           import ivm._
           import expressiontree._
           import Lifting._
@@ -140,7 +140,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
       ) yield 1).sum > 1
     }
 
-    def analyzeBaseWithoutAbstractions() = {
+    private def analyzeBaseWithoutAbstractions() = {
       val readFields = readFieldsNative.map(_._2)
       for (classFile ← classFiles
            if (isAnonymousInnerClass(classFile) &&
@@ -155,7 +155,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
         (classFile)
     }
 
-    def analyzeSQuOptWithoutAbstractions() = {
+    private def analyzeSQuOptWithoutAbstractions() = {
       import de.tud.cs.st.bat.resolved._
       import ivm._
       import expressiontree._
@@ -178,7 +178,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
     }
 
 
-    def analyzeBaseWithAbstractions() = {
+    private def analyzeBaseWithAbstractions() = {
       val readFields = readFieldsNative.map(_._2)
       for (schema.FieldRecord(classFile, field) ← fieldsNative
            if (isAnonymousInnerClass(classFile) &&
@@ -191,7 +191,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
         (classFile)
     }
 
-    def analyzeSQuOptWithAbstractions() = {
+    private def analyzeSQuOptWithAbstractions() = {
         import de.tud.cs.st.bat.resolved._
         import ivm._
         import expressiontree._

@@ -12,15 +12,13 @@ import de.tud.cs.st.bat.resolved._
 trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
     this: performancetests.opaltests.FBAnalysesBase =>
 
-    import BaseAnalyses._
-
     import ivm.expressiontree.Exp
 
-    val doubleClass = ObjectType("java/lang/Double")
+    private val doubleClass = ObjectType("java/lang/Double")
 
-    val longBitsToDoubleDescriptor = MethodDescriptor(List(LongType), DoubleType)
+    private val longBitsToDoubleDescriptor = MethodDescriptor(List(LongType), DoubleType)
 
-    def analyzeBaseWithoutAbstractions() = {
+    private def analyzeBaseWithoutAbstractions() = {
       for (classFile ← classFiles;
            method ← classFile.methods if method.body.isDefined;
            Seq(
@@ -32,7 +30,7 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
     }
 
 /*
-    def analyzeSQuOptWithoutAbstractions() = {
+    private def analyzeSQuOptWithoutAbstractions() = {
       import ivm._
       import expressiontree._
       import Lifting._
@@ -55,7 +53,7 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
     }
 */
 
-    def analyzeBaseWithAbstractions() = {
+    private def analyzeBaseWithAbstractions() = {
       for (schema.BytecodeInstrWindow(Seq(_,idx),
               Seq(I2L,INVOKESTATIC(`doubleClass`, "longBitsToDouble", `longBitsToDoubleDescriptor`)),
                classFile, method) ← methodBodiesInstructionsSlidingNative(2)
@@ -64,7 +62,7 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
     }
 
 /*
-    def analyzeSQuOptWithAbstractions() = {
+    private def analyzeSQuOptWithAbstractions() = {
         import de.tud.cs.st.bat.resolved._
         import ivm._
         import expressiontree._

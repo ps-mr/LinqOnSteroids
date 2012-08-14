@@ -13,15 +13,13 @@ import de.tud.cs.st.bat.resolved.Field
 trait MS_SHOULD_BE_FINAL{
   this: performancetests.opaltests.FBAnalysesBase =>
 
-  import BaseAnalyses._
+  private val hashTableType = ObjectType("java/util/Hashtable")
 
-  val hashTableType = ObjectType("java/util/Hashtable")
+  private def isHashTable(t: FieldType) = t == hashTableType
 
-  def isHashTable(t: FieldType) = t == hashTableType
+  private def isArray(t: FieldType) = t.isArrayType
 
-  def isArray(t: FieldType) = t.isArrayType
-
-  def isHashTable(t: ivm.expressiontree.Exp[FieldType]) = {
+  private def isHashTable(t: ivm.expressiontree.Exp[FieldType]) = {
       import ivm._
       import expressiontree._
       import Lifting._
@@ -29,7 +27,7 @@ trait MS_SHOULD_BE_FINAL{
       t ==# hashTableType
   }
 
-  def isArray(t:  ivm.expressiontree.Exp[FieldType]) = {
+  private def isArray(t:  ivm.expressiontree.Exp[FieldType]) = {
       import ivm._
       import expressiontree._
       import Lifting._
@@ -39,7 +37,7 @@ trait MS_SHOULD_BE_FINAL{
 
 
 
-  def analyzeBaseWithoutAbstractions() = {
+  private def analyzeBaseWithoutAbstractions() = {
     import de.tud.cs.st.bat.resolved._
         for (classFile ← classFiles if (!classFile.isInterfaceDeclaration);
              field ← classFile.fields
@@ -54,7 +52,7 @@ trait MS_SHOULD_BE_FINAL{
           (classFile, field)
   }
 
-    def analyzeSQuOptWithoutAbstractions() = {
+    private def analyzeSQuOptWithoutAbstractions() = {
       import de.tud.cs.st.bat.resolved._
       import ivm._
       import expressiontree._
@@ -77,7 +75,7 @@ trait MS_SHOULD_BE_FINAL{
     }
 
 
-    def analyzeBaseWithAbstractions() = {
+    private def analyzeBaseWithAbstractions() = {
       import de.tud.cs.st.bat.resolved._
       import schema._
       for (
@@ -94,7 +92,7 @@ trait MS_SHOULD_BE_FINAL{
     }
 
 
-    def analyzeSQuOptWithAbstractions() = {
+    private def analyzeSQuOptWithAbstractions() = {
         import de.tud.cs.st.bat.resolved._
         import ivm._
         import expressiontree._
@@ -121,7 +119,8 @@ trait MS_SHOULD_BE_FINAL{
     def analyzeMS_SHOULD_BE_FINAL() {
       benchQueryComplete("MS_SHOULD_BE_FINAL")(
         analyzeBaseWithoutAbstractions(),
-        analyzeBaseWithAbstractions())(
+        analyzeBaseWithAbstractions()
+        )(
         analyzeSQuOptWithoutAbstractions(),
         analyzeSQuOptWithAbstractions()
       )

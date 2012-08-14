@@ -12,17 +12,15 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
 
   import de.tud.cs.st.bat.resolved.ObjectType
 
-  val reflectionField = ObjectType("java/lang/reflect/Field")
+  private val reflectionField = ObjectType("java/lang/reflect/Field")
 
-  val reflectionMethod = ObjectType("java/lang/reflect/Method")
+  private val reflectionMethod = ObjectType("java/lang/reflect/Method")
 
-  val priviledgedAction = ObjectType("java/security/PrivilegedAction")
+  private val priviledgedAction = ObjectType("java/security/PrivilegedAction")
 
-  val priviledgedExceptionAction = ObjectType("java/security/PrivilegedExceptionAction")
+  private val priviledgedExceptionAction = ObjectType("java/security/PrivilegedExceptionAction")
 
-  import BaseAnalyses._
-
-  def analyzeBaseWithoutAbstractions() = {
+  private def analyzeBaseWithoutAbstractions() = {
     import de.tud.cs.st.bat.resolved._
     for (classFile ← classFiles
          if !classFile.interfaces.exists((t) => t == priviledgedAction || t == priviledgedExceptionAction);
@@ -34,7 +32,7 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
   }
 
 
-  def analyzeSQuOptWithoutAbstractions() = {
+  private def analyzeSQuOptWithoutAbstractions() = {
     import de.tud.cs.st.bat.resolved._
     import ivm._
     import expressiontree._
@@ -56,7 +54,7 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
   }
 
 
-  def analyzeBaseWithAbstractions() = {
+  private def analyzeBaseWithAbstractions() = {
     import de.tud.cs.st.bat.resolved._
     import schema._
 
@@ -68,7 +66,7 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
       (classFile, method, idx)
   }
 
-  def analyzeSQuOptWithAbstractions() = {
+  private def analyzeSQuOptWithAbstractions() = {
     import de.tud.cs.st.bat.resolved._
     import ivm._
     import expressiontree._

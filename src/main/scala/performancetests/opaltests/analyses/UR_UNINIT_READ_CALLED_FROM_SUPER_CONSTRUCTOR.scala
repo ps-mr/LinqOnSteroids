@@ -14,7 +14,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
 
     import BaseAnalyses._
 
-    def analyzeBaseWithoutAbstractions() = {
+    private def analyzeBaseWithoutAbstractions() = {
       val isOverride = BaseAnalyses.isOverride(classFiles, classHierarchy) _
       val calledSuperConstructor = BaseAnalyses.calledSuperConstructor(classFiles, classHierarchy) _
       for (classFile ← classFiles;
@@ -34,7 +34,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
     }
 
 /*
-    def analyzeSQuOptWithoutAbstractions() = {
+    private def analyzeSQuOptWithoutAbstractions() = {
         import de.tud.cs.st.bat.resolved._
         import ivm._
         import expressiontree._
@@ -62,7 +62,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
     }
 */
 
-    def analyzeBaseWithAbstractions() = {
+    private def analyzeBaseWithAbstractions() = {
         val isOverride = BaseAnalyses.isOverride(classFiles, classHierarchy) _
         val calledSuperConstructor = BaseAnalyses.calledSuperConstructor(classFiles, classHierarchy) _
         for (schema.BytecodeInstrIndexed(classFile, method,
@@ -81,7 +81,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
     }
 
 /*
-    def analyzeSQuOptWithAbstractions() = {
+    private def analyzeSQuOptWithAbstractions() = {
             import de.tud.cs.st.bat.resolved._
             import ivm._
             import expressiontree._
