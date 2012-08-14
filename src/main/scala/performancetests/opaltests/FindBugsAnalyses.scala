@@ -97,6 +97,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   with analyses.BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
   with analyses.DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT
   with analyses.DP_DO_INSIDE_DO_PRIVILEGED
+  with analyses.FI_USELESS
   with analyses.MS_PKGPROTECT
   with analyses.MS_SHOULD_BE_FINAL
   with FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking
@@ -141,6 +142,11 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   test("DP_DO_INSIDE_DO_PRIVILEGED") {
     analyzeDP_DO_INSIDE_DO_PRIVILEGED()
   }
+
+  test("FI_USELESS") {
+    analyzeFI_USELESS()
+  }
+
 
   test("MS_PKGPROTECT") {
     analyzeMS_PKGPROTECT()
@@ -402,6 +408,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
     analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
     analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
     analyzeDP_DO_INSIDE_DO_PRIVILEGED()
+    analyzeFI_USELESS()
     analyzeMS_PKGPROTECT()
     analyzeMS_SHOULD_BE_FINAL()
     analyzeProtectedFields()
