@@ -14,15 +14,15 @@ trait ITA_INEFFICIENT_TO_ARRAY{
 
     import ivm.expressiontree.Exp
 
-    val objectArrayType = ArrayType(ObjectType("java/lang/Object"))
+    private val objectArrayType = ArrayType(ObjectType("java/lang/Object"))
 
-    val toArrayDescriptor = MethodDescriptor(List(objectArrayType), objectArrayType)
+    private val toArrayDescriptor = MethodDescriptor(List(objectArrayType), objectArrayType)
 
-    val collectionInterface = ObjectType("java/util/Collection")
+    private val collectionInterface = ObjectType("java/util/Collection")
 
-    val listInterface = ObjectType("java/util/List")
+    private val listInterface = ObjectType("java/util/List")
 
-    def isCollectionType(t: ReferenceType): Boolean = {
+    private def isCollectionType(t: ReferenceType): Boolean = {
       if (!t.isObjectType) {
         false
       } else {
@@ -31,7 +31,7 @@ trait ITA_INEFFICIENT_TO_ARRAY{
       }
     }
 
-    def isCollectionType(t: Exp[ReferenceType]): Exp[Boolean] = {
+    private def isCollectionType(t: Exp[ReferenceType]): Exp[Boolean] = {
       import ivm._
       import expressiontree._
       import Lifting._
@@ -44,7 +44,7 @@ trait ITA_INEFFICIENT_TO_ARRAY{
       }
     }
 
-    def analyzeBaseWithoutAbstractions() = {
+    private def analyzeBaseWithoutAbstractions() = {
       for (classFile ← classFiles;
            method ← classFile.methods if method.body.isDefined;
            Seq((ICONST_0, _), (ANEWARRAY(_), _), (instr, idx)) ←
@@ -60,7 +60,7 @@ trait ITA_INEFFICIENT_TO_ARRAY{
         (classFile,method, idx)
     }
 
-    def analyzeSQuOptWithoutAbstractions() = {
+    private def analyzeSQuOptWithoutAbstractions() = {
       import ivm._
       import expressiontree._
       import Lifting._
@@ -70,7 +70,7 @@ trait ITA_INEFFICIENT_TO_ARRAY{
       for (classFile ← classFiles.asSmart;
            method ← classFile.methods if method.body.isDefined;
            instructionsWithIndex ← withIndexSQuOpt(method.body.get.instructions).sliding(3)
-           if // instructionsWithIndex(0)._1.isInstanceOf_#[ICONST_0] && // TODO type ICONST_0 not found (why ???)
+           if instructionsWithIndex(0)._1 ==# ICONST_0 &&
               instructionsWithIndex(1)._1.isInstanceOf_#[ANEWARRAY] &&
               (
               (instructionsWithIndex(2)._1.isInstanceOf_#[INVOKEINTERFACE] &&
@@ -86,7 +86,7 @@ trait ITA_INEFFICIENT_TO_ARRAY{
         (classFile,method, instructionsWithIndex.last._2)
     }
 
-    def analyzeBaseWithAbstractions() = {
+    private def analyzeBaseWithAbstractions() = {
       for ( schema.BytecodeInstrWindow(
                     Seq(_,_,idx), Seq(ICONST_0, ANEWARRAY(_),instr), classFile, method
             ) ← methodBodiesInstructionsSlidingNative(3)
@@ -103,13 +103,7 @@ trait ITA_INEFFICIENT_TO_ARRAY{
     }
 
 
-/*
-// TODO
-//found   : Int(0)
-//  required: ivm.expressiontree.OverloadHack.Overloaded2
-//            if window.instrs(0).isInstanceOf_#[ICONST_0] &&
-
-    def analyzeSQuOptWithAbstractions() = {
+   private def analyzeSQuOptWithAbstractions() = {
         import de.tud.cs.st.bat.resolved._
         import ivm._
         import expressiontree._
@@ -119,21 +113,30 @@ trait ITA_INEFFICIENT_TO_ARRAY{
         import ivm.expressiontree.Util.ExtraImplicits._
         import schema.squopt._
         for ( window ← methodBodiesInstructionsSlidingSQuOpt(3)
-           if window.instrs(0).isInstanceOf_#[ICONST_0] &&
-              window.instrs(1).isInstanceOf_#[ANEWARRAY] &&
+           if window.instrs.apply(0) ==# ICONST_0 &&  // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
+              window.instrs.apply(1).isInstanceOf_#[ANEWARRAY] && // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
               (
-              (window.instrs(2).isInstanceOf_#[INVOKEINTERFACE] &&
-                {val third = window.instrs(2).asInstanceOf_#[INVOKEINTERFACE]
+              (window.instrs.apply(2).isInstanceOf_#[INVOKEINTERFACE] && // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
+                {val third = window.instrs.apply(2).asInstanceOf_#[INVOKEINTERFACE]
                  third.name ==# "toArray" && third.methodDescriptor ==# toArrayDescriptor && isCollectionType(third.declaringClass)
                 }) ||
-              (window.instrs(2).isInstanceOf_#[INVOKEVIRTUAL] &&
-                              {val third = instructionsWithIndex(2).asInstanceOf_#[INVOKEVIRTUAL]
+              (window.instrs.apply(2).isInstanceOf_#[INVOKEVIRTUAL] && // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
+                              {val third = window.instrs.apply(2).asInstanceOf_#[INVOKEVIRTUAL]
                                third.name ==# "toArray" && third.methodDescriptor ==# toArrayDescriptor && isCollectionType(third.declaringClass)
                               })
               )
         ) yield
           (window.classFile,window.method, window.instrIdxes.last)
     }
-*/
+
+    def analyzeITA_INEFFICIENT_TO_ARRAY() {
+      benchQueryComplete("ITA_INEFFICIENT_TO_ARRAY")(
+                                                       analyzeBaseWithoutAbstractions(),
+                                                       analyzeBaseWithAbstractions()
+                                                      )(
+                                                       analyzeSQuOptWithoutAbstractions(),
+                                                       analyzeSQuOptWithAbstractions()
+                                           )
+    }
 
 }

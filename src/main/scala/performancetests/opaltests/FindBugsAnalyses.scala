@@ -98,6 +98,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   with analyses.DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT
   with analyses.DP_DO_INSIDE_DO_PRIVILEGED
   with analyses.FI_USELESS
+  with analyses.ITA_INEFFICIENT_TO_ARRAY
   with analyses.MS_PKGPROTECT
   with analyses.MS_SHOULD_BE_FINAL
   with analyses.SE_BAD_FIELD_INNER_CLASS
@@ -149,6 +150,10 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
 
   test("FI_USELESS") {
     analyzeFI_USELESS()
+  }
+
+  test("ITA_INEFFICIENT_TO_ARRAY") {
+    analyzeITA_INEFFICIENT_TO_ARRAY()
   }
 
 
@@ -431,6 +436,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
     analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
     analyzeDP_DO_INSIDE_DO_PRIVILEGED()
     analyzeFI_USELESS()
+    // analyzeITA_INEFFICIENT_TO_ARRAY() // still has a TODO
     // analyzeMS_PKGPROTECT() // still has a TODO
     // analyzeMS_SHOULD_BE_FINAL()  // still has a TODO
     // analyzeSE_BAD_FIELD_INNER_CLASS() // still has a TODO

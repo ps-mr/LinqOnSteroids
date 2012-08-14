@@ -235,7 +235,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
                                      methodDescriptor: MethodDescriptor): Option[(ClassFile, Method)] = {
       val classFileLookup = getClassFile.get(receiver)
       for (classFile ← classFileLookup;
-           methodDecl <- (
+           methodDecl ← (
                 for (method ← classFile.methods
                       if method.name == methodName &&
                       method.descriptor == methodDescriptor) yield (classFile, method)
@@ -245,7 +245,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
 
     def getMethodDeclarationSQuOpt(receiver: Exp[ObjectType],
                                    methodName: Exp[String],
-                                   methodDescriptor: Exp[MethodDescriptor]): Exp[Iterable[(ClassFile, Method)]] = {
+                                   methodDescriptor: Exp[MethodDescriptor]): Exp[Option[(ClassFile, Method)]] = {
       import de.tud.cs.st.bat.resolved._
       import ivm._
       import expressiontree._
@@ -254,6 +254,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       import performancetests.opaltests.InstructionLifting._
 
       val classFileLookup = getClassFileSQuOpt.get(receiver)
+      /*
       for (classFile ← classFileLookup;
            methodDecl ← Let((
                         for (method ← classFile.methods
@@ -262,8 +263,17 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
                         ).headOption)
            if methodDecl.isDefined
       ) yield {
-        methodDecl.get
+        methodDecl
       }
+      */
+
+      for (classFile ← classFileLookup;
+           methodDecl ← (
+                for (method ← classFile.methods
+                      if method.name ==# methodName &&
+                      method.descriptor ==# methodDescriptor) yield (classFile, method)
+                ).headOption
+          ) yield methodDecl
     }
 
   /**
@@ -334,8 +344,23 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
 
   def calledSuperConstructorSQuOpt(classFile: Exp[ClassFile],
                                    constructor: Exp[Method]): Exp[Option[(ClassFile, Method)]] = {
-    // TODO implement this
-    null
+    import de.tud.cs.st.bat.resolved._
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import BATLifting._
+    import performancetests.opaltests.InstructionLifting._
+    val superClasses : Exp[Option[Seq[ObjectType]]] = null // classHierarchySQuOpt.superclasses.get(classFile.thisClass)
+    if_# (!superClasses.isDefined) {
+      return None
+    } else_# {
+      val methodCall : Exp[INVOKESPECIAL] = null
+      /* constructor.body.get.instructions.collectFirst {
+          def isDefinedAt(x:Instruction) = x.isInstanceOf_#[INVOKESPECIAL] &&  superClasses.get.contains(x.asInstanceOf_#[INVOKESPECIAL].declaringClass.asInstanceOf_#[ObjectType])
+          def apply(x:Instruction) = x.asInstanceOf_#[INVOKESPECIAL]
+      }*/
+      getMethodDeclarationSQuOpt(methodCall.declaringClass.asInstanceOf_#[ObjectType], methodCall.name, methodCall.methodDescriptor)
+    }
   }
 
   def callsNative(sourceMethod: Method, targetClass: ClassFile, targetMethod: Method): Boolean = {
@@ -354,8 +379,32 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
   }
 
   def callsSQuOpt(sourceMethod: Exp[Method], targetClass: Exp[ClassFile], targetMethod: Exp[Method]): Exp[Boolean ]= {
-      // TODO implement
-      null
-  }
+    import de.tud.cs.st.bat.resolved._
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import BATLifting._
+    import performancetests.opaltests.InstructionLifting._
+    // TODO in future versions it would be nice to compare to concrete instances directly ( but just if pattern matching does not work, otherwise I could do the pattern matching)
+    /*
+    val targetINVOKEINTERFACE = INVOKEINTERFACE(targetClass.thisClass, targetMethod.name, targetMethod.descriptor)
+    val targetINVOKEVIRTUAL = INVOKEVIRTUAL(targetClass.thisClass, targetMethod.name, targetMethod.descriptor)
+    val targetINVOKESTATIC = INVOKESTATIC(targetClass.thisClass, targetMethod.name, targetMethod.descriptor)
+    val targetINVOKESPECIAL = INVOKESPECIAL(targetClass.thisClass, targetMethod.name, targetMethod.descriptor)
+    sourceMethod.body.isDefined &&
+    sourceMethod.body.get.instructions.exists {
+        instr => instr ==# targetINVOKEINTERFACE || instr ==# targetINVOKEVIRTUAL || instr ==# targetINVOKESTATIC || instr ==# targetINVOKESPECIAL
+    }
+    */
 
+    sourceMethod.body.isDefined &&
+    sourceMethod.body.get.instructions.exists {
+        instr => (
+           (instr.isInstanceOf_#[INVOKEINTERFACE] && { val invoke = instr.asInstanceOf_#[INVOKEINTERFACE]; invoke.declaringClass ==# targetClass.thisClass && invoke.name ==# targetMethod.name && invoke.methodDescriptor ==# targetMethod.descriptor }) ||
+           (instr.isInstanceOf_#[INVOKEVIRTUAL] && { val invoke = instr.asInstanceOf_#[INVOKEVIRTUAL]; invoke.declaringClass ==# targetClass.thisClass && invoke.name ==# targetMethod.name && invoke.methodDescriptor ==# targetMethod.descriptor }) ||
+           (instr.isInstanceOf_#[INVOKESTATIC] && { val invoke = instr.asInstanceOf_#[INVOKESTATIC]; invoke.declaringClass ==# targetClass.thisClass && invoke.name ==# targetMethod.name && invoke.methodDescriptor ==# targetMethod.descriptor }) ||
+           (instr.isInstanceOf_#[INVOKESPECIAL] && { val invoke = instr.asInstanceOf_#[INVOKESPECIAL]; invoke.declaringClass ==# targetClass.thisClass && invoke.name ==# targetMethod.name && invoke.methodDescriptor ==# targetMethod.descriptor })
+           )
+    }
+  }
 }
