@@ -229,4 +229,40 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     //.toSeq // RM: Okay this was an IDE Problem of IntelliJ
     //PG: I'm confused - I can omit the toSeq even now, and everything just compiles.
   }
+
+    def getMethodDeclaration(classFiles: Traversable[ClassFile])(receiver: ObjectType,
+                                                                 methodName: String,
+                                                                 methodDescriptor: MethodDescriptor): Option[(ClassFile, Method)] = {
+      val classFileLookup = getClassFile.get(receiver)
+      for (classFile ← classFileLookup;
+           methodDecl <- (
+                for (method ← classFile.methods
+                      if method.name == methodName &&
+                      method.descriptor == methodDescriptor) yield (classFile, method)
+                ).headOption
+          ) yield methodDecl
+    }
+
+    def getMethodDeclaration(classFiles: Exp[Traversable[ClassFile]])(receiver: Exp[ObjectType],
+                                                                 methodName: Exp[String],
+                                                                 methodDescriptor: Exp[MethodDescriptor]): Exp[Iterable[(ClassFile, Method)]] = {
+      import de.tud.cs.st.bat.resolved._
+      import ivm._
+      import expressiontree._
+      import Lifting._
+      import BATLifting._
+      import performancetests.opaltests.InstructionLifting._
+
+      val classFileLookup = getClassFileSQuOpt.get(receiver)
+      for (classFile ← classFileLookup;
+           methodDecl ← Let((
+                        for (method ← classFile.methods
+                             if method.name ==# methodName &&
+                                method.descriptor ==# methodDescriptor) yield (classFile, method)
+                        ).headOption)
+           if methodDecl.isDefined
+      ) yield {
+        methodDecl.get
+      }
+    }
 }
