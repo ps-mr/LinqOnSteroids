@@ -229,4 +229,128 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     //.toSeq // RM: Okay this was an IDE Problem of IntelliJ
     //PG: I'm confused - I can omit the toSeq even now, and everything just compiles.
   }
+
+    def getMethodDeclarationNative(receiver: ObjectType,
+                                     methodName: String,
+                                     methodDescriptor: MethodDescriptor): Option[(ClassFile, Method)] = {
+      val classFileLookup = getClassFile.get(receiver)
+      for (classFile ← classFileLookup;
+           methodDecl <- (
+                for (method ← classFile.methods
+                      if method.name == methodName &&
+                      method.descriptor == methodDescriptor) yield (classFile, method)
+                ).headOption
+          ) yield methodDecl
+    }
+
+    def getMethodDeclarationSQuOpt(receiver: Exp[ObjectType],
+                                   methodName: Exp[String],
+                                   methodDescriptor: Exp[MethodDescriptor]): Exp[Iterable[(ClassFile, Method)]] = {
+      import de.tud.cs.st.bat.resolved._
+      import ivm._
+      import expressiontree._
+      import Lifting._
+      import BATLifting._
+      import performancetests.opaltests.InstructionLifting._
+
+      val classFileLookup = getClassFileSQuOpt.get(receiver)
+      for (classFile ← classFileLookup;
+           methodDecl ← Let((
+                        for (method ← classFile.methods
+                             if method.name ==# methodName &&
+                                method.descriptor ==# methodDescriptor) yield (classFile, method)
+                        ).headOption)
+           if methodDecl.isDefined
+      ) yield {
+        methodDecl.get
+      }
+    }
+
+  /**
+   * Returns true if the method is also declared in the superclass; regardless of abstract or interface methods
+   */
+  def isOverrideNative(classFile: ClassFile)(method: Method): Boolean = {
+    (for (superClass ← classHierarchy.superclasses(classFile.thisClass).getOrElse(Set());
+                             methodDecl ← getMethodDeclarationNative(superClass, method.name, method.descriptor)
+    ) yield {
+      methodDecl
+    }).size > 0
+  }
+
+    /**
+     * Returns true if the method is also declared in the superclass; regardless of abstract or interface methods
+     */
+    def isOverrideSQuOpt(classFile: Exp[ClassFile])(method: Exp[Method]): Exp[Boolean] = {
+      import de.tud.cs.st.bat.resolved._
+      import ivm._
+      import expressiontree._
+      import Lifting._
+      import BATLifting._
+      import performancetests.opaltests.InstructionLifting._
+      (for (superClass ← classHierarchySQuOpt.superclasses(classFile.thisClass).getOrElse(Set());
+                               methodDecl ← getMethodDeclarationSQuOpt(superClass, method.name, method.descriptor)
+      ) yield {
+        methodDecl
+      }).size > 0
+    }
+
+  /**
+   * Returns true if classFile declares the given Field
+   */
+  def declaresFieldNative(classFile: ClassFile)(name: String, fieldType: FieldType): Boolean = {
+    classFile.fields.exists {
+                              case Field(_, `name`, `fieldType`, _) => true
+                              case _                                => false
+                            }
+  }
+
+  def declaresFieldSQuOpt(classFile: Exp[ClassFile])(name: Exp[String], fieldType: Exp[FieldType]): Exp[Boolean] = {
+    import de.tud.cs.st.bat.resolved._
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import BATLifting._
+    import performancetests.opaltests.InstructionLifting._
+    classFile.fields.exists { field => field.name ==# name && field.fieldType ==# fieldType }
+  }
+
+  /**
+   * Returns the super constructor called in the given constructor or None
+   */
+  def calledSuperConstructorNative(classFile: ClassFile,
+                                   constructor: Method): Option[(ClassFile, Method)] = {
+    val superClasses = classHierarchy.superclasses(classFile.thisClass)
+    if (!superClasses.isDefined) {
+      return None
+    }
+    val Some((targetType, name, desc)) = constructor.body.get.instructions.collectFirst {
+                                                                                          case INVOKESPECIAL(trgt, n, d)
+                                                                                            if superClasses.get.contains(trgt.asInstanceOf[ObjectType]) =>
+                                                                                            (trgt.asInstanceOf[ObjectType], n, d)
+
+                                                                                        }
+    getMethodDeclarationNative(targetType, name, desc)
+  }
+
+  def calledSuperConstructorSQuOpt(classFile: Exp[ClassFile],
+                                   constructor: Exp[Method]): Exp[Option[(ClassFile, Method)]] = {
+    // TODO implement this
+    null
+  }
+
+  def callsNative(sourceMethod: Method, targetClass: ClassFile, targetMethod: Method): Boolean = {
+    sourceMethod.body.isDefined &&
+    sourceMethod.body.get.instructions.exists {
+                                                case INVOKEINTERFACE(targetType, name, desc) => targetClass.thisClass == targetType && targetMethod
+                                                                                                                                       .name == name && targetMethod.descriptor == desc
+                                                case INVOKEVIRTUAL(targetType, name, desc)   => targetClass.thisClass == targetType && targetMethod
+                                                                                                                                       .name == name && targetMethod.descriptor == desc
+                                                case INVOKESTATIC(targetType, name, desc)    => targetClass.thisClass == targetType && targetMethod
+                                                                                                                                       .name == name && targetMethod.descriptor == desc
+                                                case INVOKESPECIAL(targetType, name, desc)   => targetClass.thisClass == targetType && targetMethod
+                                                                                                                                       .name == name && targetMethod.descriptor == desc
+                                                case _                                       => false
+                                              }
+  }
+
 }

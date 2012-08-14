@@ -95,8 +95,14 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   with FBSerializableNoConstructor with FBCatchIllegalMonitorStateException with FBCovariantCompareToMethods
   with FBAbstractClassesThatDefinesCovariantEquals with FBMethodsThatCallRunFinalizersOnExit
   with analyses.BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
+  with analyses.DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT
   with analyses.DP_DO_INSIDE_DO_PRIVILEGED
+  with analyses.FI_USELESS
+  with analyses.MS_PKGPROTECT
   with analyses.MS_SHOULD_BE_FINAL
+  with analyses.SE_BAD_FIELD_INNER_CLASS
+  with analyses.SIC_INNER_SHOULD_BE_STATIC_ANON
+  with analyses.SW_SWING_METHODS_INVOKED_IN_SWING_THREAD
   with FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking
 {
   import FindBugsAnalyses.QueryAnd
@@ -132,13 +138,40 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
     analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
   }
 
+  test("DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT") {
+    analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
+  }
+
   test("DP_DO_INSIDE_DO_PRIVILEGED") {
     analyzeDP_DO_INSIDE_DO_PRIVILEGED()
+  }
+
+  test("FI_USELESS") {
+    analyzeFI_USELESS()
+  }
+
+
+  test("MS_PKGPROTECT") {
+    analyzeMS_PKGPROTECT()
   }
 
   test("MS_SHOULD_BE_FINAL") {
     analyzeMS_SHOULD_BE_FINAL()
   }
+
+  test("SE_BAD_FIELD_INNER_CLASS") {
+    analyzeSE_BAD_FIELD_INNER_CLASS()
+  }
+
+  test("SIC_INNER_SHOULD_BE_STATIC_ANON") {
+    analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
+  }
+
+  test("SW_SWING_METHODS_INVOKED_IN_SWING_THREAD") {
+    analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD()
+  }
+
+
 
 
   // The following code is meant to show how easy it is to write analyses;
@@ -390,8 +423,14 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
 
   def analyze() {
     analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
+    analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
     analyzeDP_DO_INSIDE_DO_PRIVILEGED()
-    analyzeMS_SHOULD_BE_FINAL()
+    analyzeFI_USELESS()
+    // analyzeMS_PKGPROTECT() // still has a TODO
+    // analyzeMS_SHOULD_BE_FINAL()  // still has a TODO
+    // analyzeSE_BAD_FIELD_INNER_CLASS() // still has a TODO
+    // analyzeSIC_INNER_SHOULD_BE_STATIC_ANON // still has a TODO
+    // analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD // still has TODO
     analyzeProtectedFields()
     analyzeUnusedFields()
     analyzeExplicitGC()

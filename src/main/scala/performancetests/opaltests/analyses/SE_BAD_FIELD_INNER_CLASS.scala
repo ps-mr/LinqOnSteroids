@@ -69,7 +69,7 @@ trait SE_BAD_FIELD_INNER_CLASS {
   }
 
 
-/*
+
   private def analyzeSQuOptWithoutAbstractions() = {
     import ivm._
     import expressiontree._
@@ -79,7 +79,7 @@ trait SE_BAD_FIELD_INNER_CLASS {
     import ivm.expressiontree.Util.ExtraImplicits._
     val serializableClasses = classHierarchySQuOpt.subclasses(serializable).getOrElse(Set.empty)
     for(  objectType ← serializableClasses;
-          classFile = getClassFileSQuOpt(objectType);
+          classFile ←Let( getClassFileSQuOpt(objectType));
            outerClassEntry ← classFile.outerType
            if !hasStaticModifier(outerClassEntry._2) &&
               !classHierarchySQuOpt.isSubtypeOf(outerClassEntry._1, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */)
@@ -87,5 +87,47 @@ trait SE_BAD_FIELD_INNER_CLASS {
       (objectType, outerClassEntry._1)
     }
   }
-*/
+
+  private def analyzeBaseWithAbstractions() = {
+    val serializableClasses = classHierarchy.subclasses(serializable).getOrElse(Set.empty)
+    for(  objectType ← serializableClasses;
+          classFile = getClassFile(objectType);
+          (outerType, thisInnerClassesAccessFlags) ← classFile.outerType
+          if !hasStaticModifier(thisInnerClassesAccessFlags) &&
+             !classHierarchy.isSubtypeOf(outerType, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */)
+    ) yield {
+      (objectType, outerType)
+    }
+  }
+
+  private def analyzeSQuOptWithAbstractions() = {
+    import de.tud.cs.st.bat.resolved._
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import BATLifting._
+    import performancetests.opaltests.InstructionLifting._
+    import ivm.expressiontree.Util.ExtraImplicits._
+    import schema.squopt._
+    val serializableClasses = classHierarchySQuOpt.subclasses(serializable).getOrElse(Set.empty)
+    for(  objectType ← serializableClasses;
+          classFile ←Let( getClassFileSQuOpt(objectType));
+           outerClassEntry ← classFile.outerType
+           if !hasStaticModifier(outerClassEntry._2) &&
+              !classHierarchySQuOpt.isSubtypeOf(outerClassEntry._1, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */)
+    ) yield {
+      (objectType, outerClassEntry._1)
+    }
+  }
+
+
+  def analyzeSE_BAD_FIELD_INNER_CLASS() {
+    benchQueryComplete("SE_BAD_FIELD_INNER_CLASS")(
+      analyzeBaseWithoutAbstractions(),
+      analyzeBaseWithAbstractions()
+      )(
+      analyzeSQuOptWithoutAbstractions(),
+      analyzeSQuOptWithAbstractions()
+    )
+  }
 }
