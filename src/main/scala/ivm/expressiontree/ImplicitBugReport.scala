@@ -84,6 +84,8 @@ object ImplicitBugReport {
     println()
   }
 
+  //def main(args: Array[String]) = testBug()
+
 //  def testBug() {
 //    println("testBug:")
 //    val a2 = toExpTempl(Seq(1, 2, 3, 5)) //Doesn't work well
@@ -94,5 +96,4 @@ object ImplicitBugReport {
 //    println(toExpTempl(Seq(1, 2, 3, 5)))
 //    println()
 //  }
-  def main(args: Array[String]) = testBug()
 }
