@@ -100,6 +100,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   with analyses.FI_USELESS
   with analyses.MS_PKGPROTECT
   with analyses.MS_SHOULD_BE_FINAL
+  with analyses.SE_BAD_FIELD_INNER_CLASS
   with FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking
 {
   import FindBugsAnalyses.QueryAnd
@@ -155,6 +156,11 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   test("MS_SHOULD_BE_FINAL") {
     analyzeMS_SHOULD_BE_FINAL()
   }
+
+  test("SE_BAD_FIELD_INNER_CLASS") {
+    analyzeSE_BAD_FIELD_INNER_CLASS()
+  }
+
 
 
   // The following code is meant to show how easy it is to write analyses;
@@ -409,8 +415,10 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
     analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
     analyzeDP_DO_INSIDE_DO_PRIVILEGED()
     analyzeFI_USELESS()
-    analyzeMS_PKGPROTECT()
+    // analyzeMS_PKGPROTECT() // TODO still has a TODO
     analyzeMS_SHOULD_BE_FINAL()
+    analyzeSE_BAD_FIELD_INNER_CLASS()
+
     analyzeProtectedFields()
     analyzeUnusedFields()
     analyzeExplicitGC()
