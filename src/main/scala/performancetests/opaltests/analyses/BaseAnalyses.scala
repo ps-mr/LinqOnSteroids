@@ -66,7 +66,7 @@ object BaseAnalyses {
     (for (classFile ← classFiles if classFile.thisClass == t) yield classFile).headOption
   }
 
-  def getClassFile(classFiles: Exp[Traversable[ClassFile]])(t: Exp[ObjectType]) : Exp[Option[Exp[ClassFile]]] = {
+  def getClassFile(classFiles: Exp[Traversable[ClassFile]])(t: Exp[ObjectType]) : Exp[Option[ClassFile]] = {
     import de.tud.cs.st.bat.resolved._
     import ivm._
     import expressiontree._
@@ -75,6 +75,7 @@ object BaseAnalyses {
     import performancetests.opaltests.InstructionLifting._
     import ivm.expressiontree.Util.ExtraImplicits._
     val list = for (classFile ← classFiles if classFile.thisClass ==# t) yield {classFile}
+    list.headOption
     // TODO: implement this
     /*
     if(list.isEmpty.value)  // TODO: added a _.value is this correct?
@@ -85,9 +86,7 @@ object BaseAnalyses {
     {
         Some[Exp[ClassFile]](list.head).asSmart
     }
-    //list.headOption // TODO .headOption is not defined
     */
-    null
   }
 
   // TODO this should be indexed

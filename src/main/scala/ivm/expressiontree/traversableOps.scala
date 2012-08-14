@@ -116,6 +116,10 @@ trait TraversableOps {
 
     def sum[U >: T: ClassTag: TypeTag](implicit num: Numeric[U]): Exp[U] = foldLeft(pure(num.zero))(app(pure((num.plus _).tupled)))
     def product[U >: T: ClassTag: TypeTag](implicit num: Numeric[U]): Exp[U] = foldLeft(pure(num.one))(app(pure((num.times _).tupled)))
+    def head: Exp[T] = fmap(this.t, 'TraversableLike)('head, _.head)
+    def headOption: Exp[Option[T]] = fmap(this.t, 'TraversableLike)('headOption, _.headOption)
+    def last: Exp[T] = fmap(this.t, 'TraversableLike)('last, _.last)
+    def lastOption: Exp[Option[T]] = fmap(this.t, 'TraversableLike)('lastOption, _.lastOption)
 
     def typeCase[Res: TypeTag](cases: TypeCase[_, Res]*): Exp[Set[Res]] = TypeCaseExp(this.t, cases)
   }
@@ -269,8 +273,6 @@ trait IterableOps {
     extends Holder[Repr] {
     def zipWithIndex[T1 >: T, That](implicit bf: CanBuildFrom[Repr, (T1, Int), That]): Exp[That] = fmap(this.t, 'IterableLike)('zipWithIndex, _.zipWithIndex)
     def sliding(size: Exp[Int]): Exp[Seq[Repr]] = fmap(this.t, size, 'IterableLike)('sliding, (coll, size) => (coll sliding size).toSeq)
-    def head: Exp[T] = fmap(this.t, 'IterableLike)('head, _.head)
-    def last: Exp[T] = fmap(this.t, 'IterableLike)('last, _.last)
   }
 }
 
