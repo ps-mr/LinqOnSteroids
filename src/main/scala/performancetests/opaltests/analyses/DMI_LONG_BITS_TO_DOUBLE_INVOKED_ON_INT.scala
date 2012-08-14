@@ -79,4 +79,14 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
 
     }
 
+
+  def analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT() {
+    benchQueryComplete("DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT")(
+      analyzeBaseWithoutAbstractions(),
+      analyzeBaseWithAbstractions()
+      )(
+      analyzeSQuOptWithoutAbstractions(),
+      analyzeSQuOptWithAbstractions()
+    )
+  }
 }

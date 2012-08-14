@@ -95,6 +95,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   with FBSerializableNoConstructor with FBCatchIllegalMonitorStateException with FBCovariantCompareToMethods
   with FBAbstractClassesThatDefinesCovariantEquals with FBMethodsThatCallRunFinalizersOnExit
   with analyses.BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION
+  with analyses.DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT
   with analyses.DP_DO_INSIDE_DO_PRIVILEGED
   with analyses.MS_SHOULD_BE_FINAL
   with FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking
@@ -130,6 +131,10 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
 
   test("BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION") {
     analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
+  }
+
+  test("DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT") {
+    analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
   }
 
   test("DP_DO_INSIDE_DO_PRIVILEGED") {
@@ -390,6 +395,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
 
   def analyze() {
     analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
+    analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
     analyzeDP_DO_INSIDE_DO_PRIVILEGED()
     analyzeMS_SHOULD_BE_FINAL()
     analyzeProtectedFields()
