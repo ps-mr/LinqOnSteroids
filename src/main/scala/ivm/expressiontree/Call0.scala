@@ -13,3 +13,13 @@ class GlobalFuncCall1[A1, Res](override val name: Symbol,
 {
   override def copy(t1: Exp[A1]) = new GlobalFuncCall1(name, prefix, callfunc, t1)
 }
+
+class GlobalFuncCall2[A1, A2, Res](override val name: Symbol,
+                               override val prefix: String,
+                               callfunc: (A1, A2) => Res,
+                               override val t1: Exp[A1], override val t2: Exp[A2])
+    extends Call2[A1, A2, Res](name, Symbol(""), callfunc, t1, t2)
+    with Arity2OpTrait[Exp[A1], Exp[A2], Res, GlobalFuncCall2[A1, A2, Res]] with PrefixPrinting
+{
+  override def copy(t1: Exp[A1],t2: Exp[A2]) = new GlobalFuncCall2(name, prefix, callfunc, t1, t2)
+}
