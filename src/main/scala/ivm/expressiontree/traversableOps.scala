@@ -426,7 +426,7 @@ object TypeHierarchyUtils {
       for (superType <- superTypesClazz)
         subtypeRel += (superType -> clazz) //Map s to its subtypes.
     }
-    val erasedT = ClassUtil.boxedErasure(classManifest[T])
+    val erasedT = ClassUtil.boxedErasure(classTag[T])
     for {
       clazz <- seenTypes
       if clazz != erasedT
