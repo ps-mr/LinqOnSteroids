@@ -14,35 +14,45 @@ object BaseAnalyses {
 
 
 
-  // TODO this should be indexed
+  // TODO move to FBAnalysesBase
   def getMethodDeclaration(classFiles: Traversable[ClassFile])(receiver: ObjectType,
                                                                methodName: String,
                                                                methodDescriptor: MethodDescriptor): Option[(ClassFile, Method)] = {
-      /*
+    /*
     val classFileLookup = getClassFile(classFiles)(receiver)
     for (classFile ← classFileLookup;
-         methodDecl = (
+         methodDecl <- (
               for (method ← classFile.methods
                     if method.name == methodName &&
                     method.descriptor == methodDescriptor) yield (classFile, method)
               ).headOption
-          if methodDecl.isDefined
-        ) yield {
-        methodDecl.get
-    }
-    */
-    null
+        ) yield methodDecl
+     */
+     null
   }
 
+  // TODO move to FBAnalysesBase
+  //XXX the return type should still be Exp[Option[...]], not
+  //Exp[Iterable[...]].
   def getMethodDeclaration(classFiles: Exp[Traversable[ClassFile]])(receiver: Exp[ObjectType],
                                                                methodName: Exp[String],
-                                                               methodDescriptor: Exp[MethodDescriptor]): Exp[Option[(ClassFile, Method)]] = {
+                                                               methodDescriptor: Exp[MethodDescriptor]): Exp[Iterable[(ClassFile, Method)]] = {
     import de.tud.cs.st.bat.resolved._
     import ivm._
     import expressiontree._
     import Lifting._
     import BATLifting._
     import performancetests.opaltests.InstructionLifting._
+    /*
+    val classFileLookup = getClassFile(classFiles)(receiver)
+    for (classFile ← classFileLookup;
+         methodDecl <- (
+              for (method ← classFile.methods
+                    if method.name == methodName &&
+                    method.descriptor == methodDescriptor) yield (classFile, method)
+              ).headOption
+        ) yield methodDecl
+    */
     // TODO implement this
     /*
     val classFileLookup = getClassFile(classFiles)(receiver)
@@ -154,5 +164,24 @@ object BaseAnalyses {
                                               }
   }
 
+  /**
+   * Returns a filtered sequence of instructions without the bytecode padding
+   */
+  def withIndex(instructions: Array[Instruction]): Seq[(Instruction, Int)] = {
+    instructions.zipWithIndex.filter {
+                                       case (instr, _) => instr != null
+                                     }
+  }
 
+
+
+  /**
+   * Returns a filtered sequence of instructions without the bytecode padding
+   */
+  def withIndexExp(instructions: Exp[Seq[Instruction]]): Exp[Seq[(Instruction, Int)]] = {
+    import ivm.expressiontree.{Exp, Lifting}
+    import Lifting._
+    instructions.zipWithIndex.filter(_._1 !=# null).toSeq // TODO I had to add toSeq; why did this compile earlier
+    //PG: I'm confused - I can omit the toSeq even now, and everything just compiles.
+  }
 }

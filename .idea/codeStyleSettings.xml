@@ -20,6 +20,8 @@
         <ScalaCodeStyleSettings>
           <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="100000" />
           <option name="IMPORTS_MEMBERS_USING_UNDERSCORE" value="false" />
+          <option name="NOT_CONTINUATION_INDENT_FOR_PARAMS" value="true" />
+          <option name="ALIGN_IN_COLUMNS_CASE_BRANCH" value="true" />
         </ScalaCodeStyleSettings>
         <XML>
           <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
@@ -36,6 +38,15 @@
           </indentOptions>
         </codeStyleSettings>
         <codeStyleSettings language="Scala">
+          <option name="ALIGN_MULTILINE_CHAINED_METHODS" value="true" />
+          <option name="ALIGN_MULTILINE_PARAMETERS_IN_CALLS" value="true" />
+          <option name="ALIGN_MULTILINE_BINARY_OPERATION" value="true" />
+          <option name="ALIGN_MULTILINE_EXTENDS_LIST" value="true" />
+          <option name="ALIGN_MULTILINE_METHOD_BRACKETS" value="true" />
+          <option name="ALIGN_MULTILINE_PARENTHESIZED_EXPRESSION" value="true" />
+          <option name="ALIGN_GROUP_FIELD_DECLARATIONS" value="true" />
+          <option name="PREFER_PARAMETERS_WRAP" value="true" />
+          <option name="MODIFIER_LIST_WRAP" value="true" />
           <indentOptions>
             <option name="TAB_SIZE" value="8" />
           </indentOptions>

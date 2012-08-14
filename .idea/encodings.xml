@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false" />
+  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false">
+    <file url="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION.scala" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/BaseAnalyses.scala" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT.scala" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/DP_DO_INSIDE_DO_PRIVILEGED.scala" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/ITA_INEFFICIENT_TO_ARRAY.scala" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/MS_PKGPROTECT.scala" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/MS_SHOULD_BE_FINAL.scala" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/SE_BAD_FIELD_INNER_CLASS.scala" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/SIC_INNER_SHOULD_BE_STATIC_ANON.scala" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR.scala" charset="UTF-8" />
+  </component>
 </project>
 

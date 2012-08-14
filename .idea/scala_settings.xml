@@ -11,6 +11,7 @@
         <option value="scala.collection.mutable._" />
       </array>
     </option>
+    <option name="showImplisitConversions" value="false" />
   </component>
 </project>
 
