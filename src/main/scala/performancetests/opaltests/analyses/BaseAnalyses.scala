@@ -95,26 +95,33 @@ object BaseAnalyses {
                                                                methodDescriptor: MethodDescriptor): Option[(ClassFile, Method)] = {
     val classFileLookup = getClassFile(classFiles)(receiver)
     for (classFile ← classFileLookup;
-         methodDecl = (
+         methodDecl <- (
               for (method ← classFile.methods
                     if method.name == methodName &&
                     method.descriptor == methodDescriptor) yield (classFile, method)
               ).headOption
-          if methodDecl.isDefined
-        ) yield {
-        methodDecl.get
-    }
+        ) yield methodDecl
   }
 
+  //XXX the return type should still be Exp[Option[...]], not
+  //Exp[Iterable[...]].
   def getMethodDeclaration(classFiles: Exp[Traversable[ClassFile]])(receiver: Exp[ObjectType],
                                                                methodName: Exp[String],
-                                                               methodDescriptor: Exp[MethodDescriptor]): Exp[Option[(ClassFile, Method)]] = {
+                                                               methodDescriptor: Exp[MethodDescriptor]): Exp[Iterable[(ClassFile, Method)]] = {
     import de.tud.cs.st.bat.resolved._
     import ivm._
     import expressiontree._
     import Lifting._
     import BATLifting._
     import performancetests.opaltests.InstructionLifting._
+    val classFileLookup = getClassFile(classFiles)(receiver)
+    for (classFile ← classFileLookup;
+         methodDecl <- (
+              for (method ← classFile.methods
+                    if method.name == methodName &&
+                    method.descriptor == methodDescriptor) yield (classFile, method)
+              ).headOption
+        ) yield methodDecl
     // TODO implement this
     /*
     val classFileLookup = getClassFile(classFiles)(receiver)
@@ -129,7 +136,6 @@ object BaseAnalyses {
       methodDecl.get
     }
     */
-    null
   }
 
   /**
@@ -152,16 +158,12 @@ object BaseAnalyses {
     import Lifting._
     import BATLifting._
     import performancetests.opaltests.InstructionLifting._
-    // TODO implement this
-    /*
     val superMethods = (for (superClass ← classHierarchy.superclasses(classFile.thisClass).getOrElse(Set());
                              methodDecl ← getMethodDeclaration(classFiles)(superClass, method.name, method.descriptor)
     ) yield {
       methodDecl
     })
     superMethods.size > 0
-    */
-    null
   }
 
 
