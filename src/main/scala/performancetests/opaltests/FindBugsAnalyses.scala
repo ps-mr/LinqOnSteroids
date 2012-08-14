@@ -103,6 +103,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   with analyses.SE_BAD_FIELD_INNER_CLASS
   with analyses.SIC_INNER_SHOULD_BE_STATIC_ANON
   with analyses.SW_SWING_METHODS_INVOKED_IN_SWING_THREAD
+  with analyses.UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
   with FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking
 {
   import FindBugsAnalyses.QueryAnd
@@ -169,6 +170,10 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
 
   test("SW_SWING_METHODS_INVOKED_IN_SWING_THREAD") {
     analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD()
+  }
+
+  test("UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR") {
+    analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR()
   }
 
 
@@ -431,6 +436,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
     // analyzeSE_BAD_FIELD_INNER_CLASS() // still has a TODO
     // analyzeSIC_INNER_SHOULD_BE_STATIC_ANON // still has a TODO
     // analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD // still has TODO
+    // analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR() // still has TODOs in FB Base
     analyzeProtectedFields()
     analyzeUnusedFields()
     analyzeExplicitGC()

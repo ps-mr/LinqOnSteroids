@@ -353,4 +353,9 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
                                               }
   }
 
+  def callsSQuOpt(sourceMethod: Exp[Method], targetClass: Exp[ClassFile], targetMethod: Exp[Method]): Exp[Boolean ]= {
+      // TODO implement
+      null
+  }
+
 }
