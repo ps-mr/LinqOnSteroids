@@ -26,7 +26,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
            if (callsNative(superConstructor, superClass, method))
 
       ) yield
-        (classFile,method, declaringClass, name, fieldType, idx)
+        (classFile.thisClass,method.name, method.descriptor, declaringClass, name, fieldType, idx)
     }
 
 
@@ -52,7 +52,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
              calledSuperConstructorInfo ← calledSuperConstructorSQuOpt(classFile, constructor)
              if (callsSQuOpt(calledSuperConstructorInfo._2, calledSuperConstructorInfo._1, method))
         } yield
-          (classFile,method, getField.declaringClass, getField.name, getField.fieldType, instruction._2)
+          (classFile.thisClass,method.name, method.descriptor, getField.declaringClass, getField.name, getField.fieldType, instruction._2)
     }
 
 
@@ -69,7 +69,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
              if (callsNative(superConstructor, superClass, method))
 
         ) yield
-          (classFile,method, declaringClass, name, fieldType, idx)
+          (classFile.thisClass,method.name, method.descriptor, declaringClass, name, fieldType, idx)
     }
 
     private def analyzeSQuOptWithAbstractions() = {
@@ -92,7 +92,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
                calledSuperConstructorInfo ← calledSuperConstructorSQuOpt(instructionWithIndex.classFile, constructor)
                if (callsSQuOpt(calledSuperConstructorInfo._2, calledSuperConstructorInfo._1, instructionWithIndex.method))
           } yield
-            (instructionWithIndex.classFile, instructionWithIndex.method, getField.declaringClass, getField.name, getField.fieldType, instructionWithIndex.index)
+            (instructionWithIndex.classFile.thisClass, instructionWithIndex.method.name, instructionWithIndex.method.descriptor, getField.declaringClass, getField.name, getField.fieldType, instructionWithIndex.index)
         }
 
   def analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR() {

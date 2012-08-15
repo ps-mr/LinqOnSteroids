@@ -26,7 +26,7 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
            (INVOKESTATIC(`doubleClass`, "longBitsToDouble", `longBitsToDoubleDescriptor`), idx)
               ) ← withIndexNative(method.body.get.instructions).sliding(2)
       ) yield
-        (classFile, method, idx)
+        (classFile.thisClass, method.name, method.descriptor, idx)
     }
 
 
@@ -46,7 +46,7 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
                 second.name ==# "longBitsToDouble" &&
                 second.methodDescriptor ==# longBitsToDoubleDescriptor
       } yield
-        (classFile, method, window.last._2)
+        (classFile.thisClass, method.name, method.descriptor, window.last._2)
     }
 
 
@@ -55,7 +55,7 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
               Seq(I2L,INVOKESTATIC(`doubleClass`, "longBitsToDouble", `longBitsToDoubleDescriptor`)),
                classFile, method) ← methodBodiesInstructionsSlidingNative(2)
       ) yield
-        (classFile, method, idx)
+        (classFile.thisClass, method.name, method.descriptor, idx)
     }
 
 
@@ -68,14 +68,14 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
         import performancetests.opaltests.InstructionLifting._
         import ivm.expressiontree.Util.ExtraImplicits._
         import schema.squopt._
-        for ( window ← methodBodiesInstructionsSlidingSQuOpt(3);
+        for ( window ← methodBodiesInstructionsSlidingSQuOpt(2);
               second ← window.instrs.last.ifInstanceOf[INVOKESTATIC]
                if   window.instrs.head ==# I2L &&
                     second.declaringClass ==# doubleClass &&
                     second.name ==# "longBitsToDouble" &&
                     second.methodDescriptor ==# longBitsToDoubleDescriptor
          ) yield
-            (window.classFile, window.method, window.instrIdxes.last)
+            (window.classFile.thisClass, window.method.name, window.method.descriptor, window.instrIdxes.last)
 
     }
 
