@@ -51,7 +51,7 @@ trait MS_PKGPROTECT{
                  !readFieldsFromPackage.exists(entry => entry._2 ==(classFile.thisClass, field.name, field.fieldType) && entry._1 != classFile.thisClass.packageName)
                 )
         ) yield
-          (classFile, field)
+          (classFile.thisClass, field.name, field.fieldType)
     }
 
 
@@ -77,7 +77,7 @@ trait MS_PKGPROTECT{
                  !readFieldsFromPackage.exists(entry => entry._2._1 ==# classFile.thisClass && entry._2._2 ==# field.name && entry._2._3 ==# field.fieldType && entry._1 !=# classFile.thisClass.packageName)
                 )
         ) yield
-          (classFile, field)
+          (classFile.thisClass, field.name, field.fieldType)
     }
 
 
@@ -96,7 +96,7 @@ trait MS_PKGPROTECT{
                  !readFieldsFromPackage.exists(entry => entry._2 ==(classFile.thisClass, field.name, field.fieldType) && entry._1 != classFile.thisClass.packageName)
                 )
       ) yield
-        (classFile, field)
+        (classFile.thisClass, field.name, field.fieldType)
     }
 
 
@@ -122,7 +122,7 @@ trait MS_PKGPROTECT{
                    !readFieldsFromPackage.exists(entry => entry._2._1 ==# fieldRecord.classFile.thisClass && entry._2._2 ==# fieldRecord.field.name && entry._2._3 ==# fieldRecord.field.fieldType && entry._1 !=# fieldRecord.classFile.thisClass.packageName)
                   )
         ) yield
-          (fieldRecord.classFile, fieldRecord.field)
+          (fieldRecord.classFile.thisClass, fieldRecord.field.name, fieldRecord.field.fieldType)
       }
 
 
