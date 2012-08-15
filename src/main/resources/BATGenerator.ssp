@@ -21,7 +21,7 @@ import OverloadHack._
 --%>
 object BATLifting {<%
   for (c <- List("ClassFile", "ObjectType", "Field", "Method",
-		  "ClassMember", "MethodDescriptor", "Code", "ExceptionHandler", "Type", "analyses.ClassHierarchy")) {
+		  "ClassMember", "MethodDescriptor", "Code", "ExceptionHandler", "CommonAttributes", "Type", "analyses.ClassHierarchy")) {
   //render("WrappedClass.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))}
   render("WrappedClassInlined.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))
 } %>

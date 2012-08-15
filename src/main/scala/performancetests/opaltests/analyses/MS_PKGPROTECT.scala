@@ -70,7 +70,7 @@ trait MS_PKGPROTECT{
              field ← classFile.fields
              if (field.isFinal &&
                  field.isStatic &&
-                 //!field.isSynthetic && // TODO generate a BATLifting with isSynthetic
+                 !field.isSynthetic &&
                  !field.isVolatile &&
                  (field.isPublic || field.isProtected) &&
                  (isArray(field.fieldType) || isHashTable(field.fieldType)) &&
@@ -115,7 +115,7 @@ trait MS_PKGPROTECT{
              fieldRecord ← fieldsSQuOpt
                if (fieldRecord.field.isFinal &&
                    fieldRecord.field.isStatic &&
-                   //!fieldRecord.field.isSynthetic && // TODO generate a BATLifting with isSynthetic
+                   !fieldRecord.field.isSynthetic &&
                    !fieldRecord.field.isVolatile &&
                    (fieldRecord.field.isPublic || fieldRecord.field.isProtected) &&
                    (isArray(fieldRecord.field.fieldType) || isHashTable(fieldRecord.field.fieldType)) &&
