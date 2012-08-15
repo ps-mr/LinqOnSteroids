@@ -87,7 +87,8 @@ trait MS_PKGPROTECT{
       val readFieldsFromPackage = readFieldsNative.map(entry => (entry._1._1.thisClass.packageName, entry._2))
       for (
            FieldRecord(classFile, field) ← fieldsNative
-             if (field.isFinal &&
+             if (!classFile.isInterfaceDeclaration &&
+                 field.isFinal &&
                  field.isStatic &&
                  !field.isSynthetic &&
                  !field.isVolatile &&
@@ -113,7 +114,8 @@ trait MS_PKGPROTECT{
                               .map(entry => (entry._1._1.thisClass.packageName, entry._2))
         for (
              fieldRecord ← fieldsSQuOpt
-               if (fieldRecord.field.isFinal &&
+               if (!fieldRecord.classFile.isInterfaceDeclaration &&
+                   fieldRecord.field.isFinal &&
                    fieldRecord.field.isStatic &&
                    !fieldRecord.field.isSynthetic &&
                    !fieldRecord.field.isVolatile &&
