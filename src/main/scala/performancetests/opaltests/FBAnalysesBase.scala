@@ -322,13 +322,16 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     if (!superClasses.isDefined) {
        None
     }
-    val Some((targetType, name, desc)) = constructor.body.get.instructions.collectFirst {
+    val superConstructor = constructor.body.get.instructions.collectFirst {
                                                                                           case INVOKESPECIAL(trgt, n, d)
                                                                                             if superClasses.get.contains(trgt.asInstanceOf[ObjectType]) =>
                                                                                             (trgt.asInstanceOf[ObjectType], n, d)
 
                                                                                         }
-    getMethodDeclarationNative(targetType, name, desc)
+    superConstructor match {
+      case Some((targetType, name, desc)) => getMethodDeclarationNative(targetType, name, desc)
+      case None => None // we encountered java.lang.Object
+    }
   }
 
 
