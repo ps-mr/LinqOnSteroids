@@ -205,7 +205,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
         val instr = instruction.asInstanceOf_#[GETFIELD]
         (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType)))
       } else_# {
-        null
+        NULL //null causes problems!
       }
     }).toSet
   }

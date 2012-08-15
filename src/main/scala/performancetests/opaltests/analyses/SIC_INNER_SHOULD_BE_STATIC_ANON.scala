@@ -30,7 +30,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
           import Lifting._
           import BATLifting._
           import performancetests.opaltests.InstructionLifting._
-      withinAnonymousClass.matcher(classFile.thisClass.className.value).find() // TODO: added a _.value is this correct?
+      withinAnonymousClass.matcher(classFile.thisClass.className).find()
     }
 
     private def lastIndexOfInnerClassEncoding(classFile: ClassFile): Int = {

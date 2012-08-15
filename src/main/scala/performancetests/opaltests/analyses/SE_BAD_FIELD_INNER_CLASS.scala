@@ -33,6 +33,8 @@
 package performancetests.opaltests.analyses
 
 import de.tud.cs.st.bat.resolved._
+import ivm._
+import expressiontree._
 
 /**
  * An analysis that identifies (non-static) inner classes that are serializable, but where the outer class
@@ -51,9 +53,11 @@ trait SE_BAD_FIELD_INNER_CLASS {
   private def hasStaticModifier(modifiers : Int) : Boolean = de.tud.cs.st.bat.ACC_STATIC.element_of(modifiers)
 
   private def hasStaticModifier(modifiers : Exp[Int]) : Exp[Boolean] = {
-      //TODO how do I define bitwise and operation? "&"
-      //modifiers & de.tud.cs.st.bat.ACC_STATIC.mask) != 0
-      null
+    //TODO how do I define bitwise and operation? "&"
+    //modifiers & de.tud.cs.st.bat.ACC_STATIC.mask) != 0
+    import Lifting._
+    import BATLifting._
+    de.tud.cs.st.bat.ACC_STATIC.element_of(modifiers)
   }
 
   private def analyzeBaseWithoutAbstractions() = {
@@ -71,8 +75,6 @@ trait SE_BAD_FIELD_INNER_CLASS {
 
 
   private def analyzeSQuOptWithoutAbstractions() = {
-    import ivm._
-    import expressiontree._
     import Lifting._
     import BATLifting._
     import performancetests.opaltests.InstructionLifting._

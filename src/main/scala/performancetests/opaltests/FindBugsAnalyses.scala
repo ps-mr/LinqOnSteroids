@@ -436,12 +436,12 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
     analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
     analyzeDP_DO_INSIDE_DO_PRIVILEGED()
     analyzeFI_USELESS()
-    // analyzeITA_INEFFICIENT_TO_ARRAY() // still has a TODO
-    // analyzeMS_PKGPROTECT() // still has a TODO
-    // analyzeMS_SHOULD_BE_FINAL()  // still has a TODO
-    // analyzeSE_BAD_FIELD_INNER_CLASS() // still has a TODO
-    // analyzeSIC_INNER_SHOULD_BE_STATIC_ANON // still has a TODO
-    // analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD // still has TODO
+    analyzeITA_INEFFICIENT_TO_ARRAY()
+    analyzeMS_PKGPROTECT()
+    analyzeMS_SHOULD_BE_FINAL()
+    analyzeSE_BAD_FIELD_INNER_CLASS()
+    analyzeSIC_INNER_SHOULD_BE_STATIC_ANON
+    analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD
     // analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR() // still has TODOs in FB Base
     analyzeProtectedFields()
     analyzeUnusedFields()
