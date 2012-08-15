@@ -105,14 +105,17 @@ trait TraversableOps {
       TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]), classS)
     }
 
+    def toSetInt = fmap(this.t, 'TraversableLike)('toSet, _.toSet)
+    def toSet(implicit tt: TypeTag[T]) =
+      fmap(this.t, 'TraversableLike)(Symbol("toSet[%s]" format (Compile manifestToString tt)), _.toSet)
     //XXX: Generate these wrappers, also for other methods.
-    def toSet = fmap(this.t, 'TraversableLike)('toSet, _.toSet)
     def toSeq = fmap(this.t, 'TraversableLike)('toSeq, _.toSeq)
     def toList = fmap(this.t, 'TraversableLike)('toList, _.toList)
     def toVector = fmap(this.t, 'TraversableLike)('toVector, _.toVector)
     def flatten[U](implicit asTraversable: T => TraversableOnce[U]) = fmap(this.t, 'TraversableLikeOps)('flatten, _.flatten)
 
-    def foldLeft[U](z: Exp[U])(op: Exp[(U, T)] => Exp[U]): Exp[U] = fmap(this.t, z, Fun(op), 'TraversableLike)('foldLeft, (base, z, op) => base.foldLeft(z)(Function.untupled(op)))
+    def foldLeft[U](z: Exp[U])(op: Exp[(U, T)] => Exp[U]): Exp[U] = FoldLeft[T, U, Repr](this.t, z, op)
+    //fmap(this.t, z, Fun(op), 'TraversableLike)('foldLeft, (base, z, op) => base.foldLeft(z)(Function.untupled(op)))
 
     def sum[U >: T: ClassTag: TypeTag](implicit num: Numeric[U]): Exp[U] = foldLeft(pure(num.zero))(app(pure((num.plus _).tupled)))
     def product[U >: T: ClassTag: TypeTag](implicit num: Numeric[U]): Exp[U] = foldLeft(pure(num.one))(app(pure((num.times _).tupled)))
@@ -308,12 +311,12 @@ trait CollectionSetOps {
     new SetLikeOps[T, Repr] {val t = v}
   implicit def toSetLikeOps[T: TypeTag, Repr <: Set[T] with SetLike[T, Repr]: ClassTag: TypeTag](v: Repr with Set[T]) =
     expToSetLikeOps(v)
-  implicit def CollectionSetExp2ExpCollectionSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
+  implicit def CollectionSetExp2ExpCollectionSet[T: TypeTag](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
 }
 
 trait SetOps extends CollectionSetOps {
   this: LiftingConvs with TraversableOps =>
-  implicit def SetExp2ExpSet[T](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
+  implicit def SetExp2ExpSet[T: TypeTag](e: Set[Exp[T]]): Exp[Set[T]] = ExpSeq(e).toSet
 }
 
 sealed trait MaybeSub[-A, +B]
