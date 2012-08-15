@@ -186,7 +186,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
         }.fold(Set.empty)(_ union _)
         val foundEqs =
           conds.map {
-            case eq @ Eq(l, r) if (eq find {case Var(_) => true}).nonEmpty =>
+            case eq @ Eq(l, r) if (eq __find {case Var(_) => true}).nonEmpty =>
               if (usesFVars(l) && !usesFVars(r))
                 Seq(Equality(l, r, eq))
               else if (usesFVars(r) && !usesFVars(l))

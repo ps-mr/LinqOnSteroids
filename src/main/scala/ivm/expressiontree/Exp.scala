@@ -51,18 +51,21 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
     mapper(this, mappedChilds)
   }
 
-  /*private[ivm]*/ def find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = {
+  /* I renamed this method to avoid conflicts with Matcher.find. XXX test if
+   * just making it private also achieves the same result.
+   */
+  /*private[ivm]*/ def __find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = {
     val baseSeq =
       if (PartialFunction.cond(this)(filter))
         Seq(this)
       else
         Seq.empty
-    children.map(_ find filter).fold(baseSeq)(_ ++ _)
+    children.map(_ __find filter).fold(baseSeq)(_ ++ _)
   }
 
   // This overload is not called find because that would confuse type inference - it would fail to infer that filter's
   // domain type is Exp[_].
-  /*private[ivm]*/ def findTotFun(filter: Exp[_] => Boolean): Seq[Exp[_]] = find(filter.asPartial)
+  /*private[ivm]*/ def findTotFun(filter: Exp[_] => Boolean): Seq[Exp[_]] = __find(filter.asPartial)
 
   /*private[ivm]*/ def isOrContains(e: Exp[_]): Boolean =
     (this findTotFun (_ == e)).nonEmpty

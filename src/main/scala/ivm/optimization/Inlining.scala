@@ -47,7 +47,7 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
 
   private def usesArgAtMostOnceNotUnderLambda(exp: Exp[_], v1: Exp[_]): Boolean =
     exp.findTotFun(_ == v1).length <= 1 &&
-      (exp.find {
+      (exp.__find {
         case f: Fun[_, _] => true
       } forall (!_.isOrContains(v1)))
 
