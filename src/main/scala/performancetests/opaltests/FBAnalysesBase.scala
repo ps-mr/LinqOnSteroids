@@ -385,7 +385,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
         val methodCall =
             (for( instruction ← constructor.body.get.instructions;
                   invokeSpecial ← instruction.ifInstanceOf[INVOKESPECIAL]
-                  if superClasses.get.contains(invokeSpecial.declaringClass.asInstanceOf[ObjectType])
+                  if superClasses.get.contains(invokeSpecial.declaringClass.asInstanceOf_#[ObjectType])
             ) yield invokeSpecial)
         if_# (methodCall.isEmpty) {
           None
