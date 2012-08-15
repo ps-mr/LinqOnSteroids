@@ -375,16 +375,16 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       val classType : Exp[ObjectType] =classFile.thisClass
       val superClasses : Exp[Option[Set[ObjectType]]] = classHierarchySQuOpt.superclasses(classType)
       if_# (!superClasses.isDefined) {
-        return None
+        None
       } else_# {
         val methodCall =
             (for( instruction ← constructor.body.get.instructions;
                   invokeSpecial ← instruction.ifInstanceOf[INVOKESPECIAL]
             ) yield invokeSpecial).headOption
         if_# (!methodCall.isDefined) {
-          return None
+          None
         } else_# {
-          return getMethodDeclarationSQuOpt(methodCall.get.declaringClass.asInstanceOf_#[ObjectType], methodCall.get.name, methodCall.get.methodDescriptor)
+          getMethodDeclarationSQuOpt(methodCall.get.declaringClass.asInstanceOf_#[ObjectType], methodCall.get.name, methodCall.get.methodDescriptor)
         }
       }
     }
