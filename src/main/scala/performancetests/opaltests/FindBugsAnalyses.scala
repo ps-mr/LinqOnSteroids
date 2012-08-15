@@ -432,6 +432,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   }
 
   def analyze() {
+    analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR()
     analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
     analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
     analyzeDP_DO_INSIDE_DO_PRIVILEGED()
@@ -442,7 +443,6 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
     analyzeSE_BAD_FIELD_INNER_CLASS()
     analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
     analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD()
-    analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR()
     analyzeProtectedFields()
     analyzeUnusedFields()
     analyzeExplicitGC()
