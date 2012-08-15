@@ -5,7 +5,7 @@ name := "scratch"
 version := "0.0"
 
 scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation", "-explaintypes",
-  "-language:experimental.macros")
+  "-language:experimental.macros", "-Dscala.timings=true")
 
 libraryDependencies in ThisBuild <+= scalaVersion apply ("org.scala-lang" % "scala-reflect" % _)
 

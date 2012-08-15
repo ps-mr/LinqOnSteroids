@@ -63,7 +63,25 @@ import collection.{Seq => CSeq}
  * @author Michael Eichberg
  */
 
+//TODO: zipFiles -> archiveFiles (globally)
+case class FBConfig(onlyOptimized: Boolean = false, onlyBaseline: Boolean = false, executionCycles: Int = 1, zipFiles: List[String])
+
 object FindBugsAnalyses {
+  import scopt.immutable.OptionParser
+  val parser = new OptionParser[FBConfig]("FindBugsAnalyses", "0.1") {
+    def options = Seq(
+      booleanOpt("onlyOptimized", "") { (v, c) => c.copy(onlyOptimized = v) }
+      intOpt("executionCycles",
+        "how many cycles of each benchmark should be timed as one unit? Default 1") {
+        (v, c) => c.copy(executionCycles = v)
+      },
+      arglistOpt("<input subtitle>", "(std. input if not specified)") {(v, c) =>
+        c.copy(zipFiles = c.zipFiles :+ v)})
+  }
+  parser.parse(args, Config()) map { config =>
+    import config._
+  }
+
   private def printUsage(): Unit = {
     println("Usage: java … ClassHierarchy <ZIP or JAR file containing class files>+")
     println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
@@ -301,6 +319,12 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
     println("Number of class files: " + classFiles.length)
   }
   */
+
+  println((for {
+    classFile ← classFiles
+    method ← classFile.methods
+    body ← method.body
+  } yield (body.instructions.filter(_ != null).length, classFile.thisClass.className, method.name)).max[(Int, String, String)](Ordering.by(_._1)))
 
   import BATLifting._
 

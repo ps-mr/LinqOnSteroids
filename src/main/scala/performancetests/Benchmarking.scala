@@ -180,7 +180,7 @@ trait Benchmarking {
 }
 
 object Benchmarking {
-  val debugBench = false
+  val debugBench = true
 
   trait IVarianceCalc {
     var sum: Double = 0
