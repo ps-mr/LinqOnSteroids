@@ -440,8 +440,8 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
     analyzeMS_PKGPROTECT()
     analyzeMS_SHOULD_BE_FINAL()
     analyzeSE_BAD_FIELD_INNER_CLASS()
-    analyzeSIC_INNER_SHOULD_BE_STATIC_ANON
-    analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD
+    analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
+    analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD()
     analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR()
     analyzeProtectedFields()
     analyzeUnusedFields()
