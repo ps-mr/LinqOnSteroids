@@ -64,9 +64,6 @@ trait MS_PKGPROTECT{
       import performancetests.opaltests.InstructionLifting._
       import ivm.expressiontree.Util.ExtraImplicits._
 
-      //[error] D:\workspace\LinqOnSteroids\src\main\scala\performancetests\opaltests\analyses\MS_PKGPROTECT.scala:71: value thisClass is not a member of ivm.expressiontree.Exp[ivm.expressiontree.Exp[de.tud.cs.st.bat.resolved.ClassFile]]
-      //[error]                               .map(entry => (entry._1._1.thisClass.packageName, entry._2))
-      //[error]                                                          ^
         val readFieldsFromPackage = readFieldsSQuOpt
                               .map(entry => (entry._1._1.thisClass.packageName, entry._2))
         for (classFile ← classFiles.asSmart if (!classFile.isInterfaceDeclaration);
