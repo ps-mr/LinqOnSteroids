@@ -29,6 +29,54 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
         (classFile.thisClass,method.name, method.descriptor, declaringClass, name, fieldType, idx)
     }
 
+    private def analyzeBaseCompletelyWithoutAbstractions() = {
+      for (classFile ← classFiles;
+           method ← classFile.methods if (
+                                         method.body.isDefined &&
+                                         method.name != "<init>" &&
+                                         !method.isStatic && (
+                                           (for (superClass ← classHierarchy.superclasses(classFile.thisClass).getOrElse(Set());
+                                                                    methodDecl ← getMethodDeclarationNative(superClass, method.name, method.descriptor)
+                                           ) yield methodDecl).size > 0)
+                                         );
+           (GETFIELD(declaringClass, name, fieldType), idx) ← (method.body.get.instructions.zipWithIndex.filter { case (instr, _) => instr != null });
+           constructor ← classFile.constructors;
+           if (
+                classFile.fields.exists {
+                                          case Field(_, `name`, `fieldType`, _) => true
+                                          case _                                => false
+                                        }
+           );
+           (superClass, superConstructor) ← {
+                 val superClasses = classHierarchy.superclasses(classFile.thisClass)
+                 if (!superClasses.isDefined) {
+                    None
+                 }
+                 val superConstructor = constructor.body.get.instructions.collectFirst {
+                                   case INVOKESPECIAL(trgt, n, d)
+                                     if superClasses.get.contains(trgt.asInstanceOf[ObjectType]) =>
+                                     (trgt.asInstanceOf[ObjectType], n, d)
+
+                 }
+                 superConstructor match {
+                   case Some((targetType, name, desc)) => getMethodDeclarationNative(targetType, name, desc)
+                   case None => None // we encountered java.lang.Object
+                 }
+               }
+           if(
+               superConstructor.body.isDefined &&
+               superConstructor.body.get.instructions.exists {
+                 case INVOKEINTERFACE(targetType, name, desc) => superClass.thisClass == targetType && method.name == name && method.descriptor == desc
+                 case INVOKEVIRTUAL(targetType, name, desc)   => superClass.thisClass == targetType && method.name == name && method.descriptor == desc
+                 case INVOKESTATIC(targetType, name, desc)    => superClass.thisClass == targetType && method.name == name && method.descriptor == desc
+                 case INVOKESPECIAL(targetType, name, desc)   => superClass.thisClass == targetType && method.name == name && method.descriptor == desc
+                 case _                                       => false
+               }
+              )
+      ) yield
+        (classFile.thisClass,method.name, method.descriptor, declaringClass, name, fieldType, idx)
+    }
+
 
     private def analyzeSQuOptWithoutAbstractions() = {
         import de.tud.cs.st.bat.resolved._
