@@ -35,7 +35,7 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
                 name == "setVisible" && desc == boolParamDescriptor
                 )
         ) yield
-          (classFile, method, idx)
+          (classFile.thisClass, method.name, method.descriptor, idx)
   }
 
 
@@ -67,7 +67,7 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
                 invoke.name ==# "setVisible" && invoke.methodDescriptor ==# boolParamDescriptor
                 )
         ) yield
-          (classFile, method, instructionInfo._2)
+          (classFile.thisClass, method.name, method.descriptor, instructionInfo._2)
   }
 
 
@@ -75,11 +75,12 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
           for ( schema.BytecodeInstrIndexed(classFile, method,
                                     INVOKEVIRTUAL(targetType, name, desc), idx) ← methodBodiesInstructionsIndexedModularNative
                 if (method.body.isDefined &&
-                    method.isPublic &&
-                    method.isStatic &&
-                    ( method.name == "main" ||
-                      classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
-                    ) &&
+                    ((
+                      method.isPublic &&
+                      method.isStatic &&
+                      method.name == "main"
+                    ) || classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0)
+                    &&
                     targetType.isObjectType &&
                     targetType.asInstanceOf[ObjectType].className.startsWith("javax/swing/")) &&
                     (
@@ -88,7 +89,7 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
                     name == "setVisible" && desc == boolParamDescriptor
                     )
             ) yield
-              (classFile, method, idx)
+              (classFile.thisClass, method.name, method.descriptor, idx)
   }
 
 
@@ -104,10 +105,11 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
         for ( instructionInfo ← methodBodiesInstructionsIndexedModularSQuOpt;
               invoke ← instructionInfo.instruction.ifInstanceOf[INVOKEVIRTUAL]
               if (  instructionInfo.method.body.isDefined &&
-                    instructionInfo.method.isPublic &&
-                    instructionInfo.method.isStatic &&
-                    (instructionInfo.method.name ==# "main" ||
-                     instructionInfo.classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
+                    ((
+                      instructionInfo.method.isPublic &&
+                      instructionInfo.method.isStatic &&
+                      instructionInfo.method.name ==# "main"
+                    ) || instructionInfo.classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
                     )&&
                     invoke.declaringClass.isObjectType &&
                     invoke.declaringClass.asInstanceOf_#[ObjectType].className.startsWith("javax/swing/")) &&
@@ -117,7 +119,7 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
                     invoke.name ==# "setVisible" && invoke.methodDescriptor ==# boolParamDescriptor
                 )
           ) yield
-            (instructionInfo.classFile, instructionInfo.method, instructionInfo.index)
+            (instructionInfo.classFile.thisClass, instructionInfo.method.name, instructionInfo.method.descriptor, instructionInfo.index)
     }
 
 
