@@ -442,7 +442,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
     analyzeSE_BAD_FIELD_INNER_CLASS()
     analyzeSIC_INNER_SHOULD_BE_STATIC_ANON
     analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD
-    // analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR() // still has TODOs in FB Base
+    analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR()
     analyzeProtectedFields()
     analyzeUnusedFields()
     analyzeExplicitGC()
