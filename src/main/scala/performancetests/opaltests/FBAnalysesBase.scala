@@ -331,7 +331,9 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     getMethodDeclarationNative(targetType, name, desc)
   }
 
-  def calledSuperConstructorSQuOpt(classFile: Exp[ClassFile],
+
+  // TODO requires collectFirst
+  def calledSuperConstructorSQuOptCollectFirst(classFile: Exp[ClassFile],
                                    constructor: Exp[Method]): Exp[Option[(ClassFile, Method)]] = {
     import de.tud.cs.st.bat.resolved._
     import ivm._
@@ -346,7 +348,6 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     if_# (!superClasses.isDefined) {
       return None
     } else_# {
-      // TODO requires collectFirst
       //[error] D:\workspace\LinqOnSteroids\src\main\scala\performancetests\opaltests\FBAnalysesBase.scala:349: value collectFirst is not a member of ivm.expressiontree.Exp[Seq[de.tud.cs.st.bat.resolved.Instruction]]
       val methodCall : Exp[Option[INVOKESPECIAL]] = None /* constructor.body.get.instructions.collectFirst {
           def isDefinedAt(x:Instruction) = x.isInstanceOf_#[INVOKESPECIAL] &&  superClasses.get.contains(x.asInstanceOf_#[INVOKESPECIAL].declaringClass.asInstanceOf_#[ObjectType])
@@ -359,6 +360,34 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       }
     }
   }
+
+
+    def calledSuperConstructorSQuOpt(classFile: Exp[ClassFile],
+                                     constructor: Exp[Method]): Exp[Option[(ClassFile, Method)]] = {
+      import de.tud.cs.st.bat.resolved._
+      import ivm._
+      import expressiontree._
+      import Lifting._
+      import BATLifting._
+      import performancetests.opaltests.InstructionLifting._
+
+
+      val classType : Exp[ObjectType] =classFile.thisClass
+      val superClasses : Exp[Option[Set[ObjectType]]] = classHierarchySQuOpt.superclasses(classType)
+      if_# (!superClasses.isDefined) {
+        return None
+      } else_# {
+        val methodCall =
+            (for( instruction ← constructor.body.get.instructions;
+                  invokeSpecial ← instruction.ifInstanceOf[INVOKESPECIAL]
+            ) yield invokeSpecial).headOption
+        if_# (!methodCall.isDefined) {
+          return None
+        } else_# {
+          return getMethodDeclarationSQuOpt(methodCall.get.declaringClass.asInstanceOf_#[ObjectType], methodCall.get.name, methodCall.get.methodDescriptor)
+        }
+      }
+    }
 
   def callsNative(sourceMethod: Method, targetClass: ClassFile, targetMethod: Method): Boolean = {
     sourceMethod.body.isDefined &&
