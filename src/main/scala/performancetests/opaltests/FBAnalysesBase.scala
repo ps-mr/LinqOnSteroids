@@ -255,7 +255,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       val classFileLookup : Exp[Option[ClassFile]] = getClassFileSQuOpt.get(receiver)
 
       if_# (!classFileLookup.isDefined) {
-                                       return None
+                                       None
       } else_# {
           val classFile = classFileLookup.get
           (for (method ← classFile.methods
@@ -320,7 +320,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
                                    constructor: Method): Option[(ClassFile, Method)] = {
     val superClasses = classHierarchy.superclasses(classFile.thisClass)
     if (!superClasses.isDefined) {
-      return None
+       None
     }
     val Some((targetType, name, desc)) = constructor.body.get.instructions.collectFirst {
                                                                                           case INVOKESPECIAL(trgt, n, d)
@@ -346,7 +346,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     val classType : Exp[ObjectType] =classFile.thisClass
     val superClasses : Exp[Option[Set[ObjectType]]] = classHierarchySQuOpt.superclasses(classType)
     if_# (!superClasses.isDefined) {
-      return None
+      None
     } else_# {
       //[error] D:\workspace\LinqOnSteroids\src\main\scala\performancetests\opaltests\FBAnalysesBase.scala:349: value collectFirst is not a member of ivm.expressiontree.Exp[Seq[de.tud.cs.st.bat.resolved.Instruction]]
       val methodCall : Exp[Option[INVOKESPECIAL]] = None /* constructor.body.get.instructions.collectFirst {
@@ -354,9 +354,9 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
           def apply(x:Instruction) = x.asInstanceOf_#[INVOKESPECIAL]
       }*/
       if_# (!methodCall.isDefined) {
-        return None
+        None
       } else_# {
-        return getMethodDeclarationSQuOpt(methodCall.get.declaringClass.asInstanceOf_#[ObjectType], methodCall.get.name, methodCall.get.methodDescriptor)
+        getMethodDeclarationSQuOpt(methodCall.get.declaringClass.asInstanceOf_#[ObjectType], methodCall.get.name, methodCall.get.methodDescriptor)
       }
     }
   }
@@ -375,16 +375,16 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       val classType : Exp[ObjectType] =classFile.thisClass
       val superClasses : Exp[Option[Set[ObjectType]]] = classHierarchySQuOpt.superclasses(classType)
       if_# (!superClasses.isDefined) {
-        return None
+        None
       } else_# {
         val methodCall =
             (for( instruction ← constructor.body.get.instructions;
                   invokeSpecial ← instruction.ifInstanceOf[INVOKESPECIAL]
             ) yield invokeSpecial).headOption
         if_# (!methodCall.isDefined) {
-          return None
+          None
         } else_# {
-          return getMethodDeclarationSQuOpt(methodCall.get.declaringClass.asInstanceOf_#[ObjectType], methodCall.get.name, methodCall.get.methodDescriptor)
+          getMethodDeclarationSQuOpt(methodCall.get.declaringClass.asInstanceOf_#[ObjectType], methodCall.get.name, methodCall.get.methodDescriptor)
         }
       }
     }
