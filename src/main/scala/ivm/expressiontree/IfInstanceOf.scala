@@ -24,6 +24,7 @@ case class IsInstanceOf[T, S](x: Exp[T])(implicit val cS: ClassTag[S], val tS: T
     val res = x.interpret()
     res != null && (cS.runtimeClass isInstance res)
   }
+  override def toCode = "%s.isInstanceOf[%s]" format (x.toCode, Compile manifestToString tS)
 }
 
 case class AsInstanceOf[T, S](x: Exp[T])(implicit val cS: ClassTag[S], val tS: TypeTag[S]) extends Arity1OpExp[T, S, AsInstanceOf[T, S]](x) {
