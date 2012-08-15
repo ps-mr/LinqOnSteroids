@@ -126,7 +126,7 @@ object Optimization {
       compose newHandleFilters[T] //3s
       compose basicInlining[T] //5-7s
       compose existsUnnester[T] //6s
-      compose removeRedundantOption[T] compose toTypeFilter[T] compose sizeToEmpty[T]
+      compose removeRedundantOption[T] /*compose toTypeFilter[T]*/ compose sizeToEmpty[T]
       compose generalUnnesting[T] //11s
       compose mapToFlatMap[T] //12-18s
       compose removeIdentityMaps[T] //40s
