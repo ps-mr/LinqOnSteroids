@@ -53,8 +53,8 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
                                            method.body.isDefined &&
                                            method.isPublic &&
                                            method.isStatic &&
-                                           method.name ==# "main" //|| TODO needs String.oLowerCase
-                                           // classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
+                                           method.name ==# "main" ||
+                                           classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
                                            );
              instructionInfo ← withIndexSQuOpt(method.body.get.instructions);
              invoke ← instructionInfo._1.ifInstanceOf[INVOKEVIRTUAL]
@@ -106,8 +106,8 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
               if (  instructionInfo.method.body.isDefined &&
                     instructionInfo.method.isPublic &&
                     instructionInfo.method.isStatic &&
-                    (instructionInfo.method.name ==# "main" //|| TODO needs String.oLowerCase
-                    // instructionInfo.classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
+                    (instructionInfo.method.name ==# "main" ||
+                     instructionInfo.classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
                     )&&
                     invoke.declaringClass.isObjectType &&
                     invoke.declaringClass.asInstanceOf_#[ObjectType].className.startsWith("javax/swing/")) &&

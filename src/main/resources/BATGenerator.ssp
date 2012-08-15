@@ -22,9 +22,17 @@ import OverloadHack._
 object BATLifting {<%
   for (c <- List("ClassFile", "ObjectType", "Field", "Method",
 		  "ClassMember", "MethodDescriptor", "Code", "ExceptionHandler", "CommonAttributes", "Type", "analyses.ClassHierarchy")) {
-  //render("WrappedClass.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))}
-  render("WrappedClassInlined.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))
-} %>
+    //render("WrappedClass.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))}
+    render("WrappedClassInlined.ssp", Map("classFile" -> ("de.tud.cs.st.bat.resolved." + c)))
+  }
+  for (c <- List("AccessFlag")) {
+    val name = "de.tud.cs.st.bat." + c
+    %>
+  import ${name}
+<%
+    render("WrappedClassInlined.ssp", Map("classFile" -> (name)))
+  }
+%>
 <%--
 <%
   val classLoader = Thread.currentThread().getContextClassLoader()
@@ -37,3 +45,4 @@ object BATLifting {<%
   //${resources.length}
 --%>
 }
+<%-- vim: set sw=2: --%>

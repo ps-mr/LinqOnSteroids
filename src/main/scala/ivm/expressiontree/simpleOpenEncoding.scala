@@ -254,9 +254,12 @@ trait BaseTypesOps {
     def contains(that: Exp[CharSequence]) = fmap(this.t, that, 'StringOps)('contains, _ contains _)
     def startsWith(that: Exp[String]) = fmap(this.t, that, 'StringOps)('startsWith, _ startsWith _)
     def endsWith(that: Exp[String]) = fmap(this.t, that, 'StringOps)('endsWith, _ endsWith _)
+    def indexOf(that: Exp[String]): Exp[Int] = fmap(this.t, that, 'StringOps)('indexOf, _ indexOf _)
     def lastIndexOf(ch: Char): Exp[Int] = lastIndexOf(ch.toInt)
     def lastIndexOf(ch: Exp[Int]): Exp[Int] = fmap(this.t, ch, 'StringOps)('lastIndexOf, _ lastIndexOf _)
     def charAt(idx: Exp[Int]) = fmap(this.t, idx, 'StringOps)('charAt, _ charAt _ )
+    def toLowerCase = fmap(this.t, 'StringOps)('toLowerCase, _.toLowerCase)
+    def toUpperCase = fmap(this.t, 'StringOps)('toUpperCase, _.toUpperCase)
   }
 
   class BooleanOps(b: Exp[Boolean]) {
@@ -280,3 +283,15 @@ trait BaseTypesOps {
   implicit def toBooleanOps(t: Boolean) = expToBooleanOps(t)
 }
 
+trait JavaLibOps {
+  this: LiftingConvs with FunctionOps =>
+
+  import java.util.regex.{Pattern, Matcher}
+  implicit class PatternOps(t: Exp[Pattern]) {
+    def matcher(that: Exp[CharSequence]) = fmap(this.t, that, 'PatternOps)('matcher, _ matcher _)
+  }
+  implicit def toPatternOps(t: Pattern) = new PatternOps(t)
+  implicit class MatcherOps(t: Exp[Matcher]) {
+    def find() = fmap(this.t, 'MatcherOps)('find, _.find)
+  }
+}

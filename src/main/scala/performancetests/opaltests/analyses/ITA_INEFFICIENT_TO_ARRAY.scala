@@ -36,10 +36,10 @@ trait ITA_INEFFICIENT_TO_ARRAY{
       import expressiontree._
       import Lifting._
       import BATLifting._
-      if (!t.isObjectType.value) { // TODO: added a _.value is this correct?
+      if_# (!t.isObjectType) {
         false
-      } else {
-        classHierarchy.isSubtypeOf(t.asInstanceOf_#[ObjectType].value, collectionInterface).getOrElse(false) || // TODO: added a _.value is this correct?
+      } else_# {
+        classHierarchySQuOpt.isSubtypeOf(t.asInstanceOf_#[ObjectType], collectionInterface).getOrElse(false) ||
         t ==# listInterface // TODO needs more heuristic or more analysis
       }
     }

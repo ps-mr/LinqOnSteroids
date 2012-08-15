@@ -156,7 +156,7 @@ object Lifting extends LiftingTrait
 trait LiftingTrait
   extends BaseExps with OptionLifting
   with TraversableOps with ForceOps with IterableOps with SeqOps with MapOps with SetOps with TypeFilterOps
-  with NumOps with BaseTypesOps with ExpSugar with NumConvOps
+  with NumOps with BaseTypesOps with JavaLibOps with ExpSugar with NumConvOps
 {
   //Support let-bindings within for-comprehensions without relying on pattern-matching.
   def Let[T](e: Exp[T]): Exp[Seq[T]] = Seq(e)
