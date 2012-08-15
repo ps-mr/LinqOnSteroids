@@ -272,7 +272,7 @@ trait IterableOps {
   trait IterableLikeOps[T, Repr <: Iterable[T] with IterableLike[T, Repr]]
     extends Holder[Repr] {
     def zipWithIndex[T1 >: T, That](implicit bf: CanBuildFrom[Repr, (T1, Int), That]): Exp[That] = fmap(this.t, 'IterableLike)('zipWithIndex, _.zipWithIndex)
-    def sliding(size: Exp[Int]): Exp[Seq[Repr]] = fmap(this.t, size, 'IterableLike)('sliding, (coll, size) => (coll sliding size).toSeq)
+    def sliding(size: Exp[Int]): Exp[Seq[Repr]] = fmap(this.t, size, 'IterableLike)('sliding, (coll, size) => (coll sliding size).toList)
   }
 }
 
