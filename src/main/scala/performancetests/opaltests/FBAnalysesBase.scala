@@ -380,11 +380,11 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
         val methodCall =
             (for( instruction ← constructor.body.get.instructions;
                   invokeSpecial ← instruction.ifInstanceOf[INVOKESPECIAL]
-            ) yield invokeSpecial).headOption
-        if_# (!methodCall.isDefined) {
+            ) yield invokeSpecial)
+        if_# (methodCall.isEmpty) {
           None
         } else_# {
-          getMethodDeclarationSQuOpt(methodCall.get.declaringClass.asInstanceOf_#[ObjectType], methodCall.get.name, methodCall.get.methodDescriptor)
+          getMethodDeclarationSQuOpt(methodCall.head.declaringClass.asInstanceOf_#[ObjectType], methodCall.head.name, methodCall.head.methodDescriptor)
         }
       }
     }
