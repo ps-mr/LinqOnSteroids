@@ -2,7 +2,7 @@ import java.io.FileWriter
 import scalariform.formatter.preferences._
 import AssemblyKeys._
 //import de.johoop.findbugs4sbt.FindBugs._
-//import com.typesafe.startscript.StartScriptPlugin
+import com.typesafe.startscript.StartScriptPlugin
 
 name := "LinqOnSteroids"
 
@@ -158,13 +158,13 @@ object GitVersion {
   }) :+ verFile
 }
 
-////Generate start scripts
-////seq(StartScriptPlugin.startScriptForClassesSettings: _*)
+//Generate start scripts
+seq(StartScriptPlugin.startScriptForClassesSettings: _*)
 //seq(StartScriptPlugin.startScriptForJarSettings: _*)
-//
-//mainClass in Test := Some("performancetests.opaltests.FindBugsAnalyses")
-//
-//mainClass in Compile := Some("performancetests.opaltests.FindBugsAnalyses")
+
+mainClass in Test := Some("performancetests.opaltests.FindBugsAnalyses")
+
+mainClass in Compile := Some("performancetests.opaltests.FindBugsAnalyses")
 
 //generate fat JAR
 assemblySettings
