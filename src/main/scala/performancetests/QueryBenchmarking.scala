@@ -174,24 +174,10 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
       }
 
       for ((altMsg, altOptimizedNoIdx, _, _, i) <- optimizedQueries) {
-        //Check that we get the same query by optimizing modularized queries and non-modularized ones - I expect failures here.
-        if (mustModularizedOptimizeEqual) {
+        if (mustModularizedOptimizeEqual)
+          //Check that we get the same query by optimizing modularized queries
+          //and non-modularized ones; this will however fail often.
           altOptimizedNoIdx should be (optimized)
-        }
-        /*else if (altOptimizedNoIdx != optimized) {
-          //import compat.Platform.EOL
-          //val indent = "    "
-          //Console.err.printf("### %s, after optimization, is != optimized\naltOptimized = %s\noptimized = %s\nAt:\n%s\n",
-           // altMsg, altOptimizedNoIdx, optimized, new Throwable().getStackTrace mkString (indent, EOL + indent, EOL))
-          //printf("### %s, after optimization, is != optimized\naltOptimizedNoIdx = %s\noptimized = %s\n",
-            //altMsg, altOptimizedNoIdx, optimized)
-          //Since the result of optimization of the modularized query is in fact different (presumably worse?),
-          //let's compare its performance to the optimized non-modular query.
-          val (resAltOpt, timeAltOpt) = doRun(altMsg + optimizedMsg, altOptimizedNoIdx: Exp[Traversable[T]])
-          resAltOpt.toSet should be (resOpt.toSet)
-          //resAltOpt should be (resOpt)
-          reportTimeRatio("base embedded version - Alternative %d (optimized)" format i, timeOpt / timeAltOpt)
-        }*/
       }
     }
     println("\tViolations: " + resOpt.size)
