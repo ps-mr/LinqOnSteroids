@@ -443,29 +443,29 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     sourceMethod.body.isDefined &&
     sourceMethod.body.get.instructions.exists {
         instr => {
-             if_#(instr.isInstanceOf_#[INVOKEINTERFACE]){
+             if_#(instr.isInstanceOf_#[INVOKEINTERFACE]) {
                 val invoke = instr.asInstanceOf_#[INVOKEINTERFACE]
                 invoke.declaringClass ==# targetClass.thisClass &&
                 invoke.name ==# targetMethod.name &&
                 invoke.methodDescriptor ==# targetMethod.descriptor
              } else_# if_#(instr.isInstanceOf_#[INVOKEVIRTUAL]) {
-                    val invoke = instr.asInstanceOf_#[INVOKEVIRTUAL]
-                    invoke.declaringClass ==# targetClass.thisClass &&
-                    invoke.name ==# targetMethod.name &&
-                    invoke.methodDescriptor ==# targetMethod.descriptor
-                 } else_# if_#(instr.isInstanceOf_#[INVOKESTATIC]){
-                        val invoke = instr.asInstanceOf_#[INVOKESTATIC]
-                        invoke.declaringClass ==# targetClass.thisClass &&
-                        invoke.name ==# targetMethod.name &&
-                        invoke.methodDescriptor ==# targetMethod.descriptor
-                     } else_# if_#(instr.isInstanceOf_#[INVOKESPECIAL]){
-                            val invoke = instr.asInstanceOf_#[INVOKESPECIAL]
-                            invoke.declaringClass ==# targetClass.thisClass &&
-                            invoke.name ==# targetMethod.name &&
-                            invoke.methodDescriptor ==# targetMethod.descriptor
-                         } else_#{
-                             false
-                         }
+                val invoke = instr.asInstanceOf_#[INVOKEVIRTUAL]
+                invoke.declaringClass ==# targetClass.thisClass &&
+                invoke.name ==# targetMethod.name &&
+                invoke.methodDescriptor ==# targetMethod.descriptor
+             } else_# if_#(instr.isInstanceOf_#[INVOKESTATIC]) {
+                val invoke = instr.asInstanceOf_#[INVOKESTATIC]
+                invoke.declaringClass ==# targetClass.thisClass &&
+                invoke.name ==# targetMethod.name &&
+                invoke.methodDescriptor ==# targetMethod.descriptor
+             } else_# if_#(instr.isInstanceOf_#[INVOKESPECIAL]) {
+                val invoke = instr.asInstanceOf_#[INVOKESPECIAL]
+                invoke.declaringClass ==# targetClass.thisClass &&
+                invoke.name ==# targetMethod.name &&
+                invoke.methodDescriptor ==# targetMethod.descriptor
+             } else_# {
+                false
+             }
            /*
            (instr.isInstanceOf_#[INVOKEINTERFACE] && { val invoke = instr.asInstanceOf_#[INVOKEINTERFACE]; invoke.declaringClass ==# targetClass.thisClass && invoke.name ==# targetMethod.name && invoke.methodDescriptor ==# targetMethod.descriptor }) ||
            (instr.isInstanceOf_#[INVOKEVIRTUAL] && { val invoke = instr.asInstanceOf_#[INVOKEVIRTUAL]; invoke.declaringClass ==# targetClass.thisClass && invoke.name ==# targetMethod.name && invoke.methodDescriptor ==# targetMethod.descriptor }) ||
