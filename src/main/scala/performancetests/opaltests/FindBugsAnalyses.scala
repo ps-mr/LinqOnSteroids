@@ -62,7 +62,22 @@ import collection.{Seq => CSeq}
  * @author Michael Eichberg
  */
 
+//TODO: zipFiles -> archiveFiles (globally)
+case class FBConfig(onlyOptimized: Boolean = false, onlyBaseline: Boolean = false, executionCycles: Int = 1, zipFiles: List[String] = Nil)
+
 object FindBugsAnalyses {
+  import scopt.immutable.OptionParser
+  val parser = new OptionParser[FBConfig]("FindBugsAnalyses", "0.1") {
+    def options = Seq(
+      booleanOpt("onlyOptimized", "") { (v, c) => c.copy(onlyOptimized = v) },
+      intOpt("executionCycles",
+        "how many cycles of each benchmark should be timed as one unit? Default 1") {
+        (v, c) => c.copy(executionCycles = v)
+      },
+      arglistOpt("<input subtitle>", "(std. input if not specified)") {(v, c) =>
+        c.copy(zipFiles = c.zipFiles :+ v)})
+  }
+
   private def printUsage(): Unit = {
     println("Usage: java … ClassHierarchy <ZIP or JAR file containing class files>+")
     println("(c) 2011 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
@@ -89,7 +104,7 @@ object FindBugsAnalyses {
   type QueryAnd[+T] = ((ClassFile, Method, Code), T)
 }
 
-class FindBugsAnalyses(val zipFiles: Seq[String])
+class FindBugsAnalyses(val args: Seq[String])
   extends FBAnalysesBase
   with FBUnusedFields with FBExplicitGC with FBProtectedFields with FBPublicFinalizer
   with FBSerializableNoConstructor with FBCatchIllegalMonitorStateException with FBCovariantCompareToMethods
@@ -109,6 +124,13 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
 {
   import FindBugsAnalyses.QueryAnd
 
+  val Some(FBConfig(onlyOptimizedFromArgs, onlyBaseline, executionCycles, zipFiles: Seq[String])) = FindBugsAnalyses.parser.parse(args, FBConfig())
+//  map { config =>
+//    import config._
+//    ()
+//  }
+
+
   //override val defaultExecLoops = 10
 
   //def this() = this(Seq("src/test/resources/scalatest-1.6.1.jar"))
@@ -117,7 +139,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   //This is to have a run comparable with FindBugs
   //override def onlyOptimized = true
   //Standard execution
-  override def onlyOptimized = false
+  override def onlyOptimized = onlyOptimizedFromArgs
 
   /* XXX:
    * This test is currently pointless. Either I do it with a single query, where it'll benchmark cache lookup time;
