@@ -63,7 +63,13 @@ import collection.{Seq => CSeq}
  */
 
 //TODO: zipFiles -> archiveFiles (globally)
-case class FBConfig(onlyOptimized: Boolean = false, onlyBaseline: Boolean = false, executionCycles: Int = 1, zipFiles: List[String] = Nil)
+
+case class FBConfig(zipFiles: Seq[String] = Nil,
+  /** This is to compare the runtime of optimized queries with FindBugs */
+  onlyOptimized: Boolean = false,
+  /** This is to compare the runtime of non-optimized or baseline queries with FindBugs */
+  onlyBaseline: Boolean = false,
+  executionCycles: Int = 1)
 
 object FindBugsAnalyses {
   import scopt.immutable.OptionParser
@@ -99,12 +105,16 @@ object FindBugsAnalyses {
     }
 
     //Use toList to convert args to an immutable sequence - arrays can be converted implicitly only to generic sequences (in particular, mutable ones)!
-    (new FindBugsAnalyses(args.toList)).analyze()
+    parser.parse(args.toList, FBConfig()) map { config =>
+      (new FindBugsAnalyses(config)).analyze()
+    } getOrElse {
+      sys.exit(1)
+    }
   }
   type QueryAnd[+T] = ((ClassFile, Method, Code), T)
 }
 
-class FindBugsAnalyses(val args: Seq[String])
+class FindBugsAnalyses(val zipFiles: Seq[String], override val onlyOptimized: Boolean, onlyBaseline: Boolean, executionCycles: Int)
   extends FBAnalysesBase
   with FBUnusedFields with FBExplicitGC with FBProtectedFields with FBPublicFinalizer
   with FBSerializableNoConstructor with FBCatchIllegalMonitorStateException with FBCovariantCompareToMethods
@@ -124,22 +134,12 @@ class FindBugsAnalyses(val args: Seq[String])
 {
   import FindBugsAnalyses.QueryAnd
 
-  val Some(FBConfig(onlyOptimizedFromArgs, onlyBaseline, executionCycles, zipFiles: Seq[String])) = FindBugsAnalyses.parser.parse(args, FBConfig())
-//  map { config =>
-//    import config._
-//    ()
-//  }
-
-
   //override val defaultExecLoops = 10
 
   //def this() = this(Seq("src/test/resources/scalatest-1.6.1.jar"))
-  def this() = this(Seq("src/test/resources/Bugs.zip"))
-
-  //This is to have a run comparable with FindBugs
-  //override def onlyOptimized = true
-  //Standard execution
-  override def onlyOptimized = onlyOptimizedFromArgs
+  def this(config: FBConfig) =
+      this(config.zipFiles, config.onlyOptimized, config.onlyBaseline, config.executionCycles)
+  def this() = this(FBConfig(zipFiles = Seq("src/test/resources/Bugs.zip")))
 
   /* XXX:
    * This test is currently pointless. Either I do it with a single query, where it'll benchmark cache lookup time;
