@@ -72,6 +72,19 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
     reportTimeRatio("native Scala version, counting optimization time", (timeOpt + optimizationTime) / timeScala)
   }
 
+
+  def compareRes[T](a: Traversable[T], b: Traversable[T]) {
+    //a should be (b)
+    a.toSet should be (b.toSet)
+    //Comparing after converting to Sets is broken, but what can we do? A query like
+    // list.flatMap(listEl => set(listEl))
+    //returns results in non-deterministic order (which is arguably a Scala bug).
+    //Alter queries instead: if they are non-deterministic they should return a set.
+
+    //I changed my mind: we will always compare results after turning them into Sets.
+    //That's a good way to pretend we have Bag semantics.
+  }
+
   // The pattern matching costs of using force are quite annoying. I expect them to be small; so it would be be best to
   // just always have them, i.e. always check dynamically whether forcing is needed, for all LoS queries, slowing them
   // down a tiny insignificant bit.
@@ -121,36 +134,34 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
       val (expectedRes, timeScala) =
         benchMarkWithTime(msg) { expected }
       val (resLos, timeLos) = doRun(losMsg, builtQuery)
-      //resOpt.toSet should be (res.toSet) //Broken, but what can we do? A query like
-      // list.flatMap(listEl => set(listEl))
-      //returns results in non-deterministic order (which is arguably a Scala bug).
-      //Alter queries instead: if they are non-deterministic they should return a set.
-      //I changed my mind: we will always compare results after turning them into Sets.
-      //That's a good way to pretend we have Bag semantics.
 
       compare(timeLos, timeOpt, optimizationTime, timeScala)
 
-      resOpt.toSet should be (resLos.toSet)
-      resLos.toSet should be (expectedRes.toSet)
+      compareRes(resOpt, resLos)
+      compareRes(resLos, expectedRes)
 
       val optimizedQueries = for {
         (altQuery, i) <- altQueries.zipWithIndex
         altMsg = "%s Los - Alternative %d" format (msg, i)
         //Benchmark optimization time
-        (altOptimized, _ /*altOptimizationTime*/) = benchOptimize(altMsg, altQuery, idxLookup = false)
+        (altOptimizedNoIdx, _ /*altOptimizationTime*/) = benchOptimize(altMsg, altQuery, idxLookup = false)
         (altOptimizedWithIdx, _ /*altOptimizationTime*/) = benchOptimize(altMsg, altQuery, idxLookup = true)
-      } yield (altMsg, altOptimized, altOptimizedWithIdx, altQuery, i)
+      } yield (altMsg, altOptimizedNoIdx, altOptimizedWithIdx, altQuery, i)
 
-      for ((altMsg, altOptimized, altOptimizedWithIdx, altQuery, i) <- optimizedQueries) {
+      for ((altMsg, altOptimizedNoIdx, altOptimizedWithIdx, altQuery, i) <- optimizedQueries) {
         //Check that the query produces the same result *before* optimization, and how much slower it is
         val (resAlt, timeAlt) = doRun(altMsg, altQuery: Exp[Traversable[T]])
         //Check that we get the same result
-        resAlt.toSet should be (resOpt.toSet)
-        //resAlt should be (resOpt)
+        compareRes(resAlt, resOpt)
         reportTimeRatio("base embedded version - Alternative %d (non optimized)" format i, timeOpt / timeAlt)
         if (altOptimizedWithIdx != optimized) {
           val (resAltOptWithIdx, timeAltOptWithIdx) = doRun(altMsg + optimizedWithIdxMsg, altOptimizedWithIdx)
-          resAltOptWithIdx should be (resOpt)
+          resAltOptWithIdx.toSet should be (resOpt.toSet)
+        }
+        if (!mustModularizedOptimizeEqual && altOptimizedNoIdx != optimized) {
+          val (resAltOpt, timeAltOpt) = doRun(altMsg + optimizedMsg, altOptimizedNoIdx: Exp[Traversable[T]])
+          compareRes(resAltOpt, resOpt)
+          reportTimeRatio("base embedded version - Alternative %d (optimized)" format i, timeOpt / timeAltOpt)
         }
       }
       val msgNativeAltExtra = " - Alternative (modularized)"
@@ -162,24 +173,25 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         reportTimeRatio("native Scala version%s, counting optimization time" format msgNativeAltExtra, (timeOpt + optimizationTime) / timeAltScala)
       }
 
-      for ((altMsg, altOptimized, _, _, i) <- optimizedQueries) {
+      for ((altMsg, altOptimizedNoIdx, _, _, i) <- optimizedQueries) {
         //Check that we get the same query by optimizing modularized queries and non-modularized ones - I expect failures here.
         if (mustModularizedOptimizeEqual) {
-          altOptimized should be (optimized)
-        } else if (altOptimized != optimized) {
-          import compat.Platform.EOL
-          val indent = "    "
+          altOptimizedNoIdx should be (optimized)
+        }
+        /*else if (altOptimizedNoIdx != optimized) {
+          //import compat.Platform.EOL
+          //val indent = "    "
           //Console.err.printf("### %s, after optimization, is != optimized\naltOptimized = %s\noptimized = %s\nAt:\n%s\n",
-           // altMsg, altOptimized, optimized, new Throwable().getStackTrace mkString (indent, EOL + indent, EOL))
-          printf("### %s, after optimization, is != optimized\naltOptimized = %s\noptimized = %s\n",
-            altMsg, altOptimized, optimized)
+           // altMsg, altOptimizedNoIdx, optimized, new Throwable().getStackTrace mkString (indent, EOL + indent, EOL))
+          //printf("### %s, after optimization, is != optimized\naltOptimizedNoIdx = %s\noptimized = %s\n",
+            //altMsg, altOptimizedNoIdx, optimized)
           //Since the result of optimization of the modularized query is in fact different (presumably worse?),
           //let's compare its performance to the optimized non-modular query.
-          val (resAltOpt, timeAltOpt) = doRun(altMsg + optimizedMsg, altOptimized: Exp[Traversable[T]])
+          val (resAltOpt, timeAltOpt) = doRun(altMsg + optimizedMsg, altOptimizedNoIdx: Exp[Traversable[T]])
           resAltOpt.toSet should be (resOpt.toSet)
           //resAltOpt should be (resOpt)
           reportTimeRatio("base embedded version - Alternative %d (optimized)" format i, timeOpt / timeAltOpt)
-        }
+        }*/
       }
     }
     println("\tViolations: " + resOpt.size)
