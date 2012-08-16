@@ -470,7 +470,6 @@ class FindBugsAnalyses(val zipFiles: Seq[String], override val onlyOptimized: Bo
     analyzeMS_PKGPROTECT()
     analyzeMS_SHOULD_BE_FINAL()
     analyzeSE_BAD_FIELD_INNER_CLASS()
-    analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
     analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD()
     analyzeProtectedFields()
     analyzeUnusedFields()
@@ -485,6 +484,8 @@ class FindBugsAnalyses(val zipFiles: Seq[String], override val onlyOptimized: Bo
     analyzeCloneableNoClone()
     analyzeCloneDoesNotCallSuperClone()
     analyzeCloneButNotCloneable()
+    //Takes 2 hours!!
+    analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
   }
 
   override def afterAll() {
