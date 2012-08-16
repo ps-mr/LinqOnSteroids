@@ -406,6 +406,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       }
     }
 
+  //XXX: code like this calls for an INVOKE superclass and extractor to be added to BAT.
   def callsNative(sourceMethod: Method, targetClass: ClassFile, targetMethod: Method): Boolean = {
     sourceMethod.body.isDefined &&
     sourceMethod.body.get.instructions.exists {
