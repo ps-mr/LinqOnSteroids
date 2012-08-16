@@ -135,7 +135,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String], override val onlyOptimized: Bo
 {
   import FindBugsAnalyses.QueryAnd
 
-  //override val defaultExecLoops = 10
+  override val defaultExecLoops = executionCycles
 
   //def this() = this(Seq("src/test/resources/scalatest-1.6.1.jar"))
   def this(config: FBConfig) =
