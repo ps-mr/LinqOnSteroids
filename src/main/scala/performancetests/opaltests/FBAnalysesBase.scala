@@ -199,11 +199,11 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
           if (instruction.isInstanceOf_#[GETFIELD] || instruction.isInstanceOf_#[GETSTATIC])
     ) yield {
       if_# (instruction.isInstanceOf_#[GETFIELD]) {
-        val instr = instruction.asInstanceOf_#[GETFIELD]
-        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType)))
+        letExp(instruction.asInstanceOf_#[GETFIELD])(instr =>
+        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType))))
       } else_# if_# (instruction.isInstanceOf_#[GETSTATIC]) {
-        val instr = instruction.asInstanceOf_#[GETSTATIC]
-        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType)))
+        letExp(instruction.asInstanceOf_#[GETSTATIC])(instr =>
+        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType))))
       } else_# {
         NULL //null causes problems!
       }
@@ -257,12 +257,23 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       if_# (!classFileLookup.isDefined) {
                                        None
       } else_# {
-          val classFile = classFileLookup.get
+          letExp(classFileLookup.get)(classFile =>
           (for (method ← classFile.methods
                if method.name ==# methodName && method.descriptor ==# methodDescriptor
                ) yield (classFile, method)
-          ).headOption
+          ).headOption)
       }
+      /*
+      //PG: the code below should work, but unfortunately it returns Exp[Iterable[...]], while Exp[Option[]] is
+      //expected
+      for (classFile ← classFileLookup;
+           methodDecl ← (
+                for (method ← classFile.methods
+                      if method.name ==# methodName &&
+                      method.descriptor ==# methodDescriptor) yield (classFile, method)
+                ).headOption
+          ) yield methodDecl
+        */
     }
 
   /**
@@ -382,16 +393,16 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       if_# (!superClasses.isDefined) {
         None
       } else_# {
-        val methodCall =
+        letExp(
             (for( instruction ← constructor.body.get.instructions;
                   invokeSpecial ← instruction.ifInstanceOf[INVOKESPECIAL]
                   if superClasses.get.contains(invokeSpecial.declaringClass.asInstanceOf_#[ObjectType])
-            ) yield invokeSpecial)
+            ) yield invokeSpecial)) (methodCall =>
         if_# (methodCall.isEmpty) {
           None
         } else_# {
           getMethodDeclarationSQuOpt(methodCall.head.declaringClass.asInstanceOf_#[ObjectType], methodCall.head.name, methodCall.head.methodDescriptor)
-        }
+        })
       }
     }
 

@@ -64,9 +64,8 @@ trait MS_PKGPROTECT{
       import performancetests.opaltests.InstructionLifting._
       import ivm.expressiontree.Util.ExtraImplicits._
 
-        val readFieldsFromPackage = readFieldsSQuOpt
-                              .map(entry => (entry._1._1.thisClass.packageName, entry._2))
-        for (classFile ← classFiles.asSmart if (!classFile.isInterfaceDeclaration);
+        for (readFieldsFromPackage <- Let(readFieldsSQuOpt.map(entry => (entry._1._1.thisClass.packageName, entry._2)));
+             classFile ← classFiles.asSmart if (!classFile.isInterfaceDeclaration);
              field ← classFile.fields
              if (field.isFinal &&
                  field.isStatic &&
@@ -110,9 +109,7 @@ trait MS_PKGPROTECT{
         import performancetests.opaltests.InstructionLifting._
         import ivm.expressiontree.Util.ExtraImplicits._
         import schema.squopt._
-        val readFieldsFromPackage = readFieldsSQuOpt
-                              .map(entry => (entry._1._1.thisClass.packageName, entry._2))
-        for (
+        for (readFieldsFromPackage <- Let(readFieldsSQuOpt.map(entry => (entry._1._1.thisClass.packageName, entry._2)));
              fieldRecord ← fieldsSQuOpt
                if (!fieldRecord.classFile.isInterfaceDeclaration &&
                    fieldRecord.field.isFinal &&
