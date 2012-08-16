@@ -448,20 +448,17 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
                 invoke.declaringClass ==# targetClass.thisClass &&
                 invoke.name ==# targetMethod.name &&
                 invoke.methodDescriptor ==# targetMethod.descriptor
-             } else_#{
-                 if_#(instr.isInstanceOf_#[INVOKEVIRTUAL]){
+             } else_# if_#(instr.isInstanceOf_#[INVOKEVIRTUAL]) {
                     val invoke = instr.asInstanceOf_#[INVOKEVIRTUAL]
                     invoke.declaringClass ==# targetClass.thisClass &&
                     invoke.name ==# targetMethod.name &&
                     invoke.methodDescriptor ==# targetMethod.descriptor
-                 } else_#{
-                     if_#(instr.isInstanceOf_#[INVOKESTATIC]){
+                 } else_# if_#(instr.isInstanceOf_#[INVOKESTATIC]){
                         val invoke = instr.asInstanceOf_#[INVOKESTATIC]
                         invoke.declaringClass ==# targetClass.thisClass &&
                         invoke.name ==# targetMethod.name &&
                         invoke.methodDescriptor ==# targetMethod.descriptor
-                     } else_#{
-                         if_#(instr.isInstanceOf_#[INVOKESPECIAL]){
+                     } else_# if_#(instr.isInstanceOf_#[INVOKESPECIAL]){
                             val invoke = instr.asInstanceOf_#[INVOKESPECIAL]
                             invoke.declaringClass ==# targetClass.thisClass &&
                             invoke.name ==# targetMethod.name &&
@@ -469,9 +466,6 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
                          } else_#{
                              false
                          }
-                     }
-                 }
-             }
            /*
            (instr.isInstanceOf_#[INVOKEINTERFACE] && { val invoke = instr.asInstanceOf_#[INVOKEINTERFACE]; invoke.declaringClass ==# targetClass.thisClass && invoke.name ==# targetMethod.name && invoke.methodDescriptor ==# targetMethod.descriptor }) ||
            (instr.isInstanceOf_#[INVOKEVIRTUAL] && { val invoke = instr.asInstanceOf_#[INVOKEVIRTUAL]; invoke.declaringClass ==# targetClass.thisClass && invoke.name ==# targetMethod.name && invoke.methodDescriptor ==# targetMethod.descriptor }) ||
