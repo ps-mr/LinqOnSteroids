@@ -483,7 +483,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String], override val onlyOptimized: Bo
     analyzeCloneDoesNotCallSuperClone()
     analyzeCloneButNotCloneable()
     ////Takes 2 hours!!
-    //analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
+    analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
   }
 
   override def afterAll() {
