@@ -1,3 +1,4 @@
 #!/bin/bash
-mainJar=$(echo target/*-assembly-*.jar)
-java $JAVA_OPTS -jar $mainJar "$@"
+#mainJar=$(echo target/*-assembly-*.jar)
+#java $JAVA_OPTS -jar $mainJar "$@"
+./target/start "$@"
