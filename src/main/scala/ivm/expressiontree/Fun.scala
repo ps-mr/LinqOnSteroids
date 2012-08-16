@@ -7,10 +7,11 @@ import actors.threadpool.AtomicInteger
 // encodings of the STLC (simply typed lambda calculus).
 //Having explicit App nodes for application can be useful to represent application instead of computing it,
 //since computing it means inlining and can replicate terms.
-case class App[T, U](f: Exp[T => U], t: Exp[T]) extends Arity2OpExp[T => U, T, U, App[T, U]](f, t) with InfixPrinting {
+case class App[T, U](f: Exp[T => U], t: Exp[T]) extends Arity2OpExp[T => U, T, U, App[T, U]](f, t) {
   def interpret() = f.interpret()(t.interpret())
   override def copy(f: Exp[T => U], t: Exp[T]) = App(f, t)
   def operator = "apply"
+  override def toCode = "ivm.expressiontree.Util.let(%s)(%s)" format (t.toCode, f.toCode)
 }
 
 abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {

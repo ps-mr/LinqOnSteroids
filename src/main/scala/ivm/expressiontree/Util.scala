@@ -69,6 +69,7 @@ object Util {
       None
     else
       Some(v.asInstanceOf[S])
+  def let[T, U](arg: T)(f: T => U): U = f(arg)
 
   object ExtraImplicits {
     class TraversableLike_GroupBySel_Op[T, Repr <: TraversableLike[T, Repr]](v: TraversableLike[T, Repr]) {
