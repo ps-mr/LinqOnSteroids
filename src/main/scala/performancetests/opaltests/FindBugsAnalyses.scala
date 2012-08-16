@@ -352,6 +352,15 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
   }
   */
 
+  // Debug code to count max method length - relevant for the issue on Streams.
+  /*
+  println((for {
+    classFile ← classFiles
+    method ← classFile.methods
+    body ← method.body
+  } yield (body.instructions.filter(_ != null).length, classFile.thisClass.className, method.name)).max[(Int, String, String)](Ordering.by(_._1)))
+  */
+
   import BATLifting._
 
   val methodNameIdx: Exp[Map[String, Seq[(ClassFile, Method)]]] = (for {
