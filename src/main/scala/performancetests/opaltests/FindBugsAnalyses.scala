@@ -252,7 +252,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String], override val onlyOptimized: Bo
   }
   def analyzeCloneableNoClone() {
     // FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)
-    benchQueryComplete("NO_CLONE"){//  CN_IDIOM") {
+    benchQueryComplete("NO_CLONE"){//  CN_IDIOM")
       // Weakness: If we only analyze a project's class files, but omit the JDK, we will not identify
       // cloneable classes in projects, where we extend a predefined
       // class (of the JDK) that indirectly inherits from Cloneable. (If an analysis does not not include the
@@ -283,7 +283,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String], override val onlyOptimized: Bo
   }
   def analyzeCloneDoesNotCallSuperClone() {
     //XXX This analysis was changed for BAT, and now adapted here; retest.
-    benchQueryComplete("SUPER_CLONE_MISSING"){ // FB: CN_IDIOM_NO_SUPER_CALL") {
+    benchQueryComplete("SUPER_CLONE_MISSING"){ // FB: CN_IDIOM_NO_SUPER_CALL")
       // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
       for {
         classFile ← classFiles
@@ -319,7 +319,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String], override val onlyOptimized: Bo
     analyzeCloneButNotCloneable()
   }
   def analyzeCloneButNotCloneable() {
-    benchQueryComplete("NOT_CLONEABLE"){ // FB: CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE") {
+    benchQueryComplete("NOT_CLONEABLE"){ // FB: CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE")
         // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
       for {
         classFile ← classFiles
@@ -422,7 +422,6 @@ class FindBugsAnalyses(val zipFiles: Seq[String], override val onlyOptimized: Bo
   //def setupIndexes() {
     /*
     import BATLifting._
-    /*
     (for {
       classFile ← classFiles.asSmart
       method ← classFile.methods
@@ -449,7 +448,6 @@ class FindBugsAnalyses(val zipFiles: Seq[String], override val onlyOptimized: Bo
     excHandlerTypeIdx = idxBase indexBy (_._4.catchType)
     */
 
-    */
   //}
 
   def tearDownIndexes() {
