@@ -24,14 +24,14 @@ trait Benchmarking {
   protected val defaultExecLoops = 1
   protected val defaultMinSampleLoops = 10
   /** Maximum Coefficient of Variation between iterations. */
-  protected val defaultMaxCoV = Some(0.02)
+  protected val defaultMaxCoV = Some(0.10)
 
   //Other settings, not intended to be customizable.
   /** How many benchmark iterations should be remembered? Called k in the paper. */
-  protected val rememberedSampleLoops = 50
+  protected val rememberedSampleLoops = 10
 
   /** How many benchmark iterations at most should be performed? Called q in the paper. */
-  protected val maxLoops = 100
+  protected val maxLoops = 50
 
   protected val printAllData = false
 
