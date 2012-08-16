@@ -76,6 +76,7 @@ object FindBugsAnalyses {
   val parser = new OptionParser[FBConfig]("FindBugsAnalyses", "0.1") {
     def options = Seq(
       booleanOpt("onlyOptimized", "") { (v, c) => c.copy(onlyOptimized = v) },
+      booleanOpt("onlyBaseline", "") { (v, c) => c.copy(onlyBaseline = v) },
       intOpt("executionCycles",
         "how many cycles of each benchmark should be timed as one unit? Default 1") {
         (v, c) => c.copy(executionCycles = v)
