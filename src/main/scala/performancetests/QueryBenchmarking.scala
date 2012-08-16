@@ -156,7 +156,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         reportTimeRatio("base embedded version - Alternative %d (non optimized)" format i, timeOpt / timeAlt)
         if (altOptimizedWithIdx != optimized) {
           val (resAltOptWithIdx, timeAltOptWithIdx) = doRun(altMsg + optimizedWithIdxMsg, altOptimizedWithIdx)
-          resAltOptWithIdx.toSet should be (resOpt.toSet)
+          compareRes(resAltOptWithIdx, resOpt)
         }
         if (!mustModularizedOptimizeEqual && altOptimizedNoIdx != optimized) {
           val (resAltOpt, timeAltOpt) = doRun(altMsg + optimizedMsg, altOptimizedNoIdx: Exp[Traversable[T]])
@@ -168,7 +168,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
       val (altNativeRes, timeAltScala) =
         benchMarkWithTime(msg + msgNativeAltExtra) { altExpected }
       if (altNativeRes != null) {
-        altNativeRes.toSet should be (resOpt.toSet)
+        compareRes(altNativeRes, resOpt)
         reportTimeRatio("native Scala version%s" format msgNativeAltExtra, timeOpt / timeAltScala)
         reportTimeRatio("native Scala version%s, counting optimization time" format msgNativeAltExtra, (timeOpt + optimizationTime) / timeAltScala)
       }
