@@ -159,8 +159,8 @@ object GitVersion {
 }
 
 //Generate start scripts
-seq(StartScriptPlugin.startScriptForClassesSettings: _*)
-//seq(StartScriptPlugin.startScriptForJarSettings: _*)
+//seq(StartScriptPlugin.startScriptForClassesSettings: _*)
+seq(StartScriptPlugin.startScriptForJarSettings: _*)
 
 mainClass in Test := Some("performancetests.opaltests.FindBugsAnalyses")
 
