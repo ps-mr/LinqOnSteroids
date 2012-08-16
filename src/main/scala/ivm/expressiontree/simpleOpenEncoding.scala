@@ -260,6 +260,7 @@ trait BaseTypesOps {
     def charAt(idx: Exp[Int]) = fmap(this.t, idx, 'StringOps)('charAt, _ charAt _ )
     def toLowerCase = fmap(this.t, 'StringOps)('toLowerCase, _.toLowerCase)
     def toUpperCase = fmap(this.t, 'StringOps)('toUpperCase, _.toUpperCase)
+    def length = fmap(this.t, 'StringOps)('length, _.length)
   }
 
   class BooleanOps(b: Exp[Boolean]) {

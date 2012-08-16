@@ -65,12 +65,17 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
     }
 
     /**
-     * A heuristic for determining anonymous inner classes by the encoding in the name
+     * A heuristic for determining anonymous inner classes by the encoding in the name.
+     * PG: I changed this heuristic to avoid failure on Scala class names, which
+     * often end with $.
      */
     private def isAnonymousInnerClass(classFile: ClassFile): Boolean = {
       val lastSpecialChar = lastIndexOfInnerClassEncoding(classFile)
+      val className = classFile.thisClass.className
+
       isInnerClass(classFile) &&
-      Character.isDigit(classFile.thisClass.className.charAt(lastSpecialChar + 1))
+      className.length > lastSpecialChar + 1 &&
+      Character.isDigit(className.charAt(lastSpecialChar + 1))
     }
 
 
@@ -80,9 +85,13 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
           import Lifting._
           import BATLifting._
           import performancetests.opaltests.InstructionLifting._
+
       val lastSpecialChar = lastIndexOfInnerClassEncoding(classFile)
+      val className = classFile.thisClass.className
+
       isInnerClass(classFile) &&
-      expCharacter.isDigit(classFile.thisClass.className.charAt(lastSpecialChar + 1))
+      className.length > lastSpecialChar + 1 &&
+      expCharacter.isDigit(className.charAt(lastSpecialChar + 1))
     }
 
 
