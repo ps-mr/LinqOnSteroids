@@ -36,6 +36,9 @@ libraryDependencies += "org.scalatest" % ("scalatest_" + "2.10.0-M6") % ("1.9-%s
 
 libraryDependencies += "com.google.guava" % "guava" % "13.0"
 
+//Not yet available for 2.10, so use a local build.
+//libraryDependencies += "com.github.scopt" %% "scopt" % "2.1.0"
+
 libraryDependencies += "com.google.code.findbugs" % "jsr305" % "1.3.9"
 
 //resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
