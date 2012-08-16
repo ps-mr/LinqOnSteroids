@@ -184,9 +184,6 @@ class FindBugsAnalyses(val zipFiles: Seq[String])
 
 
 
-  // The following code is meant to show how easy it is to write analyses;
-  // it is not meant to demonstrate how to write such analyses in an efficient
-  // manner.
   test("ProtectedField") {
     analyzeProtectedFields()
   }
