@@ -29,7 +29,20 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
 
   private def mustModularizedOptimizeEqual = false
 
+  private def printDate() {
+    import java.text.DateFormat
+    import java.util.Calendar
+    import java.util.Date
+
+//    val cal = Calendar.getInstance
+//    val df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM)
+//
+//    println(df.format(cal.getTime))
+    println(new Date)
+  }
+
   private def doRun[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]])(implicit f: Forceable[T, Coll], c: TypeTag[Coll]) = {
+    printDate()
     if (!onlyOptimized)
       showExpNoVal(v, msg)
     val res = benchMarkWithTime(msg)(Compile.toValue(v).force)
