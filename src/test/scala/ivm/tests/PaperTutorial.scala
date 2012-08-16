@@ -194,4 +194,17 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
     println(res)
     query.optimize.interpret() should be (res)
   }
+
+  {
+    val recordsQuery = for {
+      book <- books.asSmart
+    } yield book.title
+    showExp(recordsQuery, "recordsQuery")
+    def titleFilterQuery(titles: Exp[Set[String]], prefix: Exp[String]): Exp[Set[String]] = for {
+      title <- titles
+    } yield prefix + title
+    val query = titleFilterQuery(recordsQuery, "Booktitle: ")
+    showExp(query, "query")
+    showExp(query.optimize, "query.optimize")
+  }
 }
