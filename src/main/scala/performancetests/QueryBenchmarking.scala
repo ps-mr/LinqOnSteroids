@@ -51,11 +51,11 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
     res
   }
 
-  private def benchOptimize[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]]) = {
+  private def benchOptimize[T, Coll <: Traversable[T]](msg: String, v: Exp[Coll with Traversable[T]], idxLookup: Boolean) = {
     if (!onlyOptimized)
       Optimization.optimize(v) //do it once for the logs!
     Optimization.pushEnableDebugLog(false)
-    val (optimized, optimizationTime) = benchMarkWithTime(msg + " Optimization")(Optimization.optimize(v))
+    val (optimized, optimizationTime) = benchMarkWithTime(msg + " Optimization")(Optimization.optimize(v, idxLookup))
     Optimization.popEnableDebugLog()
     (optimized, optimizationTime)
   }
@@ -103,9 +103,19 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
 
     //val res = benchInterpret("%s Los" format msg, builtQuery, timeScala)
     val losMsg = "%s Los" format msg
-    val (optimized, optimizationTime) = benchOptimize(losMsg, builtQuery)
-    val optimizedMsg = " - after optimization"
-    val (resOpt, timeOpt) = doRun(losMsg + optimizedMsg, optimized)
+    val (optimized, optimizationTime) = benchOptimize(losMsg, builtQuery, idxLookup = true)
+    //we should do this for the modularized version.
+    //val (optimizedWithIdx, optimizationTimeWithIdx) = benchOptimize(losMsg, builtQuery, idxLookup = true)
+    val optimizedWithIdxMsg = " - after optimization"
+    val optimizedMsg = optimizedWithIdxMsg + " (without indexes)"
+    val (resOpt, timeOpt) = doRun(losMsg + optimizedWithIdxMsg, optimized)
+
+    /*
+    if (optimizedWithIdx != optimized) {
+      val (resOptWithIdx, timeOptWithIdx) = doRun(losMsg + optimizedWithIdxMsg, optimizedWithIdx)
+      resOptWithIdx should be (resOpt)
+    }
+    */
 
     if (!onlyOptimized) {
       val (expectedRes, timeScala) =
@@ -127,16 +137,21 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         (altQuery, i) <- altQueries.zipWithIndex
         altMsg = "%s Los - Alternative %d" format (msg, i)
         //Benchmark optimization time
-        (altOptimized, _ /*altOptimizationTime*/) = benchOptimize(altMsg, altQuery)
-      } yield (altMsg, altOptimized, altQuery, i)
+        (altOptimized, _ /*altOptimizationTime*/) = benchOptimize(altMsg, altQuery, idxLookup = false)
+        (altOptimizedWithIdx, _ /*altOptimizationTime*/) = benchOptimize(altMsg, altQuery, idxLookup = true)
+      } yield (altMsg, altOptimized, altOptimizedWithIdx, altQuery, i)
 
-      for ((altMsg, altOptimized, altQuery, i) <- optimizedQueries) {
+      for ((altMsg, altOptimized, altOptimizedWithIdx, altQuery, i) <- optimizedQueries) {
         //Check that the query produces the same result *before* optimization, and how much slower it is
         val (resAlt, timeAlt) = doRun(altMsg, altQuery: Exp[Traversable[T]])
         //Check that we get the same result
         resAlt.toSet should be (resOpt.toSet)
         //resAlt should be (resOpt)
         reportTimeRatio("base embedded version - Alternative %d (non optimized)" format i, timeOpt / timeAlt)
+        if (altOptimizedWithIdx != optimized) {
+          val (resAltOptWithIdx, timeAltOptWithIdx) = doRun(altMsg + optimizedWithIdxMsg, altOptimizedWithIdx)
+          resAltOptWithIdx should be (resOpt)
+        }
       }
       val msgNativeAltExtra = " - Alternative (modularized)"
       val (altNativeRes, timeAltScala) =
@@ -147,7 +162,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         reportTimeRatio("native Scala version%s, counting optimization time" format msgNativeAltExtra, (timeOpt + optimizationTime) / timeAltScala)
       }
 
-      for ((altMsg, altOptimized, _, i) <- optimizedQueries) {
+      for ((altMsg, altOptimized, _, _, i) <- optimizedQueries) {
         //Check that we get the same query by optimizing modularized queries and non-modularized ones - I expect failures here.
         if (mustModularizedOptimizeEqual) {
           altOptimized should be (optimized)
