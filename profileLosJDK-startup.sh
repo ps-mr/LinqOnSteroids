@@ -16,7 +16,7 @@ echo "Git version: $gitV" > $out
 . javaSettings.inc
 for ((i=0; i < $nIters; i++)); do
   {
-    $(which time) -f "$gitV;%e;%U;%S;%P" ./start.sh /usr/lib/jvm/jre-1.6.0-openjdk.x86_64/lib/rt.jar
+    $(which time) -f "$gitV;%e;%U;%S;%P" ./start.sh data/rt.jar --onlyOptimized
   } >>$out 2>&1
   tail -1 $out >> $outCSV
 done
