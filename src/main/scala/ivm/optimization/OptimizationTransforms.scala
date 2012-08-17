@@ -24,6 +24,7 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
   //reversed list of conds
   private def collectCondsReversed(exp: Exp[Boolean]): Seq[Exp[Boolean]] =
     exp match {
+    //This works because And trees are left-associative, because of && precedence and because of reassociateBoolOps.
       case And(a, b) => b +: collectCondsReversed(a)
       case _ => Seq(exp)
     }
@@ -53,6 +54,9 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
   //exactly what we need!
   //Scalac miscompiles this code if I write it the obvious way - without optimizations enabled!
   val hoistFilter: Exp[_] => Exp[_] = {
+    //This is wrong, since filterFun is the filter which is executed last on
+    //coll2! We will move it and execute it before the other filters, which we decided not to do.
+    //Alternatively, we could just take any filter and handle null checks specially.
     case FlatMap(coll1, fmFun@FuncExpBody(FlatMap(Filter(coll2, filterFun), fmFun2)))
       if !filterFun.body.isOrContains(filterFun.x) =>
       buildHoistedFilter(coll1, fmFun, coll2, filterFun, fmFun2)
