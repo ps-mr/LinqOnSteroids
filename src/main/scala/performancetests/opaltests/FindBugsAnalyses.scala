@@ -253,26 +253,40 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   test("CloneableNoClone") {
     analyzeCloneableNoClone()
   }
+
+  //  CN_IDIOM optimizes no abstractions away (WithAbstractions == WithoutAbstractions
   def analyzeCloneableNoClone() {
     // FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)
-    benchQueryComplete("NO_CLONE"){//  CN_IDIOM")
-      // Weakness: If we only analyze a project's class files, but omit the JDK, we will not identify
-      // cloneable classes in projects, where we extend a predefined
-      // class (of the JDK) that indirectly inherits from Cloneable. (If an analysis does not not include the
-      // JDK, we have only a partial view of the project's class hierarchy.)
+          // Weakness: If we only analyze a project's class files, but omit the JDK, we will not identify
+          // cloneable classes in projects, where we extend a predefined
+          // class (of the JDK) that indirectly inherits from Cloneable. (If an analysis does not not include the
+          // JDK, we have only a partial view of the project's class hierarchy.)
+    def analyzeBaseWithoutAbstractions() = {
+          for {
+            allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList
+            cloneable ← allCloneable
+            classFile ← getClassFile.get(cloneable).toList
+            if !(classFile.methods exists {
+              case Method(_, "clone", MethodDescriptor(CSeq(), ObjectType.Object), _) ⇒ true
+              case _ ⇒ false
+            })
+          } yield classFile.thisClass.className
+    }
+
+    def analyzeBaseWithAbstractions() = {
       for {
-        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList
-        cloneable ← allCloneable
-        classFile ← getClassFile.get(cloneable).toList
-        if !(classFile.methods exists {
-          case Method(_, "clone", MethodDescriptor(CSeq(), ObjectType.Object), _) ⇒ true
-          case _ ⇒ false
-        })
-      } yield classFile.thisClass.className
+              allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList
+              cloneable ← allCloneable
+              classFile ← getClassFile.get(cloneable).toList
+              if !(classFile.methods exists {
+                case Method(_, "clone", MethodDescriptor(CSeq(), ObjectType.Object), _) ⇒ true
+                case _ ⇒ false
+              })
+            } yield classFile.thisClass.className
+    }
 
-    } {
+    def analyzeSQuOptWithoutAbstractions() = {
       import BATLifting._
-
       for {
         allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSmart
         cloneable ← allCloneable
@@ -280,6 +294,24 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
         if !(classFile.methods exists (method => method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"))
       } yield classFile.thisClass.className
     }
+
+    def analyzeSQuOptWithAbstractions() = {
+      import BATLifting._
+      for {
+        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSmart
+        cloneable ← allCloneable
+        classFile ← getClassFile.get(cloneable)
+        if !(classFile.methods exists (method => method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"))
+      } yield classFile.thisClass.className
+    }
+
+    benchQueryComplete("NO_CLONE")(
+      analyzeBaseWithoutAbstractions(),
+      analyzeBaseWithAbstractions()
+    )(
+      analyzeSQuOptWithoutAbstractions(),
+      analyzeSQuOptWithAbstractions
+    )
   }
 
   test("SuperCloneMissing") {
@@ -366,28 +398,64 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   test("NotCloneable") {
     analyzeCloneButNotCloneable()
   }
+
+
+  // FB: CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE
   def analyzeCloneButNotCloneable() {
-    benchQueryComplete("NOT_CLONEABLE"){ // FB: CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE")
-        // FINDBUGS: CN: Class defines clone() but doesn't implement Cloneable (CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE)
-      for {
-        classFile ← classFiles
-        if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
-        method @ Method(_, "clone", MethodDescriptor(CSeq(), ObjectType.Object), _) ← classFile.methods
-        if !classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
-      } yield (classFile.thisClass.className, method.name)
-        //println("\tViolations: " /*+cloneButNotCloneable.mkString(", ")*/ +cloneButNotCloneable.size)
-    } {
-      import BATLifting._
-      import InstructionLifting._
-      for {
-        classFile ← classFiles.asSmart
-        if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
-        method ← classFile.methods
-        if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
-        //Shouldn't we have a lifter for this? Yep.
-        if !asExp(classHierarchy).isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
-      } yield (classFile.thisClass.className, method.name)
-    }
+
+
+      def analyzeBaseWithoutAbstractions() = {
+        for {
+          classFile ← classFiles
+          if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
+          method @ Method(_, "clone", MethodDescriptor(CSeq(), ObjectType.Object), _) ← classFile.methods
+          if !classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
+        } yield (classFile.thisClass.className, method.name)
+      }
+
+      def analyzeBaseWithAbstractions() = {
+        import schema._
+        for {
+          MethodRecord(classFile, method @ Method(_, "clone", MethodDescriptor(CSeq(), ObjectType.Object), _)) ← methodsNative
+          if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined &&
+             !classHierarchy.isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
+        } yield (classFile.thisClass.className, method.name)
+      }
+
+
+      def analyzeSQuOptWithoutAbstractions() = {
+        import BATLifting._
+        import InstructionLifting._
+        for {
+          classFile ← classFiles.asSmart
+          if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
+          method ← classFile.methods
+          if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
+          //Shouldn't we have a lifter for this? Yep.
+          if !asExp(classHierarchy).isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
+        } yield (classFile.thisClass.className, method.name)
+      }
+
+      def analyzeSQuOptWithAbstractions() = {
+        import BATLifting._
+        import InstructionLifting._
+        import schema.squopt._
+        for {
+          methodRecord ← methodsSQuOpt
+          if !methodRecord.classFile.isAnnotationDeclaration && methodRecord.classFile.superClass.isDefined &&
+              methodRecord.method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) &&
+              methodRecord.method.name ==# "clone" &&
+             !asExp(classHierarchy).isSubtypeOf(methodRecord.classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
+        } yield (methodRecord.classFile.thisClass.className, methodRecord.method.name)
+      }
+
+    benchQueryComplete("NOT_CLONEABLE")(
+      analyzeBaseWithoutAbstractions(),
+      analyzeBaseWithAbstractions()
+    )(
+      analyzeSQuOptWithoutAbstractions(),
+      analyzeSQuOptWithAbstractions()
+    )
   }
 
   //Template for new tests:
