@@ -64,7 +64,7 @@ import collection.{Seq => CSeq}
 
 //TODO: zipFiles -> archiveFiles (globally)
 
-case class FBConfig(zipFiles: Seq[String] = Nil,
+case class FBConfig(zipFiles: List[String] = Nil,
   /** This is to compare the runtime of optimized queries with FindBugs */
   onlyOptimized: Boolean = false,
   /** This is to compare the runtime of non-optimized or baseline queries with FindBugs */
@@ -91,8 +91,7 @@ object FindBugsAnalyses {
   }
 
   def main(args: Array[String]) {
-    //Use toList to convert args to an immutable sequence - arrays can be converted implicitly only to generic sequences (in particular, mutable ones)!
-    parser.parse(args.toList, FBConfig()) map { config =>
+    parser.parse(args, FBConfig()) map { config =>
       import config.zipFiles
       if (zipFiles.length == 0 || !zipFiles.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
         printUsage
@@ -116,7 +115,7 @@ object FindBugsAnalyses {
   type QueryAnd[+T] = ((ClassFile, Method, Code), T)
 }
 
-class FindBugsAnalyses(val zipFiles: Seq[String], override val onlyOptimized: Boolean, onlyBaseline: Boolean, executionCycles: Int)
+class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: Boolean, onlyBaseline: Boolean, executionCycles: Int)
   extends FBAnalysesBase
   with FBUnusedFields with FBExplicitGC with FBProtectedFields with FBPublicFinalizer
   with FBSerializableNoConstructor with FBCatchIllegalMonitorStateException with FBCovariantCompareToMethods
@@ -141,7 +140,7 @@ class FindBugsAnalyses(val zipFiles: Seq[String], override val onlyOptimized: Bo
   //def this() = this(Seq("src/test/resources/scalatest-1.6.1.jar"))
   def this(config: FBConfig) =
       this(config.zipFiles, config.onlyOptimized, config.onlyBaseline, config.executionCycles)
-  def this() = this(FBConfig(zipFiles = Seq("src/test/resources/Bugs.zip")))
+  def this() = this(FBConfig(zipFiles = List("src/test/resources/Bugs.zip")))
 
   /* XXX:
    * This test is currently pointless. Either I do it with a single query, where it'll benchmark cache lookup time;
