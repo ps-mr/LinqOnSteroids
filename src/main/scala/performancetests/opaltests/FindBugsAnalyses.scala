@@ -598,7 +598,6 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
     analyzeCloneableNoClone()
     analyzeCloneDoesNotCallSuperClone()
     analyzeCloneButNotCloneable()
-    ////Takes 2 hours!!
     analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
   }
 
