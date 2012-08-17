@@ -87,6 +87,7 @@ object Optimization {
     checkIdempotent(exp, idxLookup, "optimize") {
       optimize(_, idxLookup = false)
     } {
+      //XXX: calling splitFilters instead of filterToWithFilter introduces a crazy bug in ITA_INEFFICIENT_TO_ARRAY
       filterToWithFilter(betterExists(flatMapToMap(betaDeltaReducer(letTransformer(optimizeBase(exp, idxLookup, forIdx = false))))))
     }
 
