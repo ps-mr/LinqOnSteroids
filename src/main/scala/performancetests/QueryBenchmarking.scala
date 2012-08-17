@@ -154,14 +154,15 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         //Check that we get the same result
         compareRes(resAlt, resOpt)
         reportTimeRatio("base embedded version - Alternative %d (non optimized)" format i, timeOpt / timeAlt)
-        if (altOptimizedWithIdx != optimized) {
+        if (!mustModularizedOptimizeEqual && altOptimizedWithIdx != optimized) {
           val (resAltOptWithIdx, timeAltOptWithIdx) = doRun(altMsg + optimizedWithIdxMsg, altOptimizedWithIdx)
           compareRes(resAltOptWithIdx, resOpt)
+          reportTimeRatio("base embedded version - Alternative %d (optimized, with indexes)" format i, timeOpt / timeAltOptWithIdx)
         }
-        if (!mustModularizedOptimizeEqual && altOptimizedNoIdx != optimized) {
+        if (altOptimizedNoIdx != altOptimizedWithIdx) {
           val (resAltOpt, timeAltOpt) = doRun(altMsg + optimizedMsg, altOptimizedNoIdx: Exp[Traversable[T]])
           compareRes(resAltOpt, resOpt)
-          reportTimeRatio("base embedded version - Alternative %d (optimized)" format i, timeOpt / timeAltOpt)
+          reportTimeRatio("base embedded version - Alternative %d (optimized), without indexes" format i, timeOpt / timeAltOpt)
         }
       }
       val msgNativeAltExtra = " - Alternative (modularized)"
