@@ -135,7 +135,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
     private def constructorReadsOuterThisField(classFile: ClassFile): Boolean = {
       (for (method ← classFile.constructors if (method.name == "<init>") && method.body.isDefined;
             instr ← method.body.get.instructions if (instr.isInstanceOf[ALOAD_1.type])
-      ) yield 1).sum > 1
+      ) yield instr).size > 1
     }
 
     private def constructorReadsOuterThisField(classFile: Exp[ClassFile]): Exp[Boolean] = {
@@ -144,9 +144,11 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
           import Lifting._
           import BATLifting._
           import performancetests.opaltests.InstructionLifting._
+          //XXX To get the size, the code had 'yield 1' followed by .sum on the resulting collection.
+          //I optimized this manually, but we could consider automating that.
       (for (method ← classFile.constructors if (method.name ==# "<init>") && method.body.isDefined;
             instr ← method.body.get.instructions if (instr.isInstanceOf_#[ALOAD_1.type])
-      ) yield 1).sum > 1
+      ) yield instr).size > 1
     }
 
     private def analyzeBaseWithoutAbstractions() = {
