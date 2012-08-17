@@ -132,12 +132,12 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
             import performancetests.opaltests.InstructionLifting._
             import ivm.expressiontree.Util.ExtraImplicits._
             import schema.squopt._
+            //XXX why do we need to do the lifting by hand? Because ordering is significant, in a buggy wrong way.
           for { instructionWithIndex ← methodBodiesInstructionsIndexedModularSQuOpt
-                getField ← instructionWithIndex.instruction.ifInstanceOf[GETFIELD]
-                if(
-                     instructionWithIndex.method.name !=# "<init>" &&
+                if isOverrideSQuOpt(instructionWithIndex.classFile)(instructionWithIndex.method) &&
                      !instructionWithIndex.method.isStatic &&
-                     isOverrideSQuOpt(instructionWithIndex.classFile)(instructionWithIndex.method))
+                     instructionWithIndex.method.name !=# "<init>"
+                getField ← instructionWithIndex.instruction.ifInstanceOf[GETFIELD]
                constructor ← instructionWithIndex.classFile.constructors
                if declaresFieldSQuOpt(instructionWithIndex.classFile)(getField.name, getField.fieldType);
                calledSuperConstructorInfo ← calledSuperConstructorSQuOpt(instructionWithIndex.classFile, constructor)
