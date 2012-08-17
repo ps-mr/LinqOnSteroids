@@ -79,8 +79,8 @@ trait SE_BAD_FIELD_INNER_CLASS {
     import BATLifting._
     import performancetests.opaltests.InstructionLifting._
     import ivm.expressiontree.Util.ExtraImplicits._
-    val serializableClasses = classHierarchySQuOpt.subclasses(serializable).getOrElse(Set.empty)
-    for(  objectType ← serializableClasses;
+    for(  serializableClasses ← Let(classHierarchySQuOpt.subclasses(serializable).getOrElse(Set.empty));
+          objectType ← serializableClasses;
           classFile ←Let( getClassFileSQuOpt(objectType));
            outerClassEntry ← classFile.outerType
            if !hasStaticModifier(outerClassEntry._2) &&
@@ -111,8 +111,8 @@ trait SE_BAD_FIELD_INNER_CLASS {
     import performancetests.opaltests.InstructionLifting._
     import ivm.expressiontree.Util.ExtraImplicits._
     import schema.squopt._
-    val serializableClasses = classHierarchySQuOpt.subclasses(serializable).getOrElse(Set.empty)
-    for(  objectType ← serializableClasses;
+    for(  serializableClasses ← Let(classHierarchySQuOpt.subclasses(serializable).getOrElse(Set.empty));
+          objectType ← serializableClasses;
           classFile ←Let( getClassFileSQuOpt(objectType));
            outerClassEntry ← classFile.outerType
            if !hasStaticModifier(outerClassEntry._2) &&
