@@ -161,7 +161,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
                !constructorReadsOuterThisField(classFile)
               )
       ) yield
-        (classFile)
+        (classFile.thisClass)
     }
 
     private def analyzeSQuOptWithoutAbstractions() = {
@@ -172,8 +172,8 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
       import BATLifting._
       import performancetests.opaltests.InstructionLifting._
       import ivm.expressiontree.Util.ExtraImplicits._
-      letExp(readFieldsSQuOpt.map(_._2))(readFields =>
-      for (classFile ← classFiles.asSmart
+      for {readFields ← Let(readFieldsSQuOpt.map(_._2))
+           classFile ← classFiles.asSmart
            if (isAnonymousInnerClass(classFile) &&
                canConvertToStaticInnerClass(classFile)
               );
@@ -182,8 +182,8 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
                !readFields.contains((classFile.thisClass, field.name, field.fieldType)) &&
                !constructorReadsOuterThisField(classFile)
               )
-      ) yield
-        (classFile))
+      } yield
+        (classFile.thisClass)
     }
 
 
@@ -197,7 +197,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
                !constructorReadsOuterThisField(classFile)
               )
       ) yield
-        (classFile)
+        (classFile.thisClass)
     }
 
     private def analyzeSQuOptWithAbstractions() = {
@@ -209,16 +209,16 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
         import performancetests.opaltests.InstructionLifting._
         import ivm.expressiontree.Util.ExtraImplicits._
         import schema.squopt._
-        letExp(readFieldsSQuOpt.map(_._2))(readFields =>
-        for (fieldRecord ← fieldsSQuOpt
+        for {readFields ← Let(readFieldsSQuOpt.map(_._2))
+             fieldRecord ← fieldsSQuOpt
              if (isAnonymousInnerClass(fieldRecord.classFile) &&
                  canConvertToStaticInnerClass(fieldRecord.classFile) &&
                  isOuterThisField(fieldRecord.field) &&
                  !readFields.contains((fieldRecord.classFile.thisClass, fieldRecord.field.name, fieldRecord.field.fieldType)) &&
                  !constructorReadsOuterThisField(fieldRecord.classFile)
                 )
-        ) yield
-          (fieldRecord.classFile))
+        } yield
+          (fieldRecord.classFile.thisClass)
       }
 
 
