@@ -86,12 +86,12 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
           import BATLifting._
           import performancetests.opaltests.InstructionLifting._
 
-      val lastSpecialChar = lastIndexOfInnerClassEncoding(classFile)
+      letExp(lastIndexOfInnerClassEncoding(classFile))(lastSpecialChar => {
       val className = classFile.thisClass.className
 
       isInnerClass(classFile) &&
       className.length > lastSpecialChar + 1 &&
-      expCharacter.isDigit(className.charAt(lastSpecialChar + 1))
+      expCharacter.isDigit(className.charAt(lastSpecialChar + 1))})
     }
 
 
@@ -172,7 +172,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
       import BATLifting._
       import performancetests.opaltests.InstructionLifting._
       import ivm.expressiontree.Util.ExtraImplicits._
-      val readFields = readFieldsSQuOpt.map(_._2)
+      letExp(readFieldsSQuOpt.map(_._2))(readFields =>
       for (classFile ← classFiles.asSmart
            if (isAnonymousInnerClass(classFile) &&
                canConvertToStaticInnerClass(classFile)
@@ -183,7 +183,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
                !constructorReadsOuterThisField(classFile)
               )
       ) yield
-        (classFile)
+        (classFile))
     }
 
 
@@ -209,7 +209,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
         import performancetests.opaltests.InstructionLifting._
         import ivm.expressiontree.Util.ExtraImplicits._
         import schema.squopt._
-        val readFields = readFieldsSQuOpt.map(_._2)
+        letExp(readFieldsSQuOpt.map(_._2))(readFields =>
         for (fieldRecord ← fieldsSQuOpt
              if (isAnonymousInnerClass(fieldRecord.classFile) &&
                  canConvertToStaticInnerClass(fieldRecord.classFile) &&
@@ -218,7 +218,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
                  !constructorReadsOuterThisField(fieldRecord.classFile)
                 )
         ) yield
-          (fieldRecord.classFile)
+          (fieldRecord.classFile))
       }
 
 
