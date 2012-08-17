@@ -12,9 +12,8 @@ import de.tud.cs.st.bat.resolved._
 trait FBSerializableNoConstructor {
   this: FBAnalysesBase =>
 
-  private val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
-
   private def analyzeBaseWithoutAbstractions() = {
+    val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
     import collection.{Seq => CSeq}
       for {
         superclass ← classHierarchy.superclasses(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
@@ -35,6 +34,7 @@ trait FBSerializableNoConstructor {
     import BATLifting._
     import InstructionLifting._
     import ivm.expressiontree.Util.ExtraImplicits._
+    val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
       for {
         superclass ← classHierarchy.superclasses(serializableClasses).asSmart if getClassFile.asSmart.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
@@ -51,6 +51,7 @@ trait FBSerializableNoConstructor {
     import collection.{Seq => CSeq}
     import schema._
     import collection.{Seq => CSeq}
+    val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
       for {
         superclass ← classHierarchy.superclasses(serializableClasses) if getClassFile.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
@@ -71,6 +72,7 @@ trait FBSerializableNoConstructor {
       import InstructionLifting._
       import ivm.expressiontree.Util.ExtraImplicits._
       import schema.squopt._
+      val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
             for {
               superclass ← classHierarchy.superclasses(serializableClasses).asSmart if getClassFile.asSmart.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
               {
