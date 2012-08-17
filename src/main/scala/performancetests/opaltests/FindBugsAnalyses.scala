@@ -69,6 +69,7 @@ case class FBConfig(zipFiles: List[String] = Nil,
   onlyOptimized: Boolean = false,
   /** This is to compare the runtime of non-optimized or baseline queries with FindBugs */
   onlyBaseline: Boolean = false,
+  debugBench: Boolean = false,
   executionCycles: Int = 1)
 
 object FindBugsAnalyses {
@@ -77,6 +78,7 @@ object FindBugsAnalyses {
     def options = Seq(
       booleanOpt("onlyOptimized", "") { (v, c) => c.copy(onlyOptimized = v) },
       booleanOpt("onlyBaseline", "") { (v, c) => c.copy(onlyBaseline = v) },
+      booleanOpt("debugBench", "") { (v, c) => c.copy(debugBench = v) },
       intOpt("executionCycles",
         "how many cycles of each benchmark should be timed as one unit? Default 1") {
         (v, c) => c.copy(executionCycles = v)
@@ -115,7 +117,7 @@ object FindBugsAnalyses {
   type QueryAnd[+T] = ((ClassFile, Method, Code), T)
 }
 
-class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: Boolean, onlyBaseline: Boolean, executionCycles: Int)
+class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: Boolean, onlyBaseline: Boolean, override val debugBench: Boolean, executionCycles: Int)
   extends FBAnalysesBase
   with FBUnusedFields with FBExplicitGC with FBProtectedFields with FBPublicFinalizer
   with FBSerializableNoConstructor with FBCatchIllegalMonitorStateException with FBCovariantCompareToMethods
@@ -139,7 +141,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
 
   //def this() = this(Seq("src/test/resources/scalatest-1.6.1.jar"))
   def this(config: FBConfig) =
-      this(config.zipFiles, config.onlyOptimized, config.onlyBaseline, config.executionCycles)
+      this(config.zipFiles, config.onlyOptimized, config.onlyBaseline, config.debugBench, config.executionCycles)
   def this() = this(FBConfig(zipFiles = List("src/test/resources/Bugs.zip")))
 
   /* XXX:
