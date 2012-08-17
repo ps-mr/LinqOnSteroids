@@ -13,6 +13,7 @@ trait FBAbstractClassesThatDefinesCovariantEquals {
 
 
   private def analyzeBaseWithoutAbstractions() = {
+    import collection.{Seq => CSeq}
     for {
       classFile ← classFiles
       method @ Method(_, "equals", MethodDescriptor(CSeq(parameterType), BooleanType), _) ← classFile.methods
@@ -40,6 +41,7 @@ trait FBAbstractClassesThatDefinesCovariantEquals {
 
 
   private def analyzeBaseWithAbstractions() = {
+    import collection.{Seq => CSeq}
     import schema._
     for { MethodRecord(classFile, method @ Method(_, "equals", MethodDescriptor(CSeq(parameterType), BooleanType), _)) ← methodsNative
           if method.isAbstract && parameterType == classFile.thisClass //!= ObjectType.Object
