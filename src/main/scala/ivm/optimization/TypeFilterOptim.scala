@@ -26,19 +26,19 @@ trait TypeFilterOptim {
     val containingXParent = fmFun.body.findTotFun(_.children.flatMap(_.children).contains(X))
     val containingX = fmFun.body.findTotFun(_.children.contains(X))
     containingX.headOption match {
-      case Some(instanceOfNode@IfInstanceOf(X, _)) if containingX.forall(_ == instanceOfNode) =>
-        implicit val classTagS = instanceOfNode.tS
+      case Some(instanceOfNode: IfInstanceOf[_, s]) if instanceOfNode.x == X && containingX.forall(_ == instanceOfNode) =>
+        val typeTagS: TypeTag[s] = instanceOfNode.tS
+        val classS = instanceOfNode.classS.asInstanceOf[Class[s]]
+        val v = Fun.gensym[s]()
         if (containingXParent.forall(_ == (instanceOfNode: Exp[Iterable[_]]))) {
-          val v = Fun.gensym()
           val transformed = fmFun.body.substSubTerm(containingXParent.head, Seq(v))
-          buildTypeFilter(coll, instanceOfNode.classS, Fun.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)
+          buildTypeFilter(coll, classS, Fun.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)(typeTagS)
         } else {
-          val v = Fun.gensym()
           val transformed = fmFun.body.substSubTerm(instanceOfNode, Some(v))
           //Note: on the result we would really like to drop all the 'Option'-ness, but that's a separate step.
           //Also, if we are in this branch, it means the client code is really using the 'Option'-ness of the value, say
           //via orElse or getOrElse, so we can't drop it.
-          buildTypeFilter(coll, instanceOfNode.classS, Fun.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)
+          buildTypeFilter(coll, classS, Fun.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)(typeTagS)
         }
       case _ =>
         e
