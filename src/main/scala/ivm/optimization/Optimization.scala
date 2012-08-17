@@ -87,7 +87,7 @@ object Optimization {
     checkIdempotent(exp, idxLookup, "optimize") {
       optimize(_, idxLookup = false)
     } {
-      filterToWithFilter(flatMapToMap(betaDeltaReducer(letTransformer(optimizeBase(exp, idxLookup, forIdx = false)))))
+      filterToWithFilter(betterExists(flatMapToMap(betaDeltaReducer(letTransformer(optimizeBase(exp, idxLookup, forIdx = false))))))
     }
 
   //The result of letTransformer is not understood by the index optimizer.
@@ -218,6 +218,8 @@ object Optimization {
   def flatMapToMap[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.flatMapToMap)
 
   def filterToWithFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.filterToWithFilter)
+
+  def betterExists[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.betterExists)
 
   def letTransformerTrivial[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformerTrivial)
 

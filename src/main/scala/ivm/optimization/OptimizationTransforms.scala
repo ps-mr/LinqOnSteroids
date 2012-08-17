@@ -97,6 +97,17 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
     case e => e
   }
 
+  val betterExists: Exp[_] => Exp[_] = {
+    case IsEmpty(Filter(coll, pred)) => !Exists(coll, pred)
+//    //XXX We have this special case, instead of relying on simplification of
+//    //Not(Not(x)) => x, just because we run this optimization at the very end
+//    //of the pipeline.
+//    case Not(IsEmpty(Filter(coll, pred))) => Exists(coll, pred)
+    //That case won't trigger since the traversal is bottom up. So instead:
+    case Not(Not(x)) => x
+    case e => e
+  }
+
   val normalizer: Exp[_] => Exp[_] = {
     case p@Plus(x, y) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum)
     case e@Eq(x, y) => Eq(Exp.min(x, y), Exp.max(x, y))
