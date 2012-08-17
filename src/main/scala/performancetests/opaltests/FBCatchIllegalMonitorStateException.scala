@@ -1,23 +1,88 @@
 package performancetests
 package opaltests
 
-import ivm._
-import expressiontree._
-import Lifting._
-
-import de.tud.cs.st.bat
-import bat.resolved._
-
-import collection.immutable.Seq
-import collection.{Seq => CSeq}
+import de.tud.cs.st.bat.resolved._
 
 /**
- * User: pgiarrusso
+ * User: pgiarrusso, Ralf Mitschke
  * Date: 4/8/2012
  */
-
+// FB: IMSE_DONT_CATCH_IMSE
 trait FBCatchIllegalMonitorStateException {
   this: FBAnalysesBase =>
+
+
+  private def analyzeBaseWithoutAbstractions() = {
+      for {
+        classFile ← classFiles if classFile.isClassDeclaration
+        method ← classFile.methods
+        body ← method.body.toList
+        exceptionHandler ← body.exceptionHandlers
+        catchType ← exceptionHandler.catchType.toList
+        if catchType == ObjectType("java/lang/IllegalMonitorStateException")
+      } yield (classFile.thisClass, method.name, method.descriptor)
+  }
+
+  private def analyzeSQuOptWithoutAbstractions() = {
+    import de.tud.cs.st.bat.resolved._
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import BATLifting._
+    import performancetests.opaltests.InstructionLifting._
+    import ivm.expressiontree.Util.ExtraImplicits._
+    import schema.squopt._
+      for {
+        classFile ← classFiles.asSmart if classFile.isClassDeclaration
+        method ← classFile.methods
+        body ← method.body
+        exceptionHandler ← body.exceptionHandlers
+        catchType ← exceptionHandler.catchType
+        if catchType ==# ObjectType("java/lang/IllegalMonitorStateException")
+      } yield (classFile.thisClass, method.name, method.descriptor)
+  }
+
+
+  private def analyzeBaseWithAbstractions() = {
+    import schema._
+      for {
+        ConcreteMethodRecord(classFile, method, body) ← methodBodiesModularNative
+        if classFile.isClassDeclaration
+        exceptionHandler ← body.exceptionHandlers
+        catchType ← exceptionHandler.catchType.toList
+        if catchType == ObjectType("java/lang/IllegalMonitorStateException")
+      } yield (classFile.thisClass, method.name, method.descriptor)
+  }
+
+  private def analyzeSQuOptWithAbstractions() = {
+    import de.tud.cs.st.bat.resolved._
+    import ivm._
+    import expressiontree._
+    import Lifting._
+    import BATLifting._
+    import performancetests.opaltests.InstructionLifting._
+    import ivm.expressiontree.Util.ExtraImplicits._
+    import schema.squopt._
+      for {
+        methodRecord ← methodBodiesModularSQuOpt
+        if methodRecord.classFile.isClassDeclaration
+        exceptionHandler ← methodRecord.body.exceptionHandlers
+        catchType ← exceptionHandler.catchType
+        if catchType ==# ObjectType("java/lang/IllegalMonitorStateException")
+      } yield (methodRecord.classFile.thisClass, methodRecord.method.name, methodRecord.method.descriptor)
+
+  }
+
+  def analyzeCatchIllegalMonitorStateException() {
+    // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
+      benchQueryComplete("DONT_CATCH_IMSE") ( // FB: IMSE_DONT_CATCH_IMSE
+                                             analyzeBaseWithoutAbstractions(),
+                                             analyzeBaseWithAbstractions()
+                                           )(
+                                              analyzeSQuOptWithoutAbstractions(),
+                                              analyzeSQuOptWithAbstractions()
+                                            )
+  }
 
   /*
   //2012-07-06 18:12 - optim results, idempotence problem.
@@ -46,27 +111,5 @@ trait FBCatchIllegalMonitorStateException {
               Const(ObjectType(className="java/lang/IllegalMonitorStateException"))))))))))),
       v9554 => LiftTuple2(v9316,v9554)))
       */
-  def analyzeCatchIllegalMonitorStateException() {
-    // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
-    benchQueryComplete("DONT_CATCH_IMSE") { // FB: IMSE_DONT_CATCH_IMSE
-      for {
-        classFile ← classFiles if classFile.isClassDeclaration
-        method ← classFile.methods
-        body ← method.body.toList
-        exceptionHandler ← body.exceptionHandlers
-        catchType ← exceptionHandler.catchType.toList
-        if catchType == ObjectType("java/lang/IllegalMonitorStateException")
-      } yield (classFile, method)
-    } {
-      import BATLifting._
-      for {
-        classFile ← classFiles.asSmart if classFile.isClassDeclaration
-        method ← classFile.methods
-        body ← method.body
-        exceptionHandler ← body.exceptionHandlers
-        catchType ← exceptionHandler.catchType
-        if catchType ==# ObjectType("java/lang/IllegalMonitorStateException")
-      } yield (classFile, method)
-    }
-  }
+
 }
