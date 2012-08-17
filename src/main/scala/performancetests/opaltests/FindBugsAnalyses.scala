@@ -91,22 +91,23 @@ object FindBugsAnalyses {
   }
 
   def main(args: Array[String]) {
-    if (args.length == 0 || !args.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
-      printUsage
-      sys.exit(1)
-    }
-
-    for (arg ← args) {
-      val file = new java.io.File(arg)
-      if (!file.canRead || file.isDirectory) {
-        println("The file: " + file + " cannot be read.")
-        printUsage()
-        sys.exit(1)
-      }
-    }
-
     //Use toList to convert args to an immutable sequence - arrays can be converted implicitly only to generic sequences (in particular, mutable ones)!
     parser.parse(args.toList, FBConfig()) map { config =>
+      import config.zipFiles
+      if (zipFiles.length == 0 || !zipFiles.forall(arg ⇒ arg.endsWith(".zip") || arg.endsWith(".jar"))) {
+        printUsage
+        sys.exit(1)
+      }
+
+      for (arg ← zipFiles) {
+        val file = new java.io.File(arg)
+        if (!file.canRead || file.isDirectory) {
+          println("The file: " + file + " cannot be read.")
+          printUsage()
+          sys.exit(1)
+        }
+      }
+
       (new FindBugsAnalyses(config)).analyze()
     } getOrElse {
       sys.exit(1)
