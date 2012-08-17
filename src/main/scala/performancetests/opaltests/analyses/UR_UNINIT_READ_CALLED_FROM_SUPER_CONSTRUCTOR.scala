@@ -110,7 +110,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
     private def analyzeBaseWithAbstractions() = {
         for (schema.BytecodeInstrIndexed(classFile, method,
              GETFIELD(declaringClass, name, fieldType), idx) ← methodBodiesInstructionsIndexedModularNative
-             if method.body.isDefined &&
+             if
                 method.name != "<init>" &&
                 !method.isStatic &&
                 isOverrideNative(classFile)(method);
@@ -134,7 +134,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
             import schema.squopt._
           for { instructionWithIndex ← methodBodiesInstructionsIndexedModularSQuOpt
                 getField ← instructionWithIndex.instruction.ifInstanceOf[GETFIELD]
-                if(  instructionWithIndex.method.body.isDefined &&
+                if(
                      instructionWithIndex.method.name !=# "<init>" &&
                      !instructionWithIndex.method.isStatic &&
                      isOverrideSQuOpt(instructionWithIndex.classFile)(instructionWithIndex.method))

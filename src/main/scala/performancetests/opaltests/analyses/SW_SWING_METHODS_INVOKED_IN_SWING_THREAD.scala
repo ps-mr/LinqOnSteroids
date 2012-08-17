@@ -74,8 +74,7 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
   private def analyzeBaseWithAbstractions() = {
           for ( schema.BytecodeInstrIndexed(classFile, method,
                                     INVOKEVIRTUAL(targetType, name, desc), idx) ← methodBodiesInstructionsIndexedModularNative
-                if (method.body.isDefined &&
-                    ((
+                if (((
                       method.isPublic &&
                       method.isStatic &&
                       method.name == "main"
@@ -104,7 +103,7 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
       import schema.squopt._
         for ( instructionInfo ← methodBodiesInstructionsIndexedModularSQuOpt;
               invoke ← instructionInfo.instruction.ifInstanceOf[INVOKEVIRTUAL]
-              if (  instructionInfo.method.body.isDefined &&
+              if (
                     ((
                       instructionInfo.method.isPublic &&
                       instructionInfo.method.isStatic &&
