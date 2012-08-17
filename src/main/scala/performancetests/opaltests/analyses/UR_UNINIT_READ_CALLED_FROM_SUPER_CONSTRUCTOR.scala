@@ -29,7 +29,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
         (classFile.thisClass,method.name, method.descriptor, declaringClass, name, fieldType, idx)
     }
 
-    private def analyzeBaseCompletelyWithoutAbstractions() = {
+    private def analyzeBaseCompletelyWithoutAbstractionsAsInlined() = {
       for (classFile ← classFiles;
            method ← classFile.methods if (
                                          method.body.isDefined &&
@@ -52,15 +52,18 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
                  if (!superClasses.isDefined) {
                     None
                  }
-                 val superConstructor = constructor.body.get.instructions.collectFirst {
-                                   case INVOKESPECIAL(trgt, n, d)
-                                     if superClasses.get.contains(trgt.asInstanceOf[ObjectType]) =>
-                                     (trgt.asInstanceOf[ObjectType], n, d)
+                 else
+                 {
+                   val superConstructor = constructor.body.get.instructions.collectFirst {
+                                     case INVOKESPECIAL(trgt, n, d)
+                                       if superClasses.get.contains(trgt.asInstanceOf[ObjectType]) =>
+                                       (trgt.asInstanceOf[ObjectType], n, d)
 
-                 }
-                 superConstructor match {
-                   case Some((targetType, name, desc)) => getMethodDeclarationNative(targetType, name, desc)
-                   case None => None // we encountered java.lang.Object
+                   }
+                   superConstructor match {
+                     case Some((targetType, name, desc)) => getMethodDeclarationNative(targetType, name, desc)
+                     case None => None // we encountered java.lang.Object
+                   }
                  }
                }
            if(
