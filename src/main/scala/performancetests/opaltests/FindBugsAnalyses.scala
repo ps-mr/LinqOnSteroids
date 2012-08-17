@@ -268,6 +268,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
           case _ ⇒ false
         })
       } yield classFile.thisClass.className
+
     } {
       import BATLifting._
 
@@ -283,10 +284,13 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   test("SuperCloneMissing") {
     analyzeCloneDoesNotCallSuperClone()
   }
+
+
+  // FB: CN_IDIOM_NO_SUPER_CALL
   def analyzeCloneDoesNotCallSuperClone() {
-    //XXX This analysis was changed for BAT, and now adapted here; retest.
-    benchQueryComplete("SUPER_CLONE_MISSING"){ // FB: CN_IDIOM_NO_SUPER_CALL")
-      // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
+
+    def analyzeBaseWithoutAbstractions() =
+    {
       for {
         classFile ← classFiles
         if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
@@ -298,8 +302,22 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
           case INVOKESPECIAL(`superClass`, "clone", MethodDescriptor(CSeq(), ObjectType.Object)) ⇒ true
           case _ ⇒ false
         })
-      } yield (classFile, method)
-    } {
+      } yield (classFile.thisClass, method.name, method.descriptor)
+    }
+
+    def analyzeBaseWithAbstractions() =
+    {
+      for { schema.ConcreteMethodRecord(classFile, method @ Method(_, "clone", MethodDescriptor(CSeq(), ObjectType.Object), _), body) ← methodBodiesModularNative
+            if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration && classFile.superClass.isDefined &&
+               !(body.instructions exists {
+                  case INVOKESPECIAL(superClass, "clone", MethodDescriptor(CSeq(), ObjectType.Object)) ⇒ superClass == classFile.superClass.get
+                  case _ ⇒ false
+                })
+      } yield (classFile.thisClass, method.name, method.descriptor)
+    }
+
+
+    def analyzeSQuOptWithoutAbstractions() = {
       import BATLifting._
       import InstructionLifting._
       for {
@@ -310,11 +328,38 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
         if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
         body ← method.body
         if !(body.instructions.typeFilter[INVOKESPECIAL] exists {
-          instr =>
+            instr =>
             instr.name ==# "clone" && instr.methodDescriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && instr.declaringClass ==# superClass
         })
-      } yield (classFile, method)
+      } yield (classFile.thisClass, method.name, method.descriptor)
     }
+
+    def analyzeSQuOptWithAbstractions() = {
+      import BATLifting._
+      import InstructionLifting._
+      import schema.squopt._
+      for { methodRecord ← methodBodiesModularSQuOpt
+            if !methodRecord.classFile.isInterfaceDeclaration &&
+               !methodRecord.classFile.isAnnotationDeclaration &&
+                methodRecord.classFile.superClass.isDefined &&
+                methodRecord.method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) &&
+                methodRecord.method.name ==# "clone" &&
+                !( methodRecord.body.instructions.typeFilter[INVOKESPECIAL] exists { instr =>
+                            instr.name ==# "clone" && instr.methodDescriptor ==# MethodDescriptor(Seq(), ObjectType.Object) &&
+                            instr.declaringClass ==# methodRecord.classFile.superClass.get
+                        })
+      } yield (methodRecord.classFile.thisClass, methodRecord.method.name, methodRecord.method.descriptor)
+    }
+
+    //XXX This analysis was changed for BAT, and now adapted here; retest.
+    benchQueryComplete("SUPER_CLONE_MISSING")( // FB: CN_IDIOM_NO_SUPER_CALL")
+      // FINDBUGS: CN: clone method does not call super.clone() (CN_IDIOM_NO_SUPER_CALL)
+      analyzeBaseWithoutAbstractions(),
+      analyzeBaseWithAbstractions()
+    )(
+      analyzeSQuOptWithoutAbstractions(),
+      analyzeSQuOptWithAbstractions()
+    )
   }
 
   test("NotCloneable") {
