@@ -144,8 +144,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         (altQuery, i) <- altQueries.zipWithIndex
         altMsg = "%s Los - Alternative %d" format (msg, i)
         //Benchmark optimization time
-        (altOptimizedNoIdx, _ /*altOptimizationTime*/) = benchOptimize(altMsg, altQuery, idxLookup = false)
-        (altOptimizedWithIdx, _ /*altOptimizationTime*/) = benchOptimize(altMsg, altQuery, idxLookup = true)
+        (altOptimizedNoIdx, _ /*altOptimizationTime*/) = benchOptimize(altMsg + " (no indexes)", altQuery, idxLookup = false)
+        (altOptimizedWithIdx, _ /*altOptimizationTime*/) = benchOptimize(altMsg + " (with indexes)", altQuery, idxLookup = true)
       } yield (altMsg, altOptimizedNoIdx, altOptimizedWithIdx, altQuery, i)
 
       for ((altMsg, altOptimizedNoIdx, altOptimizedWithIdx, altQuery, i) <- optimizedQueries) {
