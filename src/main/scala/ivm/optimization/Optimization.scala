@@ -88,7 +88,7 @@ object Optimization {
       optimize(_, idxLookup = false)
     } {
       //XXX: calling splitFilters instead of filterToWithFilter introduces a crazy bug in ITA_INEFFICIENT_TO_ARRAY
-      filterToWithFilter(betterExists(flatMapToMap(betaDeltaReducer(letTransformer(optimizeBase(exp, idxLookup, forIdx = false))))))
+      filterToWithFilter(betterExists(flatMapToMap(betaDeltaReducer(betaDeltaReducer(letTransformer(optimizeBase(exp, idxLookup, forIdx = false)))))))
     }
 
   //The result of letTransformer is not understood by the index optimizer.
@@ -101,22 +101,24 @@ object Optimization {
       flatMapToMap(optimizeBase(exp, idxLookup, forIdx = true))
     }
 
-  //TODO: rewrite using function composition
-  //The result should be in flatMap normal form.
-  private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean, forIdx: Boolean): Exp[T] =
-    postIndexing(forIdx, (if (idxLookup) shareSubqueries[T] _ else identity[Exp[T]] _)(mapToFlatMap(preIndexing(exp)))) //the call to reducer is to test.
+  private def maybeIndex[T](idxLookup: Boolean): Exp[T] => Exp[T] =
+    if (idxLookup) shareSubqueries else identity
 
   //The result should be in flatMap normal form.
-  private def postIndexing[T](forIdx: Boolean, exp: Exp[T]): Exp[T] =
+  private def optimizeBase[T](exp: Exp[T], idxLookup: Boolean, forIdx: Boolean): Exp[T] =
+    postIndexing(forIdx, idxLookup, maybeIndex(idxLookup)(mapToFlatMap(preIndexing(exp))))
+
+  //The result should be in flatMap normal form.
+  private def postIndexing[T](forIdx: Boolean, idxLookup: Boolean, exp: Exp[T]): Exp[T] =
   //Why is mergeFilterWithMap&what comes after done only after indexing? I guess to avoid "hiding" filters inside map operations.
-    handleFilters(mapToFlatMap(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(
+    handleFilters(maybeIndex(idxLookup)(mapToFlatMap(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(
       mergeFilters( //Merge filters again after indexing, since it introduces new filters.
         simplifyFilters(
           // XXX: tests if existsRenester works in this position, if it does not leave optimization
           // opportunities which require more aggressive optimizations, and in general for any negative side-effect
           // from doing this so late. Unfortunately, this must done after indexing.
           // It used instead to be called at the beginning of physicalOptimize.
-          resimplFilterIdentity(if (forIdx) exp else existsRenester(exp))))))))))))
+          resimplFilterIdentity(if (forIdx) exp else existsRenester(exp)))))))))))))
 
   private[optimization] def preIndexing[T](exp: Exp[T]): Exp[T] = //No type annotation can be dropped in the body :-( - not without
   // downcasting exp to Exp[Nothing].
