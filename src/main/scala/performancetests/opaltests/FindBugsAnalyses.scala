@@ -526,17 +526,17 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
 
   if (!onlyBaseline) {
-  Optimization.pushEnableDebugLog(false)
+    Optimization.pushEnableDebugLog(false)
 
-  benchMark("Method-name index creation (for e.g. FINALIZER_NOT_PROTECTED)"/* FB:  FI_PUBLIC_SHOULD_BE_PROTECTED*/)(Optimization.addIndex(methodNameIdx, Some(
-    CollectionUtils.groupBy(for {
-      classFile ← classFiles
-      method ← classFile.methods
-    } yield (classFile, method))(_._2.name))))
-  benchMark("Exception-handler-type index creation (for e.g. DONT_CATCH_IMSE)"/* FB: DONT_CATCH_IMSE*/)(Optimization.addIndex(excHandlerTypeIdx))
-  benchMark("Instructions type-index creation")(Optimization.addIndex(typeIdx))
+    benchMark("Method-name index creation (for e.g. FINALIZER_NOT_PROTECTED)"/* FB:  FI_PUBLIC_SHOULD_BE_PROTECTED*/)(Optimization.addIndex(methodNameIdx, Some(
+      CollectionUtils.groupBy(for {
+        classFile ← classFiles
+        method ← classFile.methods
+      } yield (classFile, method))(_._2.name))))
+    benchMark("Exception-handler-type index creation (for e.g. DONT_CATCH_IMSE)"/* FB: DONT_CATCH_IMSE*/)(Optimization.addIndex(excHandlerTypeIdx))
+    benchMark("Instructions type-index creation")(Optimization.addIndex(typeIdx))
 
-  Optimization.popEnableDebugLog()
+    Optimization.popEnableDebugLog()
   }
 
   //def setupIndexes() {
@@ -580,17 +580,17 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
 
   def analyze() {
     if (!onlyInFindBugs) {
-    analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR()
-    analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
-    analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
-    analyzeDP_DO_INSIDE_DO_PRIVILEGED()
-    analyzeFI_USELESS()
-    analyzeITA_INEFFICIENT_TO_ARRAY()
-    analyzeMS_PKGPROTECT()
-    analyzeMS_SHOULD_BE_FINAL()
-    analyzeSE_BAD_FIELD_INNER_CLASS()
-    analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD()
-    analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
+      analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR()
+      analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
+      analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
+      analyzeDP_DO_INSIDE_DO_PRIVILEGED()
+      analyzeFI_USELESS()
+      analyzeITA_INEFFICIENT_TO_ARRAY()
+      analyzeMS_PKGPROTECT()
+      analyzeMS_SHOULD_BE_FINAL()
+      analyzeSE_BAD_FIELD_INNER_CLASS()
+      analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD()
+      analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
     }
     analyzeProtectedFields()
     analyzeUnusedFields()
