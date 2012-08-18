@@ -13,6 +13,7 @@ import collection.TraversableLike
  */
 
 trait Fusion {
+  this: SimplificationsOptimTransforms =>
   private def buildMergedMaps[
     T, U, V, To <: Traversable[V] with TraversableLike[V, To]](coll: Exp[Traversable[T]],
                                                                f: Fun[T, U], g: Fun[U, V],
@@ -78,6 +79,11 @@ trait Fusion {
       coll filter Fun.makefun(test, fmFun.x) flatMap Fun.makefun(thenBranch, fmFun.x)
     case FlatMap(coll, fmFun@FuncExpBody(FlatMap(IfThenElse(test, thenBranch, elseBranch@ExpSeq(Seq())), fmFun2))) =>
       coll filter Fun.makefun(test, fmFun.x) flatMap Fun.makefun(thenBranch flatMap fmFun2, fmFun.x)
+    //This case merges a transformed filter with a filter to allow the merged filter to be recognized by the remaining cases
+    //during the rest of the upward traversal.
+    //XXX Matching against thenBranch@ExpSeq(Seq(el)) instead of just thenBranch is restrictive, but probably helps.
+    case Filter(IfThenElse(test, thenBranch@ExpSeq(Seq(el)), elseBranch@ExpSeq(Seq())), pred) =>
+      (betaReduction orElse emptyTransform)(letExp(el)(elVal => if_# (test && pred(elVal)) { Seq(elVal) } else_# { Seq.empty }))
     case e => e
   }
 
