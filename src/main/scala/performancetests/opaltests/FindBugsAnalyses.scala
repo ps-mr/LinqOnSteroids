@@ -525,6 +525,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   } yield (asExp((classFile, method, body)), instruction)
   val typeIdx: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = typeIdxBase.groupByTupleType2
 
+  if (!onlyBaseline) {
   Optimization.pushEnableDebugLog(false)
 
   benchMark("Method-name index creation (for e.g. FINALIZER_NOT_PROTECTED)"/* FB:  FI_PUBLIC_SHOULD_BE_PROTECTED*/)(Optimization.addIndex(methodNameIdx, Some(
@@ -536,6 +537,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   benchMark("Instructions type-index creation")(Optimization.addIndex(typeIdx))
 
   Optimization.popEnableDebugLog()
+  }
 
   //def setupIndexes() {
     /*
@@ -569,7 +571,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   //}
 
   def tearDownIndexes() {
-    if (!onlyOptimized) {
+    if (!onlyOptimized && !onlyBaseline) {
       Optimization.removeIndex(methodNameIdx)
       Optimization.removeIndex(excHandlerTypeIdx)
       Optimization.removeIndex(typeIdx)
