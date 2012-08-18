@@ -2,7 +2,12 @@
 now=`timestamp`
 for i in -ScalaTest -JDK ''; do
   for j in '' -raw; do
-    src=LOSTestLog$i$j.csv
-    [ -f $src ] && mv $src away/LOSTestLog$i$j-$now.csv
+    name=LOSTestLog$i$j
+    src=$name.csv
+    [ -f $src ] && mv $src away/$name-$now.csv
   done
+done
+for name in startup-JDK-baseline startup-JDK-optimized; do
+    src=$name.csv
+    [ -f $src ] && mv $src away/$name-$now.csv
 done
