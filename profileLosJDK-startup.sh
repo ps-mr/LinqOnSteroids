@@ -6,18 +6,28 @@
 #done
 
 out=profileLogJDK-startup-`timestamp`
-outCSV=startup-JDK.csv
-nIters=40
+outCSVOptimized=startup-JDK-optimized.csv
+outCSVBaseline=startup-JDK-baseline.csv
+nIters=5
 
 gitV=$(git describe --always --dirty --abbrev=40)
 echo "Git version: $gitV" > $out
-> $outCSV
+
+> $outCSVOptimized
+> $outCSVBaseline
 
 . javaSettings.inc
+
 for ((i=0; i < $nIters; i++)); do
   {
-    $(which time) -f "$gitV;%e;%U;%S;%P" ./start.sh data/rt.jar --onlyOptimized
+    $(which time) -f "$gitV;%e;%U;%S;%P" ./start.sh data/rt.jar --onlyOptimized 1 --onlyInFindBugs 1 --debugBench 1
   } >>$out 2>&1
-  tail -1 $out >> $outCSV
+  tail -1 $out >> $outCSVOptimized
+
+  {
+    $(which time) -f "$gitV;%e;%U;%S;%P" ./start.sh data/rt.jar --onlyBaseline 1 --onlyInFindBugs 1 --debugBench 1
+  } >>$out 2>&1
+  tail -1 $out >> $outCSVBaseline
 done
+
 rm -f LOSTestLog.csv

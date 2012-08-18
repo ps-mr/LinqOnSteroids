@@ -69,6 +69,7 @@ case class FBConfig(zipFiles: List[String] = Nil,
   onlyOptimized: Boolean = false,
   /** This is to compare the runtime of non-optimized or baseline queries with FindBugs */
   onlyBaseline: Boolean = false,
+  onlyInFindBugs: Boolean = false,
   debugBench: Boolean = false,
   executionCycles: Int = 1)
 
@@ -79,6 +80,7 @@ object FindBugsAnalyses {
       //XXX: these should all use flag, not booleanOpt.
       booleanOpt("onlyOptimized", "") { (v, c) => c.copy(onlyOptimized = v) },
       booleanOpt("onlyBaseline", "") { (v, c) => c.copy(onlyBaseline = v) },
+      booleanOpt("onlyInFindBugs", "") { (v, c) => c.copy(onlyInFindBugs = v) },
       booleanOpt("debugBench", "") { (v, c) => c.copy(debugBench = v) },
       intOpt("executionCycles",
         "how many cycles of each benchmark should be timed as one unit? Default 1") {
@@ -118,7 +120,7 @@ object FindBugsAnalyses {
   type QueryAnd[+T] = ((ClassFile, Method, Code), T)
 }
 
-class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: Boolean, onlyBaseline: Boolean, override val debugBench: Boolean, executionCycles: Int)
+class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: Boolean, override val onlyBaseline: Boolean, onlyInFindBugs: Boolean, override val debugBench: Boolean, executionCycles: Int)
   extends FBAnalysesBase
   with FBUnusedFields with FBExplicitGC with FBProtectedFields with FBPublicFinalizer
   with FBSerializableNoConstructor with FBCatchIllegalMonitorStateException with FBCovariantCompareToMethods
@@ -142,7 +144,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
 
   //def this() = this(Seq("src/test/resources/scalatest-1.6.1.jar"))
   def this(config: FBConfig) =
-      this(config.zipFiles, config.onlyOptimized, config.onlyBaseline, config.debugBench, config.executionCycles)
+      this(config.zipFiles, config.onlyOptimized, config.onlyBaseline, config.onlyInFindBugs, config.debugBench, config.executionCycles)
   def this() = this(FBConfig(zipFiles = List("src/test/resources/Bugs.zip")))
 
   /* XXX:
@@ -575,6 +577,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   }
 
   def analyze() {
+    if (!onlyInFindBugs) {
     analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR()
     analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
     analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
@@ -585,6 +588,8 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
     analyzeMS_SHOULD_BE_FINAL()
     analyzeSE_BAD_FIELD_INNER_CLASS()
     analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD()
+    analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
+    }
     analyzeProtectedFields()
     analyzeUnusedFields()
     analyzeExplicitGC()
@@ -598,7 +603,6 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
     analyzeCloneableNoClone()
     analyzeCloneDoesNotCallSuperClone()
     analyzeCloneButNotCloneable()
-    analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
   }
 
   override def afterAll() {
