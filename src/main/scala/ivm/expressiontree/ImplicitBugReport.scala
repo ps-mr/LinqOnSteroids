@@ -97,3 +97,63 @@ object ImplicitBugReport {
 //    println()
 //  }
 }
+/*
+object WarnBugReport {
+  //case class FlatMap[T]()
+  sealed abstract class FoundNode[T, Repr]/*presence of parameters is irrelevant*/
+  case class FoundFilter[T, Repr](/*presence of parameters is irrelevant*/) extends FoundNode[T, Repr]
+  case class FoundTypeCase[BaseT, Repr](/*presence of parameters is irrelevant*/) extends FoundNode[BaseT, Repr]
+  //This gives no warning:
+  // def foo(): Seq[(FlatMap[Int, Traversable[Int], Int, Traversable[Int]], FoundNode[_, _])] = ???
+
+  //These gives a warning:
+  //def foo(): Seq[(FlatMap[_, _, _, _], FoundNode[_, _])] = ???
+  def foo(): Seq[(Some[_], FoundNode[_, _])] = ???
+
+  //This also gives no warning:
+  //def foo(): Seq[(Option[_], FoundNode[_, _])] = ???
+
+  def collectFirst[T, U](coll: Traversable[T])(f: T => Option[U]): Option[U] = ???
+  collectFirst(foo()) {
+    case (parentNode: Some[t], fn1: FoundNode[_, _]) => ??? //Warning here
+    //case (parentNode, fn1: FoundNode[_, _]) => ??? //No warning if I add this case.
+  }
+
+  val f: Some[_] = ???
+  (f, 1) match {
+    case (x: Some[t], _) => ??? //No warning
+  }
+  (f, (??? : FoundNode[_, _])) match {
+    case (x: Some[t], _: FoundNode[_, _]) => ??? //No warning
+  }
+  val v: (Some[_], FoundNode[_, _]) = (f, ???)
+  v match {
+    case (x: Some[t], _: FoundNode[_, _]) => ???
+  }
+  v match {
+    case (x: Some[t], _) => ???
+  }
+}
+*/
+
+object ExhaustivityWarnBugReportMinimal {
+  //sealed is needed for the warning.
+  sealed abstract class FoundNode[T]/*presence of parameters is irrelevant*/
+  case class FoundFilter[T](/*presence of parameters is irrelevant*/) extends FoundNode[T]
+  case class FoundTypeCase[T](/*presence of parameters is irrelevant*/) extends FoundNode[T]
+  val f: Some[_] = ???
+  val v: (Some[_], FoundNode[_]) = (f, ???)
+  v match {
+    case (x: Some[t], _: FoundNode[_]) => ???
+  }
+  //Warning here:
+  v match {
+    case (x: Some[t], _) => ???
+  }
+
+  //No warning here:
+  val v2: (Some[_], Int) = (f, ???)
+  v2 match {
+    case (x: Some[t], _) => ???
+  }
+}
