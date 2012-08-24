@@ -46,6 +46,8 @@ libraryDependencies += "com.google.code.findbugs" % "jsr305" % "1.3.9"
 
 //libraryDependencies in ThisBuild += "de.tud.cs.st" %% "bat-core" % "1.0.0-SNAPSHOT"
 
+//libraryDependencies in ThisBuild += "de.tud.cs.st" % "bat-core" % "1.0.0-SNAPSHOT" cross CrossVersion.full
+
 //libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
