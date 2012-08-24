@@ -134,7 +134,6 @@ object WarnBugReport {
     case (x: Some[t], _) => ???
   }
 }
-*/
 
 object ExhaustivityWarnBugReportMinimal {
   //sealed is needed for the warning.
@@ -157,3 +156,4 @@ object ExhaustivityWarnBugReportMinimal {
     case (x: Some[t], _) => ???
   }
 }
+*/
