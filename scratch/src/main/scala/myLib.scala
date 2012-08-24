@@ -58,6 +58,8 @@ object myLib extends App {
   //Test printf
   printf("hello %s!\n", "world")
 
+  println(stringify(smart(c1.toString)))
+  show(smart(c1.toString))
   println("With macros: " + smart(c1.toString))
   println("With macros: " + smart(c1.toString.toString))
   println("With macros: " + smart(c1.toString + "foo"))
