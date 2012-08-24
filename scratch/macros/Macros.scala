@@ -2,7 +2,33 @@ import scala.reflect.macros.Context
 import collection.mutable.ListBuffer
 import collection.mutable.Stack
 
-object Macros {
+trait MacroUtils {
+  import MacroUtils._
+  def stringify(arg: Any): String = macro stringify_impl
+  def show(arg: Any) = macro show_impl
+}
+object MacroUtils {
+  def stringify_base(c: Context)(arg: c.Expr[Any]): String =
+    arg.tree.toString //The result here is a bit ugly - we need to print the tree before desugaring.
+  def stringify_impl(c: Context)(arg: c.Expr[Any]): c.Expr[String] = {
+    import c.universe._
+    //c.Expr[String](Literal(Constant(stringify_base(c)(arg))))
+    //reify(c.Expr[String](Literal(Constant(stringify_base(c)(arg)))).splice)
+    val v = stringify_base(c)(arg)
+    //reify(v) // This reifies the variable reference.
+    //println(showRaw(reify(v).tree))
+    c.Expr[String](Literal(Constant(v)))
+  }
+
+  def show_impl(c: Context)(arg: c.Expr[Any]): c.Expr[Unit] = {
+    import c.universe._
+    val v = stringify_base(c)(arg)
+    //val v1 = reify(v)
+    val v1 = c.Expr[String](Literal(Constant(v)))
+    reify(println("Expr: %s evaluates to %s" format (v1.splice, arg.splice)))
+  }
+}
+object Macros extends MacroUtils {
   // macro definition is a normal function with anything you fancy in its signature
   // its body, though, is nothing more that a reference to an implementation
   def printf(format: String, params: Any*): Unit = macro printf_impl
