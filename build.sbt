@@ -10,7 +10,7 @@ version := "0.3-SNAPSHOT"
 
 //scalaVersion in ThisBuild := "2.9.2"
 
-scalaVersion in ThisBuild := "2.10.0-M6"
+scalaVersion in ThisBuild := "2.10.0-M7"
 
 //resolvers in ThisBuild += Resolver.sonatypeRepo("snapshots")
 
@@ -32,7 +32,8 @@ libraryDependencies += "junit" % "junit" % "4.8.2" % "test->default"
 //We can't restrict this to "test" as long as FindBugsAnalysis is in main, including its "testing" part.
 //libraryDependencies += "org.scalatest" %% "scalatest" % "1.7.1"// % "test"
 //libraryDependencies <+= scalaVersion (ver => "org.scalatest" % ("scalatest_" + ver) % ("1.9-%s-B2" format ver))
-libraryDependencies += "org.scalatest" % ("scalatest_" + "2.10.0-M6") % ("1.9-%s-B2" format "2.10.0-M6")
+//libraryDependencies += "org.scalatest" % "scalatest" % ("1.9-%s-B1" format "2.10.0-M7") cross CrossVersion.full
+libraryDependencies <+= scalaVersion (ver => "org.scalatest" % "scalatest" % ("1.9-%s-B1" format ver) cross CrossVersion.full)
 
 libraryDependencies += "com.google.guava" % "guava" % "13.0"
 
