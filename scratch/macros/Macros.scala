@@ -1,4 +1,4 @@
-import scala.reflect.makro.Context
+import scala.reflect.macros.Context
 import collection.mutable.ListBuffer
 import collection.mutable.Stack
 
@@ -11,7 +11,7 @@ object Macros {
   // required signature is quite involved, but don't be scared
   // if the compiler is unhappy, it will print the signature it wants in the error message
   def printf_impl(c: Context)(format: c.Expr[String], params: c.Expr[Any]*): c.Expr[Unit] = {
-    // compiler API is exposed in scala.reflect.makro.Context
+    // compiler API is exposed in scala.reflect.macros.Context
     // its most important part, reflection API, is accessible via c.mirror
     // it's customary to import c.mirror._, because it includes a lot of routinely used stuff
     import c.universe._

@@ -1,4 +1,4 @@
-scalaVersion in ThisBuild := "2.10.0-M6"
+scalaVersion in ThisBuild := "2.10.0-M7"
 
 name := "scratch"
 
