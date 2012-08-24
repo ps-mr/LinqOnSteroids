@@ -120,11 +120,11 @@ object Macros extends MacroUtils {
     //Main problem: we need to visit the tree recursively.
     expr.tree match {
       case Apply(Select(op1, member), l @ List()) if anyUnaryMethods contains member.decoded =>
-        c.Expr(Apply(Ident(newTermName("dummy_" + member.encoded)), op1 :: l))
+        c.Expr(Apply(Ident(newTermName("smart_" + member.encoded)), op1 :: l))
         //c.Expr(Apply(Ident(newTermName("toString")), List(op1)))
         //c.Expr(Apply(Ident(member), List(op1)))
       case Apply(Select(op1, member), l @ List(op2)) if anyBinaryMethods contains member.decoded =>
-        c.Expr(Apply(Ident(newTermName("dummy_" + member.encoded)), op1 :: l))
+        c.Expr(Apply(Ident(newTermName("smart_" + member.encoded)), op1 :: l))
 //      case Apply(Select(op1, member), List(op2)) if member.decoded == "==" =>
 //        c.Expr(Apply(Ident(newTermName("eq")), List(op1, op2)))
 //      case Apply(Select(op1, member), List(op2)) if member.decoded == "!=" =>
@@ -153,25 +153,25 @@ object Macros extends MacroUtils {
             if (anyUnaryMethods ++ anyRefUnaryMethods ++ anyTypeUnaryMethod) contains member.decoded
           =>
             //Use reify and splices:
-            //reify((c.Expr[Any => Nothing](Ident(newTermName("dummy_" +
+            //reify((c.Expr[Any => Nothing](Ident(newTermName("smart_" +
               //member.encoded))).value)(op1))
               ////member.encoded))).value)(op1, l.map(c.Expr[Any](_).value):_*))
             println("Op1: " + showRaw(op1))
-            Apply(Ident(newTermName("dummy_" + member.encoded)), transform(op1) :: l)
+            Apply(Ident(newTermName("smart_" + member.encoded)), transform(op1) :: l)
           case Apply(Select(op1, member), l @ List(op2)) if anyBinaryMethods contains member.decoded =>
-            Apply(Ident(newTermName("dummy_" + member.encoded)), (op1 :: l) map (transform(_)))
+            Apply(Ident(newTermName("smart_" + member.encoded)), (op1 :: l) map (transform(_)))
           case TypeApply(Select(op1, member), typeArgs @ List(typeArg))
             if anyTypeUnaryMethod contains member.decoded
           =>
             Apply(TypeApply(
-              Ident(newTermName("dummy_" + member.encoded)), typeArgs), List(transform(op1)))
+              Ident(newTermName("smart_" + member.encoded)), typeArgs), List(transform(op1)))
           case Apply(
             TypeApply(Select(op1, member), typeArgs @ List(typeArg)),
             l2 @ List(arg))
             if anyTypeBinaryMethod contains member.decoded
           =>
             Apply(TypeApply(
-              Ident(newTermName("dummy_" + member.encoded)), typeArgs), (op1 :: l2) map (transform(_)))
+              Ident(newTermName("smart_" + member.encoded)), typeArgs), (op1 :: l2) map (transform(_)))
           case _ => super.transform(tree)
         }
         level -= 1
