@@ -55,8 +55,6 @@ scalacOptions ++= Seq("-unchecked", "-deprecation")
 scalacOptions ++= Seq("-feature", "-language:implicitConversions",
   "-language:higherKinds", "-language:existentials")
 
-scalacOptions += "-target:jvm-1.5-fjbg"
-
 scalacOptions ++= Seq("-Ywarn-adapted-args", "-Ywarn-inaccessible", 
   "-Ywarn-nullary-override", "-Ywarn-nullary-unit", "-Ywarn-numeric-widen") //All -Ywarn except -Ywarn-dead-code, which gives tons
 //of false positives, and -Ywarn-value-discard, which doesn't sound relevant.
