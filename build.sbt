@@ -166,8 +166,6 @@ object GitVersion {
 //seq(StartScriptPlugin.startScriptForClassesSettings: _*)
 seq(StartScriptPlugin.startScriptForJarSettings: _*)
 
-mainClass in Test := Some("performancetests.opaltests.FindBugsAnalyses")
-
 mainClass in Compile := Some("performancetests.opaltests.FindBugsAnalyses")
 
 //generate fat JAR
