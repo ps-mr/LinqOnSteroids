@@ -1,7 +1,7 @@
 #!/bin/bash -e
 #git pull
 DATA=data/rt.jar
-nIters=1
+nIters=3
 . javaSettings.inc
 for ((i=0; i < $nIters; i++)); do
   out=profileLogJDK-`timestamp`
