@@ -125,7 +125,7 @@ initialCommands in (Test, console) := """
 //
     import de.tud.cs.st.bat
     import bat.resolved._
-    import analyses._
+    import bat.resolved.analyses._
 //
     import reader.Java6Framework
 """
