@@ -7,12 +7,7 @@ case class ToString[T](e: Exp[T]) extends Arity1OpExp[T, String, ToString[T]](e)
   def operator = "=="
 }
 
-object MacroTest extends scala.App with tests.TestUtil {
-  import Lifting._
-  import Macros._
-
-  val c1 = asExp(1)
-  val c2 = asExp(2)
+object Helpers {
   def smart_toString[T](v: Exp[T]) = ToString(v)
   def smart_toString(v: Any) = v.toString
 
@@ -37,6 +32,15 @@ object MacroTest extends scala.App with tests.TestUtil {
     implicitly[ClassTag[T]].runtimeClass.cast(a).asInstanceOf[T]
   def smart_asInstanceOf[T: ClassTag: TypeTag](a: Exp[Any]): Exp[T] =
     AsInstanceOf(a)
+}
+
+object MacroTest extends scala.App with tests.TestUtil {
+  import Lifting._
+  import Macros._
+  import Helpers._
+
+  val c1 = asExp(1)
+  val c2 = asExp(2)
   /*
   //Test printf
   printf("hello %s!\n", "world")
@@ -60,20 +64,42 @@ object MacroTest extends scala.App with tests.TestUtil {
 
   //println("With macros: " + smart(c1.isInstanceOf[Int]))
   */
-  val coll = (1 to 10).asSmart
+  //val coll = (1 to 10).asSmart
+  //val coll = List(1, 2, 3).asSmart
+  val coll = asExp(List(1, 2, 3))
   val mod = asExp(2)
   val rem = asExp(1)
-  val f0 = ctShowDebug {
+
+  val noMacro = for {
+    i <- coll
+    if i == rem
+  } yield i
+
+  val f0 = macroId {
     for {
       i <- coll
       //if i % mod == rem
       if i == rem
     } yield i
   }
-  for {
-    i <- coll
-    if i == rem
-  } yield i
+
+  val f10 = macroId {
+    for {
+      i <- coll
+    } yield i
+  }
+
+  val f15 = macroId {
+    coll map (i => i)
+  }
+
+  val f17 = macroId {
+    coll map identity
+  }
+
+  val f20 = macroId {
+    (1 to 10) map (i => i) //works
+  }
   /*
   val f = smart {
     for {
