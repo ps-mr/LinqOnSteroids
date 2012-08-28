@@ -37,6 +37,7 @@ object MacroTest extends scala.App with tests.TestUtil {
     implicitly[ClassTag[T]].runtimeClass.cast(a).asInstanceOf[T]
   def smart_asInstanceOf[T: ClassTag: TypeTag](a: Exp[Any]): Exp[T] =
     AsInstanceOf(a)
+  /*
   //Test printf
   printf("hello %s!\n", "world")
 
@@ -54,8 +55,41 @@ object MacroTest extends scala.App with tests.TestUtil {
   //for allowing calls to non-reifying methods - am I right? Usually we in fact want to reify them. We want to reify everything inside smart, and then some (the calls to reifying methods).
   //println("With macros: " + smart(c1 synchronized 2))
   //println("With macros: " + smart(c1.synchronized[Int](2)))
+
   println("With macros: " + smart(c1.asInstanceOf[Int]))
+
   //println("With macros: " + smart(c1.isInstanceOf[Int]))
+  */
+  val coll = (1 to 10).asSmart
+  val mod = asExp(2)
+  val rem = asExp(1)
+  val f0 = ctShowDebug {
+    for {
+      i <- coll
+      //if i % mod == rem
+      if i == rem
+    } yield i
+  }
+  for {
+    i <- coll
+    if i == rem
+  } yield i
+  /*
+  val f = smart {
+    for {
+      i <- coll
+      //if i % mod == rem
+      if i == rem
+    } yield i
+  }
+  */
+  //println("With macros: " + f)
+  /*val f2 = smart {
+    for {
+      i <- (1 to 10).asSmart
+      if i % 2 == 1
+    } yield i
+  }*/
 }
 
 // vim: set sw=2 et:
