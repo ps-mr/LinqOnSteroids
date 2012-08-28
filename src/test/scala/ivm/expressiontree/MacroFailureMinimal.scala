@@ -8,11 +8,8 @@ object MacroFailureMinimalHelper {
 
   import collection.generic.CanBuildFrom
   import collection.TraversableLike
-  //case class MapNode[T, Repr <: Traversable[T] with TraversableLike[T, Repr],
-                   //U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr with Traversable[T]], f: Fun[T, U])
-                            //(implicit c: CanBuildFrom[Repr with Traversable[T], U, That with Traversable[U]])
   implicit class TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Exp[Repr with TraversableLike[T, Repr]]) {
-    def map[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] = ??? //MapNode(base, f)
+    def map[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] = ???
   }
   val coll = asExp(List(1, 2, 3))
 }
@@ -26,6 +23,10 @@ object MacroFailureMinimal {
   }
 
   val f15 = macroId {
+    coll map (i => i)
+  }
+
+  val f15_show = ctShowDebug {
     coll map (i => i)
   }
 }
