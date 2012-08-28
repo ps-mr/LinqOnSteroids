@@ -137,9 +137,18 @@ object Macros extends MacroUtils {
   scala> showRaw(reify(1.asInstanceOf: String).tree)
   res20: String = Typed(Select(Literal(Constant(1)), newTermName("asInstanceOf")), Ident(newTypeName("String")))
     */
-  private val macroDebug = false
+  private val macroDebug = true
+  val AnyTuple = "Tuple[0-9]+".r
   def smart_impl(c: Context)(expr: c.Expr[Any]): c.Expr[Any] = {
     import c.universe._
+
+    object TermNameDecoded {
+      def unapply(t: TermName): Some[String] = Some(t.decoded)
+    }
+    object TermNameEncoded {
+      def unapply(t: TermName): Some[String] = Some(t.encoded)
+    }
+
     def println(x: => Any) = if (macroDebug) Predef println x
     object smartTransformer extends Transformer {
       var level = 0
@@ -172,6 +181,15 @@ object Macros extends MacroUtils {
           =>
             Apply(TypeApply(
               Ident(newTermName("smart_" + member.encoded)), typeArgs), (op1 :: l2) map (transform(_)))
+          //case Apply(TypeApply(Select(Select(Ident(TermNameEncoded("scala")), TermNameEncoded(AnyTuple)), TermNameEncoded("apply")), tArgs), args @ List(_*)) =>
+          case Apply(TypeApply(Select(Select(Ident(TermNameEncoded("scala")), TermNameEncoded(AnyTuple())), TermNameEncoded("apply")), tArgs), args @ List(_*)) =>
+          //case Apply(TypeApply(Select(Select(Ident(t1 /*TermNameEncoded("scala")*/), t2 /*TermNameEncoded(AnyTuple)*/), t3 /*TermNameEncoded("apply")*/), tArgs), args @ List(_*)) =>
+            println("####### " + showRaw(tree))
+            //println(showRaw(t1.encoded))
+            //println(showRaw(t2.encoded))
+            //println(showRaw(t3.encoded))
+            // Apply(TypeApply(Ident(newTermName("asExp")), tArgs), super.transform(tree) :: Nil)
+            Apply(Ident(newTermName("asExp")), super.transform(tree) :: Nil)
           case _ => super.transform(tree)
         }
         level -= 1
