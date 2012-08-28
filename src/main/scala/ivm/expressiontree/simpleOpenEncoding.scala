@@ -214,7 +214,7 @@ trait NumOps {
     def /(that: Exp[T]): Exp[T] = fmap(implicitly[Fractional[T]], this.t, that)('FractionalOps$div, _.div(_, _))
   }
 
-  class IntegralOps[T: Integral](t: Exp[T])(implicit tTag: TypeTag[Integral[T]]) {
+  class IntegralOps[T: Integral: TypeTag](t: Exp[T]) {
     def %(that: Exp[T]): Exp[T] = fmap(implicitly[Integral[T]], this.t, that)('IntegralOps$mod, _.rem(_, _))
   }
 
@@ -226,11 +226,11 @@ trait NumOps {
   implicit def toNumOps[T: Numeric: ClassTag: TypeTag](t: T) = expToNumOps(t)
 
   //Same for the others:
-  implicit def expToFractionalOps[T: Fractional](t: Exp[T])(implicit tTag: TypeTag[Fractional[T]]) = new FractionalOps(t)
-  implicit def toFractionalOps[T: Fractional: ClassTag: TypeTag](t: T)(implicit tTag: TypeTag[Fractional[T]]) = expToFractionalOps(t)
+  implicit def expToFractionalOps[T: Fractional: TypeTag](t: Exp[T]) = new FractionalOps(t)
+  implicit def toFractionalOps[T: Fractional: ClassTag: TypeTag](t: T) = expToFractionalOps(t)
 
-  implicit def expToIntegralOps[T: Integral](t: Exp[T])(implicit tTag: TypeTag[Integral[T]]) = new IntegralOps(t)
-  implicit def toIntegralOps[T: Integral: ClassTag: TypeTag](t: T)(implicit tTag: TypeTag[Integral[T]]) = expToIntegralOps(t)
+  implicit def expToIntegralOps[T: Integral: TypeTag](t: Exp[T]) = new IntegralOps(t)
+  implicit def toIntegralOps[T: Integral: ClassTag: TypeTag](t: T) = expToIntegralOps(t)
 }
 
 trait BaseTypesOps {
