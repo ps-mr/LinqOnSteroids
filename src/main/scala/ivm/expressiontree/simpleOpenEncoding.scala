@@ -55,6 +55,10 @@ trait LiftingConvs extends ConversionDisabler with ExtraConversions {
   //implicit def pure[T, U <% T](t: U): Exp[T] = Const(t)
   //So let's keep it simple.
   implicit def pure[T: ClassTag: TypeTag](t: T): Exp[T] = pureExpl(t)
+  //Failed experiment - allow ignoring calls to pure when they become unneeded. Just a hack.
+  //def pure[T: ClassTag: TypeTag](t: Exp[T]): Exp[T] = t
+  //Of course, this fails: overloading conversions makes them unavailable as
+  //implicit views, so asSmart stops working.
 
   class WithAsSmartCollection[T](t: T) {
     def asSmart(implicit conv: T => Exp[T]) = conv(t)
