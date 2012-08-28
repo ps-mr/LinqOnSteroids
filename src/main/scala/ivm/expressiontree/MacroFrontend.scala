@@ -39,7 +39,11 @@ object Macros {
   def show(arg: Any) = macro show_impl
   def ctShow(arg: Any) = macro ctShow_impl
   def ctShowDebug(arg: Any) = macro ctShowDebug_impl
+
+
   def macroId(arg: Any) = macro macroId_impl
+  def macroId_impl(c: Context)(arg: c.Expr[Any]): c.Expr[Any] = arg
+
 
   def stringify_base(c: Context)(arg: c.Expr[Any]): String =
     arg.tree.toString //The result here is a bit ugly - we need to print the tree before desugaring.
@@ -71,8 +75,6 @@ object Macros {
     println(stringify_base(c)(arg))
     arg
   }
-
-  def macroId_impl(c: Context)(arg: c.Expr[Any]): c.Expr[Any] = arg
 
   import UtilsForMacros._
 
