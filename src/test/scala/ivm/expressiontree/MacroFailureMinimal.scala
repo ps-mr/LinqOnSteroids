@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-object MacroFailureMinimal {
+object MacroFailureMinimalHelper {
   trait Exp[+T]
   case class Const[+T](t: T) extends Exp[T]
   implicit def pure[T](t: T): Exp[T] = Const(t)
@@ -15,12 +15,15 @@ object MacroFailureMinimal {
     def map[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] = ??? //MapNode(base, f)
   }
   val coll = asExp(List(1, 2, 3))
+}
+
+object MacroFailureMinimal {
+  import Macros._
+  import MacroFailureMinimalHelper._
 
   val f15_noMacro = {
     coll map (i => i)
   }
-
-  import Macros._
 
   val f15 = macroId {
     coll map (i => i)
