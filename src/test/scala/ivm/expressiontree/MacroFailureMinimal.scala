@@ -15,6 +15,7 @@ object MacroFailureMinimalHelper {
   val coll = asExp(List(1, 2, 3))
 }
 
+/*
 object MacroFailureMinimal {
   import Macros._
   import MacroFailureMinimalHelper._
@@ -35,5 +36,6 @@ object MacroFailureMinimal {
     coll map (i => i) filter (i => false)
   }
 }
+*/
 
 // vim: set sw=2 et:
