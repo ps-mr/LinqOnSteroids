@@ -93,6 +93,10 @@ object MacroTest extends scala.App with tests.TestUtil {
     coll map (i => i)
   }
 
+  val f15_show_2 = ctShowDebug {
+    coll map (i => i) filter (i => false)
+  }
+
   val f17 = macroId {
     coll map identity
   }
