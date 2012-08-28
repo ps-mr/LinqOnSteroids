@@ -72,7 +72,8 @@ object Macros {
 
   def ctShowDebug_impl(c: Context)(arg: c.Expr[Any]): c.Expr[Any] = {
     import c.universe._
-    println(stringify_base(c)(arg))
+    println("Stringify: " + stringify_base(c)(arg))
+    println("showRaw: " + showRaw(arg.tree, printTypes = true, printIds = true))
     arg
   }
 
