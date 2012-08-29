@@ -35,19 +35,19 @@ object UtilsForMacros {
   }
 }
 object Macros {
-  def stringify(arg: Any): String = macro stringify_impl
-  def show(arg: Any) = macro show_impl
-  def ctShow(arg: Any) = macro ctShow_impl
-  def ctShowDebug(arg: Any) = macro ctShowDebug_impl
+  def stringify[T](arg: T): String = macro stringify_impl[T]
+  def show[T](arg: T) = macro show_impl[T]
+  def ctShow[T](arg: T) = macro ctShow_impl[T]
+  def ctShowDebug[T](arg: T) = macro ctShowDebug_impl[T]
 
 
-  def macroId(arg: Any) = macro macroId_impl
-  def macroId_impl(c: Context)(arg: c.Expr[Any]): c.Expr[Any] = arg
+  def macroId[T](arg: T): T = macro macroId_impl[T]
+  def macroId_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[T] = arg
 
 
   def stringify_base(c: Context)(arg: c.Expr[Any]): String =
     arg.tree.toString //The result here is a bit ugly - we need to print the tree before desugaring.
-  def stringify_impl(c: Context)(arg: c.Expr[Any]): c.Expr[String] = {
+  def stringify_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[String] = {
     import c.universe._
     //c.Expr[String](Literal(Constant(stringify_base(c)(arg))))
     //reify(c.Expr[String](Literal(Constant(stringify_base(c)(arg)))).splice)
@@ -57,23 +57,23 @@ object Macros {
     c.Expr[String](Literal(Constant(v)))
   }
 
-  def show_impl(c: Context)(arg: c.Expr[Any]): c.Expr[Unit] = {
+  def show_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[Unit] = {
     import c.universe._
     val v = stringify_base(c)(arg)
     //val v1 = reify(v)
     val v1 = c.Expr[String](Literal(Constant(v)))
     reify(println("Expr: %s evaluates to %s" format (v1.splice, arg.splice)))
   }
-  def ctShow_impl(c: Context)(arg: c.Expr[Any]): c.Expr[Unit] = {
+  def ctShow_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[Unit] = {
     import c.universe._
     println(stringify_base(c)(arg))
     reify(())
   }
 
-  def ctShowDebug_impl(c: Context)(arg: c.Expr[Any]): c.Expr[Any] = {
+  def ctShowDebug_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[T] = {
     import c.universe._
-    println("Stringify: " + stringify_base(c)(arg))
-    println("showRaw: " + showRaw(arg.tree, printTypes = true, printIds = true))
+    println("\n## Stringify: " + stringify_base(c)(arg) + "\n")
+    println("## showRaw: " + showRaw(arg.tree) + "\n")//, printTypes = true, printIds = true
     arg
   }
 
@@ -108,7 +108,7 @@ object Macros {
       case _ => expr
     }
   }*/
-  def smart(expr: Any): Any = macro smart_impl
+  def smart[T](expr: T): T = macro smart_impl[T]
   def prefix = "smart_"
   /* To handle:
   scala> showRaw(reify(1.asInstanceOf: String).tree)
@@ -116,7 +116,7 @@ object Macros {
     */
   private val macroDebug = true
   val AnyTuple = "Tuple([0-9]+)".r
-  def smart_impl(c: Context)(expr: c.Expr[Any]): c.Expr[Any] = {
+  def smart_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[T] = {
     import c.universe._
 
     //Too clever for Scalac - it doesn't get it:
