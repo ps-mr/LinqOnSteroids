@@ -13,6 +13,7 @@ object MacroFailureMinimalHelper {
     def filter(f: Exp[T] => Exp[Boolean]): Exp[Repr] = ???
   }
   val coll = asExp(List(1, 2, 3))
+  def idAny(v: Any): Any = v
 }
 
 object MacroFailureMinimal {
@@ -25,6 +26,10 @@ object MacroFailureMinimal {
 
   val f15 = macroId {
     coll map (i => i)
+  }
+
+  val f15_problem_noMacro = idAny {
+    coll map (i => i) //fails as well!
   }
 
   val f15_show = ctShowDebug {
