@@ -181,14 +181,15 @@ object Macros {
 //          =>
           case Apply(Apply(TypeApply(Select(Ident(TermNameEncoded("Lifting")), TermNameEncoded("pure")), tArgs), List(convertedTerm)), implicitArgs) =>
             //println("#### Depure: a: %s; b: %s; c: %s" format (showRaw(a, printTypes = true, printIds = true), showRaw(b, printIds = true), showRaw(c, printTypes = true)))
-            val afterResetCT = c.resetAllAttrs(convertedTerm)
-            println("#### Depure: " + showRaw(tree, printTypes = true))
-            println("#### gives: " + showRaw(convertedTerm, printTypes = true))
-            println("#### after reset: " + showRaw(afterResetCT, printTypes = true))
+            //val afterResetCT = c.resetAllAttrs(convertedTerm)
+            println("#### Depure: " + /*showRaw*/(tree))
+            println("#### gives: " + /*showRaw*/(convertedTerm))
+            //println("#### after reset: " + showRaw(afterResetCT))
             //println("#### gives: " + showRaw(convertedTerm))
             //super.transform(tree)
-            super.transform(convertedTerm)
-
+            val res = super.transform(convertedTerm)
+            println("#### after descent: " + res)
+            res
           case _ => super.transform(tree)
         }
         level -= 1
