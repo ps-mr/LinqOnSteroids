@@ -70,6 +70,7 @@ object MacroTest extends scala.App with tests.TestUtil {
   val mod = asExp(2)
   val rem = asExp(1)
 
+/*
   val noMacro = for {
     i <- coll
     if i == rem
@@ -104,7 +105,8 @@ object MacroTest extends scala.App with tests.TestUtil {
   val f20 = macroId {
     (1 to 10) map (i => i) //works
   }
-  /*
+  */
+
   val f = smart {
     for {
       i <- coll
@@ -112,14 +114,15 @@ object MacroTest extends scala.App with tests.TestUtil {
       if i == rem
     } yield i
   }
-  */
-  //println("With macros: " + f)
-  /*val f2 = smart {
+
+  println("With macros: " + f)
+  val f2 = smart {
     for {
       i <- (1 to 10).asSmart
       if i % 2 == 1
     } yield i
-  }*/
+  }
+  println("With macros: " + f2)
 }
 
 // vim: set sw=2 et:

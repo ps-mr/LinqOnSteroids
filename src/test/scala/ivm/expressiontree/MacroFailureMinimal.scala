@@ -27,6 +27,7 @@ object MacroFailureMinimal {
     coll map (i => i)
   }
 
+/*
   val f15_show = ctShowDebug {
     coll map (i => i)
   }
@@ -34,6 +35,7 @@ object MacroFailureMinimal {
   val f15_show_2 = ctShowDebug {
     coll map (i => i) filter (i => false)
   }
+  */
 }
 
 // vim: set sw=2 et:
