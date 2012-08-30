@@ -116,6 +116,7 @@ object Macros {
     */
   private val macroDebug = true
   val AnyTuple = "Tuple([0-9]+)".r
+  val ConvToTuple = "tuple[0-9]+ToTuple[0-9]+Exp".r
   def smart_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[T] = {
     import c.universe._
 
@@ -170,8 +171,8 @@ object Macros {
             Apply(TypeApply(
               Ident(newTermName(prefix + member.encoded)), typeArgs), (op1 :: l2) map (transform(_)))
           case Apply(TypeApply(Select(Select(Ident(TermNameEncoded("scala")), TermNameEncoded(AnyTuple(arity))), TermNameEncoded("apply")), tArgs), args @ List(_*)) =>
-            //println("Foo! " + showRaw(tree))
-            Apply(Ident(newTermName("LiftProduct" + arity)), args map (transform(_)))
+            println("#### Tuple: " + showRaw(tree))
+            Apply(Ident(newTermName("LiftTuple" + arity)), args map (transform(_)))
 
           //Start removing implicit conversions, hoping they are readded later if needed.
           //It is strange that Lifting is not fully qualified here - I suspect that's only the case inside the ivm.expressiontree package!
@@ -182,14 +183,17 @@ object Macros {
           case Apply(Apply(TypeApply(Select(Ident(TermNameEncoded("Lifting")), TermNameEncoded("pure")), tArgs), List(convertedTerm)), implicitArgs) =>
             //println("#### Depure: a: %s; b: %s; c: %s" format (showRaw(a, printTypes = true, printIds = true), showRaw(b, printIds = true), showRaw(c, printTypes = true)))
             //val afterResetCT = c.resetAllAttrs(convertedTerm)
-            println("#### Depure: " + /*showRaw*/(tree))
-            println("#### gives: " + /*showRaw*/(convertedTerm))
+            //println("#### Depure: " + /*showRaw*/(tree))
+            //println("#### gives: " + /*showRaw*/(convertedTerm))
             //println("#### after reset: " + showRaw(afterResetCT))
             //println("#### gives: " + showRaw(convertedTerm))
             //super.transform(tree)
             val res = transform(convertedTerm)
-            println("#### after descent: " + res)
+            //println("#### after descent: " + res)
             res
+          case Apply(TypeApply(Select(Ident(TermNameEncoded("Lifting")), TermNameEncoded(ConvToTuple())), tArgs), List(convertedTerm)) =>
+            println("#### Detuple: " + showRaw(tree))
+            transform(convertedTerm)
           case _ => super.transform(tree)
         }
         level -= 1
