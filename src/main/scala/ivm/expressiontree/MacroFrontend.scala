@@ -187,7 +187,7 @@ object Macros {
             //println("#### after reset: " + showRaw(afterResetCT))
             //println("#### gives: " + showRaw(convertedTerm))
             //super.transform(tree)
-            val res = super.transform(convertedTerm)
+            val res = transform(convertedTerm)
             println("#### after descent: " + res)
             res
           case _ => super.transform(tree)
