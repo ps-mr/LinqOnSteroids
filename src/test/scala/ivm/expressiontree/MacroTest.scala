@@ -111,7 +111,7 @@ object MacroTest extends scala.App with tests.TestUtil {
     val f = smart {
       for {
         i <- coll
-        //if i % mod == rem
+        if i % mod == rem
         if i == rem
       } yield i
     }
