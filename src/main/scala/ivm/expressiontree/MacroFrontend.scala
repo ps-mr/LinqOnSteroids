@@ -108,7 +108,7 @@ object Macros {
       case _ => expr
     }
   }*/
-  def smart[T](expr: T): T = macro smart_impl[T]
+  def smart[T](expr: T): Any = macro smart_impl[T]
   def prefix = "smart_"
   /* To handle:
   scala> showRaw(reify(1.asInstanceOf: String).tree)
@@ -117,7 +117,7 @@ object Macros {
   private val macroDebug = true
   val AnyTuple = "Tuple([0-9]+)".r
   val ConvToTuple = "tuple[0-9]+ToTuple[0-9]+Exp".r
-  def smart_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[T] = {
+  def smart_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[Any] = {
     import c.universe._
 
     //Too clever for Scalac - it doesn't get it:
@@ -145,6 +145,8 @@ object Macros {
         //println("Level %d, tree %s" format(level, showRaw(tree)))
         level += 1
         val ret = tree match {
+          case TypeApply(polyterm, arg) =>
+            transform(polyterm)
           //this duplicates the check but also checks arity. Do it even more
           //generic. Later.
           case Apply(Select(op1, member), l @ List())
