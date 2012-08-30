@@ -170,8 +170,10 @@ object Macros {
           =>
             Apply(TypeApply(
               Ident(newTermName(prefix + member.encoded)), typeArgs), (op1 :: l2) map (transform(_)))
-          case Apply(TypeApply(Select(Select(Ident(TermNameEncoded("scala")), TermNameEncoded(AnyTuple(arity))), TermNameEncoded("apply")), tArgs), args @ List(_*)) =>
-            println("#### Tuple: " + showRaw(tree))
+          case Apply(TypeApply(Select(Select(Ident(TermNameEncoded("scala")),
+            TermNameEncoded(AnyTuple(arity))), TermNameEncoded("apply")), tArgs),
+            args @ List(_*))
+          =>
             Apply(Ident(newTermName("LiftTuple" + arity)), args map (transform(_)))
 
           //Start removing implicit conversions, hoping they are readded later if needed.
@@ -180,19 +182,13 @@ object Macros {
 //            Select(Select(Select(Ident(TermNameEncoded("ivm")), TermNameEncoded("expressiontree")), TermNameEncoded("Lifting")), TermNameEncoded("pure")),
 //            tArgs), List(convertedTerm)), implicitArgs)
 //          =>
-          case Apply(Apply(TypeApply(Select(Ident(TermNameEncoded("Lifting")), TermNameEncoded("pure")), tArgs), List(convertedTerm)), implicitArgs) =>
-            //println("#### Depure: a: %s; b: %s; c: %s" format (showRaw(a, printTypes = true, printIds = true), showRaw(b, printIds = true), showRaw(c, printTypes = true)))
-            //val afterResetCT = c.resetAllAttrs(convertedTerm)
-            //println("#### Depure: " + /*showRaw*/(tree))
-            //println("#### gives: " + /*showRaw*/(convertedTerm))
-            //println("#### after reset: " + showRaw(afterResetCT))
-            //println("#### gives: " + showRaw(convertedTerm))
-            //super.transform(tree)
-            val res = transform(convertedTerm)
-            //println("#### after descent: " + res)
-            res
-          case Apply(TypeApply(Select(Ident(TermNameEncoded("Lifting")), TermNameEncoded(ConvToTuple())), tArgs), List(convertedTerm)) =>
-            println("#### Detuple: " + showRaw(tree))
+          case Apply(Apply(TypeApply(Select(Ident(TermNameEncoded("Lifting")),
+            TermNameEncoded("pure")), tArgs), List(convertedTerm)), implicitArgs)
+          =>
+            transform(convertedTerm)
+          case Apply(TypeApply(Select(Ident(TermNameEncoded("Lifting")),
+            TermNameEncoded(ConvToTuple())), tArgs), List(convertedTerm))
+          =>
             transform(convertedTerm)
           case _ => super.transform(tree)
         }
@@ -200,16 +196,11 @@ object Macros {
         ret
       }
     }
-    //println(expr.tree)
-    //println(showRaw(expr.tree))
     val transformed = smartTransformer.transform(expr.tree)
     println(transformed)
+    //resetAllAttrs comes from: https://github.com/retronym/macrocosm/blob/171be7e/src/main/scala/com/github/retronym/macrocosm/Macrocosm.scala#L171
     val afterReset = c.resetAllAttrs(transformed)
-    println(afterReset)
     c.Expr(afterReset)
-    //Or maybe
-    //c.Expr(c.resetAllAttrs(...)), as below?
-    //https://github.com/retronym/macrocosm/blob/171be7e/src/main/scala/com/github/retronym/macrocosm/Macrocosm.scala#L171
   }
 }
 
