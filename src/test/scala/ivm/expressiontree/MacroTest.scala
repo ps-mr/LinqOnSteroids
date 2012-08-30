@@ -139,6 +139,18 @@ object MacroTest extends scala.App with tests.TestUtil {
     println("With macros: " + f)
     println("With macros, after code: " + (Compile toCode f))
   }
+  /*
+  {
+    val f = smart {
+      for {
+        i <- (1 to 10).asSmart
+        if i % 2 == 1
+      } yield (i, (i + 1, i + 2))
+    }
+    println("With macros: " + f)
+    println("With macros, after code: " + (Compile toCode f))
+  }
+  */
 }
 
 // vim: set sw=2 et:
