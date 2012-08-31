@@ -161,7 +161,14 @@ object Macros {
           =>
             Apply(TypeApply(
               Ident(newTermName(prefix + member.encoded)), typeArgs), (op1 :: l2) map (transform(_)))
+
           case Apply(TypeApply(Select(Select(Ident(TermNameEncoded("scala")),
+            TermNameEncoded(AnyTuple(arity))), TermNameEncoded("apply")), tArgs),
+            args @ List(_*))
+          =>
+            Apply(Ident(newTermName("LiftTuple" + arity)), args map (transform(_)))
+
+          case Apply(TypeApply(Select(Select(This(TypeNameEncoded("scala")),
             TermNameEncoded(AnyTuple(arity))), TermNameEncoded("apply")), tArgs),
             args @ List(_*))
           =>
