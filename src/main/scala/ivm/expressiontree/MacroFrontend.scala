@@ -146,6 +146,7 @@ object Macros {
         level += 1
         val ret = tree match {
           case TypeApply(polyterm, arg) =>
+            //Drops result of type inference, as well as explicit type application. Hm.
             transform(polyterm)
           //this duplicates the check but also checks arity. Do it even more
           //generic. Later.
@@ -199,9 +200,13 @@ object Macros {
       }
     }
     val transformed = smartTransformer.transform(expr.tree)
-    println(transformed)
+    //println("#### Transformed: " + showRaw(transformed, printTypes = true))
+    println("#### Transformed: " + transformed)
+    //println("#### Transformed: " + transformed)
     //resetAllAttrs comes from: https://github.com/retronym/macrocosm/blob/171be7e/src/main/scala/com/github/retronym/macrocosm/Macrocosm.scala#L171
     val afterReset = c.resetAllAttrs(transformed)
+    //println("#### After reset: " + showRaw(afterReset, printTypes = true))
+    //c.Expr(c.typeCheck(afterReset))
     c.Expr(afterReset)
   }
 }
