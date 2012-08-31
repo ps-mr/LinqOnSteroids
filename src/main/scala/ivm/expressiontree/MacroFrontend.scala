@@ -8,29 +8,11 @@ import language.experimental.macros
 object UtilsForMacros {
   def extractors(c: Context) = new {
     import c.universe._
-    /*
     object TermNameDecoded {
       def unapply(t: TermName): Some[String] = Some(t.decoded)
     }
     object TermNameEncoded {
       def unapply(t: TermName): Some[String] = Some(t.encoded)
-    }
-    */
-    object TermNameDecoded {
-      def unapply(t: NameApi): Option[String] =
-        t match {
-          case _: TermName =>
-            Some(t.decoded)
-          case _ => None
-        }
-    }
-    object TermNameEncoded {
-      def unapply(t: NameApi): Option[String] =
-        t match {
-          case _: TermName =>
-            Some(t.encoded)
-          case _ => None
-        }
     }
   }
 }
@@ -136,6 +118,12 @@ object Macros {
     }
     object TermNameEncoded {
       def unapply(t: TermName): Some[String] = Some(t.encoded)
+    }
+    object TypeNameDecoded {
+      def unapply(t: TypeName): Some[String] = Some(t.decoded)
+    }
+    object TypeNameEncoded {
+      def unapply(t: TypeName): Some[String] = Some(t.encoded)
     }
 
     def println(x: => Any) = if (macroDebug) Predef println x
