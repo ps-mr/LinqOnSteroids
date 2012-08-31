@@ -74,43 +74,6 @@ object MacroTest extends scala.App with tests.TestUtil {
   val mod = asExp(2)
   val rem = asExp(1)
 
-/*
-  val noMacro = for {
-    i <- coll
-    if i == rem
-  } yield i
-
-  val f0 = macroId {
-    for {
-      i <- coll
-      //if i % mod == rem
-      if i == rem
-    } yield i
-  }
-
-  val f10 = macroId {
-    for {
-      i <- coll
-    } yield i
-  }
-
-  val f15 = macroId {
-    coll map (i => i)
-  }
-
-  val f15_show_2 = ctShowDebug {
-    coll map (i => i) filter (i => false)
-  }
-
-  val f17 = macroId {
-    coll map identity
-  }
-
-  val f20 = macroId {
-    (1 to 10) map (i => i) //works
-  }
-  */
-
   {
     val f = smart {
       for {
