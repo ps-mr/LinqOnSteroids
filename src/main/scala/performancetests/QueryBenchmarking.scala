@@ -103,7 +103,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
    //Since 2.10.0-M6, Coll is deduced to be Traversable[Nothing].
   //def benchQueryComplete[T, Coll <: Traversable[T]](msg: String)
                                                    //(expected: => Traversable[T], altExpected: => Traversable[T] = null /* Tried using OptParam here with */)
-                                                   //(query: => Exp[Coll], altQueries: Exp[Coll]*)(implicit cm: TypeTag[Traversable[T]])
+                                                   //(query: => Exp[Coll], altQueries: Exp[Coll]*)(implicit cm: TypeTag[Traversable[T]]): Traversable[T]
   def benchQueryComplete[T](msg: String)
                                                    (expected: => Traversable[T], altExpected: => Traversable[T] = null /* Tried using OptParam here with */)
                                                    (query: => Exp[Traversable[T]], altQueries: Exp[Traversable[T]]*)(implicit cm: TypeTag[Traversable[T]]): Traversable[T]
@@ -162,7 +162,7 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
         compareRes(resAlt, resOpt)
         reportTimeRatio("base embedded version - Alternative %d (non optimized)" format i, timeOpt / timeAlt)
         if (!mustModularizedOptimizeEqual && altOptimizedWithIdx != optimized) {
-          val (resAltOptWithIdx, timeAltOptWithIdx) = doRun(altMsg + optimizedWithIdxMsg, altOptimizedWithIdx)
+          val (resAltOptWithIdx, timeAltOptWithIdx) = doRun(altMsg + optimizedWithIdxMsg, altOptimizedWithIdx: Exp[Traversable[T]])
           compareRes(resAltOptWithIdx, resOpt)
           reportTimeRatio("base embedded version - Alternative %d (optimized, with indexes)" format i, timeOpt / timeAltOptWithIdx)
         }
