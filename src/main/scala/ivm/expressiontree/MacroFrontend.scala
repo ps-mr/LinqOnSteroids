@@ -135,6 +135,10 @@ object Macros {
         val ret = tree match {
           case TypeApply(polyterm, arg) =>
             //Drops result of type inference, as well as explicit type application. Hm.
+            //XXX: check if the type application is generated, maybe by checking pos.
+            println("#### Pos: " + tree.pos)
+            println("#### Tree: " + tree)
+            println("#### Polyterm: " + polyterm)
             transform(polyterm)
           //this duplicates the check but also checks arity. Do it even more
           //generic. Later.
@@ -194,10 +198,15 @@ object Macros {
         ret
       }
     }
+    //val thisReplaced = expr.tree.substituteThis(/*Get a symbol for the type scala*/
+    //Then, using substituteSymbols (?) or sth. like that, replace references to Lifting with references to ivm.expressiontree.Lifting :-).
+    Predef println ()
+    println("#### Before transform: " + expr.tree)
     val transformed = smartTransformer.transform(expr.tree)
-    //println("#### Transformed: " + showRaw(transformed, printTypes = true))
+    //println("#### Before transform: " + showRaw(expr.tree))
     println("#### Transformed: " + transformed)
-    //println("#### Transformed: " + transformed)
+    //println("#### Transformed: " + showRaw(transformed))
+    //println("#### Transformed: " + showRaw(transformed, printTypes = true))
     //resetAllAttrs comes from: https://github.com/retronym/macrocosm/blob/171be7e/src/main/scala/com/github/retronym/macrocosm/Macrocosm.scala#L171
     val afterReset = c.resetAllAttrs(transformed)
     //println("#### After reset: " + showRaw(afterReset, printTypes = true))
