@@ -133,13 +133,24 @@ object Macros {
         //println("Level %d, tree %s" format(level, showRaw(tree)))
         level += 1
         val ret = tree match {
-          case TypeApply(polyterm, arg) =>
-            //Drops result of type inference, as well as explicit type application. Hm.
-            //XXX: check if the type application is generated, maybe by checking pos.
-            println("#### Pos: " + tree.pos)
-            println("#### Tree: " + tree)
-            println("#### Polyterm: " + polyterm)
+          //Drop type applications which are introduced by type inference.
+          case TypeApply(polyterm, args)
+            //TypeTree.original returns the type before type inference, if any.
+            //Hence, t.original == null means that t is inferred.
+            if (for (arg @ TypeTree() <- args) yield arg) exists (_.original == null)
+          =>
+            //We assume that if one arg is inferred, all are inferred, so we can just drop all.
+            assert((for (arg @ TypeTree() <- args) yield arg) forall (_.original == null))
+            //TODO move this case at the end, so that explicit type applications which
+            //are matched earlier are possible. We do match on isInstanceOf and
+            //asInstanceOf, which are most cases.
+
+            //println("#### Pos: " + tree.pos)
+            //println("#### Positions: " + args.map(_.pos))
+            //println("#### Tree: " + tree)
+            //println("#### Polyterm: " + polyterm)
             transform(polyterm)
+
           //this duplicates the check but also checks arity. Do it even more
           //generic. Later.
           case Apply(Select(op1, member), l @ List())
@@ -156,6 +167,20 @@ object Macros {
           case TypeApply(Select(op1, member), typeArgs @ List(typeArg))
             if anyTypeUnaryMethod contains member.decoded
           =>
+            /*println("#### Pos: " + tree.pos)
+            println("#### typeArg: " + typeArg)
+            println("#### typeArg Position: " + typeArg.pos)
+            println("#### typeArg Position: " + typeArg.pos.show)
+            println("#### typeArg Position: " + typeArg.pos.isDefined)
+            println("#### typeArg Position: " + typeArg.pos.pos)
+            //println("#### typeArg Position: " + typeArg.pos.fileContent.map(identity)(collection.breakOut): String)
+            println("#### Tree: " + tree)
+            println("#### Tree: " + showRaw(tree))
+            println("#### showRaw(typeArg): " + showRaw(typeArg))
+            println("#### showRaw(typeArg.original): " + showRaw(typeArg.asInstanceOf[TypeTree].original))
+            println("#### typeArg.original == null: " + (typeArg.asInstanceOf[TypeTree].original == null))*/
+            if (typeArg.asInstanceOf[TypeTree].original == null)
+              printf("Argument of %s deduced by type inference!\n", member.decoded)
             Apply(TypeApply(
               Ident(newTermName(prefix + member.encoded)), typeArgs), List(transform(op1)))
           case Apply(
@@ -202,8 +227,8 @@ object Macros {
     //Then, using substituteSymbols (?) or sth. like that, replace references to Lifting with references to ivm.expressiontree.Lifting :-).
     Predef println ()
     println("#### Before transform: " + expr.tree)
-    val transformed = smartTransformer.transform(expr.tree)
     //println("#### Before transform: " + showRaw(expr.tree))
+    val transformed = smartTransformer.transform(expr.tree)
     println("#### Transformed: " + transformed)
     //println("#### Transformed: " + showRaw(transformed))
     //println("#### Transformed: " + showRaw(transformed, printTypes = true))
