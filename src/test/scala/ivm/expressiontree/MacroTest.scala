@@ -11,6 +11,11 @@ object Helpers {
   def smart_toString[T](v: Exp[T]) = ToString(v)
   def smart_toString(v: Any) = v.toString
 
+  import Lifting._
+  def smart_==[T](a: T, b: T) = a == b
+  //Hm. I could probably obviate the need for these overloads by making the smart macro more intelligent - after all, it can invoke typeCheck.
+  def smart_==[T: ClassTag: TypeTag](a: T, b: Exp[T]) = Eq(a, b)
+  def smart_==[T: ClassTag: TypeTag](a: Exp[T], b: T) = Eq(a, b)
   def smart_==[T](a: Exp[T], b: Exp[T]) = Eq(a, b)
   //This method is side-effect-based, not clear how to support it.
   //def smart_synchronized[T, T0](a: T, b: =>T0) = a synchronized b
