@@ -78,7 +78,7 @@ case class Diff[T, Repr <: collection.Set[T] with SetLike[T, Repr]](base: Exp[Re
   def operator = "--"
 }
 
-case class Size[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) extends Arity1OpExp[Repr, Int, Size[T, Repr]](t) with InfixPrinting {
+final case class Size[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) extends Arity1OpExp[Repr, Int, Size[T, Repr]](t) with InfixPrinting {
   def interpret() = t.interpret().size
   def copy(t: Exp[Repr]) = Size(t)
   def operator = "size"
