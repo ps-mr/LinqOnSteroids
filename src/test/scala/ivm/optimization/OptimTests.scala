@@ -3,7 +3,7 @@ package optimization
 
 import squopt.imports._
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
-import org.junit.Test
+import org.junit.{Ignore, Test}
 import expressiontree.{Const, Plus, Fun, Exp}
 import tests.TestUtil
 import collection.generic.CanBuildFrom
@@ -177,7 +177,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     Yquery.optimize should be (expected)
   }
 
-  @Test
+  @Ignore @Test
   def unnestingFromPaperPart2() {
     //this example works now even in practice! Making it work requires various forms of fusion and inlining, together with filter hoisting.
     val Zquery = for {

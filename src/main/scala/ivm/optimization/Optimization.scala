@@ -111,7 +111,7 @@ object Optimization {
   //The result should be in flatMap normal form.
   private def postIndexing[T](forIdx: Boolean, idxLookup: Boolean, exp: Exp[T]): Exp[T] =
   //Why is mergeFilterWithMap&what comes after done only after indexing? I guess to avoid "hiding" filters inside map operations.
-    handleFilters(maybeIndex(idxLookup)(mapToFlatMap(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(
+    handleFilters/*or just hoistFilter ?*/(maybeIndex(idxLookup)(mapToFlatMap(handleNewMaps(flatMapToMap(transformedFilterToFilter(betaDeltaReducer(mergeFilterWithMap(flatMapToMap(
       mergeFilters( //Merge filters again after indexing, since it introduces new filters.
         simplifyFilters(
           // XXX: tests if existsRenester works in this position, if it does not leave optimization
@@ -167,11 +167,11 @@ object Optimization {
   //cartProdToAntiJoin(optimizeCartProdToJoin(
 
   private def newHandleFilters[T](exp: Exp[T]): Exp[T] =
-    (handleFilters[T] _ compose splitFilters[T] compose simplifyConditions[T])(exp)
+    (handleFilters[T] _ compose simplifyConditions[T])(exp)
 
   //Requires flatMap normal form
   def handleFilters[T](exp: Exp[T]): Exp[T] =
-    mergeFilters(hoistFilter(exp)) //Do this before merging filters!
+    hoistFilter(mergeFilters(exp))
 
   //Accepts either normal form
   private def filterFusion[T](exp: Exp[T]): Exp[T] =
