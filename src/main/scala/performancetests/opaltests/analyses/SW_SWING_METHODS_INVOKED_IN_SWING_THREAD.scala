@@ -74,17 +74,19 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
   private def analyzeBaseWithAbstractions() = {
           for ( schema.BytecodeInstrIndexed(classFile, method,
                                     INVOKEVIRTUAL(targetType, name, desc), idx) ← methodBodiesInstructionsIndexedModularNative
-                if (targetType.isObjectType &&
+                if (((
+                      method.isPublic &&
+                      method.isStatic &&
+                      method.name == "main"
+                    ) || classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0)
+                    &&
+                    targetType.isObjectType &&
                     targetType.asInstanceOf[ObjectType].className.startsWith("javax/swing/")) &&
                     (
                     name == "show" && desc == emptyDescriptor ||
                     name == "pack" && desc == emptyDescriptor ||
                     name == "setVisible" && desc == boolParamDescriptor
-                    ) && ((
-                      method.isPublic &&
-                      method.isStatic &&
-                      method.name == "main"
-                    ) || classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0)
+                    )
             ) yield
               (classFile.thisClass, method.name, method.descriptor, idx)
   }
@@ -102,19 +104,19 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
         for ( instructionInfo ← methodBodiesInstructionsIndexedModularSQuOpt;
               invoke ← instructionInfo.instruction.ifInstanceOf[INVOKEVIRTUAL]
               if (
+                    ((
+                      instructionInfo.method.isPublic &&
+                      instructionInfo.method.isStatic &&
+                      instructionInfo.method.name ==# "main"
+                    ) || instructionInfo.classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
+                    )&&
                     invoke.declaringClass.isObjectType &&
                     invoke.declaringClass.asInstanceOf_#[ObjectType].className.startsWith("javax/swing/")) &&
                     (
                     invoke.name ==# "show" && invoke.methodDescriptor ==# emptyDescriptor ||
                     invoke.name ==# "pack" && invoke.methodDescriptor ==# emptyDescriptor ||
                     invoke.name ==# "setVisible" && invoke.methodDescriptor ==# boolParamDescriptor
-                )&&
-                    ((
-                      instructionInfo.method.isPublic &&
-                      instructionInfo.method.isStatic &&
-                      instructionInfo.method.name ==# "main"
-                    ) || instructionInfo.classFile.thisClass.className.toLowerCase.indexOf("benchmark") >= 0
-                    )
+                )
           ) yield
             (instructionInfo.classFile.thisClass, instructionInfo.method.name, instructionInfo.method.descriptor, instructionInfo.index)
     }
