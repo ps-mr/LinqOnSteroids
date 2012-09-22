@@ -78,10 +78,11 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
 
     for  {
       instructionWithIndex ← methodBodiesInstructionsIndexedModularSQuOpt
-      if !instructionWithIndex.classFile.interfaces.exists((t) =>  (t ==# priviledgedAction) || (t ==# priviledgedExceptionAction))
       invoke ← instructionWithIndex.instruction.ifInstanceOf[INVOKEVIRTUAL]
-      if (invoke.declaringClass ==# reflectionField || invoke.declaringClass ==# reflectionMethod) &&
+      if (!instructionWithIndex.classFile.interfaces.exists((t) =>  (t ==# priviledgedAction) || (t ==# priviledgedExceptionAction)) &&
+         (invoke.declaringClass ==# reflectionField || invoke.declaringClass ==# reflectionMethod) &&
          invoke.name ==# "setAccessible"
+         )
     } yield
       (instructionWithIndex.classFile, instructionWithIndex.method, instructionWithIndex.index)
   }
