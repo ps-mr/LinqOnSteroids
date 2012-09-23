@@ -118,8 +118,10 @@ object Macros /*extends ModularFrontendDefs*/ {
     }
   }
    */
-  def wrap[T](expr: Exp[T]): Interpreted[BaseLangIntf with ScalaLangIntf, T] = macro wrap_impl[T, BaseLangIntf with ScalaLangIntf]
-  def wrap_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
+  def wrap[T](expr: Exp[T]): Interpreted[BaseLangIntf with ScalaLangIntf, T] = macro wrap_impl[T]
+  def wrap_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[BaseLangIntf with ScalaLangIntf, T]] =
+    wrap_gen_impl[T, BaseLangIntf with ScalaLangIntf](c)(expr)
+  def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
     import c.universe._
     //Since this transformer inspects symbols, it must be called _before_ c.resetAllAttrs!
     object resetIntfMemberBindings extends Transformer {
