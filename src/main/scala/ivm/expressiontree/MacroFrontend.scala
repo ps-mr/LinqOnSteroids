@@ -118,6 +118,69 @@ object Macros /*extends ModularFrontendDefs*/ {
     }
   }
    */
+  /*
+  def wrap[T](expr: T): Any = macro wrap_impl[T, BaseLangIntf with ScalaLangIntf]
+  def wrap_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[Any] = {
+   */
+  def wrap[T](expr: Exp[T]): Any = macro wrap_impl[T, BaseLangIntf with ScalaLangIntf]
+  def wrap_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Any] = {
+    import c.universe._
+    object transformer2 extends Transformer {
+      override def transform(tree: Tree): Tree = {
+        object TermNameEncoded {
+          def unapply(t: TermName): Some[String] = Some(t.encoded)
+        }
+        tree match {
+          //case Select(a, TermNameEncoded(b)) if a hasSymbolWhich (_.name == newTermName("ivm.expressiontree.Lifting")) =>
+          //case Select(a, TermNameEncoded(b)) =>
+          case Select(a @ Ident(TermNameEncoded("Lifting")), TermNameEncoded(b))
+            if a.symbol != null && a.symbol != NoSymbol && a.symbol.fullName == "ivm.expressiontree.Lifting"
+          =>
+            //println(showRaw(a), b, showRaw(a.symbol))
+            //println(showRaw(a), b, a.symbol, a.symbol.name, a.symbol.fullName, tree.symbol.fullName)
+            val res = Ident(newTermName(b))
+            //println(showRaw(res))
+            res //Returning res causes failures; Scalac does not do name resolution again... unless we call resetAllAttrs after the transformation
+            //super.transform(tree)
+          case _ => super.transform(tree)
+        }
+      }
+    }
+    //val clearedExpr = c.Expr[Any](transformer2 transform c.resetAllAttrs(expr.tree))
+    val clearedExpr = c.Expr[Any](transformer2 transform expr.tree)
+    //val res = c.Expr[Interpreted[Sym, T]](c.resetAllAttrs(reify(new Interpreted[Sym, T]
+    val res = c.Expr[Any](c.resetAllAttrs(reify(new Interpreted[Sym, T] {
+        def apply(s: ThisLangIntf): s.Rep[T] = {
+          import s._
+          //expr.splice.asInstanceOf[s.Rep[T]]
+          clearedExpr.splice.asInstanceOf[s.Rep[T]]
+        }
+      }).tree))
+    println(showRaw(res))
+    //println(showRaw(res.tree, printTypes = false))
+    //println("Typechecking:")
+    val typechecked = c.typeCheck(res.tree, silent = false)
+    //println(typechecked)
+    //println(showRaw(typechecked, printTypes = false))
+    object visitor extends Transformer {
+      override def transform(tree: Tree): Tree = {
+        object TermNameEncoded {
+          def unapply(t: TermName): Some[String] = Some(t.encoded)
+        }
+        tree match {
+          //case Select(a, TermNameEncoded(b)) if a hasSymbolWhich (_.name == newTermName("ivm.expressiontree.Lifting")) =>
+          //case Select(a, TermNameEncoded(b)) =>
+          case TypeApply(fn, args) if fn.tpe == null =>
+            printf("%s has null tpe after typechecking\n", fn)
+            super.transform(tree)
+          case _ => super.transform(tree)
+        }
+      }
+    }
+    visitor transform typechecked
+    println("Typechecking done")
+    res
+  }
   def smart[T](expr: T): Any = macro smart_impl[T]
   def prefix = "smart_"
   /* To handle:

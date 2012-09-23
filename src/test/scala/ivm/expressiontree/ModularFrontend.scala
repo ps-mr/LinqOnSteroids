@@ -13,6 +13,22 @@ object ModularFrontendExample extends scala.App {
       pure(1) + 2
     }
   })
+
+  import Lifting._
+  //This macro produces the same code as above, after expansion. What is important is that this macro guarantees adequacy.
+  println(Macros.wrap {
+    pure(1) + 2
+  })
+  //This is accepted, although it is an exotic term:
+  println(
+    pure(pure(1).interpret() + 2)
+  )
+  //But this isn't:
+  /*
+  println(Macros.wrap {
+    pure(1).interpret() + 2
+  })
+  */
 }
 class ModularFrontendExample extends Interpreted[BaseLangIntf with ScalaLangIntf, Int] {
   def apply(s: ThisLangIntf): s.Rep[Int] = {
