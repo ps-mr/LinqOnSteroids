@@ -5,6 +5,9 @@ import Lifting._
 import scala.reflect.macros.Context
 import language.experimental.macros
 
+//trait ModularFrontendDefs {
+//}
+
 object UtilsForMacros {
   def extractors(c: Context) = new {
     import c.universe._
@@ -16,7 +19,7 @@ object UtilsForMacros {
     }
   }
 }
-object Macros {
+object Macros /*extends ModularFrontendDefs*/ {
   def stringify[T](arg: T): String = macro stringify_impl[T]
   def show[T](arg: T) = macro show_impl[T]
   def ctShow[T](arg: T) = macro ctShow_impl[T]
@@ -70,9 +73,10 @@ object Macros {
 
   val anyTypeUnaryMethod = List("asInstanceOf", "isInstanceOf")
   val anyTypeBinaryMethod = List("synchronized")
-  //def anyUnary(v: String): Boolean =
+  //def anyUnary(v: String): Boolean
 
-  /*def smart(expr: Any): Any = macro smart_impl
+  /*
+  def smart(expr: Any): Any = macro smart_impl
   def smart_impl(c: Context)(expr: c.Expr[Any]): c.Expr[Any] = {
     import c.universe._
     //Main problem: we need to visit the tree recursively.
@@ -83,13 +87,14 @@ object Macros {
         //c.Expr(Apply(Ident(member), List(op1)))
       case Apply(Select(op1, member), l @ List(op2)) if anyBinaryMethods contains member.decoded =>
         c.Expr(Apply(Ident(newTermName(prefix + member.encoded)), op1 :: l))
-//      case Apply(Select(op1, member), List(op2)) if member.decoded == "==" =>
-//        c.Expr(Apply(Ident(newTermName("eq")), List(op1, op2)))
-//      case Apply(Select(op1, member), List(op2)) if member.decoded == "!=" =>
-//        c.Expr(Apply(Ident(newTermName("neq")), List(op1, op2)))
+      //case Apply(Select(op1, member), List(op2)) if member.decoded == "==" =>
+        //c.Expr(Apply(Ident(newTermName("eq")), List(op1, op2)))
+      //case Apply(Select(op1, member), List(op2)) if member.decoded == "!=" =>
+        //c.Expr(Apply(Ident(newTermName("neq")), List(op1, op2)))
       case _ => expr
     }
-  }*/
+  }
+   */
   def smart[T](expr: T): Any = macro smart_impl[T]
   def prefix = "smart_"
   /* To handle:
@@ -127,6 +132,7 @@ object Macros {
     }
 
     def println(x: => Any) = if (macroDebug) Predef println x
+    def newline() = if (macroDebug) Predef println ()
     object smartTransformer extends Transformer {
       var level = 0
       override def transform(tree: Tree): Tree = {
@@ -225,7 +231,7 @@ object Macros {
     }
     //val thisReplaced = expr.tree.substituteThis(/*Get a symbol for the type scala*/
     //Then, using substituteSymbols (?) or sth. like that, replace references to Lifting with references to ivm.expressiontree.Lifting :-).
-    Predef println ()
+    newline() //Predef println ()
     println("#### Before transform: " + expr.tree)
     //println("#### Before transform: " + showRaw(expr.tree))
     val transformed = smartTransformer.transform(expr.tree)

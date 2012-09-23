@@ -3,6 +3,12 @@ package ivm.expressiontree
 trait LangIntf {
   type Rep[+T]
 }
+/*
+object ModularFrontendDefsObj extends ModularFrontendDefs
+
+import ModularFrontendDefsObj._
+*/
+
 /* Compared to the example below, the LangIntf classes can be taken out and LangIntf can just become a type parameter.*/
 /*trait ScalaIntf {
   this: Interface =>
@@ -23,7 +29,7 @@ trait LangIntf {
   */
   trait BaseLangIntf extends LangIntf {
     type Rep[+T]
-    implicit def unit[T](t: T): Rep[T]
+    implicit def pure[T](t: T): Rep[T]
   }
 /*}
 
@@ -37,17 +43,17 @@ trait Interpreted[Sym <: LangIntf, Res] {
   def apply(s: ThisLangIntf): s.Rep[Res]
 }
 object ModularFrontendExample extends scala.App {
-  new Interpreted[BaseLangIntf with ScalaLangIntf, Int] {
+  println(new Interpreted[BaseLangIntf with ScalaLangIntf, Int] {
     def apply(s: ThisLangIntf): s.Rep[Int] = {
       import s._
-      unit(1) + 2
+      pure(1) + 2
     }
-  }
+  })
 }
 class ModularFrontendExample extends Interpreted[BaseLangIntf with ScalaLangIntf, Int] {
   def apply(s: ThisLangIntf): s.Rep[Int] = {
     import s._
-    unit(1) + 2
+    pure(1) + 2
   }
 }
 
