@@ -36,7 +36,7 @@ trait Interpreted[Sym <: LangIntf, Res] {
   type ThisLangIntf = Sym
   def apply(s: ThisLangIntf): s.Rep[Res]
 }
-object ModularFrontendExample extends App {
+object ModularFrontendExample extends scala.App {
   new Interpreted[BaseLangIntf with ScalaLangIntf, Int] {
     def apply(s: ThisLangIntf): s.Rep[Int] = {
       import s._
