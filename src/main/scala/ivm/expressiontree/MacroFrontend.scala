@@ -32,13 +32,19 @@ import language.experimental.macros
 //}
 
 object UtilsForMacros {
-  def extractors(c: Context) = new {
-    import c.universe._
+  class Extractors[T <: Context](ctx: T) {
+    import ctx.universe._
     object TermNameDecoded {
       def unapply(t: TermName): Some[String] = Some(t.decoded)
     }
     object TermNameEncoded {
       def unapply(t: TermName): Some[String] = Some(t.encoded)
+    }
+    object TypeNameDecoded {
+      def unapply(t: TypeName): Some[String] = Some(t.decoded)
+    }
+    object TypeNameEncoded {
+      def unapply(t: TypeName): Some[String] = Some(t.encoded)
     }
   }
 }
@@ -123,12 +129,11 @@ object Macros /*extends ModularFrontendDefs*/ {
     wrap_gen_impl[T, BaseLangIntf with ScalaLangIntf](c)(expr)
   def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
     import c.universe._
+    val extractors = new Extractors[c.type](c)
+    import extractors._
     //Since this transformer inspects symbols, it must be called _before_ c.resetAllAttrs!
     object resetIntfMemberBindings extends Transformer {
       override def transform(tree: Tree): Tree = {
-        object TermNameEncoded {
-          def unapply(t: TermName): Some[String] = Some(t.encoded)
-        }
         tree match {
           //case Select(a, TermNameEncoded(b)) if a hasSymbolWhich (_.fullName == "ivm.expressiontree.Lifting") =>
           case Select(a @ Ident(TermNameEncoded("Lifting")), TermNameEncoded(b))
@@ -165,29 +170,8 @@ object Macros /*extends ModularFrontendDefs*/ {
   def smart_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[Any] = {
     import c.universe._
 
-    //Too clever for Scalac - it doesn't get it:
-    //val extr = extractors(c)
-    //import extr._
-    //causes below:
-    /*
-    [error] /app/home/pgiarrusso/src/LinqOnSteroids/src/main/scala/ivm/expressiontree/MacroFrontend.scala:123: pattern type is incompatible with expected type;
-    [error]  found   : c.universe.NameApi
-    [error]  required: c.universe.NameApi
-    [error]           case Apply(Select(Select(Ident(TermNameEncoded("scala")), TermNameEncoded(AnyTuple)), TermNameEncoded("apply")), args @ List(_*)) =>
-    */
-
-    object TermNameDecoded {
-      def unapply(t: TermName): Some[String] = Some(t.decoded)
-    }
-    object TermNameEncoded {
-      def unapply(t: TermName): Some[String] = Some(t.encoded)
-    }
-    object TypeNameDecoded {
-      def unapply(t: TypeName): Some[String] = Some(t.decoded)
-    }
-    object TypeNameEncoded {
-      def unapply(t: TypeName): Some[String] = Some(t.encoded)
-    }
+    val extractors = new Extractors[c.type](c)
+    import extractors._
 
     def println(x: => Any) = if (macroDebug) Predef println x
     def newline() = if (macroDebug) Predef println ()
