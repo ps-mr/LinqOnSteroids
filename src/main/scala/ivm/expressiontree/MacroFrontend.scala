@@ -118,8 +118,8 @@ object Macros /*extends ModularFrontendDefs*/ {
     }
   }
    */
-  def wrap[T](expr: Exp[T]): Interpreted[BaseLangIntf with ScalaLangIntf, T] = macro wrap_impl[T]
-  def wrap_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[BaseLangIntf with ScalaLangIntf, T]] =
+  def wrap[T](expr: Exp[T]) = macro wrap_impl[T]
+  def wrap_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
     wrap_gen_impl[T, BaseLangIntf with ScalaLangIntf](c)(expr)
   def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
     import c.universe._
