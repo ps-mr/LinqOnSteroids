@@ -133,6 +133,9 @@ object Macros /*extends ModularFrontendDefs*/ {
             //This is the manually inlined implementation of hasSymbolWhich:
             if a.symbol != null && a.symbol != NoSymbol && a.symbol.fullName == "ivm.expressiontree.Lifting"
           =>
+            /* This tree is untyped, hence we must trigger typechecking again
+             * by calling resetAllAttrs. When a tree is typed, the typechecker
+             * does not visit its descendants. */
             Ident(newTermName(b))
           case _ => super.transform(tree)
         }
@@ -147,24 +150,6 @@ object Macros /*extends ModularFrontendDefs*/ {
         }
       }).tree))
     //println(showRaw(res))
-    val typechecked = c.typeCheck(res.tree, silent = false)
-    object visitor extends Transformer {
-      override def transform(tree: Tree): Tree = {
-        object TermNameEncoded {
-          def unapply(t: TermName): Some[String] = Some(t.encoded)
-        }
-        tree match {
-          //case Select(a, TermNameEncoded(b)) if a hasSymbolWhich (_.name == newTermName("ivm.expressiontree.Lifting")) =>
-          //case Select(a, TermNameEncoded(b)) =>
-          case TypeApply(fn, args) if fn.tpe == null =>
-            printf("%s has null tpe after typechecking\n", fn)
-            super.transform(tree)
-          case _ => super.transform(tree)
-        }
-      }
-    }
-    visitor transform typechecked
-    println("Typechecking done")
     res
   }
   def smart[T](expr: T): Any = macro smart_impl[T]
