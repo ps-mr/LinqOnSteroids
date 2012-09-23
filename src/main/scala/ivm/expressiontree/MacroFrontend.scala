@@ -118,8 +118,8 @@ object Macros /*extends ModularFrontendDefs*/ {
     }
   }
    */
-  def wrap[T](expr: Exp[T]): Any = macro wrap_impl[T, BaseLangIntf with ScalaLangIntf]
-  def wrap_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Any] = {
+  def wrap[T](expr: Exp[T]): Interpreted[BaseLangIntf with ScalaLangIntf, T] = macro wrap_impl[T, BaseLangIntf with ScalaLangIntf]
+  def wrap_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
     import c.universe._
     //Since this transformer inspects symbols, it must be called _before_ c.resetAllAttrs!
     object resetIntfMemberBindings extends Transformer {
@@ -142,8 +142,7 @@ object Macros /*extends ModularFrontendDefs*/ {
       }
     }
     val clearedExpr = c.Expr[Any](resetIntfMemberBindings transform expr.tree)
-    //val res = c.Expr[Interpreted[Sym, T]](c.resetAllAttrs(reify(new Interpreted[Sym, T]
-    val res = c.Expr[Any](c.resetAllAttrs(reify(new Interpreted[Sym, T] {
+    val res = c.Expr[Interpreted[Sym, T]](c.resetAllAttrs(reify(new Interpreted[Sym, T] {
         def apply(s: ThisLangIntf): s.Rep[T] = {
           import s._
           clearedExpr.splice.asInstanceOf[s.Rep[T]]
