@@ -4,39 +4,60 @@ package expressiontree
 import Lifting._
 import scala.reflect.macros.Context
 import language.experimental.macros
+import util.matching.Regex
 
 trait Interpreted[Sym <: LangIntf, Res] {
   type ThisLangIntf = Sym
   def apply(s: ThisLangIntf): s.Rep[Res]
 }
 
-object UtilsForMacros {
-  class Extractors[T <: Context](ctx: T) {
-    import ctx.universe._
-    object TermNameDecoded {
-      def unapply(t: TermName): Some[String] = Some(t.decoded)
-    }
-    object TermNameEncoded {
-      def unapply(t: TermName): Some[String] = Some(t.encoded)
-    }
-    object TypeNameDecoded {
-      def unapply(t: TypeName): Some[String] = Some(t.decoded)
-    }
-    object TypeNameEncoded {
-      def unapply(t: TypeName): Some[String] = Some(t.encoded)
-    }
-    //This duplicates the Tree.hasSymbolWhich method of the standard library.
-    def hasSymbolWhich(sym: Symbol)(pred: Symbol => Boolean) = {
-      sym != null && sym != NoSymbol && pred(sym)
-    }
-    def hasFullName(sym: Symbol, name: String): Boolean = {
-      hasSymbolWhich(sym)(_.fullName == name)
-    }
-    def hasFullName(tree: Tree, name: String): Boolean =
-      hasFullName(tree.symbol, name)
+class MacroUtils[T <: Context](ctx: T) {
+  import ctx.universe._
+  object TermNameDecoded {
+    def unapply(t: TermName): Some[String] = Some(t.decoded)
   }
+  object TermNameEncoded {
+    def unapply(t: TermName): Some[String] = Some(t.encoded)
+  }
+  object TypeNameDecoded {
+    def unapply(t: TypeName): Some[String] = Some(t.decoded)
+  }
+  object TypeNameEncoded {
+    def unapply(t: TypeName): Some[String] = Some(t.encoded)
+  }
+  //This duplicates the Tree.hasSymbolWhich method of the standard library.
+  def hasSymbolWhich(sym: Symbol)(pred: Symbol => Boolean) = {
+    sym != null && sym != NoSymbol && pred(sym)
+  }
+  def hasFullName(sym: Symbol, name: String): Boolean = {
+    hasSymbolWhich(sym)(_.fullName == name)
+  }
+  def hasFullName(tree: Tree, name: String): Boolean =
+    hasFullName(tree.symbol, name)
 }
-object Macros {
+
+trait ReusableMacros {
+  val ConvToTuple: Regex
+
+  protected def prefix: String
+  protected val macroDebug = false
+  protected def implementationPkgName: String
+  protected def implementationClsName: String
+  protected def implementationFQClsName = implementationPkgName + "." + implementationClsName
+
+  val anyUnaryMethods = List("toString", "hashCode", "##")
+  val anyRefUnaryMethods = List("notify", "notifyAll", "wait")
+
+  val anyBinaryMethods = List("!=", "==", "equals")
+  val anyRefBinaryMethods = List("eq", "ne")
+
+  val anyTypeUnaryMethod = List("asInstanceOf", "isInstanceOf")
+  val anyTypeBinaryMethod = List("synchronized")
+
+  val AnyTuple = "Tuple([0-9]+)".r
+}
+
+object Macros extends ReusableMacros {
   def stringify[T](arg: T): String = macro stringify_impl[T]
   def show[T](arg: T) = macro show_impl[T]
   def ctShow[T](arg: T) = macro ctShow_impl[T]
@@ -79,30 +100,30 @@ object Macros {
     arg
   }
 
-  import UtilsForMacros._
-
-  val anyUnaryMethods = List("toString", "hashCode", "##")
-  val anyRefUnaryMethods = List("notify", "notifyAll", "wait")
-
-  val anyBinaryMethods = List("!=", "==", "equals")
-  val anyRefBinaryMethods = List("eq", "ne")
-
-  val anyTypeUnaryMethod = List("asInstanceOf", "isInstanceOf")
-  val anyTypeBinaryMethod = List("synchronized")
-
   def wrap[T](expr: Exp[T]) = macro wrap_impl[T]
   def wrap_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
     wrap_gen_impl[T, BaseLangIntf with ScalaLangIntf](c)(expr)
   //TODO: merge this macro within squopt.
+
+  def squopt[T](expr: T): Any = macro squopt_impl[T]
+  override protected def prefix = "squopt_"
+
+  override protected val macroDebug = true
+  override protected def implementationPkgName = "ivm.expressiontree"
+  override protected def implementationClsName = "Lifting"
+
+  val ConvToTuple = "tuple[0-9]+ToTuple[0-9]+Exp".r
+
+  //Reusable part.
   def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
     import c.universe._
-    val extractors = new Extractors[c.type](c)
+    val extractors = new MacroUtils[c.type](c)
     import extractors._
     //Since this transformer inspects symbols, it must be called _before_ c.resetAllAttrs!
     object resetIntfMemberBindings extends Transformer {
       override def transform(tree: Tree): Tree = {
         tree match {
-          case Select(lifting, b) if hasFullName(lifting, "ivm.expressiontree.Lifting") =>
+          case Select(lifting, b) if hasFullName(lifting, implementationFQClsName) =>
             /* This tree is untyped, hence we must trigger typechecking again
              * by calling resetAllAttrs. When a tree is typed, the typechecker
              * does not visit its descendants. */
@@ -120,17 +141,11 @@ object Macros {
     }).tree))
     res
   }
-  def squopt[T](expr: T): Any = macro squopt_impl[T]
-  def prefix = "squopt_"
-
-  private val macroDebug = true
-  val AnyTuple = "Tuple([0-9]+)".r
-  val ConvToTuple = "tuple[0-9]+ToTuple[0-9]+Exp".r
 
   def squopt_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[Any] = {
     import c.universe._
 
-    val extractors = new Extractors[c.type](c)
+    val extractors = new MacroUtils[c.type](c)
     import extractors._
 
     def println(x: => Any) = if (macroDebug) Predef println x
@@ -182,11 +197,11 @@ object Macros {
 
           //Start removing implicit conversions: they will be readded by the second layer of typechecking if needed.
           case Apply(Apply(TypeApply(Select(lifting, TermNameEncoded("pure")), tArgs), List(convertedTerm)), implicitArgs)
-            if hasFullName(lifting, "ivm.expressiontree.Lifting")
+            if hasFullName(lifting, implementationFQClsName)
           =>
             transform(convertedTerm)
           case Apply(TypeApply(Select(lifting, TermNameEncoded(ConvToTuple())), tArgs), List(convertedTerm))
-            if hasFullName(lifting, "ivm.expressiontree.Lifting")
+            if hasFullName(lifting, implementationFQClsName)
           =>
             transform(convertedTerm)
           case _ => super.transform(tree)
