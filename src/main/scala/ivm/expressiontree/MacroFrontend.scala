@@ -121,7 +121,7 @@ object Macros {
     res
   }
   def squopt[T](expr: T): Any = macro squopt_impl[T]
-  def prefix = "smart_"
+  def prefix = "squopt_"
 
   private val macroDebug = true
   val AnyTuple = "Tuple([0-9]+)".r
