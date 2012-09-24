@@ -5,31 +5,11 @@ import Lifting._
 import scala.reflect.macros.Context
 import language.experimental.macros
 
-//trait ModularFrontendDefs {
-  trait LangIntf {
-    type Rep[+T]
-  }
-
-  trait BaseLangIntf extends LangIntf {
-    //Add a typeclass constraint, instead of ugly tricks to disable the conversion for specific classes.
-    //implicit def pure[T](t: T): Rep[T]
-    implicit def pure[T: ClassTag: TypeTag](t: T): Rep[T]
-  }
-
-  trait ScalaLangIntf {
-    this: LangIntf =>
-    //Why not an implicit abstract class? Ah I see.
-    implicit def expToNumOps[T: Numeric](t: Rep[T]): NumericOps[T]
-    abstract class NumericOps[T: Numeric](t: Rep[T]) {
-      def +(that: Rep[Int]): Rep[Int]
-    }
-  }
 
   trait Interpreted[Sym <: LangIntf, Res] {
     type ThisLangIntf = Sym
     def apply(s: ThisLangIntf): s.Rep[Res]
   }
-//}
 
 object UtilsForMacros {
   class Extractors[T <: Context](ctx: T) {

@@ -15,6 +15,25 @@ import collection.mutable
  * This can be solved by making their composition available as another implicit conversion, and that's the solution
  * we show here.
  */
+trait LangIntf {
+  type Rep[+T]
+}
+
+trait BaseLangIntf extends LangIntf {
+  //Add a typeclass constraint, instead of ugly tricks to disable the conversion for specific classes.
+  //implicit def pure[T](t: T): Rep[T]
+  implicit def pure[T: ClassTag: TypeTag](t: T): Rep[T]
+}
+
+trait ScalaLangIntf {
+  this: LangIntf =>
+  //Why not an implicit abstract class? Ah I see.
+  implicit def expToNumOps[T: Numeric](t: Rep[T]): NumericOps[T]
+  abstract class NumericOps[T: Numeric](t: Rep[T]) {
+    def +(that: Rep[T]): Rep[T]
+  }
+}
+
 trait ConversionDisabler {
   //We forbid implicit conversion from Unit to Exp[Unit] by making it ambiguous. To this end we declare noToExpForUnit.
   //It is more specific than pure[Unit] because it's not generic, but is declared in a superclass, hence
@@ -48,7 +67,8 @@ trait ExtraConversions extends ConversionHelpers {
 //  implicit def int2ExpFloat(t: Int) = convFromBase[Int, Float](t)
 }
 
-trait LiftingConvs extends ConversionDisabler with ExtraConversions {
+trait LiftingConvs extends ConversionDisabler with ExtraConversions with BaseLangIntf {
+  type Rep[+T] = Exp[T]
   //The following variant would avoid ugliness like:
   //implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
   //but it does not work (bug https://issues.scala-lang.org/browse/SI-3346).
@@ -200,10 +220,10 @@ trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
  * then specific ones Pi T: Numeric. Exp[T] => NumExp[T]; Pi T. Exp[Traversable[T]] => TraversableExp[T]
  */
 
-trait NumOps {
+trait NumOps extends ScalaLangIntf {
   this: LiftingConvs with FunctionOps =>
 
-  class NumericOps[T: Numeric](t: Exp[T]) {
+  class NumericOps[T: Numeric](t: Exp[T]) extends super.NumericOps[T](t) {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
     def *(that: Exp[T]): Exp[T] = Times(this.t, that)
     def -(that: Exp[T]): Exp[T] = Plus(this.t, Negate(that))
