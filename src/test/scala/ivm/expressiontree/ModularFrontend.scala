@@ -1,4 +1,6 @@
 package ivm.expressiontree
+
+import language.reflectiveCalls
 import org.scalatest._
 import org.scalatest.matchers.ShouldMatchers
 
@@ -10,6 +12,13 @@ trait MyIntf extends Interface with ScalaIntf {
 
 class ModularFrontendExample extends FunSuite with ShouldMatchers {
   val expected = Plus(Const(1), Const(2))
+
+  //Convert some compile-time failures into run-time ones.
+  //Tillmann took this idea from a blog post to my knowledge :-)
+  implicit def toInterpret[T](x: LangIntf#Rep[T]) = new {
+    def interpret(): T = throw new NotImplementedError()
+  }
+
   test("A manually written polymorphically embedded expression should produce an expression tree") {
     new Interpreted[BaseLangIntf with ScalaLangIntf, Int] {
       def apply(s: ThisLangIntf): s.Rep[Int] = {
@@ -30,12 +39,13 @@ class ModularFrontendExample extends FunSuite with ShouldMatchers {
   test("An exotic term produces another tree") {
     pure(pure(1).interpret() + 2) should be (Const(3))
   }
-  //But this isn't:
-  /*
-  println(Macros.wrap {
-    pure(1).interpret() + 2
-  })
-  */
+
+  test("wrap rejects exotic terms") {
+    //But this isn't:
+    evaluating { Macros.wrap {
+      pure(1).interpret() + 2
+    } apply Lifting} should produce [NotImplementedError]
+  }
 }
 
 // vim: set ts=8 sw=2 et:
