@@ -1,3 +1,3 @@
 #!/bin/sh
 > tags
-find src/ target/ -name '*.scala'|xargs ctags -a
+find src target sampleapp -name '*.scala'|xargs ctags -a
