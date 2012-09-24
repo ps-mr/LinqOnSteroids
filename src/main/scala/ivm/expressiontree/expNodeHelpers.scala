@@ -13,15 +13,6 @@ trait Arity0Exp[+R] extends Exp[R] {
   override protected def checkedGenericConstructor(v: List[Exp[_]]) = this
 }
 
-trait Arity1OpExpTrait[T1, +R, Self <: Exp[R]] extends Arity1OpTrait[Exp[T1], R, Self] {
-  this: Self =>
-}
-
-
-trait Arity2OpExpTrait[T1, T2, +R, Self <: Exp[R]] extends Arity2OpTrait[Exp[T1], Exp[T2], R, Self] {
-  this: Self =>
-}
-
 //Note: descendents of this class are not necessarily supposed to be commutative, just to have type (A, A) => B.
 trait Arity2OpSymmExp[Arg, +R, Self <: Exp[R]] extends Arity2OpExpTrait[Arg, Arg, R, Self] {
   this: Self =>

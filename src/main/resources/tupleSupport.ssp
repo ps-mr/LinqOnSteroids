@@ -52,6 +52,11 @@ trait Arity${arity}OpTrait[${paramsLoopComma("A%d <: Exp[_]")}, +R, +Self <: Exp
   def copy(${paramsLoopComma(argPfx + "%d: A%<d")}): Self
 }
 
+trait Arity${arity}OpExpTrait[${tparams}, +R, +Self <: Exp[R]]
+  extends Arity${arity}OpTrait[${paramsLoopComma("Exp[" + tpPfx + "%d]")}, R, Self] {
+  this: Self =>
+}
+
 abstract class Arity${arity}Op[${paramsLoopComma(tpPfx + "%d <: Exp[_]")}, +R, +Self <: Exp[R]](${paramsLoopComma("val " + argPfx + "%d: A%<d")}) extends Arity${arity}OpTrait[${tparams}, R, Self] {
   this: Self =>
 }
