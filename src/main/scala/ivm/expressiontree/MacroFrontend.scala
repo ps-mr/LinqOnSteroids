@@ -37,7 +37,10 @@ class MacroUtils[T <: Context](ctx: T) {
 }
 
 trait ReusableMacrosParams {
-  val ConvToTuple: Regex
+  /*
+   * Macros for now can't be moved to this trait (as I'd like) because of https://issues.scala-lang.org/browse/SI-5753.
+   */
+  def ConvToTuple: Regex
 
   protected def prefix: String
   protected val macroDebug = false
@@ -169,6 +172,7 @@ object ReusableMacrosParams {
 }
 
 object Macros extends ReusableMacrosParams {
+  //TODO: move this misc macros to a separate class.
   def stringify[T](arg: T): String = macro stringify_impl[T]
   def show[T](arg: T) = macro show_impl[T]
   def ctShow[T](arg: T) = macro ctShow_impl[T]
