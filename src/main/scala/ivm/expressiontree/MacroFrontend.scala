@@ -36,7 +36,7 @@ class MacroUtils[T <: Context](ctx: T) {
     hasFullName(tree.symbol, name)
 }
 
-trait ReusableMacros {
+trait ReusableMacrosParams {
   val ConvToTuple: Regex
 
   protected def prefix: String
@@ -44,78 +44,14 @@ trait ReusableMacros {
   protected def implementationPkgName: String
   protected def implementationClsName: String
   protected def implementationFQClsName = implementationPkgName + "." + implementationClsName
-
-  val anyUnaryMethods = List("toString", "hashCode", "##")
-  val anyRefUnaryMethods = List("notify", "notifyAll", "wait")
-
-  val anyBinaryMethods = List("!=", "==", "equals")
-  val anyRefBinaryMethods = List("eq", "ne")
-
-  val anyTypeUnaryMethod = List("asInstanceOf", "isInstanceOf")
-  val anyTypeBinaryMethod = List("synchronized")
-
-  val AnyTuple = "Tuple([0-9]+)".r
 }
 
-object Macros extends ReusableMacros {
-  def stringify[T](arg: T): String = macro stringify_impl[T]
-  def show[T](arg: T) = macro show_impl[T]
-  def ctShow[T](arg: T) = macro ctShow_impl[T]
-  def ctShowDebug[T](arg: T) = macro ctShowDebug_impl[T]
-
-
-  def macroId[T](arg: T): T = macro macroId_impl[T]
-  def macroId_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[T] = arg
-
-
-  def stringify_base(c: Context)(arg: c.Expr[Any]): String =
-    arg.tree.toString //The result here is a bit ugly - we need to print the tree before desugaring.
-  def stringify_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[String] = {
-    import c.universe._
-    //c.Expr[String](Literal(Constant(stringify_base(c)(arg))))
-    //reify(c.Expr[String](Literal(Constant(stringify_base(c)(arg)))).splice)
-    val v = stringify_base(c)(arg)
-    //reify(v) // This reifies the variable reference.
-    //println(showRaw(reify(v).tree))
-    c.Expr[String](Literal(Constant(v)))
-  }
-
-  def show_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[Unit] = {
-    import c.universe._
-    val v = stringify_base(c)(arg)
-    //val v1 = reify(v)
-    val v1 = c.Expr[String](Literal(Constant(v)))
-    reify(println("Expr: %s evaluates to %s" format (v1.splice, arg.splice)))
-  }
-  def ctShow_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[Unit] = {
-    import c.universe._
-    println(stringify_base(c)(arg))
-    reify(())
-  }
-
-  def ctShowDebug_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[T] = {
-    import c.universe._
-    println("\n## Stringify: " + stringify_base(c)(arg) + "\n")
-    println("## showRaw: " + showRaw(arg.tree) + "\n")//, printTypes = true, printIds = true
-    arg
-  }
-
-  def wrap[T](expr: Exp[T]) = macro wrap_impl[T]
-  def wrap_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
-    wrap_gen_impl[T, BaseLangIntf with ScalaLangIntf](c)(expr)
-  //TODO: merge this macro within squopt.
-
-  def squopt[T](expr: T): Any = macro squopt_impl[T]
-  override protected def prefix = "squopt_"
-
-  override protected val macroDebug = true
-  override protected def implementationPkgName = "ivm.expressiontree"
-  override protected def implementationClsName = "Lifting"
-
-  val ConvToTuple = "tuple[0-9]+ToTuple[0-9]+Exp".r
-
+object ReusableMacrosParams {
   //Reusable part.
-  def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
+  def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)
+                                                                   (expr: c.Expr[Exp[T]],
+                                                                    implementationFQClsName: String):
+  c.Expr[Interpreted[Sym, T]] = {
     import c.universe._
     val extractors = new MacroUtils[c.type](c)
     import extractors._
@@ -142,7 +78,19 @@ object Macros extends ReusableMacros {
     res
   }
 
-  def squopt_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[Any] = {
+  val anyUnaryMethods = List("toString", "hashCode", "##")
+  val anyRefUnaryMethods = List("notify", "notifyAll", "wait")
+
+  val anyBinaryMethods = List("!=", "==", "equals")
+  val anyRefBinaryMethods = List("eq", "ne")
+
+  val anyTypeUnaryMethod = List("asInstanceOf", "isInstanceOf")
+  val anyTypeBinaryMethod = List("synchronized")
+
+  val AnyTuple = "Tuple([0-9]+)".r
+
+  def squopt_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T], implementationFQClsName: String,
+                                               prefix: String, ConvToTuple: Regex, macroDebug: Boolean): c.Expr[Any] = {
     import c.universe._
 
     val extractors = new MacroUtils[c.type](c)
@@ -217,6 +165,70 @@ object Macros extends ReusableMacros {
     //resetAllAttrs comes from: https://github.com/retronym/macrocosm/blob/171be7e/src/main/scala/com/github/retronym/macrocosm/Macrocosm.scala#L171
     val afterReset = c.resetAllAttrs(transformed)
     c.Expr(afterReset)
+  }
+}
+
+object Macros extends ReusableMacrosParams {
+  def stringify[T](arg: T): String = macro stringify_impl[T]
+  def show[T](arg: T) = macro show_impl[T]
+  def ctShow[T](arg: T) = macro ctShow_impl[T]
+  def ctShowDebug[T](arg: T) = macro ctShowDebug_impl[T]
+
+
+  def macroId[T](arg: T): T = macro macroId_impl[T]
+  def macroId_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[T] = arg
+
+
+  def stringify_base(c: Context)(arg: c.Expr[Any]): String =
+    arg.tree.toString //The result here is a bit ugly - we need to print the tree before desugaring.
+  def stringify_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[String] = {
+    import c.universe._
+    //c.Expr[String](Literal(Constant(stringify_base(c)(arg))))
+    //reify(c.Expr[String](Literal(Constant(stringify_base(c)(arg)))).splice)
+    val v = stringify_base(c)(arg)
+    //reify(v) // This reifies the variable reference.
+    //println(showRaw(reify(v).tree))
+    c.Expr[String](Literal(Constant(v)))
+  }
+
+  def show_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[Unit] = {
+    import c.universe._
+    val v = stringify_base(c)(arg)
+    //val v1 = reify(v)
+    val v1 = c.Expr[String](Literal(Constant(v)))
+    reify(println("Expr: %s evaluates to %s" format (v1.splice, arg.splice)))
+  }
+  def ctShow_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[Unit] = {
+    import c.universe._
+    println(stringify_base(c)(arg))
+    reify(())
+  }
+
+  def ctShowDebug_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[T] = {
+    import c.universe._
+    println("\n## Stringify: " + stringify_base(c)(arg) + "\n")
+    println("## showRaw: " + showRaw(arg.tree) + "\n")//, printTypes = true, printIds = true
+    arg
+  }
+
+  def wrap[T](expr: Exp[T]) = macro wrap_impl[T]
+  def wrap_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
+    wrap_gen_impl[T, BaseLangIntf with ScalaLangIntf](c)(expr)
+  //TODO: merge this macro within squopt.
+
+  def squopt[T](expr: T): Any = macro squopt_impl[T]
+  override protected def prefix = "squopt_"
+
+  override protected val macroDebug = true
+  override protected def implementationPkgName = "ivm.expressiontree"
+  override protected def implementationClsName = "Lifting"
+
+  val ConvToTuple = "tuple[0-9]+ToTuple[0-9]+Exp".r
+  def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
+    ReusableMacrosParams.wrap_gen_impl[T, Sym](c)(expr, implementationFQClsName)
+  }
+  def squopt_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[Any] = {
+    ReusableMacrosParams.squopt_impl[T](c)(expr, implementationFQClsName, prefix, ConvToTuple, macroDebug)
   }
 }
 
