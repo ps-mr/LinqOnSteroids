@@ -258,11 +258,11 @@ trait NumOps extends NumOpsLangIntf {
   }
 
   class FractionalOps[T: Fractional](t: Exp[T])(implicit tTag: TypeTag[Fractional[T]]) extends super.FractionalOps[T] {
-    def /(that: Exp[T]): Exp[T] = fmap(implicitly[Fractional[T]], this.t, that)('FractionalOps$div, _.div(_, _))
+    def /(that: Exp[T]): Exp[T] = Div(this.t, that)
   }
 
   class IntegralOps[T: Integral: TypeTag](t: Exp[T]) extends super.IntegralOps[T] {
-    def %(that: Exp[T]): Exp[T] = fmap(implicitly[Integral[T]], this.t, that)('IntegralOps$mod, _.rem(_, _))
+    def %(that: Exp[T]): Exp[T] = Mod(this.t, that)
   }
 
   implicit def expToNumOps[T: Numeric](t: Exp[T]) = new NumericOps(t)
