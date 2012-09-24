@@ -7,7 +7,7 @@ object Helpers {
 
   import Lifting._
   def smart_==[T](a: T, b: T) = a == b
-  //Hm. I could probably obviate the need for these overloads by making the smart macro more intelligent - after all, it can invoke typeCheck.
+  //Hm. I could probably obviate the need for these overloads by making the squopt macro more intelligent - after all, it can invoke typeCheck.
   def smart_==[T: ClassTag: TypeTag](a: T, b: Exp[T]) = Eq(a, b)
   def smart_==[T: ClassTag: TypeTag](a: Exp[T], b: T) = Eq(a, b)
   def smart_==[T](a: Exp[T], b: Exp[T]) = Eq(a, b)

@@ -93,7 +93,7 @@ object Macros {
   def wrap[T](expr: Exp[T]) = macro wrap_impl[T]
   def wrap_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
     wrap_gen_impl[T, BaseLangIntf with ScalaLangIntf](c)(expr)
-  //TODO: merge this macro within smart.
+  //TODO: merge this macro within squopt.
   def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
     import c.universe._
     val extractors = new Extractors[c.type](c)
@@ -120,14 +120,14 @@ object Macros {
     }).tree))
     res
   }
-  def smart[T](expr: T): Any = macro smart_impl[T]
+  def squopt[T](expr: T): Any = macro squopt_impl[T]
   def prefix = "smart_"
 
   private val macroDebug = true
   val AnyTuple = "Tuple([0-9]+)".r
   val ConvToTuple = "tuple[0-9]+ToTuple[0-9]+Exp".r
 
-  def smart_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[Any] = {
+  def squopt_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[Any] = {
     import c.universe._
 
     val extractors = new Extractors[c.type](c)
@@ -135,7 +135,7 @@ object Macros {
 
     def println(x: => Any) = if (macroDebug) Predef println x
     def newline() = if (macroDebug) Predef println ()
-    object smartTransformer extends Transformer {
+    object squoptTransformer extends Transformer {
       var level = 0
       override def transform(tree: Tree): Tree = {
         //println("Level %d, tree %s" format(level, showRaw(tree)))
@@ -197,7 +197,7 @@ object Macros {
     }
     newline()
     println("#### Before transform: " + expr.tree)
-    val transformed = smartTransformer.transform(expr.tree)
+    val transformed = squoptTransformer.transform(expr.tree)
     println("#### Transformed: " + transformed)
     //resetAllAttrs comes from: https://github.com/retronym/macrocosm/blob/171be7e/src/main/scala/com/github/retronym/macrocosm/Macrocosm.scala#L171
     val afterReset = c.resetAllAttrs(transformed)
