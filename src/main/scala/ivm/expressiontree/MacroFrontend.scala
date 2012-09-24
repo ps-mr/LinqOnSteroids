@@ -26,6 +26,15 @@ object UtilsForMacros {
     object TypeNameEncoded {
       def unapply(t: TypeName): Some[String] = Some(t.encoded)
     }
+    //This duplicates the Tree.hasSymbolWhich method of the standard library.
+    def hasSymbolWhich(sym: Symbol)(pred: Symbol => Boolean) = {
+      sym != null && sym != NoSymbol && pred(sym)
+    }
+    def hasFullName(sym: Symbol, name: String): Boolean = {
+      hasSymbolWhich(sym)(_.fullName == name)
+    }
+    def hasFullName(tree: Tree, name: String): Boolean =
+      hasFullName(tree.symbol, name)
   }
 }
 object Macros /*extends ModularFrontendDefs*/ {
@@ -115,15 +124,11 @@ object Macros /*extends ModularFrontendDefs*/ {
     object resetIntfMemberBindings extends Transformer {
       override def transform(tree: Tree): Tree = {
         tree match {
-          //case Select(a, TermNameEncoded(b)) if a hasSymbolWhich (_.fullName == "ivm.expressiontree.Lifting") =>
-          case Select(a @ Ident(TermNameEncoded("Lifting")), TermNameEncoded(b))
-            //This is the manually inlined implementation of hasSymbolWhich:
-            if a.symbol != null && a.symbol != NoSymbol && a.symbol.fullName == "ivm.expressiontree.Lifting"
-          =>
+          case Select(lifting, b) if hasFullName(lifting, "ivm.expressiontree.Lifting") =>
             /* This tree is untyped, hence we must trigger typechecking again
              * by calling resetAllAttrs. When a tree is typed, the typechecker
              * does not visit its descendants. */
-            Ident(newTermName(b))
+            Ident(b)
           case _ => super.transform(tree)
         }
       }
@@ -237,12 +242,12 @@ object Macros /*extends ModularFrontendDefs*/ {
 //            Select(Select(Select(Ident(TermNameEncoded("ivm")), TermNameEncoded("expressiontree")), TermNameEncoded("Lifting")), TermNameEncoded("pure")),
 //            tArgs), List(convertedTerm)), implicitArgs)
 //          =>
-          case Apply(Apply(TypeApply(Select(Ident(TermNameEncoded("Lifting")),
-            TermNameEncoded("pure")), tArgs), List(convertedTerm)), implicitArgs)
+          case Apply(Apply(TypeApply(Select(lifting, TermNameEncoded("pure")), tArgs), List(convertedTerm)), implicitArgs)
+            if hasFullName(lifting, "ivm.expressiontree.Lifting")
           =>
             transform(convertedTerm)
-          case Apply(TypeApply(Select(Ident(TermNameEncoded("Lifting")),
-            TermNameEncoded(ConvToTuple())), tArgs), List(convertedTerm))
+          case Apply(TypeApply(Select(lifting, TermNameEncoded(ConvToTuple())), tArgs), List(convertedTerm))
+            if hasFullName(lifting, "ivm.expressiontree.Lifting")
           =>
             transform(convertedTerm)
           case _ => super.transform(tree)

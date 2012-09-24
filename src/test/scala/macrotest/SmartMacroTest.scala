@@ -1,10 +1,10 @@
-package ivm
-package expressiontree
+package macrotest
 
-object MacroTest extends scala.App with tests.TestUtil {
+object SmartMacroTest extends scala.App with ivm.tests.TestUtil {
+  import ivm.expressiontree._
+  import Helpers._
   import Lifting._
   import Macros._
-  import Helpers._
 
   val c1 = asExp(1)
   val c2 = asExp(2)
@@ -52,7 +52,7 @@ object MacroTest extends scala.App with tests.TestUtil {
     }
 
     println("With macros: " + f)
-    println("With macros, after code: " + (Compile toCode f))
+    //println("With macros, after code: " + (Compile toCode f))
   }
   {
     val f = smart {
@@ -64,7 +64,7 @@ object MacroTest extends scala.App with tests.TestUtil {
     }
 
     println("With macros: " + f)
-    println("With macros, after code: " + (Compile toCode f))
+    //println("With macros, after code: " + (Compile toCode f))
   }
   {
     val f = smart {
@@ -74,7 +74,7 @@ object MacroTest extends scala.App with tests.TestUtil {
       } yield i
     }
     println("With macros: " + f)
-    println("With macros, after code: " + (Compile toCode f))
+    //println("With macros, after code: " + (Compile toCode f))
   }
   {
     val f = smart {
@@ -84,7 +84,7 @@ object MacroTest extends scala.App with tests.TestUtil {
       } yield (i, i + 1)
     }
     println("With macros: " + f)
-    println("With macros, after code: " + (Compile toCode f))
+    //println("With macros, after code: " + (Compile toCode f))
   }
   {
     val f = smart {
@@ -94,7 +94,7 @@ object MacroTest extends scala.App with tests.TestUtil {
       } yield (i, (i + 1, i + 2))
     }
     println("With macros: " + f)
-    println("With macros, after code: " + (Compile toCode f))
+    //println("With macros, after code: " + (Compile toCode f))
   }
   //*/
 }
