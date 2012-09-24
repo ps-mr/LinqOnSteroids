@@ -6,7 +6,7 @@ import org.scalatest.matchers.ShouldMatchers
 
 /*
 trait MyIntf extends Interface with ScalaIntf {
-  type LangIntf <: BaseLangIntf with ScalaLangIntf
+  type LangIntf <: LiftingConvsLangIntf with NumOpsLangIntf
 }
 */
 
@@ -20,7 +20,7 @@ class ModularFrontendExample extends FunSuite with ShouldMatchers {
   }
 
   test("A manually written polymorphically embedded expression should produce an expression tree") {
-    new Interpreted[BaseLangIntf with ScalaLangIntf, Int] {
+    new Interpreted[LiftingConvsLangIntf with NumOpsLangIntf, Int] {
       def apply(s: ThisLangIntf): s.Rep[Int] = {
         import s._
         pure(1) + 2

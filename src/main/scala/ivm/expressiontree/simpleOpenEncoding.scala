@@ -19,25 +19,14 @@ trait LangIntf {
   type Rep[+T]
 }
 
-trait BaseLangIntf extends LangIntf {
-  //Add a typeclass constraint, instead of ugly tricks to disable the conversion for specific classes.
-  //implicit def pure[T](t: T): Rep[T]
-  implicit def pure[T: ClassTag: TypeTag](t: T): Rep[T]
+trait ConversionDisablerLangIntf extends LangIntf {
+  implicit def noToExpForUnit(t: Unit): Rep[Unit]
+  implicit def noConstForMutableColl[T](t: mutable.Traversable[T]): Rep[mutable.Traversable[T]]
+  implicit def noPureForExp[T](t: Rep[T]): Rep[Rep[T]]
 }
 
-trait ScalaLangIntf {
-  this: LangIntf =>
-  //Why not an implicit abstract class? Ah I see.
-  implicit def expToNumOps[T: Numeric](t: Rep[T]): NumericOps[T]
-  abstract class NumericOps[T: Numeric](t: Rep[T]) {
-    def +(that: Rep[T]): Rep[T]
-    def *(that: Rep[T]): Rep[T]
-    def -(that: Rep[T]): Rep[T]
-    def unary_- : Rep[T]
-  }
-}
-
-trait ConversionDisabler {
+trait ConversionDisabler extends ConversionDisablerLangIntf {
+  type Rep[+T] = Exp[T]
   //We forbid implicit conversion from Unit to Exp[Unit] by making it ambiguous. To this end we declare noToExpForUnit.
   //It is more specific than pure[Unit] because it's not generic, but is declared in a superclass, hence
   //has less priority. Ambiguity follows.
@@ -49,18 +38,13 @@ trait ConversionDisabler {
   implicit def noPureForExp[T](t: Exp[T]): Exp[Exp[T]] = null
 }
 
+//Implementation details, not in the language interface.
 trait ConversionHelpers {
   def pureExpl[T: ClassTag: TypeTag](t: T): Exp[T] = Const(t)
-
-  //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
-  //parameter of Exp here.
-  def asExp[T](t: Exp[T]) = t
-
   //Use something derived from the above to lift other implicit conversions.
   def convLift[T, U](t: Exp[T], name: Symbol, prefix: String)(implicit conv: T => U): Exp[U] =
     new GlobalFuncCall1(name, prefix, conv, t)
   def convFromBase[T <% U, U: ClassTag: TypeTag](t: T): Exp[U] = pureExpl(t: U)
-
 }
 
 //Conversions which should have lower priority than pure.
@@ -70,8 +54,18 @@ trait ExtraConversions extends ConversionHelpers {
 //  implicit def int2ExpFloat(t: Int) = convFromBase[Int, Float](t)
 }
 
-trait LiftingConvs extends ConversionDisabler with ExtraConversions with BaseLangIntf {
-  type Rep[+T] = Exp[T]
+trait LiftingConvsLangIntf extends ConversionDisablerLangIntf {
+  //Add a typeclass constraint, instead of ugly tricks to disable the conversion for specific classes.
+  //implicit def pure[T](t: T): Rep[T]
+  implicit def pure[T: ClassTag: TypeTag](t: T): Rep[T]
+  def asExp[T](t: Rep[T]): Rep[T]
+
+  abstract class WithAsSmartCollection[T](t: T) {
+    def asSmart(implicit conv: T => Exp[T]): Rep[T]
+  }
+}
+
+trait LiftingConvs extends ConversionDisabler with ExtraConversions with LiftingConvsLangIntf {
   //The following variant would avoid ugliness like:
   //implicit def arrayToExpSeq[T](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
   //but it does not work (bug https://issues.scala-lang.org/browse/SI-3346).
@@ -83,12 +77,21 @@ trait LiftingConvs extends ConversionDisabler with ExtraConversions with BaseLan
   //Of course, this fails: overloading conversions makes them unavailable as
   //implicit views, so asSmart stops working.
 
-  class WithAsSmartCollection[T](t: T) {
+  //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
+  //parameter of Exp here.
+  def asExp[T](t: Exp[T]) = t
+
+  class WithAsSmartCollection[T](t: T) extends super.WithAsSmartCollection(t) {
     def asSmart(implicit conv: T => Exp[T]) = conv(t)
   }
 }
 
-trait ConversionDisabler2 extends LiftingConvs {
+trait ConversionDisabler2LangIntf extends LiftingConvsLangIntf {
+  //Disable conversion - should no more be needed, but it is, as explained below.
+  implicit def noAsSmartForExp[T](t: Exp[T]): WithAsSmartCollection[Exp[T]]
+}
+
+trait ConversionDisabler2 extends LiftingConvs with ConversionDisabler2LangIntf {
   //Disable conversion - should no more be needed, but it is, as explained below.
   implicit def noAsSmartForExp[T](t: Exp[T]): WithAsSmartCollection[Exp[T]] = null
   /* Assume that `class WithAsSmartCollection[T](t: T)` contains:
@@ -113,8 +116,22 @@ def asSmart[U >: T](implicit conv: T => Exp[U]): Exp[U] = conv(t)
    * with the same result - toPimper(Const(1)).asSmart is accepted.
    */
 }
+trait FunctionOpsLangIntf extends AutoFunctionOpsLangIntf {
+  this: LiftingConvsLangIntf =>
+  def fmap[Res](id: Symbol, callfunc: () => Res): Rep[Res]
 
-trait FunctionOps extends AutoFunctionOps {
+  implicit def funcExp[S, T](f: Rep[S] => Rep[T]): Rep[S => T]
+
+  implicit def app[A, B](f: Rep[A => B]): Rep[A] => Rep[B]
+
+  abstract class PartialFunctionOps[S, T] {
+    def isDefinedAt(a: Rep[S]): Rep[Boolean]
+  }
+
+  implicit def expToPartialFunOps[S, T](t: Rep[PartialFunction[S, T]]): PartialFunctionOps[S, T]
+}
+
+trait FunctionOps extends FunctionOpsLangIntf with AutoFunctionOps {
   this: LiftingConvs =>
   // Unused!
   def fmap[Res](id: Symbol, callfunc: () => Res) = new Call0(id, Symbol(""), callfunc)
@@ -126,33 +143,7 @@ trait FunctionOps extends AutoFunctionOps {
   def globalFmap[A0, A1, Res](t: Exp[A0], t2: Exp[A1])
                    (name: Symbol, prefix: String, f: (A0, A1) => Res): Exp[Res] =
     new GlobalFuncCall2(name, prefix, f, t, t2)
-  /*
-  // these functions are explicitly not implicit :)
-  def fmap[A0, Res](t: Exp[A0])
-                   (name: Symbol, f: A0 => Res, restId: Symbol = Symbol("")): Exp[Res] =
-    new Call1(name, restId, f, t)
-  def fmap[A0, A1, Res](a0: Exp[A0], a1: Exp[A1])
-                       (name: Symbol, f: (A0, A1) => Res, restId: Symbol = Symbol("")): Exp[Res] =
-    new Call2(name, restId, f, a0, a1)
-  def fmap[A0, A1, A2, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2])
-                           (name: Symbol, f: (A0, A1, A2) => Res, restId: Symbol = Symbol("")): Exp[Res] =
-    new Call3(name, restId, f, a0, a1, a2)
-  def fmap[A0, A1, A2, A3, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3])
-                               (name: Symbol, f: (A0, A1, A2, A3) => Res, restId: Symbol = Symbol("")): Exp[Res] =
-    new Call4(name, restId, f, a0, a1, a2, a3)
-  def fmap[A0, A1, A2, A3, A4, Res](a0: Exp[A0], a1: Exp[A1], a2: Exp[A2], a3: Exp[A3], a4: Exp[A4])
-                                   (name: Symbol, f: (A0, A1, A2, A3, A4) => Res, restId: Symbol = Symbol("")): Exp[Res] =
-    new Call5(name, restId, f, a0, a1, a2, a3, a4)
-  */
-  /*
-  //This is not applied implicitly.
-  implicit def liftConv[T, U](t: Exp[T])(implicit tM: Manifest[T], uM: Manifest[U], conv: T => U): Exp[U] =
-    fmap(t)(Symbol("liftConv_%s_%s" format (tM.erasure.getName, uM.erasure.getName)), conv)
-  //Not even this version is applied implicitly:
-  implicit def liftConv[T, U](t: Exp[T])(implicit conv: T => U): Exp[U] = convLift(t, 'liftConvXXX)
-  */
 
-  //Should we add this?
   implicit def funcExp[S, T](f: Exp[S] => Exp[T]) = Fun(f)
 
   implicit def app[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
@@ -170,7 +161,7 @@ trait FunctionOps extends AutoFunctionOps {
       case _ => App(f, _)
     }
 
-  class PartialFunctionOps[S, T](t: Exp[PartialFunction[S, T]]) {
+  class PartialFunctionOps[S, T](t: Exp[PartialFunction[S, T]]) extends super.PartialFunctionOps[S, T] {
     def isDefinedAt(a: Exp[S]): Exp[Boolean] = IsDefinedAt(t, a)
   }
 
@@ -216,6 +207,39 @@ trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
   }
 }
 
+trait NumOpsLangIntf {
+  this: LiftingConvsLangIntf =>
+  //Why not an implicit abstract class? Ah I see.
+  abstract class NumericOps[T: Numeric] {
+    def +(that: Rep[T]): Rep[T]
+    def *(that: Rep[T]): Rep[T]
+    def -(that: Rep[T]): Rep[T]
+    def unary_- : Rep[T]
+  }
+
+  abstract class FractionalOps[T: Fractional] {
+    def /(that: Rep[T]): Rep[T]
+  }
+
+  abstract class IntegralOps[T: Integral: TypeTag] {
+    def %(that: Rep[T]): Rep[T]
+  }
+
+  //Solution 1:
+  //implicit def expToNumOps[T: Numeric, U <% Rep[T]](t: U) = new NumericOps(t)
+  //Doesn't work because of https://issues.scala-lang.org/browse/SI-3346 - expToNumOps is the same as mkOps in their example.
+  //Solution 2:
+  implicit def expToNumOps[T: Numeric](t: Rep[T]): NumericOps[T]
+  implicit def toNumOps[T: Numeric: ClassTag: TypeTag](t: T) = expToNumOps(t)
+
+  //Same for the others:
+  implicit def expToFractionalOps[T: Fractional: TypeTag](t: Rep[T]): FractionalOps[T]
+  implicit def toFractionalOps[T: Fractional: ClassTag: TypeTag](t: T) = expToFractionalOps(t)
+
+  implicit def expToIntegralOps[T: Integral: TypeTag](t: Rep[T]): IntegralOps[T]
+  implicit def toIntegralOps[T: Integral: ClassTag: TypeTag](t: T) = expToIntegralOps(t)
+}
+
 /**
  * In comparison to the other encoding, we don't use CanBuildExp to get most specific types as result types, as
  * that implies that the type is obtained through type inference.
@@ -223,37 +247,27 @@ trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
  * then specific ones Pi T: Numeric. Exp[T] => NumExp[T]; Pi T. Exp[Traversable[T]] => TraversableExp[T]
  */
 
-trait NumOps extends ScalaLangIntf {
+trait NumOps extends NumOpsLangIntf {
   this: LiftingConvs with FunctionOps =>
 
-  class NumericOps[T: Numeric](t: Exp[T]) extends super.NumericOps[T](t) {
+  class NumericOps[T: Numeric](t: Exp[T]) extends super.NumericOps[T] {
     def +(that: Exp[T]): Exp[T] = Plus(this.t, that)
     def *(that: Exp[T]): Exp[T] = Times(this.t, that)
     def -(that: Exp[T]): Exp[T] = Plus(this.t, Negate(that))
     def unary_- : Exp[T] = Negate(this.t)
   }
 
-  class FractionalOps[T: Fractional](t: Exp[T])(implicit tTag: TypeTag[Fractional[T]]) {
+  class FractionalOps[T: Fractional](t: Exp[T])(implicit tTag: TypeTag[Fractional[T]]) extends super.FractionalOps[T] {
     def /(that: Exp[T]): Exp[T] = fmap(implicitly[Fractional[T]], this.t, that)('FractionalOps$div, _.div(_, _))
   }
 
-  class IntegralOps[T: Integral: TypeTag](t: Exp[T]) {
+  class IntegralOps[T: Integral: TypeTag](t: Exp[T]) extends super.IntegralOps[T] {
     def %(that: Exp[T]): Exp[T] = fmap(implicitly[Integral[T]], this.t, that)('IntegralOps$mod, _.rem(_, _))
   }
 
-  //Solution 1:
-  //implicit def expToNumOps[T: Numeric, U <% Exp[T]](t: U) = new NumericOps(t)
-  //Doesn't work because of https://issues.scala-lang.org/browse/SI-3346 - expToNumOps is the same as mkOps in their example.
-  //Solution 2:
   implicit def expToNumOps[T: Numeric](t: Exp[T]) = new NumericOps(t)
-  implicit def toNumOps[T: Numeric: ClassTag: TypeTag](t: T) = expToNumOps(t)
-
-  //Same for the others:
   implicit def expToFractionalOps[T: Fractional: TypeTag](t: Exp[T]) = new FractionalOps(t)
-  implicit def toFractionalOps[T: Fractional: ClassTag: TypeTag](t: T) = expToFractionalOps(t)
-
   implicit def expToIntegralOps[T: Integral: TypeTag](t: Exp[T]) = new IntegralOps(t)
-  implicit def toIntegralOps[T: Integral: ClassTag: TypeTag](t: T) = expToIntegralOps(t)
 }
 
 trait BaseTypesOps {

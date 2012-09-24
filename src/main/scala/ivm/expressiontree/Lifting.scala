@@ -152,7 +152,10 @@ trait ExpSugar extends ConversionDisabler2 {
   implicit def toMaterializable[T](t: Exp[Traversable[T]]) = new Materializable(t)
 }
 
-object Lifting extends LiftingTrait
+trait LiftingInterface
+  extends LangIntf with ConversionDisablerLangIntf with LiftingConvsLangIntf with ConversionDisabler2LangIntf with
+          FunctionOpsLangIntf with NumOpsLangIntf
+object Lifting extends LiftingInterface with LiftingTrait
 trait LiftingTrait
   extends BaseExps with OptionLifting
   with TraversableOps with ForceOps with IterableOps with SeqOps with MapOps with SetOps with TypeFilterOps

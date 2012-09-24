@@ -117,8 +117,31 @@ case class Product${arity}Proj${i}[${tparams}](p: Exp[Product${arity}[${tparams}
 ////////////////////////////////////////////////
 // SUPPORT FOR TUPLES - AUTOMATIC CONVERSIONS //
 ////////////////////////////////////////////////
+trait AutoTupleOpsLangIntf {
+  this: LiftingConvsLangIntf =>
+#for (arity <- minTupleArity to maxArity)
+  ////////////////////////////////////////////
+  // AUTOMATIC CONVERSIONS - ARITY ${arity} //
+  ////////////////////////////////////////////
+  <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2; foreachParam = p._3 %>
 
-trait AutoTupleOps {
+  implicit def tuple${arity}ToTuple${arity}Exp[${tparams}](tuple: (${paramsLoopComma("Rep[" + tpPfx + "%d]")})): LiftTuple${arity}[${tparams}]
+
+  implicit def product${arity}ToProduct${arity}Exp[${tparams}](tuple: Product${arity}[${paramsLoopComma("Rep[" + tpPfx + "%d]")}]): LiftProduct${arity}[${tparams}]
+
+  abstract class Product${arity}Ops[${tparams}] {
+<% foreachParam("\n    ") { %>
+    def _${pIdx}: Rep[${tpPfx}${pIdx}]
+<% } %>
+    def metaProductArity: Int
+    def metaProductElement(n: Int): Rep[Any]
+  }
+
+  implicit def toProduct${arity}Ops[${tparams}](e: Rep[Product${arity}[${tparams}]]): Product${arity}Ops[${tparams}]
+#end
+}
+
+trait AutoTupleOps extends AutoTupleOpsLangIntf {
   this: LiftingConvs =>
 #for (arity <- minTupleArity to maxArity)
   ////////////////////////////////////////////
@@ -132,7 +155,7 @@ trait AutoTupleOps {
   implicit def product${arity}ToProduct${arity}Exp[${tparams}](tuple: Product${arity}[${paramsLoopComma("Exp[" + tpPfx + "%d]")}]): LiftProduct${arity}[${tparams}] =
     LiftProduct${arity}[${tparams}](${paramsLoopComma("tuple._%d")})
 
-  class Product${arity}Ops[${tparams}](p: Exp[Product${arity}[${tparams}]]) {
+  class Product${arity}Ops[${tparams}](p: Exp[Product${arity}[${tparams}]]) extends super.Product${arity}Ops[${tparams}] {
 <% foreachParam("\n    ") { %>
     def _${pIdx}: Exp[${tpPfx}${pIdx}] = p match {
       case LiftTuple${arity}(${params}) => ${argPfx}${pIdx}
@@ -151,7 +174,20 @@ trait AutoTupleOps {
 #end
 }
 
-trait AutoFunctionOps {
+trait AutoFunctionOpsLangIntf {
+  this: LiftingConvsLangIntf =>
+#for (arity <- 1 to maxArity)
+  <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2; foreachParam = p._3 %>
+
+  def fmap[${tparams}, Res](${paramsDecl}, restId: Symbol)
+      (name: Symbol, f: (${tparams}) => Res): Rep[Res]
+
+  def fmap[${tparams}, Res](${paramsDecl})
+      (name: Symbol, f: (${tparams}) => Res): Rep[Res]
+#end
+}
+
+trait AutoFunctionOps extends AutoFunctionOpsLangIntf {
   this: LiftingConvs =>
 #for (arity <- 1 to maxArity)
   <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2; foreachParam = p._3 %>
