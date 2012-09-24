@@ -36,7 +36,7 @@ object UtilsForMacros {
       hasFullName(tree.symbol, name)
   }
 }
-object Macros /*extends ModularFrontendDefs*/ {
+object Macros {
   def stringify[T](arg: T): String = macro stringify_impl[T]
   def show[T](arg: T) = macro show_impl[T]
   def ctShow[T](arg: T) = macro ctShow_impl[T]
@@ -81,7 +81,6 @@ object Macros /*extends ModularFrontendDefs*/ {
 
   import UtilsForMacros._
 
-  //val anyUnaryMethods = List("toString", "hashCode", "getClass", "##")
   val anyUnaryMethods = List("toString", "hashCode", "##")
   val anyRefUnaryMethods = List("notify", "notifyAll", "wait")
 
@@ -90,31 +89,11 @@ object Macros /*extends ModularFrontendDefs*/ {
 
   val anyTypeUnaryMethod = List("asInstanceOf", "isInstanceOf")
   val anyTypeBinaryMethod = List("synchronized")
-  //def anyUnary(v: String): Boolean
 
-  /*
-  def smart(expr: Any): Any = macro smart_impl
-  def smart_impl(c: Context)(expr: c.Expr[Any]): c.Expr[Any] = {
-    import c.universe._
-    //Main problem: we need to visit the tree recursively.
-    expr.tree match {
-      case Apply(Select(op1, member), l @ List()) if anyUnaryMethods contains member.decoded =>
-        c.Expr(Apply(Ident(newTermName(prefix + member.encoded)), op1 :: l))
-        //c.Expr(Apply(Ident(newTermName("toString")), List(op1)))
-        //c.Expr(Apply(Ident(member), List(op1)))
-      case Apply(Select(op1, member), l @ List(op2)) if anyBinaryMethods contains member.decoded =>
-        c.Expr(Apply(Ident(newTermName(prefix + member.encoded)), op1 :: l))
-      //case Apply(Select(op1, member), List(op2)) if member.decoded == "==" =>
-        //c.Expr(Apply(Ident(newTermName("eq")), List(op1, op2)))
-      //case Apply(Select(op1, member), List(op2)) if member.decoded == "!=" =>
-        //c.Expr(Apply(Ident(newTermName("neq")), List(op1, op2)))
-      case _ => expr
-    }
-  }
-   */
   def wrap[T](expr: Exp[T]) = macro wrap_impl[T]
   def wrap_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
     wrap_gen_impl[T, BaseLangIntf with ScalaLangIntf](c)(expr)
+  //TODO: merge this macro within smart.
   def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
     import c.universe._
     val extractors = new Extractors[c.type](c)
@@ -139,18 +118,15 @@ object Macros /*extends ModularFrontendDefs*/ {
         clearedExpr.splice.asInstanceOf[s.Rep[T]]
       }
     }).tree))
-    //println(showRaw(res))
     res
   }
   def smart[T](expr: T): Any = macro smart_impl[T]
   def prefix = "smart_"
-  /* To handle:
-  scala> showRaw(reify(1.asInstanceOf: String).tree)
-  res20: String = Typed(Select(Literal(Constant(1)), newTermName("asInstanceOf")), Ident(newTypeName("String")))
-    */
+
   private val macroDebug = true
   val AnyTuple = "Tuple([0-9]+)".r
   val ConvToTuple = "tuple[0-9]+ToTuple[0-9]+Exp".r
+
   def smart_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[Any] = {
     import c.universe._
 
@@ -173,44 +149,19 @@ object Macros /*extends ModularFrontendDefs*/ {
           =>
             //We assume that if one arg is inferred, all are inferred, so we can just drop all.
             assert((for (arg @ TypeTree() <- args) yield arg) forall (_.original == null))
-            //TODO move this case at the end, so that explicit type applications which
-            //are matched earlier are possible. We do match on isInstanceOf and
-            //asInstanceOf, which are most cases.
-
-            //println("#### Pos: " + tree.pos)
-            //println("#### Positions: " + args.map(_.pos))
-            //println("#### Tree: " + tree)
-            //println("#### Polyterm: " + polyterm)
             transform(polyterm)
 
           //this duplicates the check but also checks arity. Do it even more
-          //generic. Later.
+          //generic. But later.
           case Apply(Select(op1, member), l @ List())
             if (anyUnaryMethods ++ anyRefUnaryMethods ++ anyTypeUnaryMethod) contains member.decoded
           =>
-            //Use reify and splices:
-            //reify((c.Expr[Any => Nothing](Ident(newTermName(prefix +
-              //member.encoded))).value)(op1))
-              ////member.encoded))).value)(op1, l.map(c.Expr[Any](_).value):_*))
-            //println("Op1: " + showRaw(op1))
             Apply(Ident(newTermName(prefix + member.encoded)), transform(op1) :: l)
           case Apply(Select(op1, member), l @ List(op2)) if anyBinaryMethods contains member.decoded =>
             Apply(Ident(newTermName(prefix + member.encoded)), (op1 :: l) map (transform(_)))
           case TypeApply(Select(op1, member), typeArgs @ List(typeArg))
             if anyTypeUnaryMethod contains member.decoded
           =>
-            /*println("#### Pos: " + tree.pos)
-            println("#### typeArg: " + typeArg)
-            println("#### typeArg Position: " + typeArg.pos)
-            println("#### typeArg Position: " + typeArg.pos.show)
-            println("#### typeArg Position: " + typeArg.pos.isDefined)
-            println("#### typeArg Position: " + typeArg.pos.pos)
-            //println("#### typeArg Position: " + typeArg.pos.fileContent.map(identity)(collection.breakOut): String)
-            println("#### Tree: " + tree)
-            println("#### Tree: " + showRaw(tree))
-            println("#### showRaw(typeArg): " + showRaw(typeArg))
-            println("#### showRaw(typeArg.original): " + showRaw(typeArg.asInstanceOf[TypeTree].original))
-            println("#### typeArg.original == null: " + (typeArg.asInstanceOf[TypeTree].original == null))*/
             if (typeArg.asInstanceOf[TypeTree].original == null)
               printf("Argument of %s deduced by type inference!\n", member.decoded)
             Apply(TypeApply(
@@ -223,19 +174,13 @@ object Macros /*extends ModularFrontendDefs*/ {
             Apply(TypeApply(
               Ident(newTermName(prefix + member.encoded)), typeArgs), (op1 :: l2) map (transform(_)))
 
-          case Apply(TypeApply(Select(Select(scala,
-            TermNameEncoded(AnyTuple(arity))), TermNameEncoded("apply")), tArgs),
+          case Apply(TypeApply(Select(Select(scala, TermNameEncoded(AnyTuple(arity))), TermNameEncoded("apply")), tArgs),
             args @ List(_*))
             if hasFullName(scala, "scala")
           =>
             Apply(Ident(newTermName("LiftTuple" + arity)), args map (transform(_)))
 
-          //Start removing implicit conversions, hoping they are readded later if needed.
-          //It is strange that Lifting is not fully qualified here - I suspect that's only the case inside the ivm.expressiontree package!
-//          case Apply(Apply(TypeApply(
-//            Select(Select(Select(Ident(TermNameEncoded("ivm")), TermNameEncoded("expressiontree")), TermNameEncoded("Lifting")), TermNameEncoded("pure")),
-//            tArgs), List(convertedTerm)), implicitArgs)
-//          =>
+          //Start removing implicit conversions: they will be readded by the second layer of typechecking if needed.
           case Apply(Apply(TypeApply(Select(lifting, TermNameEncoded("pure")), tArgs), List(convertedTerm)), implicitArgs)
             if hasFullName(lifting, "ivm.expressiontree.Lifting")
           =>
@@ -250,19 +195,12 @@ object Macros /*extends ModularFrontendDefs*/ {
         ret
       }
     }
-    //val thisReplaced = expr.tree.substituteThis(/*Get a symbol for the type scala*/
-    //Then, using substituteSymbols (?) or sth. like that, replace references to Lifting with references to ivm.expressiontree.Lifting :-).
-    newline() //Predef println ()
+    newline()
     println("#### Before transform: " + expr.tree)
-    //println("#### Before transform: " + showRaw(expr.tree))
     val transformed = smartTransformer.transform(expr.tree)
     println("#### Transformed: " + transformed)
-    //println("#### Transformed: " + showRaw(transformed))
-    //println("#### Transformed: " + showRaw(transformed, printTypes = true))
     //resetAllAttrs comes from: https://github.com/retronym/macrocosm/blob/171be7e/src/main/scala/com/github/retronym/macrocosm/Macrocosm.scala#L171
     val afterReset = c.resetAllAttrs(transformed)
-    //println("#### After reset: " + showRaw(afterReset, printTypes = true))
-    //c.Expr(c.typeCheck(afterReset))
     c.Expr(afterReset)
   }
 }

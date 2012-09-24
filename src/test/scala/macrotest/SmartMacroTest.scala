@@ -9,14 +9,7 @@ object SmartMacroTest extends scala.App with ivm.tests.TestUtil {
   val c1 = asExp(1)
   val c2 = asExp(2)
 
-  /*
-  //Test printf
-  printf("hello %s!\n", "world")
-  */
-  //println("Without macros: " + (1.asInstanceOf: Int)) //This syntax just seems not to work at runtime, the type inferencer figures out Nothing as type parameter.
   println("With macros: " + smart(c1.asInstanceOf[Int]))
-  //println("With macros: " + smart(c1.asInstanceOf: Int)) //This syntax just seems not to work, the type inferencer figures out Nothing as type parameter. So we don't need to support it.
-
   println("With macros: " + smart(c1.isInstanceOf[Int]))
 
   println("With macros: " + smart(c1 synchronized 2))
