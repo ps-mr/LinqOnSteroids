@@ -11,7 +11,6 @@ libraryDependencies in ThisBuild <+= scalaVersion apply ("org.scala-lang" % "sca
 
 initialCommands in console := """
     import scala.reflect.runtime.{universe => u}
-    //import u.{Apply,Select,Ident}
     import u._
     val a = 1
     val b = 2

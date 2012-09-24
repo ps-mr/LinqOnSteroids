@@ -31,6 +31,9 @@ trait ScalaLangIntf {
   implicit def expToNumOps[T: Numeric](t: Rep[T]): NumericOps[T]
   abstract class NumericOps[T: Numeric](t: Rep[T]) {
     def +(that: Rep[T]): Rep[T]
+    def *(that: Rep[T]): Rep[T]
+    def -(that: Rep[T]): Rep[T]
+    def unary_- : Rep[T]
   }
 }
 

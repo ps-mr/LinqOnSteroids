@@ -5,11 +5,10 @@ import Lifting._
 import scala.reflect.macros.Context
 import language.experimental.macros
 
-
-  trait Interpreted[Sym <: LangIntf, Res] {
-    type ThisLangIntf = Sym
-    def apply(s: ThisLangIntf): s.Rep[Res]
-  }
+trait Interpreted[Sym <: LangIntf, Res] {
+  type ThisLangIntf = Sym
+  def apply(s: ThisLangIntf): s.Rep[Res]
+}
 
 object UtilsForMacros {
   class Extractors[T <: Context](ctx: T) {
@@ -135,11 +134,11 @@ object Macros /*extends ModularFrontendDefs*/ {
     }
     val clearedExpr = c.Expr[Any](resetIntfMemberBindings transform expr.tree)
     val res = c.Expr[Interpreted[Sym, T]](c.resetAllAttrs(reify(new Interpreted[Sym, T] {
-        def apply(s: ThisLangIntf): s.Rep[T] = {
-          import s._
-          clearedExpr.splice.asInstanceOf[s.Rep[T]]
-        }
-      }).tree))
+      def apply(s: ThisLangIntf): s.Rep[T] = {
+        import s._
+        clearedExpr.splice.asInstanceOf[s.Rep[T]]
+      }
+    }).tree))
     //println(showRaw(res))
     res
   }
