@@ -273,15 +273,6 @@ trait NumOps extends NumOpsLangIntf {
 trait BaseTypesOps {
   this: LiftingConvs with FunctionOps =>
 
-  object expMath {
-    def max(a: Exp[Int], b: Exp[Int]) = globalFmap(a, b)('math_max, "math.max", math.max(_, _))
-      // new GlobalFuncCall2('math_max, "math.max", (a: Int, b: Int) => math.max(a, b), a, b)
-  }
-
-  object expCharacter {
-    def isDigit(ch: Exp[Char]) = globalFmap(ch)('math_max, "Character.isDigit", Character isDigit _)
-  }
-
   class OrderingOps[T: Ordering](t: Exp[T]) {
     def <=(that: Exp[T]): Exp[Boolean] = LEq(this.t, that)
     def <(that: Exp[T]): Exp[Boolean] = Less(this.t, that)
@@ -289,7 +280,6 @@ trait BaseTypesOps {
     def >=(that: Exp[T]): Exp[Boolean] = LEq(that, this.t)
   }
 
-  //No. Not both operands must be strings, just one is enough.
   class StringOps(t: Exp[String]) {
     def +(that: Exp[String]): Exp[String] = StringConcat(t, that)
     def contains(that: Exp[CharSequence]) = fmap(this.t, that, 'StringOps)('contains, _ contains _)
@@ -323,6 +313,18 @@ trait BaseTypesOps {
   implicit def toOrderingOps[T: Ordering: ClassTag: TypeTag](t: T) = expToOrderingOps(t)
   implicit def toStringOps(t: String) = expToStringOps(t)
   implicit def toBooleanOps(t: Boolean) = expToBooleanOps(t)
+}
+
+trait ScalaLibOps {
+  this: LiftingConvs with FunctionOps =>
+
+  object expMath {
+    def max(a: Exp[Int], b: Exp[Int]) = globalFmap(a, b)('math_max, "math.max", math.max(_, _))
+  }
+
+  object expCharacter {
+    def isDigit(ch: Exp[Char]) = globalFmap(ch)('math_max, "Character.isDigit", Character isDigit _)
+  }
 }
 
 trait JavaLibOps {
