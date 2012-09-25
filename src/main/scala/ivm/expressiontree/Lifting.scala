@@ -151,16 +151,10 @@ trait ExpSugar extends ConversionDisabler2 {
   }
   implicit def toMaterializable[T](t: Exp[Traversable[T]]) = new Materializable(t)
 }
+trait MiscLiftingLangIntf {
+}
 
-trait LiftingInterface
-  extends LangIntf with ConversionDisablerLangIntf with LiftingConvsLangIntf with ConversionDisabler2LangIntf with
-          FunctionOpsLangIntf with NumOpsLangIntf
-object Lifting extends LiftingInterface with LiftingTrait
-trait LiftingTrait
-  extends BaseExps with OptionLifting
-  with TraversableOps with ForceOps with IterableOps with SeqOps with MapOps with SetOps with TypeFilterOps
-  with NumOps with BaseTypesOps with JavaLibOps with ScalaLibOps with ExpSugar with NumConvOps
-{
+trait MiscLifting extends BaseExps with BaseTypesOps with TraversableOps with SeqOps with MiscLiftingLangIntf {
   //Support let-bindings within for-comprehensions without relying on pattern-matching.
   def Let[T](e: Exp[T]): Exp[Seq[T]] = Seq(e)
   //def Let[T](e: Exp[T]): Exp[Option[T]] = Some(e)
@@ -224,3 +218,13 @@ trait LiftingTrait
   }
   def if_#[T](cond: Exp[Boolean])(thenBody: Exp[T]) = Elseable(Seq(cond), Seq(thenBody))
 }
+
+trait LiftingInterface
+  extends LangIntf with ConversionDisablerLangIntf with LiftingConvsLangIntf with ConversionDisabler2LangIntf with
+          FunctionOpsLangIntf with NumOpsLangIntf with BaseTypesOpsLangIntf with MiscLiftingLangIntf
+object Lifting extends LiftingInterface with LiftingTrait
+trait LiftingTrait
+  extends BaseExps with OptionLifting
+  with TraversableOps with ForceOps with IterableOps with SeqOps with MapOps with SetOps with TypeFilterOps
+  with NumOps with BaseTypesOps with JavaLibOps with ScalaLibOps with ExpSugar with NumConvOps with MiscLifting
+
