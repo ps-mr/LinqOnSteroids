@@ -154,6 +154,9 @@ trait FunctionOpsLangIntf extends AutoFunctionOpsLangIntf {
     def isDefinedAt(a: Rep[S]): Rep[Boolean]
   }
 
+  def withExpFunc[T, U](t: Rep[T])(f: Rep[T] => Rep[U]): Rep[U]
+  def letExp[T, U](t: Rep[T])(f: Rep[T] => Rep[U]): Rep[U]
+
   implicit def expToPartialFunOps[S, T](t: Rep[PartialFunction[S, T]]): PartialFunctionOps[S, T]
 }
 
@@ -192,6 +195,43 @@ trait FunctionOps extends FunctionOpsLangIntf with AutoFunctionOps {
   }
 
   implicit def expToPartialFunOps[S, T](t: Exp[PartialFunction[S, T]]) = new PartialFunctionOps(t)
+
+  // XXX: Both these and fmap should not be made available without qualification everywhere. We should just be able to
+  // import them, but we should not pollute the namespace for client code.
+
+  //Analogues of Exp.app. Given the different argument order, I needed to rename them to get a sensible name:
+  def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
+  //The use of _App_ and Fun means that t will be evaluated only once.
+  def letExp[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = App(Fun(f), t)
+
+  // Some experimental implicit conversions.
+  // With the current Scala compiler, given (f_ )(x), the compiler will try to use implicit conversion on (f _), because
+  // that code is equivalent to (f _).apply(x), and the compiler applies conversion to the target of a method invocation.
+  // However, given f(x), since f is just a method name and not the target of a method invocation, the compiler will not
+  // apply implicit conversions, including the ones below. This is highly irregular, and hopefully could be solved
+  // through a compiler plugin.
+  //XXX: This problem should be now faced not with a compiler plugin but with some macros!
+  /*
+  object FunctionLifter {
+    //Such an implicit conversion makes no sense - it might be needed if the function call, instead of its result, is
+    //to be present in the expression tree, but the compiler will not insert this call, but rather a Const conversion on
+    //the result. Should Const take its argument by-name? It can be argued that it should instead take its argument
+    //by-value.
+
+    //implicit def liftCall0[Res](f: () => Res) = Call0(f)
+
+    implicit def liftCall1[A0, Res](id: Symbol, f: A0 => Res):
+      Exp[A0] => Exp[Res] = new Call1(id,f, _)
+    implicit def liftCall2[A0, A1, Res](id: Symbol, f: (A0, A1) => Res):
+      (Exp[A0], Exp[A1]) => Exp[Res] = new Call2(id,f, _, _)
+    implicit def liftCall3[A0, A1, A2, Res](id: Symbol, f: (A0, A1, A2) => Res):
+      (Exp[A0], Exp[A1], Exp[A2]) => Exp[Res] = new Call3(id,f, _, _, _)
+    implicit def liftCall4[A0, A1, A2, A3, Res](id: Symbol, f: (A0, A1, A2, A3) => Res):
+      (Exp[A0], Exp[A1], Exp[A2], Exp[A3]) => Exp[Res] = new Call4(id,f, _, _, _, _)
+    implicit def liftCall5[A0, A1, A2, A3, A4, Res](id: Symbol, f: (A0, A1, A2, A3, A4) => Res):
+      (Exp[A0], Exp[A1], Exp[A2], Exp[A3], Exp[A4]) => Exp[Res]= new Call5(id,f, _, _, _, _, _)
+  }
+  */
 }
 
 trait ExpProduct {
