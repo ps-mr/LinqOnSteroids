@@ -180,7 +180,8 @@ trait MiscLifting extends BaseExps with BaseTypesOps with TraversableOps with Se
 
 trait LiftingInterface
   extends LangIntf with ConversionDisablerLangIntf with LiftingConvsLangIntf with ConversionDisabler2LangIntf with
-          FunctionOpsLangIntf with NumOpsLangIntf with BaseTypesOpsLangIntf with MiscLiftingLangIntf with IfElseLangIntf
+          FunctionOpsLangIntf with NumOpsLangIntf with BaseExpsLangIntf with BaseTypesOpsLangIntf with MiscLiftingLangIntf with IfElseLangIntf
+          with TraversableOpsLangIntf
 object Lifting extends LiftingInterface with LiftingTrait
 trait LiftingTrait
   extends BaseExps with OptionLifting

@@ -4,7 +4,135 @@ import collection.generic.{CanBuildFrom, GenericTraversableTemplate}
 import collection.{GenTraversableView, IterableLike, TraversableView, TraversableViewLike, TraversableLike}
 import ivm.collections.TypeMapping
 
-trait TraversableOps {
+trait TraversableOpsLangIntf {
+  this: BaseExpsLangIntf with BaseTypesOpsLangIntf =>
+
+  abstract class TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]] {
+    def map[U, That <: Traversable[U] with TraversableLike[U, That]](f: Rep[T] => Rep[U])(implicit c: CanBuildFrom[Repr, U, That]): Rep[That]
+    def flatMap[U, That <: Traversable[U]](f: Rep[T] => Rep[Traversable[U]])
+                                          (implicit c: CanBuildFrom[Repr, U, That]): Rep[That]
+    def withFilter(f: Rep[T] => Rep[Boolean]): Rep[Repr]
+
+    def exists(f: Rep[T] => Rep[Boolean]): Rep[Boolean]
+    def forall(f: Rep[T] => Rep[Boolean]): Rep[Boolean]
+
+    def collect[U, That <: Traversable[U] with TraversableLike[U, That]](f: Rep[T] => Rep[Option[U]])
+                                          (implicit c: CanBuildFrom[Repr, U, That]): Rep[That]
+
+    def filter(f: Rep[T] => Rep[Boolean]): Rep[Repr]
+
+    def union[U >: T, That <: Traversable[U]](that: Rep[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Rep[That]
+
+    // XXX: This cannot be called + to avoid ambiguity with the conversion to NumericOps - probably that's an artifact of it being
+    // declared in a subclass
+    def :+[U >: T, That <: Traversable[U]](that: Rep[U])(implicit c: CanBuildFrom[Repr, U, That]): Rep[That]
+    def ++[U >: T, That <: Traversable[U]](that: Rep[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Rep[That]
+
+    def size: Rep[Int]
+    //Omitted @override here because it's inherited.
+    //def length = size
+    def isEmpty: Rep[Boolean]
+    def nonEmpty: Rep[Boolean]
+
+    def view: Rep[TraversableView[T, Repr]]
+
+    def indexBy[K](f: Rep[T] => Rep[K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr], cTag: ClassTag[T], tTag: TypeTag[T], tTag2: TypeTag[Repr]): Rep[Map[K, Repr]]
+
+    def groupBySel[K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](f: Rep[T] => Rep[K], g: Rep[T] => Rep[Rest])
+                                                                                       (implicit cbf: CanBuildFrom[Repr, T, Repr],
+                                                                                        cbf2: CanBuildFrom[Repr, Rest, That],
+                                                                                        cTagT: ClassTag[T],
+                                                                                        tTagT: TypeTag[T],
+                                                                                        tTagRepr: TypeTag[Repr]): Rep[Map[K, That]]
+
+    def join[S, TKey, TResult, That](innerColl: Rep[Traversable[S]]) //Split argument list to help type inference deduce S and use it after.
+                                    (outerKeySelector: Rep[T] => Rep[TKey],
+                                     innerKeySelector: Rep[S] => Rep[TKey],
+                                     resultSelector: Rep[(T, S)] => Rep[TResult])
+                                    (implicit cbf: CanBuildFrom[Repr, TResult, That]): Rep[That]
+
+    def typeFilter[S: ClassTag: TypeTag]: Rep[Traversable[S]]
+    private[ivm] def typeFilterClass[S: TypeTag](classS: Class[S]): Rep[Traversable[S]]
+
+    def toSet(implicit tt: TypeTag[T]): Rep[Set[T]]
+    def toSeq: Rep[Seq[T]]
+    def toList: Rep[List[T]]
+    def toVector: Rep[Vector[T]]
+
+    def foldLeft[U](z: Rep[U])(op: Rep[(U, T)] => Rep[U]): Rep[U]
+    //fmap(this.t, z, Fun(op), 'TraversableLike)('foldLeft, (base, z, op) => base.foldLeft(z)(Function.untupled(op)))
+
+    def sum[U >: T: ClassTag: TypeTag](implicit num: Numeric[U]): Rep[U]
+    def product[U >: T: ClassTag: TypeTag](implicit num: Numeric[U]): Rep[U]
+    def head: Rep[T]
+    def headOption: Rep[Option[T]]
+    def last: Rep[T]
+    def lastOption: Rep[Option[T]]
+
+    def typeCase[Res: TypeTag](cases: TypeCase[_, Res]*): Rep[Set[Res]]
+  }
+
+  abstract class TraversableTemplateOps[T, +CC[X] <: Traversable[X] with GenericTraversableTemplate[X, CC]] {
+    def flatten[U](implicit asTraversable: T => TraversableOnce[U]): Rep[CC[U]]
+    def unzip[T1, T2](implicit asPair: T => (T1, T2)): Rep[(CC[T1], CC[T2])]
+  }
+  implicit def expToTraversableTemplateOps[T, CC[X] <: Traversable[X] with GenericTraversableTemplate[X, CC]](v: Rep[CC[T]]): TraversableTemplateOps[T, CC]
+  //implicit def toTraversableTemplateOps[T: TypeTag, CC[X] <: Traversable[X] with GenericTraversableTemplate[T, CC]](v: CC[T]) =
+    //expToTraversableTemplateOps(v)
+
+  trait TraversableViewLikeOps[
+    T,
+    Repr <: Traversable[T] with TraversableLike[T, Repr],
+    ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]]
+    extends TraversableLikeOps[T, ViewColl]
+  {
+    def force[That](implicit bf: CanBuildFrom[Repr, T, That]): Rep[That]
+  }
+
+  //Compare collection nodes by identity.
+  //Saves costs when comparing collections, which happens during optimization.
+  implicit def pureColl[T: TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassTag: TypeTag](v: Repr with Traversable[T]): Rep[Repr]
+
+  //This version does not work, due to https://issues.scala-lang.org/browse/SI-5298:
+  //implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Rep[Repr])
+  /*
+  //With this version, we need an extra overload for Range <: IndexedSeq[Int] <: IndexedSeqLike[Int, IndexedSeq[Int]].
+  implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Rep[Repr with Traversable[T]]) =
+    new TraversableLikeOps[T, Repr](v)
+  implicit def toTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Repr with Traversable[T]) =
+    expToTraversableLikeOps(v)
+  implicit def expRangeToTraversableLikeOps(r: Rep[Range]) = expToTraversableLikeOps(r: Rep[IndexedSeq[Int]])
+  */
+  /* Instead, use TraversableLike[T, Repr] in the bound, so that it can be considered when looking for a matching Repr;
+   * Repr is now deduced by matching against TraversableLike[T, Repr]. At least `with` is still commutative - this works
+   * irrespective of the order in which the bounds are considered. */
+  implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Rep[Repr with TraversableLike[T, Repr]]): TraversableLikeOps[T, Repr]
+  implicit def toTraversableLikeOps[T: TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassTag: TypeTag](v: Repr with TraversableLike[T, Repr]) =
+    expToTraversableLikeOps(v)
+
+  //Ranges are cheap to compare for equality; hence we can easily use pure, not pureColl, for them.
+  implicit def pureRange(r: Range): Rep[Range] = pure(r)
+  //Repr = Range does not satisfy the bound given by:
+  //  Repr <: Traversable[T] with TraversableLike[T, Repr]
+  //Hence we need this extra conversion.
+  implicit def rangeToTraversableLikeOps(r: Range) = expToTraversableLikeOps(r: Rep[IndexedSeq[Int]])
+
+  //XXX: this class is now essentially useless.
+  trait TraversableViewOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]]
+    extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]]
+
+  implicit def expToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Rep[TraversableView[T, Repr]]): TraversableViewOps[T, Repr]
+  implicit def tToTravViewExp[T: TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassTag: TypeTag](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
+
+  implicit def expToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: Rep[TraversableView[T, C[_]]]): TraversableViewOps[T, C[T]]
+  //XXX
+  implicit def tToTravViewExp2[T: TypeTag, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]])(implicit evidence: ClassTag[C[_]], ev2: TypeTag[TraversableView[T, C[_]]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
+
+  implicit def TraversableExp2ExpTraversable[T](e: Traversable[Rep[T]]): Rep[Traversable[T]]
+}
+
+
+trait TraversableOps extends TraversableOpsLangIntf {
   this: BaseExps with BaseTypesOps =>
   def newFilter[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr],
                                                                              f: Fun[T, Boolean]) =
@@ -32,7 +160,7 @@ trait TraversableOps {
     val t: Exp[Repr]
   }
 
-  class TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](protected val t: Exp[Repr]) {
+  class TraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](protected val t: Exp[Repr]) extends super.TraversableLikeOps[T, Repr] {
     def map[U, That <: Traversable[U] with TraversableLike[U, That]](f: Exp[T] => Exp[U])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
       newMapOp(this.t, Fun(f))
     def flatMap[U, That <: Traversable[U]](f: Exp[T] => Exp[Traversable[U]])
@@ -112,7 +240,6 @@ trait TraversableOps {
     def toSeq = fmap(this.t, 'TraversableLike)('toSeq, _.toSeq)
     def toList = fmap(this.t, 'TraversableLike)('toList, _.toList)
     def toVector = fmap(this.t, 'TraversableLike)('toVector, _.toVector)
-    def flatten[U](implicit asTraversable: T => TraversableOnce[U]) = fmap(this.t, 'TraversableLikeOps)('flatten, _.flatten)
 
     def foldLeft[U](z: Exp[U])(op: Exp[(U, T)] => Exp[U]): Exp[U] = FoldLeft[T, U, Repr](this.t, z, op)
     //fmap(this.t, z, Fun(op), 'TraversableLike)('foldLeft, (base, z, op) => base.foldLeft(z)(Function.untupled(op)))
@@ -127,7 +254,8 @@ trait TraversableOps {
     def typeCase[Res: TypeTag](cases: TypeCase[_, Res]*): Exp[Set[Res]] = TypeCaseExp(this.t, cases)
   }
 
-  class TraversableTemplateOps[T, +CC[X] <: Traversable[X] with GenericTraversableTemplate[X, CC]](protected val t: Exp[CC[T]]) {
+  class TraversableTemplateOps[T, +CC[X] <: Traversable[X] with GenericTraversableTemplate[X, CC]](protected val t: Exp[CC[T]]) extends super.TraversableTemplateOps[T, CC] {
+    def flatten[U](implicit asTraversable: T => TraversableOnce[U]): Exp[CC[U]] = fmap(this.t, 'TraversableLikeOps)('flatten, _.flatten)
     def unzip[T1, T2](implicit asPair: T => (T1, T2)): Exp[(CC[T1], CC[T2])] = fmap(t, 'TraversableTemplate)('unzip, _.unzip)
   }
   implicit def expToTraversableTemplateOps[T, CC[X] <: Traversable[X] with GenericTraversableTemplate[X, CC]](v: Exp[CC[T]]) =
@@ -141,7 +269,7 @@ trait TraversableOps {
     ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]](tp: Exp[ViewColl])
     extends TraversableLikeOps[T, ViewColl](tp)
   {
-    def force[That](implicit bf: CanBuildFrom[Repr, T, That]) = Force(this.t)
+    def force[That](implicit bf: CanBuildFrom[Repr, T, That]): Exp[That] = Force(this.t)
 
     //def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
       //newFilter[T, ViewColl](this.t, Fun(f))
@@ -168,27 +296,15 @@ trait TraversableOps {
    * irrespective of the order in which the bounds are considered. */
   implicit def expToTraversableLikeOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](v: Exp[Repr with TraversableLike[T, Repr]]) =
     new TraversableLikeOps[T, Repr](v)
-  implicit def toTraversableLikeOps[T: TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassTag: TypeTag](v: Repr with TraversableLike[T, Repr]) =
-    expToTraversableLikeOps(v)
-
-  //Ranges are cheap to compare for equality; hence we can easily use pure, not pureColl, for them.
-  implicit def pureRange(r: Range): Exp[Range] = pure(r)
-  //Repr = Range does not satisfy the bound given by:
-  //  Repr <: Traversable[T] with TraversableLike[T, Repr]
-  //Hence we need this extra conversion.
-  implicit def rangeToTraversableLikeOps(r: Range) = expToTraversableLikeOps(r: Exp[IndexedSeq[Int]])
 
   //XXX: this class is now essentially useless.
   class TraversableViewOps[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](tp: Exp[TraversableView[T, Repr]])
-    extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]](tp)
+    extends TraversableViewLikeOps[T, Repr, TraversableView[T, Repr]](tp) with super.TraversableViewOps[T, Repr]
 
   implicit def expToTravViewExp[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Exp[TraversableView[T, Repr]]): TraversableViewOps[T, Repr] = new TraversableViewOps(t)
-  implicit def tToTravViewExp[T: TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassTag: TypeTag](t: TraversableView[T, Repr]): TraversableViewOps[T, Repr] = expToTravViewExp(t)
 
   implicit def expToTravViewExp2[T, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: Exp[TraversableView[T, C[_]]]): TraversableViewOps[T, C[T]] = expToTravViewExp(
     t.asInstanceOf[Exp[TraversableView[T, C[T]]]])
-  //XXX
-  implicit def tToTravViewExp2[T: TypeTag, C[X] <: Traversable[X] with TraversableLike[X, C[X]]](t: TraversableView[T, C[_]])(implicit evidence: ClassTag[C[_]], ev2: TypeTag[TraversableView[T, C[_]]]): TraversableViewOps[T, C[T]] = expToTravViewExp2(t)
 
   implicit def TraversableExp2ExpTraversable[T](e: Traversable[Exp[T]]): Exp[Traversable[T]] = ExpSeq(e)
 }
