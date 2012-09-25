@@ -19,14 +19,17 @@ trait LangIntf {
   type Rep[+T]
 }
 
+trait BaseLang {
+  type Rep[+T] = Exp[T]
+}
+
 trait ConversionDisablerLangIntf extends LangIntf {
   implicit def noToExpForUnit(t: Unit): Rep[Unit]
   implicit def noConstForMutableColl[T](t: mutable.Traversable[T]): Rep[mutable.Traversable[T]]
   implicit def noPureForExp[T](t: Rep[T]): Rep[Rep[T]]
 }
 
-trait ConversionDisabler extends ConversionDisablerLangIntf {
-  type Rep[+T] = Exp[T]
+trait ConversionDisabler extends ConversionDisablerLangIntf with BaseLang {
   //We forbid implicit conversion from Unit to Exp[Unit] by making it ambiguous. To this end we declare noToExpForUnit.
   //It is more specific than pure[Unit] because it's not generic, but is declared in a superclass, hence
   //has less priority. Ambiguity follows.
