@@ -278,7 +278,7 @@ trait TraversableOps extends TraversableOpsLangIntf {
 
   //Compare collection nodes by identity.
   //Saves costs when comparing collections, which happens during optimization.
-  implicit def pureColl[T: TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassTag: TypeTag](v: Repr with Traversable[T]): Exp[Repr] =
+  override implicit def pureColl[T: TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: ClassTag: TypeTag](v: Repr with Traversable[T]): Exp[Repr] =
     ConstByIdentity(v)
 
   //This version does not work, due to https://issues.scala-lang.org/browse/SI-5298:

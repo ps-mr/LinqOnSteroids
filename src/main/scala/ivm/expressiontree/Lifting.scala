@@ -134,13 +134,6 @@ trait ExpSugar extends ConversionDisabler2 with ExpSugarLangIntf {
 
   implicit def toPimper[T](t: T) = new WithAsSmartCollection(t)
 
-  //XXX: After adding arrayToExpSeq to the language interface, why do I need to write this:
-  //override implicit def arrayToExpSeq[T: TypeTag](x: Array[T]) = pureColl(genericWrapArray(x): Seq[T]): Exp[Seq[T]]
-  //instead of this:
-  //implicit def arrayToExpSeq[T: TypeTag](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
-  //? Debug after the deadline.
-  //Final solution: it is enough to add the return type, as below (with or without override). I guess this conversion
-  //conflicted with the one from Array[T] to Seq[T].
   implicit def arrayToExpSeq[T: TypeTag](x: Array[T]): Exp[Seq[T]] = x: Seq[T]
 
   class ArrayWithAsSmartCollection[T: TypeTag](t: Array[T]) extends super.ArrayWithAsSmartCollection[T] {
@@ -162,9 +155,9 @@ trait ExpSugar extends ConversionDisabler2 with ExpSugarLangIntf {
   //
   //implicit def toQuery[T](t: Exp[Traversable[T]]) = new UnconvertedExp(t)
   //We can use this stronger version:
-  implicit def toQuery[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]): UnconvertedExp[Exp[Repr with Traversable[T]]] = new UnconvertedExp(t)
+  override implicit def toQuery[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]): UnconvertedExp[Exp[Repr with Traversable[T]]] = new UnconvertedExp(t)
   //We also need this version:
-  implicit def toTypeIndexDummy[C[X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new UnconvertedExp(t)
+  override implicit def toTypeIndexDummy[C[X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new UnconvertedExp(t)
   //def Query[T](t: UnconvertedExp[Exp[Traversable[T]]]) = t.v
   def Query[T, Repr <: Traversable[T]](t: UnconvertedExp[Exp[Repr with Traversable[T]]]): Exp[Repr with Traversable[T]] = t.v
 
