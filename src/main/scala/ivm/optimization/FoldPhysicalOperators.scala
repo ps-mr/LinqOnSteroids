@@ -68,7 +68,7 @@ trait FoldPhysicalOperators {
     val lhsFun = Fun.makefun[T, TKey](lhs, filterFun.x)
     // lhsFun is used only in one location in a loop; thanks to normalization-by-evaluation, we can inline it while being
     // sure that term manipulation is only done at optimization time.
-    letExp((forallColl map Fun.makefun[S, TKey](rhs, forallFun.x).f).toSetInt) {
+    letExp((forallColl map Fun.makefun[S, TKey](rhs, forallFun.x).f).toSetInternal) {
       subColl =>
         stripView(filteredColl) withFilter {
           x =>

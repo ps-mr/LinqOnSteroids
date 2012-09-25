@@ -105,7 +105,7 @@ trait TraversableOps {
       TypeFilter[T, Traversable, ID, S](t, Fun(identity[Exp[T]]), classS)
     }
 
-    def toSetInt = fmap(this.t, 'TraversableLike)('toSet, _.toSet)
+    def toSetInternal = fmap(this.t, 'TraversableLike)('toSet, _.toSet)
     def toSet(implicit tt: TypeTag[T]) =
       fmap(this.t, 'TraversableLike)(Symbol("toSet[%s]" format (Compile manifestToString tt)), _.toSet)
     //XXX: Generate these wrappers, also for other methods.
