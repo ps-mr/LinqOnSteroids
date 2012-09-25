@@ -97,16 +97,53 @@ trait OptionLifting extends BaseExps {
   implicit def OptionExp2ExpOption[T](e: Option[Exp[T]]): Exp[Option[T]] = ExpOption(e)
 }
 
-trait ExpSugar extends ConversionDisabler2 {
-  this: BaseExps =>
+trait ExpSugarLangIntf extends ConversionDisabler2LangIntf {
+  this: BaseExpsLangIntf =>
+  //XXX: evaluate whether this interface is good.
+  def NULL: Rep[Null]
+
+  implicit def toPimper[T](t: T): WithAsSmartCollection[T]
+
+  implicit def arrayToExpSeq[T: TypeTag](x: Array[T]): Rep[Seq[T]]
+
+  abstract class ArrayWithAsSmartCollection[T: TypeTag] {
+    def asSmart: Rep[Seq[T]]
+  }
+  implicit def toArrayPimper[T: TypeTag](t: Array[T]): ArrayWithAsSmartCollection[T]
+  //Simplest possible definition of Query:
+  //def Query[Repr](t: Exp[Repr]): Exp[Repr] = t
+
+  abstract class UnconvertedExp[+T]
+  type UnconvertedExpImpl[+T] <: UnconvertedExp[T]
+
+  //This way, using Query verifies that it's argument is of type Exp[Traversable[T]] without needing to convert it. We could
+  //maybe also restrict the result of Query so that only value() can be called on it.
+  //
+  //implicit def toQuery[T](t: Exp[Traversable[T]]) = new UnconvertedExp(t)
+  //We can use this stronger version:
+  implicit def toQuery[T, Repr <: Traversable[T]](t: Rep[Repr with Traversable[T]]): UnconvertedExpImpl[Rep[Repr with Traversable[T]]]
+  //We also need this version:
+  implicit def toTypeIndexDummy[C[X] <: TraversableLike[X, C[X]], D[+_], Base](t: Rep[TypeMapping[C, D, Base]]): UnconvertedExpImpl[Rep[TypeMapping[C, D, Base]]]
+  def Query[T, Repr <: Traversable[T]](t: UnconvertedExpImpl[Rep[Repr with Traversable[T]]]): Rep[Repr with Traversable[T]]
+}
+
+trait ExpSugar extends ConversionDisabler2 with ExpSugarLangIntf {
+  this: BaseExps with TraversableOps with BaseLang =>
   //XXX: evaluate whether this interface is good.
   def NULL = pure(null)
 
   implicit def toPimper[T](t: T) = new WithAsSmartCollection(t)
 
-  implicit def arrayToExpSeq[T: TypeTag](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
+  //XXX: After adding arrayToExpSeq to the language interface, why do I need to write this:
+  //override implicit def arrayToExpSeq[T: TypeTag](x: Array[T]) = pureColl(genericWrapArray(x): Seq[T]): Exp[Seq[T]]
+  //instead of this:
+  //implicit def arrayToExpSeq[T: TypeTag](x: Array[T]) = (x: Seq[T]): Exp[Seq[T]]
+  //? Debug after the deadline.
+  //Final solution: it is enough to add the return type, as below (with or without override). I guess this conversion
+  //conflicted with the one from Array[T] to Seq[T].
+  implicit def arrayToExpSeq[T: TypeTag](x: Array[T]): Exp[Seq[T]] = x: Seq[T]
 
-  class ArrayWithAsSmartCollection[T: TypeTag](t: Array[T]) {
+  class ArrayWithAsSmartCollection[T: TypeTag](t: Array[T]) extends super.ArrayWithAsSmartCollection[T] {
     def asSmart = t: Exp[Seq[T]]
   }
   implicit def toArrayPimper[T: TypeTag](t: Array[T]) = new ArrayWithAsSmartCollection(t)
@@ -117,7 +154,8 @@ trait ExpSugar extends ConversionDisabler2 {
   //Simplest possible definition of Query:
   //def Query[Repr](t: Exp[Repr]): Exp[Repr] = t
 
-  class UnconvertedExp[+T](val v: T)
+  class UnconvertedExp[+T](val v: T) extends super.UnconvertedExp[T]
+  type UnconvertedExpImpl[+T] = UnconvertedExp[T]
 
   //This way, using Query verifies that it's argument is of type Exp[Traversable[T]] without needing to convert it. We could
   //maybe also restrict the result of Query so that only value() can be called on it.
