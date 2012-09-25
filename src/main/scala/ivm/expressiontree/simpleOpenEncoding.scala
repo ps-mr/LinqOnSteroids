@@ -270,17 +270,62 @@ trait NumOps extends NumOpsLangIntf {
   implicit def expToIntegralOps[T: Integral: TypeTag](t: Exp[T]) = new IntegralOps(t)
 }
 
-trait BaseTypesOps {
+trait BaseTypesOpsLangIntf {
+  this: LiftingConvsLangIntf with FunctionOpsLangIntf =>
+
+  abstract class OrderingOps[T: Ordering] {
+    def <=(that: Rep[T]): Rep[Boolean]
+    def <(that: Rep[T]): Rep[Boolean]
+    def >(that: Rep[T]): Rep[Boolean]
+    def >=(that: Rep[T]): Rep[Boolean]
+  }
+
+  abstract class StringOps {
+    def +(that: Rep[String]): Rep[String]
+    def contains(that: Rep[CharSequence]): Rep[Boolean] 
+    def startsWith(that: Rep[String]): Rep[Boolean] 
+    def endsWith(that: Rep[String]): Rep[Boolean] 
+    def indexOf(that: Rep[String]): Rep[Int] 
+    def lastIndexOf(ch: Char): Rep[Int] 
+    def lastIndexOf(ch: Rep[Int]): Rep[Int] 
+    def charAt(idx: Rep[Int]): Rep[Char] 
+    def toLowerCase: Rep[String] 
+    def toUpperCase: Rep[String] 
+    def length: Rep[Int]
+  }
+
+  abstract class BooleanOps {
+    def &&(that: Rep[Boolean]): Rep[Boolean]
+    def ||(that: Rep[Boolean]): Rep[Boolean]
+    def unary_! : Rep[Boolean]
+  }
+
+  implicit def expToOrderingOps[T: Ordering](t: Rep[T]): OrderingOps[T]
+  implicit def expToStringOps(t: Rep[String]): StringOps
+  implicit def expToBooleanOps(t: Rep[Boolean]): BooleanOps
+
+  /*
+   * In these definitions of toNumOps and toOrderingOps, implicit resolution fails because of ambiguity between liftOrd
+   * and liftNum, if they are both declared - even if the ambiguity could easily be solved. The problem can be solved by
+   * just having a polymorphic lift conversion. Other solutions are possible here but don't remove this ambiguity that
+   * affects client code then.
+   */
+  implicit def toOrderingOps[T: Ordering: ClassTag: TypeTag](t: T) = expToOrderingOps(t)
+  implicit def toStringOps(t: String) = expToStringOps(t)
+  implicit def toBooleanOps(t: Boolean) = expToBooleanOps(t)
+}
+
+trait BaseTypesOps extends BaseTypesOpsLangIntf {
   this: LiftingConvs with FunctionOps =>
 
-  class OrderingOps[T: Ordering](t: Exp[T]) {
+  class OrderingOps[T: Ordering](t: Exp[T]) extends super.OrderingOps[T] {
     def <=(that: Exp[T]): Exp[Boolean] = LEq(this.t, that)
     def <(that: Exp[T]): Exp[Boolean] = Less(this.t, that)
     def >(that: Exp[T]): Exp[Boolean] = Less(that, this.t)
     def >=(that: Exp[T]): Exp[Boolean] = LEq(that, this.t)
   }
 
-  class StringOps(t: Exp[String]) {
+  class StringOps(t: Exp[String]) extends super.StringOps {
     def +(that: Exp[String]): Exp[String] = StringConcat(t, that)
     def contains(that: Exp[CharSequence]) = fmap(this.t, that, 'StringOps)('contains, _ contains _)
     def startsWith(that: Exp[String]) = fmap(this.t, that, 'StringOps)('startsWith, _ startsWith _)
@@ -294,7 +339,7 @@ trait BaseTypesOps {
     def length = fmap(this.t, 'StringOps)('length, _.length)
   }
 
-  class BooleanOps(b: Exp[Boolean]) {
+  class BooleanOps(b: Exp[Boolean]) extends super.BooleanOps {
     def &&(that: Exp[Boolean]) = And(b, that)
     def ||(that: Exp[Boolean]) = Or(b, that)
     def unary_! = Not(b)
@@ -303,16 +348,6 @@ trait BaseTypesOps {
   implicit def expToOrderingOps[T: Ordering](t: Exp[T]) = new OrderingOps(t)
   implicit def expToStringOps(t: Exp[String]) = new StringOps(t)
   implicit def expToBooleanOps(t: Exp[Boolean]) = new BooleanOps(t)
-
-  /*
-   * In these definitions of toNumOps and toOrderingOps, implicit resolution fails because of ambiguity between liftOrd
-   * and liftNum, if they are both declared - even if the ambiguity could easily be solved. The problem can be solved by
-   * just having a polymorphic lift conversion. Other solutions are possible here but don't remove this ambiguity that
-   * affects client code then.
-   */
-  implicit def toOrderingOps[T: Ordering: ClassTag: TypeTag](t: T) = expToOrderingOps(t)
-  implicit def toStringOps(t: String) = expToStringOps(t)
-  implicit def toBooleanOps(t: Boolean) = expToBooleanOps(t)
 }
 
 trait ScalaLibOps {
