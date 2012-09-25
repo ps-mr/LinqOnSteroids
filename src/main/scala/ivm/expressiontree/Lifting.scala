@@ -151,6 +151,7 @@ trait ExpSugar extends ConversionDisabler2 {
   }
   implicit def toMaterializable[T](t: Exp[Traversable[T]]) = new Materializable(t)
 }
+
 trait MiscLiftingLangIntf {
 }
 
@@ -206,25 +207,14 @@ trait MiscLifting extends BaseExps with BaseTypesOps with TraversableOps with Se
 
   // maybe this is not the best place to define this function
   //def filterByType[S: Manifest]: Exp[PartialFunction[Any, S]] = new PartialFuncExp(x => x.ifInstanceOf[S])
-
-  case class Elseable[T](conds: Seq[Exp[Boolean]], bodies: Seq[Exp[T]]) {
-    def else_#[U >: T](elseBody: Exp[U]): Exp[U] =
-      (conds, bodies).zipped.foldRight(elseBody) {
-        case ((cond, thenBody), curr) => IfThenElse(cond, thenBody, curr)
-      }
-    //This overload allows chaining if-else if. The idea comes from:
-    //http://blog.razie.com/2011/08/scala-dsl-technique-if-else-constructs.html
-    def else_#[U >: T](branch: Elseable[U]) = Elseable(conds ++ branch.conds, bodies ++ branch.bodies)
-  }
-  def if_#[T](cond: Exp[Boolean])(thenBody: Exp[T]) = Elseable(Seq(cond), Seq(thenBody))
 }
 
 trait LiftingInterface
   extends LangIntf with ConversionDisablerLangIntf with LiftingConvsLangIntf with ConversionDisabler2LangIntf with
-          FunctionOpsLangIntf with NumOpsLangIntf with BaseTypesOpsLangIntf with MiscLiftingLangIntf
+          FunctionOpsLangIntf with NumOpsLangIntf with BaseTypesOpsLangIntf with MiscLiftingLangIntf with IfElseLangIntf
 object Lifting extends LiftingInterface with LiftingTrait
 trait LiftingTrait
   extends BaseExps with OptionLifting
   with TraversableOps with ForceOps with IterableOps with SeqOps with MapOps with SetOps with TypeFilterOps
-  with NumOps with BaseTypesOps with JavaLibOps with ScalaLibOps with ExpSugar with NumConvOps with MiscLifting
+  with NumOps with BaseTypesOps with JavaLibOps with ScalaLibOps with ExpSugar with NumConvOps with MiscLifting with IfElse
 

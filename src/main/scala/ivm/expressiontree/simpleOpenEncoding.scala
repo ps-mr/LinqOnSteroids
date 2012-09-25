@@ -23,6 +23,29 @@ trait BaseLang {
   type Rep[+T] = Exp[T]
 }
 
+trait IfElseLangIntf extends LangIntf {
+  type ElseableImpl[T] <: Elseable[T]
+  abstract class Elseable[T] {
+    def else_#[U >: T](elseBody: Rep[U]): Rep[U]
+    def else_#[U >: T](branch: ElseableImpl[U]): ElseableImpl[U]
+  }
+  def if_#[T](cond: Rep[Boolean])(thenBody: Rep[T]): ElseableImpl[T]
+}
+
+trait IfElse extends IfElseLangIntf with BaseLang {
+  type ElseableImpl[T] = Elseable[T]
+  case class Elseable[T](conds: Seq[Exp[Boolean]], bodies: Seq[Exp[T]]) extends super.Elseable[T] {
+    def else_#[U >: T](elseBody: Exp[U]): Exp[U] =
+      (conds, bodies).zipped.foldRight(elseBody) {
+        case ((cond, thenBody), curr) => IfThenElse(cond, thenBody, curr)
+      }
+    //This overload allows chaining if-else if. The idea comes from:
+    //http://blog.razie.com/2011/08/scala-dsl-technique-if-else-constructs.html
+    def else_#[U >: T](branch: Elseable[U]) = Elseable(conds ++ branch.conds, bodies ++ branch.bodies)
+  }
+  def if_#[T](cond: Exp[Boolean])(thenBody: Exp[T]) = Elseable(Seq(cond), Seq(thenBody))
+}
+
 trait ConversionDisablerLangIntf extends LangIntf {
   implicit def noToExpForUnit(t: Unit): Rep[Unit]
   implicit def noConstForMutableColl[T](t: mutable.Traversable[T]): Rep[mutable.Traversable[T]]
