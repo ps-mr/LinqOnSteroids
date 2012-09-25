@@ -152,11 +152,17 @@ trait ExpSugar extends ConversionDisabler2 {
   implicit def toMaterializable[T](t: Exp[Traversable[T]]) = new Materializable(t)
 }
 
-trait MiscLiftingLangIntf {
+trait MiscLiftingLangIntf extends LangIntf {
+  /** Support let-bindings within for-comprehensions without relying on pattern-matching. */
+  def Let[T](e: Rep[T]): Rep[Seq[T]]
+
+  def groupBySelImpl[T: ClassTag: TypeTag, Repr <: Traversable[T] with
+    TraversableLike[T, Repr]: TypeTag, K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Rep[Repr], f: Rep[T] => Rep[K],
+                                             g: Rep[T] => Rep[Rest])(
+    implicit cbf: CanBuildFrom[Repr, T, Repr], cbf2: CanBuildFrom[Repr, Rest, That]): Rep[Map[K, That]]
 }
 
 trait MiscLifting extends BaseExps with BaseTypesOps with TraversableOps with SeqOps with MiscLiftingLangIntf {
-  //Support let-bindings within for-comprehensions without relying on pattern-matching.
   def Let[T](e: Exp[T]): Exp[Seq[T]] = Seq(e)
   //def Let[T](e: Exp[T]): Exp[Option[T]] = Some(e)
 

@@ -158,6 +158,11 @@ trait FunctionOpsLangIntf extends AutoFunctionOpsLangIntf {
   def letExp[T, U](t: Rep[T])(f: Rep[T] => Rep[U]): Rep[U]
 
   implicit def expToPartialFunOps[S, T](t: Rep[PartialFunction[S, T]]): PartialFunctionOps[S, T]
+
+  implicit def toIfInstanceOfOps[T](t: Exp[T]): IfInstanceOfOps[T]
+  abstract class IfInstanceOfOps[T] {
+    def ifInstanceOf[S: ClassTag: TypeTag]: Exp[Option[S]]
+  }
 }
 
 trait FunctionOps extends FunctionOpsLangIntf with AutoFunctionOps {
@@ -203,6 +208,11 @@ trait FunctionOps extends FunctionOpsLangIntf with AutoFunctionOps {
   def withExpFunc[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = f(t)
   //The use of _App_ and Fun means that t will be evaluated only once.
   def letExp[T, U](t: Exp[T])(f: Exp[T] => Exp[U]): Exp[U] = App(Fun(f), t)
+
+  implicit def toIfInstanceOfOps[T](t: Exp[T]) = new IfInstanceOfOps(t)
+  class IfInstanceOfOps[T](t: Exp[T]) extends super.IfInstanceOfOps[T] {
+    def ifInstanceOf[S: ClassTag: TypeTag]: Exp[Option[S]] = IfInstanceOf(t)
+  }
 
   // Some experimental implicit conversions.
   // With the current Scala compiler, given (f_ )(x), the compiler will try to use implicit conversion on (f _), because
@@ -256,6 +266,10 @@ object ExpSelection {
   }
 }
 
+trait TupleOpsLangIntf extends AutoTupleOpsLangIntf {
+  this: LiftingConvsLangIntf =>
+}
+
 trait TupleOps extends AutoTupleOps {
   this: LiftingConvs =>
   //implicit def pairToPairExp[A, B](pair: (Exp[A], Exp[B])): LiftTuple2[A, B] = LiftTuple2[A, B](pair._1, pair._2)
@@ -266,12 +280,8 @@ trait TupleOps extends AutoTupleOps {
   //The second one is just pimp-my-library.
 }
 
-trait BaseExps extends LiftingConvs with FunctionOps with TupleOps {
-  implicit def toIfInstanceOfOps[T](t: Exp[T]) = new IfInstanceOfOps(t)
-  class IfInstanceOfOps[T](t: Exp[T]) {
-    def ifInstanceOf[S: ClassTag: TypeTag]: Exp[Option[S]] = IfInstanceOf(t)
-  }
-}
+trait BaseExpsLangIntf extends LiftingConvsLangIntf with FunctionOpsLangIntf with TupleOpsLangIntf
+trait BaseExps extends LiftingConvs with FunctionOps with TupleOps with BaseExpsLangIntf
 
 trait NumOpsLangIntf {
   this: LiftingConvsLangIntf =>
