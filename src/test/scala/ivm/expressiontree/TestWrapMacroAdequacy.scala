@@ -8,7 +8,7 @@ class TestWrapMacroAdequacy extends FunSuite with ShouldMatchers {
   val expected = Plus(Const(1), Const(2))
 
   //Convert some compile-time failures into run-time ones.
-  //Tillmann took this idea from a blog post to my knowledge :-)
+  //Tillmann took this idea from a blog post to me :-)
   implicit def toInterpret[T](x: LangIntf#Rep[T]) = new {
     def interpret(): T = throw new NotImplementedError()
   }

@@ -9,6 +9,8 @@ object TestSquoptMacro extends scala.App with tests.TestUtil {
   val c1 = asExp(1)
   val c2 = asExp(2)
 
+  val v = squopt(c1.asInstanceOf[Int])
+  Util.assertType[Exp[Int]](v)
   println("With macros: " + squopt(c1.asInstanceOf[Int]))
   println("With macros: " + squopt(c1.isInstanceOf[Int]))
 
