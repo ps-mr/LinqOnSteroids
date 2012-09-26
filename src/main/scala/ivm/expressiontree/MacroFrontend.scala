@@ -217,7 +217,7 @@ object Macros extends ReusableMacrosParams {
 
   def wrap[T](expr: Exp[T]) = macro wrap_impl[T]
   def wrap_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
-    wrap_gen_impl[T, LiftingConvsLangIntf with NumOpsLangIntf](c)(expr)
+    wrap_gen_impl[T, LiftingLangIntf](c)(expr)
   //TODO: merge this macro within squopt.
 
   def squopt[T](expr: T): Any = macro squopt_impl[T]

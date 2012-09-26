@@ -209,11 +209,11 @@ trait MiscLifting extends BaseExps with BaseTypesOps with TraversableOps with Se
   //def filterByType[S: Manifest]: Exp[PartialFunction[Any, S]] = new PartialFuncExp(x => x.ifInstanceOf[S])
 }
 
-trait LiftingInterface
+trait LiftingLangIntf
   extends LangIntf with ConversionDisablerLangIntf with LiftingConvsLangIntf with ConversionDisabler2LangIntf with
           FunctionOpsLangIntf with NumOpsLangIntf with BaseExpsLangIntf with BaseTypesOpsLangIntf with MiscLiftingLangIntf with IfElseLangIntf
           with TraversableOpsLangIntf
-object Lifting extends LiftingInterface with LiftingTrait
+object Lifting extends LiftingLangIntf with LiftingTrait
 trait LiftingTrait
   extends BaseExps with OptionLifting
   with TraversableOps with ForceOps with IterableOps with SeqOps with MapOps with SetOps with TypeFilterOps
