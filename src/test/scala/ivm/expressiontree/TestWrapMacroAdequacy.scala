@@ -4,13 +4,7 @@ import language.reflectiveCalls
 import org.scalatest._
 import org.scalatest.matchers.ShouldMatchers
 
-/*
-trait MyIntf extends Interface with ScalaIntf {
-  type LangIntf <: LiftingConvsLangIntf with NumOpsLangIntf
-}
-*/
-
-class ModularFrontendExample extends FunSuite with ShouldMatchers {
+class TestWrapMacroAdequacy extends FunSuite with ShouldMatchers {
   val expected = Plus(Const(1), Const(2))
 
   //Convert some compile-time failures into run-time ones.

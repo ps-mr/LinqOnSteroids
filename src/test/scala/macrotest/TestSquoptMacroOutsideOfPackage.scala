@@ -1,6 +1,6 @@
 package macrotest
 
-object SmartMacroTest extends scala.App with ivm.tests.TestUtil {
+object TestSquoptMacroOutsideOfPackage extends scala.App with ivm.tests.TestUtil {
   import ivm.expressiontree._
   import Helpers._
   import Lifting._

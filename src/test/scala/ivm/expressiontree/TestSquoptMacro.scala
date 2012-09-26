@@ -1,7 +1,7 @@
 package ivm
 package expressiontree
 
-object SmartMacroTest extends scala.App with tests.TestUtil {
+object TestSquoptMacro extends scala.App with tests.TestUtil {
   import Lifting._
   import Macros._
   import Helpers._
