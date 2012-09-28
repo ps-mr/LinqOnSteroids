@@ -37,12 +37,12 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   /*private[ivm]*/ def visitPreorderRoots(visitor: Exp[_] => Unit) = visitPreorder(visitor, _.roots)
 
   /*private[ivm]*/ def transform(transformer: Exp[_] => Exp[_]): Exp[T] = {
-    val transformedChilds = children mapConserve (_ transform transformer)
+    val transformedChildren = children mapConserve (_ transform transformer)
     val newself =
-      if (transformedChilds eq children)
+      if (transformedChildren eq children)
         this
       else
-        genericConstructor(transformedChilds)
+        genericConstructor(transformedChildren)
     transformer(newself).asInstanceOf[Exp[T]]
   }
   //This could use as interface some Foldable-like stuff (or Haskell's Traversable, IIRC).
