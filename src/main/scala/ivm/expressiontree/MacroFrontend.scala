@@ -50,11 +50,23 @@ trait ReusableMacrosParams {
 }
 
 object ReusableMacrosParams {
+  def wrap_squopt_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag]
+    (c: Context)
+    (expr: c.Expr[Exp[T]], implementationFQClsName: String, prefix: String, ConvToTuple: Regex, macroDebug: Boolean):
+  c.Expr[Any] = {
+    val res = wrap_gen_impl_transf[T, Sym](c)(
+        c.Expr[Exp[Any]](squopt_impl_transf(c)(
+          expr,
+          implementationFQClsName, prefix, ConvToTuple, macroDebug)), implementationFQClsName)
+    println(res)
+    c.Expr(c.resetAllAttrs(res))
+  }
+
   //Reusable part.
-  def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)
-                                                                   (expr: c.Expr[Exp[T]],
-                                                                    implementationFQClsName: String):
-  c.Expr[Interpreted[Sym, T]] = {
+  def wrap_gen_impl_transf[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag]
+    (c: Context)
+    (expr: c.Expr[Exp[Any]], implementationFQClsName: String):
+  c.universe.Tree = {
     import c.universe._
     val extractors = new MacroUtils[c.type](c)
     import extractors._
@@ -72,13 +84,21 @@ object ReusableMacrosParams {
       }
     }
     val clearedExpr = c.Expr[Any](resetIntfMemberBindings transform expr.tree)
-    val res = c.Expr[Interpreted[Sym, T]](c.resetAllAttrs(reify(new Interpreted[Sym, T] {
-      def apply(s: ThisLangIntf): s.Rep[T] = {
-        import s._
-        clearedExpr.splice.asInstanceOf[s.Rep[T]]
-      }
-    }).tree))
-    res
+    val newTree =
+      reify(new Interpreted[Sym, T] {
+        def apply(s: ThisLangIntf): s.Rep[T] = {
+          import s._
+          clearedExpr.splice.asInstanceOf[s.Rep[T]]
+        }
+      }).tree
+    newTree
+  }
+  def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)
+                                                                   (expr: c.Expr[Exp[T]],
+                                                                    implementationFQClsName: String):
+  c.Expr[Interpreted[Sym, T]] = {
+    val newTree = wrap_gen_impl_transf[T, Sym](c)(expr, implementationFQClsName)
+    c.Expr[Interpreted[Sym, T]](c.resetAllAttrs(newTree))
   }
 
   val anyUnaryMethods = List("toString", "hashCode", "##")
@@ -92,8 +112,17 @@ object ReusableMacrosParams {
 
   val AnyTuple = "Tuple([0-9]+)".r
 
-  def squopt_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T], implementationFQClsName: String,
-                                               prefix: String, ConvToTuple: Regex, macroDebug: Boolean): c.Expr[Any] = {
+  def squopt_impl[T: c.AbsTypeTag]
+    (c: Context)
+    (expr: c.Expr[T], implementationFQClsName: String, prefix: String, ConvToTuple: Regex, macroDebug: Boolean):
+  c.Expr[Any] = {
+    c.Expr(c.resetAllAttrs(squopt_impl_transf[T](c)(expr, implementationFQClsName, prefix, ConvToTuple, macroDebug)))
+  }
+
+  def squopt_impl_transf[T: c.AbsTypeTag]
+    (c: Context)
+    (expr: c.Expr[T], implementationFQClsName: String, prefix: String, ConvToTuple: Regex, macroDebug: Boolean):
+  c.universe.Tree = {
     import c.universe._
 
     val extractors = new MacroUtils[c.type](c)
@@ -150,6 +179,17 @@ object ReusableMacrosParams {
           case Apply(Apply(TypeApply(Select(lifting, TermNameEncoded("pure")), tArgs), List(convertedTerm)), implicitArgs)
             if hasFullName(lifting, implementationFQClsName)
           =>
+            //println(tArgs map (showRaw(_, printTypes = true)))
+            assert(tArgs.length == 1)
+            println(tArgs(0).tpe)
+            val TypeRef(pre, sym, args) = tArgs(0).tpe
+            println(sym.fullName)
+            println(tArgs(0).tpe.toString)
+            //println(tArgs map (showRaw(_, printTypes = true)))
+            //transform(convertedTerm)
+            //Typed(transform(convertedTerm), Ident(newTypeName("ivm.expressiontree.Exp[" + sym.fullName + "]")))
+            //Still Scalac doesn't like it.
+            //Typed(transform(convertedTerm), AppliedTypeTree(Ident(newTypeName("Exp")), List(Ident(newTypeName(sym.fullName)))))
             transform(convertedTerm)
           case Apply(TypeApply(Select(lifting, TermNameEncoded(ConvToTuple())), tArgs), List(convertedTerm))
             if hasFullName(lifting, implementationFQClsName)
@@ -165,9 +205,7 @@ object ReusableMacrosParams {
     println("#### Before transform: " + expr.tree)
     val transformed = squoptTransformer.transform(expr.tree)
     println("#### Transformed: " + transformed)
-    //resetAllAttrs comes from: https://github.com/retronym/macrocosm/blob/171be7e/src/main/scala/com/github/retronym/macrocosm/Macrocosm.scala#L171
-    val afterReset = c.resetAllAttrs(transformed)
-    c.Expr(afterReset)
+    transformed
   }
 }
 
@@ -215,6 +253,9 @@ object Macros extends ReusableMacrosParams {
     arg
   }
 
+  def wrap_squopt[T](expr: Exp[T]) = macro wrap_squopt_impl[T]
+  def wrap_squopt_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
+    wrap_squopt_gen_impl[T, LiftingLangIntf](c)(expr)
   def wrap[T](expr: Exp[T]) = macro wrap_impl[T]
   def wrap_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
     wrap_gen_impl[T, LiftingLangIntf](c)(expr)
@@ -228,6 +269,9 @@ object Macros extends ReusableMacrosParams {
   override protected def implementationClsName = "Lifting"
 
   val ConvToTuple = "tuple[0-9]+ToTuple[0-9]+Exp".r
+  def wrap_squopt_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Any] = {
+    ReusableMacrosParams.wrap_squopt_gen_impl[T, Sym](c)(expr, implementationFQClsName, prefix, ConvToTuple, macroDebug)
+  }
   def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
     ReusableMacrosParams.wrap_gen_impl[T, Sym](c)(expr, implementationFQClsName)
   }

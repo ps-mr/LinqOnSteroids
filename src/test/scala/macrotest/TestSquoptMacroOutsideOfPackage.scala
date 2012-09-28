@@ -90,6 +90,18 @@ object TestSquoptMacroOutsideOfPackage extends scala.App with ivm.tests.TestUtil
     //println("With macros, after code: " + (Compile toCode f))
   }
   //*/
+  /*
+  {
+    val f = wrap_squopt {
+      for {
+        i <- (1 to 10).asSmart
+        if i % 2 == 1
+      } yield (i, (i + 1, i + 2))
+    } apply Lifting
+    println("With wrap & squopt: " + f)
+    //println("With macros, after code: " + (Compile toCode f))
+  }
+  */
 }
 
 // vim: set sw=2 et:
