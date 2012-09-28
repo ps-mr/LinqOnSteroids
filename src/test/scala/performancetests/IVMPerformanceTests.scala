@@ -7,7 +7,7 @@ import org.junit.{Ignore, Test}
 import collection.mutable
 
 import mutable.Buffer
-import tests.IVMTestUtil
+//import tests.IVMTestUtil
 
 import expressiontree._
 import Lifting._

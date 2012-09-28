@@ -1,5 +1,6 @@
 package ivm.tests
 
+/*
 import ivm.expressiontree.IncrementalResult
 import org.scalatest.junit.ShouldMatchersForJUnit
 
@@ -20,3 +21,4 @@ trait IVMTestUtil {
     checkIncRes(coll)
   }
 }
+*/

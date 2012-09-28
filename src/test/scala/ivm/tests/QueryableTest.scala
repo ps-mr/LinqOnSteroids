@@ -9,6 +9,7 @@ import collections.{IncHashSet, IncArrayBuffer}
 import collection.mutable.{HashSet, ArrayBuffer}
 import org.junit.Test
 
+/*
 class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
   import Lifting._
 
@@ -81,3 +82,4 @@ class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit with IVMTestU
   }
 
 }
+*/
