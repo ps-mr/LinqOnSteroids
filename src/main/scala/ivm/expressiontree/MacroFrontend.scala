@@ -180,11 +180,13 @@ object ReusableMacrosParams {
             if hasFullName(lifting, implementationFQClsName)
           =>
             //println(tArgs map (showRaw(_, printTypes = true)))
+            /*
             assert(tArgs.length == 1)
             println(tArgs(0).tpe)
             val TypeRef(pre, sym, args) = tArgs(0).tpe
             println(sym.fullName)
             println(tArgs(0).tpe.toString)
+            */
             //println(tArgs map (showRaw(_, printTypes = true)))
             //transform(convertedTerm)
             //Typed(transform(convertedTerm), Ident(newTypeName("ivm.expressiontree.Exp[" + sym.fullName + "]")))
