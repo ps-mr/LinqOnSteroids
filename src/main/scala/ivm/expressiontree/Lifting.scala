@@ -177,10 +177,12 @@ trait ExpSugar extends ConversionDisabler2 with ExpSugarLangIntf {
   //def Query[T, Repr <: Traversable[T]](t: UnconvertedExp[Exp[Repr with Traversable[T]]]): Exp[Repr with Traversable[T]] = t.v
 
 
+  /*
   class Materializable[T](t: Exp[Traversable[T]]) {
     def materialize = new IncrementalResult(t)
   }
   implicit def toMaterializable[T](t: Exp[Traversable[T]]) = new Materializable(t)
+  */
 }
 
 trait MiscLiftingLangIntf extends LangIntf {

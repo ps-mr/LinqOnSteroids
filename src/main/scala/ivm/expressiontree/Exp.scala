@@ -1,12 +1,17 @@
 package ivm.expressiontree
 
 trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
+  /*
   type RootType
   private[ivm] def activateIVM() {}
 
   //XXX: does this really belong here?
   private[ivm] def pullAndPropagateContent() {}
   /*private[ivm]*/ def isRoot = roots.isEmpty
+
+  /*private[ivm]*/ def roots: Seq[Exp[RootType]] = Nil
+  /*private[ivm]*/ def visitPreorderRoots(visitor: Exp[_] => Unit) = visitPreorder(visitor, _.roots)
+   */
 
   //This method recomputes the contained value
   def interpret(): T
@@ -17,7 +22,6 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   def nodeArity: Int
 
   /*private[ivm]*/ def children: List[Exp[_]]
-  /*private[ivm]*/ def roots: Seq[Exp[RootType]] = Nil
   protected def checkedGenericConstructor(v: List[Exp[_]]): Exp[T]
 
   /*private[ivm]*/ def genericConstructor(v: List[Exp[_]]): Exp[T] =
@@ -34,7 +38,6 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
       c.visitPreorder(visitor, childSelector)
     }
   }
-  /*private[ivm]*/ def visitPreorderRoots(visitor: Exp[_] => Unit) = visitPreorder(visitor, _.roots)
 
   /*private[ivm]*/ def transform(transformer: Exp[_] => Exp[_]): Exp[T] = {
     val transformedChildren = children mapConserve (_ transform transformer)

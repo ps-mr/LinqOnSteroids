@@ -4,6 +4,7 @@ import collection.mutable.HashMap
 import collection.generic.CanBuildFrom
 import collection.TraversableLike
 
+/*
 // All the maintainer classes/traits (MapMaintener, FilterMaintainer, FlatMapMaintainer) have a common structure of
 // "message transformers". That can be probably abstracted away: they should have a method
 // producedMessages: TravMessage[T] => Seq[TravMessage[T]], we should remove Script[T], implement publish in term of it in type:
@@ -232,4 +233,5 @@ class NotMaintainerExp(b: Exp[Boolean]) extends Not(b) with EvtTransformerEl[Boo
   }
 }
 
+*/
 // vim: set ts=4 sw=4 et:

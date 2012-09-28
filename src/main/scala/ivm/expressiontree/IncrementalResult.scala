@@ -7,7 +7,7 @@ import collection.mutable.HashMap
  * User: pgiarrusso
  * Date: 27/8/2011
  */
-
+/*
 private[expressiontree] object IncrementalResult {
   // Given e.g. coll2 = MapNode(coll@IncHashSet(_), Fun(...)), coll2 is the child and coll is the parent (here, the root).
   // Do not return duplicates!
@@ -131,3 +131,4 @@ class IncrementalResultBase[T](val base: Exp[Traversable[T]])
  */
 class IncrementalResult[T](base: Exp[Traversable[T]])
   extends IncrementalResultBase(base) with Queryable[T, collection.Set, collection.SetProxy[T]]
+*/
