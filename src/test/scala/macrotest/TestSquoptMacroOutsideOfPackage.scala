@@ -26,7 +26,7 @@ object TestSquoptMacroOutsideOfPackage extends scala.App with ivm.tests.TestUtil
   //This is what we currently need!
   showExp((squopt(c1 == 2 || c2 == 1), asExp("With macros: ")), "Pair")
   //But we can also write:
-  showExp(squopt((c1 == 2 || c2 == 1), "With macros: "), "Pair")
+  //showExp(squopt((c1 == 2 || c2 == 1), "With macros: "), "Pair") //gives a warning, as expected
   showExp(squopt(((c1 == 2 || c2 == 1), "With macros: ")), "Pair")
   //After all, we want to allow inside squopt calls to reifying methods to have modularity, but we don't necessarily care
   //for allowing calls to non-reifying methods - am I right? Usually we in fact want to reify them. We want to reify everything inside squopt, and then some (the calls to reifying methods).
