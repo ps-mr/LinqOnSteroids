@@ -20,22 +20,22 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   //Rest of Figure 1 - Definition of the schema and of content
   val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "Pearson Education", Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
 
-  //Figure 2 - Query on schema in Fig. 1
+  //Figure 2 - Our example query on the schema in Fig. 1
   val records = for {
     book <- books
     if book.publisher == "Pearson Education"
     author <- book.authors
-  } yield Result(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
+  } yield BookData(book.title, author.firstName + " " + author.lastName, /*Number of coauthors*/ book.authors.size - 1)
 
-  //Figure 3 - Further processing of the query in Fig. 2
-  def titleFilter(records: Set[Result], keyword: String): Set[(String, String)] = for {
+  //Figure 3 - Another query, which processes the results of the query in Fig. 2.
+  def titleFilter(records: Set[BookData], keyword: String): Set[(String, String)] = for {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
 
   val processedRecords = titleFilter(records, "Principles")
 
-  //Figure 4. Hand-optimized composition of Fig. 2 and 3
+  //No more in paper. Hand-optimized composition of Fig. 2 and 3
   def titleFilterHandOpt1(books: Set[Book], publisher: String, keyword: String) = for {
     book <- books
     if book.publisher == publisher
@@ -44,21 +44,20 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   } yield (book.title, author.firstName + " " + author.lastName)
   val processedRecordsOpt1 = titleFilterHandOpt1(books, "Pearson Education", "Principles")
 
-  //Figure 5. Hoisting the filtering step of Fig. 4
-  def titleFilterHandOpt2(books: Set[Book], publisher: String, keyword: String) =
+  //Figure 4. Composition of queries in Fig. 2 and Fig. 3, after inlining, query unnesting and hoisting.
+  def titleFilterHandOpt(books: Set[Book], publisher: String, keyword: String) =
     for {
       book <- books
-      if book.publisher == publisher
-      if book.title.contains(keyword)
+      if book.publisher == publisher && book.title.contains(keyword)
       author <- book.authors
     } yield (book.title, author.firstName + " " + author.lastName)
-  val processedRecordsOpt2 = titleFilterHandOpt2(books, "Pearson Educationrson Education", "Principles")
+  val processedRecordsOpt2 = titleFilterHandOpt(books, "Pearson Educationrson Education", "Principles")
 
   //Figure 8. Desugaring of code in Fig. 2.
   val recordsDesugared = books.withFilter(book =>
     book.publisher == "Pearson Education").flatMap(book =>
     book.authors.map(author =>
-      Result(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
+      BookData(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)))
 
   //Test for Fig. 8
   test("recordsDesugared should be records") {
@@ -75,11 +74,11 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
    book <- books.asSquopt
    if book.publisher ==# "Pearson Education"
    author <- book.authors
- } yield Result(book.title,
+ } yield BookData(book.title,
     author.firstName + " " + author.lastName,
     book.authors.size - 1)
 
-  Util.assertType[Exp[Set[Result]]](recordsQuery)
+  Util.assertType[Exp[Set[BookData]]](recordsQuery)
 
   val recordsQuery2: Exp[Set[(String, Set[String], Int)]] = for {
     book <- books.asSquopt
@@ -118,20 +117,20 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
       (for {
         book <- idxByPublisher("Pearson Education")
         author <- book.authors
-      } yield Result(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)).optimize
+      } yield BookData(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)).optimize
     showExp(indexedQuery, "indexedQuery")
     if (doIndex)
       recordsQueryOpt should be (indexedQuery)
   }
 
-  //Figure 7. SQUOPT version of Fig. 3
-  def titleFilterQuery(records: Exp[Set[Result]], keyword: Exp[String]): Exp[Set[(String, String)]] = for {
+  //Figure 6. SQUOPT version of Fig. 3
+  def titleFilterQuery(records: Exp[Set[BookData]], keyword: Exp[String]): Exp[Set[(String, String)]] = for {
     record <- records
     if record.title.contains(keyword)
   } yield (record.title, record.authorName)
-
   val processedRecordsQuery = titleFilterQuery(recordsQuery, "Principles")
-  //Figure 7 end. The result is checked below.
+  val processedRecordsOptimizedRes = processedRecordsQuery.optimize.eval
+  //Figure 6 end. The result is checked below.
 
   //We lift the hand-optimized version to verify that the optimizer produces the same code.
   def titleFilterHandOpt2Query(books: Exp[Set[Book]], publisher: String, keyword: String): Exp[Set[(String, String)]] =
@@ -148,6 +147,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
     val processedRecordsQueryOpt = Optimization.optimize(processedRecordsQuery)
     showExp(processedRecordsQueryOpt, "processedRecordsQueryOpt")
     processedRecordsQueryOpt.interpret() should be (processedRecords)
+    processedRecordsOptimizedRes should be (processedRecords)
     //showExp(processedQueryExpectedOptimRes, "processedQueryExpectedOptimRes")
     if (!doIndex)
       processedRecordsQueryOpt should be (processedQueryExpectedOptimRes)

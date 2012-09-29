@@ -1,7 +1,7 @@
 package schema
 case class Author(firstName: String, lastName: String)
 case class Book(title: String, publisher: String, authors: Seq[Author])
-case class Result(title: String, authorName: String, coauthors: Int)
+case class BookData(title: String, authorName: String, coauthors: Int)
 
 import de.tud.cs.st.bat.resolved._
 
