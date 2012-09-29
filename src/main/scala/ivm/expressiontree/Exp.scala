@@ -89,19 +89,6 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
   }
   def toCode: String = ""
   def persistValues() { children foreach (_.persistValues()) }
-
-  //Methods for the clients of the library, rather than for the implementations.
-  //They simply produce the appropriate expression tree nodes.
-  final def ==#[S >: T](that: Exp[S]): Exp[Boolean] = Eq(this, that)
-  // This variant is needed because null <: S but also null <: Exp[S], so the needed call to pure won't be inserted
-  // manually when that is statically known to be null.
-  final def ==#(that: Null): Exp[Boolean] = Eq(this, Const(null))
-
-  final def !=#[S >: T](that: Exp[S]): Exp[Boolean] = Not(this ==# that)
-  final def !=#(that: Null): Exp[Boolean] = Not(this ==# that)
-
-  final def isInstanceOf_#[S: ClassTag: TypeTag]: Exp[Boolean] = IsInstanceOf[T, S](this)
-  final def asInstanceOf_#[S: ClassTag: TypeTag]: Exp[S] = AsInstanceOf[T, S](this)
 }
 
 object Exp {

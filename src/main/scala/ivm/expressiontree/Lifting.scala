@@ -212,12 +212,12 @@ trait MiscLifting extends BaseExps with BaseTypesOps with TraversableOps with Se
 }
 
 trait LiftingLangIntf
-  extends BaseLangIntf with ConversionDisablerLangIntf with LiftingConvsLangIntf with ConversionDisabler2LangIntf with
+  extends BaseLangIntf with ScalaLangIntf with ConversionDisablerLangIntf with LiftingConvsLangIntf with ConversionDisabler2LangIntf with
           FunctionOpsLangIntf with NumOpsLangIntf with BaseExpsLangIntf with BaseTypesOpsLangIntf with MiscLiftingLangIntf with IfElseLangIntf
           with TraversableOpsLangIntf
 object Lifting extends LiftingLangIntf with LiftingTrait
 trait LiftingTrait
-  extends BaseExps with OptionLifting
+  extends BaseExps with ScalaLangImpl with OptionLifting
   with TraversableOps with ForceOps with IterableOps with SeqOps with MapOps with SetOps with TypeFilterOps
   with NumOps with BaseTypesOps with JavaLibOps with ScalaLibOps with ExpSugar with NumConvOps with MiscLifting with IfElse
 
