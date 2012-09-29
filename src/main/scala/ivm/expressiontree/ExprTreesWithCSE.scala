@@ -53,10 +53,10 @@ object ExprTreesWithCSE {
   trait Def[+T] extends TreeNode[T] {
     def nodeArity: Int
 
-    /*private[ivm]*/ def children: List[Exp[_]]
+    def children: List[Exp[_]]
     protected def checkedGenericConstructor(v: List[Exp[_]]): Def[T]
 
-    /*private[ivm]*/ def genericConstructor(v: List[Exp[_]]): Def[T] =
+    def genericConstructor(v: List[Exp[_]]): Def[T] =
       if (v.length == nodeArity)
         checkedGenericConstructor(v)
       else
