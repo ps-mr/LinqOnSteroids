@@ -10,48 +10,6 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
 
   override def interpret() = x
 
-  //Pretty-printing: we print some constants inline, sometimes (but not always) using toString.
-
-  private def showFP[U](t: U): String = {
-    //val typ = classManifest.toString
-    //"""java.lang.%s.parse%s("%s")""".format(typ, typ, x.toString)
-    CrossStagePersistence.addVar(x)
-  }
-
-  private def baseShow: PartialFunction[T, String] = {
-    case s: String if s.length < maxInlineStringLength =>
-      "\"%s\"" format s
-    case c: Char =>
-      "'%c'" format c
-  }
-  import java.{lang => jl}
-
-  private def inlineShow: PartialFunction[T, String] = {
-    case x: jl.Integer =>
-      x.toString
-    case x: Double =>
-      showFP(x)
-    case x: Float =>
-      showFP(x)
-    case x: Number =>
-      "(%s: %s)".format(x.toString, cTag)
-    case _ =>
-      CrossStagePersistence.addVar(x)
-  }
-
-  private def show(toEval: Boolean = false): String = {
-    val allowInline = allowInlineInEval || !toEval
-    if (toEval) {
-      if (allowInlineInEval) {
-        (baseShow orElse inlineShow)(x)
-      } else {
-        CrossStagePersistence.addVar(x)
-      }
-    } else {
-      (baseShow orElse (String.valueOf((_: Any))).asPartial)(x)
-    }
-  }
-
   override def toCode = throw new RuntimeException("Const.toCode should never be called")
   override def toString = {
     val s =
@@ -61,8 +19,12 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
         //takes a lot of time for any reason. Still, better than nothing.
         case coll: Traversable[_] =>
           coll.take(3).toString() + (if (coll.size > 3) "..." else "")
+        case s: String if s.length < maxInlineStringLength =>
+          "\"%s\"" format s
+        case c: Char =>
+          "'%c'" format c
         case _ =>
-          show()
+          String valueOf x
       }
     val shortened =
       if (s.length() > 100) {
