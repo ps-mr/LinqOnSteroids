@@ -83,6 +83,7 @@ object ReusableMacrosParams {
         }
       }
     }
+    //The correct type would be s.Rep[T], but it is not available here.
     val clearedExpr = c.Expr[Any](resetIntfMemberBindings transform expr.tree)
     val newTree =
       reify(new Interpreted[Sym, T] {
@@ -91,6 +92,7 @@ object ReusableMacrosParams {
           clearedExpr.splice.asInstanceOf[s.Rep[T]]
         }
       }).tree
+    //TODO: process the expression to remove the cast - it's not needed in fact.
     newTree
   }
   def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)
