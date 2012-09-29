@@ -102,7 +102,7 @@ trait ExpSugarLangIntf extends ConversionDisabler2LangIntf {
   //XXX: evaluate whether this interface is good.
   def NULL: Rep[Null]
 
-  implicit def toPimper[T](t: T): WithAsSmartCollection[T]
+  implicit def toWithAsSquopt[T](t: T): WithAsSquopt[T]
 
   implicit def arrayToExpSeq[T: TypeTag](x: Array[T]): Rep[Seq[T]]
 
@@ -132,7 +132,7 @@ trait ExpSugar extends ConversionDisabler2 with ExpSugarLangIntf {
   //XXX: evaluate whether this interface is good.
   def NULL = pure(null)
 
-  implicit def toPimper[T](t: T) = new WithAsSmartCollection(t)
+  implicit def toWithAsSquopt[T](t: T) = new WithAsSquopt(t)
 
   implicit def arrayToExpSeq[T: TypeTag](x: Array[T]): Exp[Seq[T]] = x: Seq[T]
 

@@ -17,7 +17,7 @@ import optimization.Optimization
 
 class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   val l: Exp[Seq[(Int, Int)]] = asExp(Vector.range(1, 3).flatMap(i => Vector.range(1, 2).map((i, _))))
-  val baseRange = Vector.range(1, 10).asSmart
+  val baseRange = Vector.range(1, 10).asSquopt
 
   @Test def testSimpleSharing() {
     val s1 = l.map(p => (p._1 + 1, p._2 + 2))

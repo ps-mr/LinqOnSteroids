@@ -37,7 +37,7 @@ trait DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT{
       import BATLifting._
       import performancetests.opaltests.InstructionLifting._
       import ivm.expressiontree.Util.ExtraImplicits._
-      for {classFile ← classFiles.asSmart
+      for {classFile ← classFiles.asSquopt
            method ← classFile.methods if method.body.isDefined
            window ← withIndexSQuOpt(method.body.get.instructions).sliding(2)
            second ← window.last._1.ifInstanceOf[INVOKESTATIC]

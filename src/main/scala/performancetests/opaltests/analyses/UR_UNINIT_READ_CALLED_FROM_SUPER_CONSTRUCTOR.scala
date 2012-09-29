@@ -90,7 +90,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
         import performancetests.opaltests.InstructionLifting._
         import ivm.expressiontree.Util.ExtraImplicits._
         import schema.squopt._
-        for {classFile ← classFiles.asSmart
+        for {classFile ← classFiles.asSquopt
              method ← classFile.methods if (
                                            method.body.isDefined &&
                                            method.name !=# "<init>" &&

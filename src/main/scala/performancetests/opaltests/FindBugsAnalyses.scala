@@ -290,7 +290,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
     def analyzeSQuOptWithoutAbstractions() = {
       import BATLifting._
       for {
-        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSmart
+        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSquopt
         cloneable ← allCloneable
         classFile ← getClassFile.get(cloneable)
         if !(classFile.methods exists (method => method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"))
@@ -300,7 +300,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
     def analyzeSQuOptWithAbstractions() = {
       import BATLifting._
       for {
-        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSmart
+        allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSquopt
         cloneable ← allCloneable
         classFile ← getClassFile.get(cloneable)
         if !(classFile.methods exists (method => method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"))
@@ -356,7 +356,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
       import BATLifting._
       import InstructionLifting._
       for {
-        classFile ← classFiles.asSmart
+        classFile ← classFiles.asSquopt
         if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
         superClass ← classFile.superClass
         method ← classFile.methods
@@ -429,7 +429,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
         import BATLifting._
         import InstructionLifting._
         for {
-          classFile ← classFiles.asSmart
+          classFile ← classFiles.asSquopt
           if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
           method ← classFile.methods
           if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
@@ -505,12 +505,12 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   import BATLifting._
 
   val methodNameIdx: Exp[Map[String, Seq[(ClassFile, Method)]]] = (for {
-    classFile ← classFiles.asSmart
+    classFile ← classFiles.asSquopt
     method ← classFile.methods
   } yield (classFile, method)).indexBy(_._2.name)
 
   val excHandlerTypeIdx: Exp[Map[ObjectType, Traversable[(ClassFile, Method, Code, ExceptionHandler, ObjectType)]]] = (for {
-    classFile ← classFiles.asSmart if classFile.isClassDeclaration
+    classFile ← classFiles.asSquopt if classFile.isClassDeclaration
     method ← classFile.methods
     body ← method.body
     exceptionHandler ← body.exceptionHandlers
@@ -518,7 +518,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   } yield (classFile, method, body, exceptionHandler, catchType)) indexBy (_._5)
 
   val typeIdxBase: Exp[Seq[QueryAnd[Instruction]]] = for {
-    classFile ← classFiles.asSmart
+    classFile ← classFiles.asSquopt
     method ← classFile.methods
     body ← method.body
     instruction ← body.instructions
@@ -543,14 +543,14 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
     /*
     import BATLifting._
     (for {
-      classFile ← classFiles.asSmart
+      classFile ← classFiles.asSquopt
       method ← classFile.methods
     } yield (classFile, method)).size
     */
 
     /*
     methodNameIdx = (for {
-      classFile ← classFiles.asSmart
+      classFile ← classFiles.asSquopt
       method ← classFile.methods
     } yield (classFile, method)).indexBy(_._2.name)
 
@@ -560,7 +560,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
     } yield (classFile, method)).indexBy(_._2.name)
 
     val idxBase = for {
-      classFile ← classFiles.asSmart if classFile.isClassDeclaration
+      classFile ← classFiles.asSquopt if classFile.isClassDeclaration
       method ← classFile.methods
       body ← method.body
       exceptionHandler ← body.exceptionHandlers

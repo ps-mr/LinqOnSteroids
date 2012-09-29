@@ -41,7 +41,7 @@ trait FBMethodsThatCallRunFinalizersOnExit {
       import InstructionLifting._
 
       for {
-        classFile ← classFiles.asSmart
+        classFile ← classFiles.asSquopt
         method ← classFile.methods
         body ← method.body
         instruction ← body.instructions.typeCase(when[INVOKESTATIC](

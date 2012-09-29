@@ -209,7 +209,7 @@ object FoldOperatorsMain {
     import Lifting._
     for (n <- 1 to 5) {
       val coll = Seq.fill(n)((math.random * 2).toInt)
-      val collQ = coll.asSmart
+      val collQ = coll.asSquopt
       println(coll)
       val res = coll.forall(_ % 2 == 0)
       val res2 = coll.exists(_ % 2 == 0)

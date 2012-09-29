@@ -40,7 +40,7 @@ trait DP_DO_INSIDE_DO_PRIVILEGED {
     import performancetests.opaltests.InstructionLifting._
     import BATLifting._
 
-    for (classFile ← classFiles.asSmart
+    for (classFile ← classFiles.asSquopt
          if !classFile.interfaces.exists((t) => (t ==# priviledgedAction) || (t ==# priviledgedExceptionAction));
          method ← classFile.methods if method.body.isDefined;
          instructionWithIndex ← withIndexSQuOpt(method.body.get.instructions);

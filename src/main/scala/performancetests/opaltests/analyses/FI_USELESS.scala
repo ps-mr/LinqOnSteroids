@@ -65,7 +65,7 @@ trait FI_USELESS {
       import BATLifting._
       import performancetests.opaltests.InstructionLifting._
       import ivm.expressiontree.Util.ExtraImplicits._
-      for { classFile ← classFiles.asSmart
+      for { classFile ← classFiles.asSquopt
             if !classFile.isInterfaceDeclaration // performance optimization
             method ← classFile.methods
             if method.body.isDefined &&

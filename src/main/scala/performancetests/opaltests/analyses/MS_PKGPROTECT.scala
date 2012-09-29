@@ -65,7 +65,7 @@ trait MS_PKGPROTECT{
       import ivm.expressiontree.Util.ExtraImplicits._
 
         for (readFieldsFromPackage <- Let(readFieldsSQuOpt.map(entry => (entry._1._1.thisClass.packageName, entry._2)));
-             classFile ← classFiles.asSmart if (!classFile.isInterfaceDeclaration);
+             classFile ← classFiles.asSquopt if (!classFile.isInterfaceDeclaration);
              field ← classFile.fields
              if (field.isFinal &&
                  field.isStatic &&

@@ -48,15 +48,15 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   }
   test("pattern matching") {
     import squopt.imports._
-    val exp1 = seenTypesEx.asSmart flatMap (x => Seq(x))
+    val exp1 = seenTypesEx.asSquopt flatMap (x => Seq(x))
     testBinding(exp1) should be (true)
     testBaseBinding(exp1) should be (true)
     testBinding2(exp1) should be (true)
-    val expFilter = seenTypesEx.asSmart filter (x => false)
+    val expFilter = seenTypesEx.asSquopt filter (x => false)
     testBinding(expFilter) should be (true)
     testBaseBinding(expFilter) should be (true)
-    //testBinding(seenTypesEx.asSmart map (x => Seq(x))) should be (false) //doesn't compile
-    val exp2 = seenTypesEx.asSmart map (x => Seq(x))
+    //testBinding(seenTypesEx.asSquopt map (x => Seq(x))) should be (false) //doesn't compile
+    val exp2 = seenTypesEx.asSquopt map (x => Seq(x))
     testBinding(exp2) should be (true) //compiles?
     testBinding2(exp2) should be (true) //compiles!
     testBaseBinding(exp2) should be (false)

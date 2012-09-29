@@ -76,7 +76,7 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
   }
 }
 
-//This class has much faster hashing and comparison; we use it when we can semantically afford it, that is within asSmart.
+//This class has much faster hashing and comparison; we use it when we can semantically afford it, that is within asSquopt.
 class ConstByIdentity[T](content: T, wit: ClassTag[T], wit2: TypeTag[T]) extends Const(content)(wit, wit2) {
   override def canEqual(o: Any) = o.isInstanceOf[ConstByIdentity[_]]
 

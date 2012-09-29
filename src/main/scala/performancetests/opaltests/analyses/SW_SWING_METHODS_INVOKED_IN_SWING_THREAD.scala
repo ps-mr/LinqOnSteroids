@@ -48,7 +48,7 @@ trait SW_SWING_METHODS_INVOKED_IN_SWING_THREAD {
     import performancetests.opaltests.InstructionLifting._
     import ivm.expressiontree.Util.ExtraImplicits._
 
-      for (classFile ← classFiles.asSmart;
+      for (classFile ← classFiles.asSquopt;
              method ← classFile.methods if (
                                            method.body.isDefined &&
                                            method.isPublic &&

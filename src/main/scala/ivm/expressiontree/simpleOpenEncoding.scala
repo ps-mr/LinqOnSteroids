@@ -86,8 +86,8 @@ trait LiftingConvsLangIntf extends ConversionDisablerLangIntf {
   implicit def pure[T: ClassTag: TypeTag](t: T): Rep[T]
   def asExp[T](t: Rep[T]): Rep[T]
 
-  abstract class WithAsSmartCollection[T](t: T) {
-    def asSmart(implicit conv: T => Exp[T]): Rep[T]
+  abstract class WithAsSquopt[T](t: T) {
+    def asSquopt(implicit conv: T => Exp[T]): Rep[T]
   }
 }
 
@@ -101,45 +101,45 @@ trait LiftingConvs extends ConversionDisabler with ExtraConversions with Lifting
   //Failed experiment - allow ignoring calls to pure when they become unneeded. Just a hack.
   //def pure[T: ClassTag: TypeTag](t: Exp[T]): Exp[T] = t
   //Of course, this fails: overloading conversions makes them unavailable as
-  //implicit views, so asSmart stops working.
+  //implicit views, so asSquopt stops working.
 
   //Used to force insertion of the appropriate implicit conversion - unlike ascriptions, one needn't write out the type
   //parameter of Exp here.
   def asExp[T](t: Exp[T]) = t
 
-  class WithAsSmartCollection[T](t: T) extends super.WithAsSmartCollection(t) {
-    def asSmart(implicit conv: T => Exp[T]) = conv(t)
+  class WithAsSquopt[T](t: T) extends super.WithAsSquopt(t) {
+    override def asSquopt(implicit conv: T => Exp[T]) = conv(t)
   }
 }
 
 trait ConversionDisabler2LangIntf extends LiftingConvsLangIntf {
   //Disable conversion - should no more be needed, but it is, as explained below.
-  implicit def noAsSmartForExp[T](t: Exp[T]): WithAsSmartCollection[Exp[T]]
+  implicit def noAsSmartForExp[T](t: Exp[T]): WithAsSquopt[Exp[T]]
 }
 
 trait ConversionDisabler2 extends LiftingConvs with ConversionDisabler2LangIntf {
   //Disable conversion - should no more be needed, but it is, as explained below.
-  implicit def noAsSmartForExp[T](t: Exp[T]): WithAsSmartCollection[Exp[T]] = null
-  /* Assume that `class WithAsSmartCollection[T](t: T)` contains:
-def asSmart(implicit conv: T => Exp[T]) = conv(t)
+  implicit def noAsSmartForExp[T](t: Exp[T]): WithAsSquopt[Exp[T]] = null
+  /* Assume that `class WithAsSquopt[T](t: T)` contains:
+def asSquopt(implicit conv: T => Exp[T]) = conv(t)
    * (as it does at the moment of this writing).
-   * Consider this test: disable the effect of this conversion by using toPimper explicitly:
-toPimper(Const(1)).asSmart
+   * Consider this test: disable the effect of this conversion by using toWithAsSquopt explicitly:
+toWithAsSquopt(Const(1)).asSquopt
    * This code is accepted, while
-scala> toPimper(Const(1): Exp[Int]) asSmart
+scala> toWithAsSquopt(Const(1): Exp[Int]) asSquopt
    * gives the expected error, i.e.:
 <console>:37: error: ambiguous implicit values:
  both method noPureForExp in trait ConversionDisabler of type [T](t: ivm.expressiontree.Exp[T])ivm.expressiontree.Exp[ivm.expressiontree.Exp[T]]
  and method pure in trait LiftingConvs of type [T](t: T)ivm.expressiontree.Exp[T]
  match expected type ivm.expressiontree.Exp[Int] => ivm.expressiontree.Exp[ivm.expressiontree.Exp[Int]]
-              toPimper(Const(1): Exp[Int]) asSmart
+              toWithAsSquopt(Const(1): Exp[Int]) asSquopt
    * The compiler is even right, since we do ask for a very specific conversion, from T to Exp[T]; when T = Const[Int], we
    * only have a conversion from U = Exp[Int] to Exp[U] >: Exp[T]. If we write instead:
-def asSmart[U >: T](implicit conv: U => Exp[U]): Exp[U] = conv(t)
+def asSquopt[U >: T](implicit conv: U => Exp[U]): Exp[U] = conv(t)
    * then U might as well be Any; luckily, pure[T] is always available, and noPureForExp will be available as well on expressions.
    * However, the compiler still deduced U = T, so that noPureForExp is not found. The last attempt is this:
-def asSmart[U >: T](implicit conv: T => Exp[U]): Exp[U] = conv(t)
-   * with the same result - toPimper(Const(1)).asSmart is accepted.
+def asSquopt[U >: T](implicit conv: T => Exp[U]): Exp[U] = conv(t)
+   * with the same result - toWithAsSquopt(Const(1)).asSquopt is accepted.
    */
 }
 trait FunctionOpsLangIntf extends AutoFunctionOpsLangIntf {

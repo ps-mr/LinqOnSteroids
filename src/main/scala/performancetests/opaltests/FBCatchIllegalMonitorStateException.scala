@@ -33,7 +33,7 @@ trait FBCatchIllegalMonitorStateException {
     import ivm.expressiontree.Util.ExtraImplicits._
     import schema.squopt._
       for {
-        classFile ← classFiles.asSmart if classFile.isClassDeclaration
+        classFile ← classFiles.asSquopt if classFile.isClassDeclaration
         method ← classFile.methods
         body ← method.body
         exceptionHandler ← body.exceptionHandlers

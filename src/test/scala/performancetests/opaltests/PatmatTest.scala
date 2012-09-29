@@ -73,7 +73,7 @@ object PatmatTest {
   val testdata: Set[ClassFile] = ???
   val queryData = asExp(testdata)
 
-  val baseCol = Seq(1).asSmart
+  val baseCol = Seq(1).asSquopt
   val query = for (i <- baseCol.typeFilter[Int]; j <- Let(i) if j % 2 ==# 1) yield j
   val query2 = for (i <- baseCol.typeFilter[Int]; j <- asExp(Some(i)) if j % 2 ==# 1) yield j
 

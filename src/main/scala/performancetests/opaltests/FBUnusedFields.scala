@@ -183,7 +183,7 @@ trait FBUnusedFields {
       import BATLifting._
       import InstructionLifting._
       for {
-        classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration
+        classFile ← classFiles.asSquopt if !classFile.isInterfaceDeclaration
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
         unusedPrivateFields ← Let(privateFields -- (for {
@@ -199,7 +199,7 @@ trait FBUnusedFields {
       import BATLifting._
       import InstructionLifting._
       for {
-        classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration
+        classFile ← classFiles.asSquopt if !classFile.isInterfaceDeclaration
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let((for (field ← classFile.fields if field.isPrivate) yield field.name).toSet)
         instructions ← Let(for {
@@ -216,7 +216,7 @@ trait FBUnusedFields {
     }, Optimization removeIdentityMaps {
       import BATLifting._
       for {
-        classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration
+        classFile ← classFiles.asSquopt if !classFile.isInterfaceDeclaration
         declaringClass ← Let(classFile.thisClass)
         privateFields ← Let(getPrivateFieldsLos(classFile))
         usedPrivateFields ← Let(usedPrivateFieldsLos(classFile, declaringClass))

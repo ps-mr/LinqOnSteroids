@@ -36,9 +36,9 @@ trait FBSerializableNoConstructor {
     import ivm.expressiontree.Util.ExtraImplicits._
     val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
       for {
-        superclass ← classHierarchy.superclasses(serializableClasses).asSmart if getClassFile.asSmart.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+        superclass ← classHierarchy.superclasses(serializableClasses).asSquopt if getClassFile.asSquopt.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
         {
-          val superClassFile = getClassFile.asSmart.apply(superclass)
+          val superClassFile = getClassFile.asSquopt.apply(superclass)
           !superClassFile.isInterfaceDeclaration &&
             !superClassFile.constructors.exists(_.descriptor.parameterTypes.length ==# 0)
         }
@@ -74,9 +74,9 @@ trait FBSerializableNoConstructor {
       import schema.squopt._
       val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
             for {
-              superclass ← classHierarchy.superclasses(serializableClasses).asSmart if getClassFile.asSmart.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+              superclass ← classHierarchy.superclasses(serializableClasses).asSquopt if getClassFile.asSquopt.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
               {
-                val superClassFile = getClassFile.asSmart.apply(superclass)
+                val superClassFile = getClassFile.asSquopt.apply(superclass)
                 !superClassFile.isInterfaceDeclaration &&
                   !superClassFile.constructors.exists(_.descriptor.parameterTypes.length ==# 0)
               }

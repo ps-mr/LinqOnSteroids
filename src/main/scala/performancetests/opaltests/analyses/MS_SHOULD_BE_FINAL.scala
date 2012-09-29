@@ -61,7 +61,7 @@ trait MS_SHOULD_BE_FINAL{
       import performancetests.opaltests.InstructionLifting._
       import ivm.expressiontree.Util.ExtraImplicits._
 
-        for (classFile ← classFiles.asSmart if (!classFile.isInterfaceDeclaration);
+        for (classFile ← classFiles.asSquopt if (!classFile.isInterfaceDeclaration);
              field ← classFile.fields
              if (!field.isFinal &&
                  field.isStatic &&

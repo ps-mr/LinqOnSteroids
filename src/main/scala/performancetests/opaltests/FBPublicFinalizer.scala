@@ -31,7 +31,7 @@ trait FBPublicFinalizer {
     } {
       import BATLifting._
       for (
-        classFile ← classFiles.asSmart
+        classFile ← classFiles.asSquopt
         if classFile.methods.exists(method ⇒ method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0)
       ) yield classFile
     }
@@ -53,7 +53,7 @@ trait FBPublicFinalizer {
       } yield classFile
     }) (
       for {
-        classFile ← classFiles.asSmart
+        classFile ← classFiles.asSquopt
         method ← classFile.methods
         if method.name ==# "finalize" && method.isPublic && method.descriptor.returnType ==# VoidType && method.descriptor.parameterTypes.size ==# 0
       } yield classFile, {

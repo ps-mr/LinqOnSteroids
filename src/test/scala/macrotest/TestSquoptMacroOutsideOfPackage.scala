@@ -31,8 +31,8 @@ object TestSquoptMacroOutsideOfPackage extends scala.App with ivm.tests.TestUtil
   //After all, we want to allow inside squopt calls to reifying methods to have modularity, but we don't necessarily care
   //for allowing calls to non-reifying methods - am I right? Usually we in fact want to reify them. We want to reify everything inside squopt, and then some (the calls to reifying methods).
 
-  //val coll = (1 to 10).asSmart
-  //val coll = List(1, 2, 3).asSmart
+  //val coll = (1 to 10).asSquopt
+  //val coll = List(1, 2, 3).asSquopt
   val coll = asExp(List(1, 2, 3))
   val mod = asExp(2)
   val rem = asExp(1)
@@ -62,7 +62,7 @@ object TestSquoptMacroOutsideOfPackage extends scala.App with ivm.tests.TestUtil
   {
     val f = squopt {
       for {
-        i <- (1 to 10).asSmart
+        i <- (1 to 10).asSquopt
         if i % 2 == 1
       } yield i
     }
@@ -72,7 +72,7 @@ object TestSquoptMacroOutsideOfPackage extends scala.App with ivm.tests.TestUtil
   {
     val f = squopt {
       for {
-        i <- (1 to 10).asSmart
+        i <- (1 to 10).asSquopt
         if i % 2 == 1
       } yield (i, i + 1)
     }
@@ -82,7 +82,7 @@ object TestSquoptMacroOutsideOfPackage extends scala.App with ivm.tests.TestUtil
   {
     val f = squopt {
       for {
-        i <- (1 to 10).asSmart
+        i <- (1 to 10).asSquopt
         if i % 2 == 1
       } yield (i, (i + 1, i + 2))
     }
@@ -94,7 +94,7 @@ object TestSquoptMacroOutsideOfPackage extends scala.App with ivm.tests.TestUtil
   {
     val f = wrap_squopt {
       for {
-        i <- (1 to 10).asSmart
+        i <- (1 to 10).asSquopt
         if i % 2 == 1
       } yield (i, (i + 1, i + 2))
     } apply Lifting

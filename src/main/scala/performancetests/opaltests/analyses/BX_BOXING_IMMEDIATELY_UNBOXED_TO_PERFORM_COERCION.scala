@@ -41,7 +41,7 @@ trait BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION {
     import ivm.expressiontree.Util.ExtraImplicits._
 
     for {
-         classFile ← classFiles.asSmart if classFile.majorVersion >= 49
+         classFile ← classFiles.asSquopt if classFile.majorVersion >= 49
          method ← classFile.methods if method.body.isDefined
          window ← withIndexSQuOpt(method.body.get.instructions).sliding(2)
          first ← window.head._1.ifInstanceOf[INVOKESPECIAL]

@@ -31,7 +31,7 @@ trait FBAbstractClassesThatDefinesCovariantEquals {
     import ivm.expressiontree.Util.ExtraImplicits._
     import schema.squopt._
     for {
-      classFile ← classFiles.asSmart
+      classFile ← classFiles.asSquopt
       method ← classFile.methods
       if method.isAbstract && method.name ==# "equals" && method.descriptor.returnType ==# BooleanType
       parameterTypes <- Let(method.descriptor.parameterTypes)

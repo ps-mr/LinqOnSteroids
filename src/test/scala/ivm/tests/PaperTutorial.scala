@@ -72,7 +72,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   import schema.squopt._
 
   val recordsQuery = for {
-   book <- books.asSmart
+   book <- books.asSquopt
    if book.publisher ==# "Pearson Education"
    author <- book.authors
  } yield Result(book.title,
@@ -82,7 +82,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
   Util.assertType[Exp[Set[Result]]](recordsQuery)
 
   val recordsQuery2: Exp[Set[(String, Set[String], Int)]] = for {
-    book <- books.asSmart
+    book <- books.asSquopt
     if book.publisher ==# "Pearson Education"
     author <- book.authors
   } yield (book.title,
@@ -97,7 +97,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   //From Section 3.3
   val idxByPublisher =
-    books.asSmart indexBy (_.publisher)
+    books.asSquopt indexBy (_.publisher)
 
   val doIndex = true //Disable this to test other optimizations, like unnesting, instead of indexing
   if (doIndex)
@@ -197,7 +197,7 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   {
     val recordsQuery = for {
-      book <- books.asSmart
+      book <- books.asSquopt
     } yield book.title
     showExp(recordsQuery, "recordsQuery")
     def titleFilterQuery(titles: Exp[Set[String]], prefix: Exp[String]): Exp[Set[String]] = for {

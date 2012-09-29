@@ -65,7 +65,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   @Test
   def testHoistFilter() {
     def optim[T](exp: Exp[T]) = Optimization flatMapToMap (Optimization handleFilters (Optimization mapToFlatMap exp))
-    val base = Vector.range(1, 6).asSmart
+    val base = Vector.range(1, 6).asSquopt
     val query =
       for {
         i <- base
@@ -117,7 +117,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     opt21.interpret() should be (query2.interpret())
   }
 
-  val baseCol = Seq(1).asSmart
+  val baseCol = Seq(1).asSquopt
 
   @Test
   def testRemoveRedundantOption() {
@@ -138,7 +138,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
 
   @Test
   def testMapToFlatMapAndBack() {
-    val baseRange = (1 to 10).asSmart
+    val baseRange = (1 to 10).asSquopt
     val query = for (i <- baseRange) yield i
     import Optimization._
     val transf = mapToFlatMap(query)
@@ -156,8 +156,8 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   }
 
   val Xquery = for {
-    x <- (1 to 10).asSmart
-    y <- (1 to 10).asSmart
+    x <- (1 to 10).asSquopt
+    y <- (1 to 10).asSquopt
     if y % 2 ==# 0
   } yield (x, y)
 
@@ -169,8 +169,8 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     } yield (pair._1, pair._2 + 1)
 
     val expected = (for {
-      x <- (1 to 10).asSmart
-      y <- (1 to 10).asSmart
+      x <- (1 to 10).asSquopt
+      y <- (1 to 10).asSquopt
       if y % 2 ==# 0
     } yield (x, 1 + y)).optimize
     Optimization filterToWithFilter (Optimization preIndexing Yquery) should be (expected)
@@ -189,9 +189,9 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     showExp(Zquery, "Zquery")
     showExp(optZ, "optZ")
     optZ should be (for {
-      x <- (1 to 10).asSmart
+      x <- (1 to 10).asSquopt
       if x % 2 ==# 0
-      y <- (1 to 10).asSmart
+      y <- (1 to 10).asSquopt
       if y % 2 ==# 0
     } yield (x, y))
   }
@@ -231,12 +231,12 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   }
 
   @Test def renestExists1() {
-    val compr = for { x <- Set(1, 2, 3, 4).asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
+    val compr = for { x <- Set(1, 2, 3, 4).asSquopt; if ((1 to 10) ++ (1 to 10)).asSquopt exists (y => y * 2 ==# x) } yield x
     testRenestingExistsForSets(compr)
     testRenestingExistsGeneric(compr)
   }
   @Test def renestExists2() {
-    val compr = for { x <- Seq(1, 2, 3, 4).asSmart; if ((1 to 10) ++ (1 to 10)).asSmart exists (y => y * 2 ==# x) } yield x
+    val compr = for { x <- Seq(1, 2, 3, 4).asSquopt; if ((1 to 10) ++ (1 to 10)).asSquopt exists (y => y * 2 ==# x) } yield x
     testRenestingExistsGeneric(compr)
   }
 }

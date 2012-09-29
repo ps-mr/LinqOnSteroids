@@ -177,7 +177,7 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
       import performancetests.opaltests.InstructionLifting._
       import ivm.expressiontree.Util.ExtraImplicits._
       for {readFields ← Let(readFieldsSQuOpt.map(_._2))
-           classFile ← classFiles.asSmart
+           classFile ← classFiles.asSquopt
            if (isAnonymousInnerClass(classFile) &&
                canConvertToStaticInnerClass(classFile)
               );

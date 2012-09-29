@@ -30,13 +30,13 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
   }
   val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
 
-  val getClassFileSQuOpt = getClassFile.asSmart
+  val getClassFileSQuOpt = getClassFile.asSquopt
 
   // Now the classHierarchy is built functionally - hence, the result could be incrementally maintained (at least for the
   // addition of classes).
   val classHierarchy = (new ClassHierarchy /: classFiles)(_ + _)
 
-  val classHierarchySQuOpt = classHierarchy.asSmart
+  val classHierarchySQuOpt = classHierarchy.asSquopt
 
   println("Number of class files: " + classFiles.length)
   println("Numer of methods: " + methodsSQuOpt().interpret().size)
@@ -54,7 +54,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     import BATLifting._
     import schema.squopt._
     for {
-      classFile ← classFiles.asSmart
+      classFile ← classFiles.asSquopt
       field ← classFile.fields
     } yield FieldRecord(classFile, field)
   }
@@ -72,7 +72,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     import BATLifting._
     import schema.squopt._
     for {
-      classFile ← classFiles.asSmart
+      classFile ← classFiles.asSquopt
       method ← classFile.methods
     } yield MethodRecord(classFile, method)
   }
@@ -83,7 +83,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     //import schema._ //{squopt => _, _}
     import schema.squopt._
     for {
-      classFile ← classFiles.asSmart
+      classFile ← classFiles.asSquopt
       method ← classFile.methods
       body ← method.body
     } yield ConcreteMethodRecord(classFile, method, body)
@@ -193,7 +193,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     import Lifting._
     import BATLifting._
     import performancetests.opaltests.InstructionLifting._
-    (for (classFile ← classFiles.asSmart if !classFile.isInterfaceDeclaration;
+    (for (classFile ← classFiles.asSquopt if !classFile.isInterfaceDeclaration;
           method ← classFile.methods if method.body.isDefined;
           instruction ← method.body.get.instructions
           if (instruction.isInstanceOf_#[GETFIELD] || instruction.isInstanceOf_#[GETSTATIC])

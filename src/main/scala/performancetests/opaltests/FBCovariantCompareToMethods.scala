@@ -32,7 +32,7 @@ trait FBCovariantCompareToMethods {
     import InstructionLifting._
     import ivm.expressiontree.Util.ExtraImplicits._
       for {
-        allComparables ← classHierarchy.subtypes(comparableType).toList.asSmart
+        allComparables ← classHierarchy.subtypes(comparableType).toList.asSquopt
         comparable ← allComparables
         classFile ← getClassFile.get(comparable) //getClassFile is lifted through Const and makes optimization expensive.
         method ← classFile.methods //if parameterType != ObjectType.Object
@@ -67,7 +67,7 @@ trait FBCovariantCompareToMethods {
       import ivm.expressiontree.Util.ExtraImplicits._
       import schema.squopt._
       for {
-        allComparables ← classHierarchy.subtypes(comparableType).toList.asSmart
+        allComparables ← classHierarchy.subtypes(comparableType).toList.asSquopt
         comparable ← allComparables
         classFile ← getClassFile.get(comparable) //getClassFile is lifted through Const and makes optimization expensive.
         method ← classFile.methods //if parameterType != ObjectType.Object

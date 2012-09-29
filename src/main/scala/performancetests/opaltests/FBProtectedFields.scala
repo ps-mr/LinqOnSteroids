@@ -39,7 +39,7 @@ trait FBProtectedFields {
       } yield (classFile, field)
     }) (
       for {
-        classFile ← classFiles.asSmart if classFile.isFinal
+        classFile ← classFiles.asSquopt if classFile.isFinal
         field ← classFile.fields if field.isProtected
       } yield (classFile, field), {
       import schema.squopt._

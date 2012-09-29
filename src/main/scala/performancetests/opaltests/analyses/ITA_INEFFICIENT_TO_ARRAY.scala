@@ -67,7 +67,7 @@ trait ITA_INEFFICIENT_TO_ARRAY{
       import BATLifting._
       import performancetests.opaltests.InstructionLifting._
       import ivm.expressiontree.Util.ExtraImplicits._
-      for (classFile ← classFiles.asSmart;
+      for (classFile ← classFiles.asSquopt;
            method ← classFile.methods if method.body.isDefined;
            instructionsWithIndex ← withIndexSQuOpt(method.body.get.instructions).sliding(3)
            if instructionsWithIndex(0)._1 ==# ICONST_0 &&
