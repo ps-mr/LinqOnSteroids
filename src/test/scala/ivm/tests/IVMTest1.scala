@@ -2,6 +2,7 @@ package ivm
 package tests
 
 
+/*
 import org.junit.Test
 import collections.IncHashSet
 import collection.mutable.HashSet
@@ -13,7 +14,6 @@ import expressiontree.{Lifting, Exp, Queryable, IncrementalResult}
  * Date: 31/10/2011
  */
 
-/*
 class IVMTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
   import Lifting._
 
