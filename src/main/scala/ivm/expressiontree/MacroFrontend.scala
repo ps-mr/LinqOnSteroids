@@ -6,7 +6,7 @@ import scala.reflect.macros.Context
 import language.experimental.macros
 import util.matching.Regex
 
-trait Interpreted[Sym <: LangIntf, Res] {
+trait Interpreted[Sym <: BaseLangIntf, Res] {
   type ThisLangIntf = Sym
   def apply(s: ThisLangIntf): s.Rep[Res]
 }
@@ -50,7 +50,7 @@ trait ReusableMacrosParams {
 }
 
 object ReusableMacrosParams {
-  def wrap_squopt_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag]
+  def wrap_squopt_gen_impl[T: c.AbsTypeTag, Sym <: BaseLangIntf: c.AbsTypeTag]
     (c: Context)
     (expr: c.Expr[Exp[T]], implementationFQClsName: String, prefix: String, ConvToTuple: Regex, macroDebug: Boolean):
   c.Expr[Any] = {
@@ -63,7 +63,7 @@ object ReusableMacrosParams {
   }
 
   //Reusable part.
-  def wrap_gen_impl_transf[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag]
+  def wrap_gen_impl_transf[T: c.AbsTypeTag, Sym <: BaseLangIntf: c.AbsTypeTag]
     (c: Context)
     (expr: c.Expr[Exp[Any]], implementationFQClsName: String):
   c.universe.Tree = {
@@ -95,7 +95,7 @@ object ReusableMacrosParams {
     //TODO: process the expression to remove the cast - it's not needed in fact.
     newTree
   }
-  def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)
+  def wrap_gen_impl[T: c.AbsTypeTag, Sym <: BaseLangIntf: c.AbsTypeTag](c: Context)
                                                                    (expr: c.Expr[Exp[T]],
                                                                     implementationFQClsName: String):
   c.Expr[Interpreted[Sym, T]] = {
@@ -273,10 +273,10 @@ object Macros extends ReusableMacrosParams {
   override protected def implementationClsName = "Lifting"
 
   val ConvToTuple = "tuple[0-9]+ToTuple[0-9]+Exp".r
-  def wrap_squopt_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Any] = {
+  def wrap_squopt_gen_impl[T: c.AbsTypeTag, Sym <: BaseLangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Any] = {
     ReusableMacrosParams.wrap_squopt_gen_impl[T, Sym](c)(expr, implementationFQClsName, prefix, ConvToTuple, macroDebug)
   }
-  def wrap_gen_impl[T: c.AbsTypeTag, Sym <: LangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
+  def wrap_gen_impl[T: c.AbsTypeTag, Sym <: BaseLangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
     ReusableMacrosParams.wrap_gen_impl[T, Sym](c)(expr, implementationFQClsName)
   }
   def squopt_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[Any] = {

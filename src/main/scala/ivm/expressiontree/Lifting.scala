@@ -128,7 +128,7 @@ trait ExpSugarLangIntf extends ConversionDisabler2LangIntf {
 }
 
 trait ExpSugar extends ConversionDisabler2 with ExpSugarLangIntf {
-  this: BaseExps with TraversableOps with BaseLang =>
+  this: BaseExps with TraversableOps with BaseLangImpl =>
   //XXX: evaluate whether this interface is good.
   def NULL = pure(null)
 
@@ -185,7 +185,7 @@ trait ExpSugar extends ConversionDisabler2 with ExpSugarLangIntf {
   */
 }
 
-trait MiscLiftingLangIntf extends LangIntf {
+trait MiscLiftingLangIntf extends BaseLangIntf {
   /** Support let-bindings within for-comprehensions without relying on pattern-matching. */
   def Let[T](e: Rep[T]): Rep[Seq[T]]
 
@@ -212,7 +212,7 @@ trait MiscLifting extends BaseExps with BaseTypesOps with TraversableOps with Se
 }
 
 trait LiftingLangIntf
-  extends LangIntf with ConversionDisablerLangIntf with LiftingConvsLangIntf with ConversionDisabler2LangIntf with
+  extends BaseLangIntf with ConversionDisablerLangIntf with LiftingConvsLangIntf with ConversionDisabler2LangIntf with
           FunctionOpsLangIntf with NumOpsLangIntf with BaseExpsLangIntf with BaseTypesOpsLangIntf with MiscLiftingLangIntf with IfElseLangIntf
           with TraversableOpsLangIntf
 object Lifting extends LiftingLangIntf with LiftingTrait

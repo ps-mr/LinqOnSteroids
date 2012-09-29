@@ -9,7 +9,7 @@ class TestWrapMacroAdequacy extends FunSuite with ShouldMatchers {
 
   //Convert some compile-time failures into run-time ones.
   //Tillmann took this idea from a blog post to me :-)
-  implicit def toInterpret[T](x: LangIntf#Rep[T]) = new {
+  implicit def toInterpret[T](x: BaseLangIntf#Rep[T]) = new {
     def interpret(): T = throw new NotImplementedError()
   }
 

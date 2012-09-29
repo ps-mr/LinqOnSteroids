@@ -15,15 +15,15 @@ import collection.mutable
  * This can be solved by making their composition available as another implicit conversion, and that's the solution
  * we show here.
  */
-trait LangIntf {
+trait BaseLangIntf {
   type Rep[+T]
 }
 
-trait BaseLang {
+trait BaseLangImpl {
   type Rep[+T] = Exp[T]
 }
 
-trait IfElseLangIntf extends LangIntf {
+trait IfElseLangIntf extends BaseLangIntf {
   type ElseableImpl[T] <: Elseable[T]
   abstract class Elseable[T] {
     def else_#[U >: T](elseBody: Rep[U]): Rep[U]
@@ -32,7 +32,7 @@ trait IfElseLangIntf extends LangIntf {
   def if_#[T](cond: Rep[Boolean])(thenBody: Rep[T]): ElseableImpl[T]
 }
 
-trait IfElse extends IfElseLangIntf with BaseLang {
+trait IfElse extends IfElseLangIntf with BaseLangImpl {
   type ElseableImpl[T] = Elseable[T]
   case class Elseable[T](conds: Seq[Exp[Boolean]], bodies: Seq[Exp[T]]) extends super.Elseable[T] {
     def else_#[U >: T](elseBody: Exp[U]): Exp[U] =
@@ -46,13 +46,13 @@ trait IfElse extends IfElseLangIntf with BaseLang {
   def if_#[T](cond: Exp[Boolean])(thenBody: Exp[T]) = Elseable(Seq(cond), Seq(thenBody))
 }
 
-trait ConversionDisablerLangIntf extends LangIntf {
+trait ConversionDisablerLangIntf extends BaseLangIntf {
   implicit def noToExpForUnit(t: Unit): Rep[Unit]
   implicit def noConstForMutableColl[T](t: mutable.Traversable[T]): Rep[mutable.Traversable[T]]
   implicit def noPureForExp[T](t: Rep[T]): Rep[Rep[T]]
 }
 
-trait ConversionDisabler extends ConversionDisablerLangIntf with BaseLang {
+trait ConversionDisabler extends ConversionDisablerLangIntf with BaseLangImpl {
   //We forbid implicit conversion from Unit to Exp[Unit] by making it ambiguous. To this end we declare noToExpForUnit.
   //It is more specific than pure[Unit] because it's not generic, but is declared in a superclass, hence
   //has less priority. Ambiguity follows.
