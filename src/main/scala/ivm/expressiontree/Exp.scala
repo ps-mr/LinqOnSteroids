@@ -11,6 +11,13 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
 
   def roots: Seq[Exp[RootType]] = Nil
   def visitPreorderRoots(visitor: Exp[_] => Unit) = visitPreorder(visitor, _.roots)
+
+  def visitPreorder(visitor: Exp[_] => Unit, childSelector: Exp[_] => Seq[Exp[_]]) {
+    visitor(this)
+    for (c <- childSelector(this)) {
+      c.visitPreorder(visitor, childSelector)
+    }
+  }
    */
 
   //This method recomputes the contained value
@@ -31,13 +38,6 @@ trait Exp[+T] extends MsgSeqPublisher[T, Exp[T]] {
       throw new IllegalArgumentException()
 
   // some child management auxiliary functions
-
-  /*private[ivm]*/ def visitPreorder(visitor: Exp[_] => Unit, childSelector: Exp[_] => Seq[Exp[_]]) {
-    visitor(this)
-    for (c <- childSelector(this)) {
-      c.visitPreorder(visitor, childSelector)
-    }
-  }
 
   def transform(transformer: Exp[_] => Exp[_]): Exp[T] = {
     val transformedChildren = children mapConserve (_ transform transformer)
