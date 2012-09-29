@@ -3,15 +3,8 @@ package ivm.expressiontree
 object Const {
   private val maxInlineStringLength = 10
   val allowInlineInEval = false
-}
 
-case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) extends Arity0Exp[T] {
-  import Const._
-
-  override def interpret() = x
-
-  override def toCode = throw new RuntimeException("Const.toCode should never be called")
-  override def toString = {
+  def toString[T](x: T, productPrefix: String): String = {
     val s =
       x match {
         //Printing all elements and then cutting the output is horribly expensive for huge collections, so try to avoid it.
@@ -38,6 +31,15 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
   }
 }
 
+case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) extends Arity0Exp[T] {
+  import Const._
+
+  override def interpret() = x
+
+  override def toCode = throw new RuntimeException("Const.toCode should never be called")
+  override def toString = Const toString (x, productPrefix)
+}
+
 //This class has much faster hashing and comparison; we use it when we can semantically afford it, that is within asSquopt.
 class ConstByIdentity[T](content: T, wit: ClassTag[T], wit2: TypeTag[T]) extends Const(content)(wit, wit2) {
   override def canEqual(o: Any) = o.isInstanceOf[ConstByIdentity[_]]
@@ -47,12 +49,11 @@ class ConstByIdentity[T](content: T, wit: ClassTag[T], wit2: TypeTag[T]) extends
     case _ => false
   }
 
-  override def hashCode() = System.identityHashCode(x.asInstanceOf[AnyRef])
+  override def hashCode() = System identityHashCode x.asInstanceOf[AnyRef]
   override def productPrefix = "ConstByIdentity"
 }
 
 object ConstByIdentity {
-  //implicit val cTag: ClassTag[T], tTag: TypeTag[T]
   def apply[T: ClassTag: TypeTag](content: T) = new ConstByIdentity[T](content, classTag[T], typeTag[T])
   def apply[T](content: T, cTag: ClassTag[_], tTag: TypeTag[_])(implicit v: DummyImplicit) =
     new ConstByIdentity[T](content, cTag.asInstanceOf[ClassTag[T]], tTag.asInstanceOf[TypeTag[T]])

@@ -44,10 +44,11 @@ object ExprTreesWithCSE {
       //transformer(d.genericConstructor(children mapConserve (_ transform transformer)))
     }
   }
-  case class Const[T](t: T) extends Exp[T] {
+  case class Const[T](t: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) extends Exp[T] {
     def interpret() = t
     def children: List[Exp[_]] = Nil
     def transform(transformer: DefTransformer): Exp[T] = this
+    override def toString = expressiontree.Const toString (t, productPrefix)
   }
 
   trait Def[+T] extends TreeNode[T] {
