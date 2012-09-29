@@ -1,4 +1,5 @@
-package ivm.expressiontree
+package ivm
+package expressiontree
 
 import collection.mutable
 
@@ -7,24 +8,70 @@ import collection.mutable
  * Date: 28/9/2012
  */
 object ExprTreesWithCSE {
-  trait DefTransformer {
-    def apply[T](e: Def[T]): Def[T]
+  trait ExpTransformer {
+    def apply[T](e: Exp[T]): Exp[T]
   }
-  object DefTransformer {
-    def apply(f: Def[_] => Def[_]) = new DefTransformer {
-      def apply[T](e: Def[T]): Def[T] = f(e).asInstanceOf[Def[T]]
+  object ExpTransformer {
+    implicit def apply(f: Exp[_] => Exp[_]) = new ExpTransformer {
+      def apply[T](e: Exp[T]): Exp[T] = f(e).asInstanceOf[Exp[T]]
     }
   }
 
   trait TreeNode[+T] {
+    //This method computes the contained value
     def interpret(): T
     def children: List[Exp[_]]
   }
 
   sealed trait Exp[+T] extends TreeNode[T] {
-    def transform(transformer: Def[_] => Def[_]): Exp[T] =
-      transform(DefTransformer(transformer))
-    def transform(transformer: DefTransformer): Exp[T]
+    /*def transform(transformer: Exp[_] => Exp[_]): Exp[T] =
+      transform(ExpTransformer(transformer))*/
+    def transform(transformer: ExpTransformer): Exp[T]
+
+    //This method returns the cached value (if any) or invokes interpret().
+    def value(): T = interpret()
+
+    //This could use as interface some Foldable-like stuff (or Haskell's Traversable, IIRC).
+    def treeMap[S](mapper: (Exp[_], Seq[S]) => S): S = {
+      val mappedChilds = for (c <- children) yield c.treeMap(mapper)
+      mapper(this, mappedChilds)
+    }
+
+    /* I renamed this method to avoid conflicts with Matcher.find. XXX test if
+    * just making it private also achieves the same result.
+    */
+    def __find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = {
+      val baseSeq =
+        if (PartialFunction.cond(this)(filter))
+          Seq(this)
+        else
+          Seq.empty
+      children.map(_ __find filter).fold(baseSeq)(_ ++ _)
+    }
+
+    // This overload is not called find because that would confuse type inference - it would fail to infer that filter's
+    // domain type is Exp[_].
+    def findTotFun(filter: Exp[_] => Boolean): Seq[Exp[_]] = __find(filter.asPartial)
+
+    def isOrContains(e: Exp[_]): Boolean =
+      (this findTotFun (_ == e)).nonEmpty
+
+    def substSubTerm[S](SubTerm: Exp[_], e: Exp[S]) =
+      this transform ExpTransformer{{
+        case SubTerm => e
+        case exp => exp
+      }}
+
+    def freeVars: Set[Var] = {
+      def mapper(e: Exp[_], c: Seq[Set[Var]]): Set[Var] = e match {
+        case v@Var(_) => Set(v)
+        case fe@Fun(_) => c.fold(Set.empty)(_ union _).filter(!_.equals(fe.x))
+        case _ => c.fold(Set.empty)(_ union _)
+      }
+      treeMap(mapper)
+    }
+    def toCode: String = ""
+    def persistValues() { children foreach (_.persistValues()) }
   }
   def definitions: mutable.Map[Def[_], Sym[_]] = new mutable.HashMap()
   implicit def toAtom[T](d: Def[T]): Exp[T] =
@@ -33,11 +80,11 @@ object ExprTreesWithCSE {
   case class Sym[+T] private[ExprTreesWithCSE](d: Def[T]) extends Exp[T] {
     def interpret() = d.interpret()
     def children = d.children
-    def transform(transformer: DefTransformer): Exp[T] = {
+    def transform(transformer: ExpTransformer): Exp[T] = {
       val transformedChildren = children mapConserve (_ transform transformer)
-      val newSelf =
+      val newSelf: Exp[T] =
         if (transformedChildren eq children)
-          d
+          this
         else
           d genericConstructor transformedChildren
       transformer(newSelf)
@@ -47,7 +94,7 @@ object ExprTreesWithCSE {
   case class Const[T](t: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) extends Exp[T] {
     def interpret() = t
     def children: List[Exp[_]] = Nil
-    def transform(transformer: DefTransformer): Exp[T] = this
+    def transform(transformer: ExpTransformer): Exp[T] = this
     override def toString = expressiontree.Const toString (t, productPrefix)
   }
 
@@ -62,7 +109,5 @@ object ExprTreesWithCSE {
         checkedGenericConstructor(v)
       else
         throw new IllegalArgumentException()
-
-    //def children: Seq[Exp[_]]
   }
 }
