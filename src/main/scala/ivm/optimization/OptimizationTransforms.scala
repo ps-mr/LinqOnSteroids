@@ -25,15 +25,15 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
   private def collectCondsReversed(exp: Exp[Boolean]): Seq[Exp[Boolean]] =
     exp match {
     //This works because And trees are left-associative, because of && precedence and because of reassociateBoolOps.
-      case And(a, b) => b +: collectCondsReversed(a)
+      case Sym(And(a, b)) => b +: collectCondsReversed(a)
       case _ => Seq(exp)
     }
   private def collectConds = collectCondsReversed _ andThen (_.reverse)
 
   //Split multiple filters anded together.
   val splitFilters: Exp[_] => Exp[_] = {
-    case Filter(coll: Exp[Traversable[Any]], f @ FuncExpBody(And(_, _))) =>
-      collectConds(f.body).foldRight[Exp[Traversable[Any]]](coll)((cond, coll) => coll filter Fun.makefun(cond, f.x))
+    case Sym(Filter(coll: Exp[Traversable[Any]], FunSym(f @ FuncExpBody(Sym(And(_, _)))))) =>
+      collectConds(f.body).foldRight[Exp[Traversable[Any]]](coll)((cond, coll) => coll filter Fun.makefun(cond, f.x).f)
     case e => e
   }
 
@@ -67,21 +67,21 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
   }
   */
   //The body moves the filter up one level, but we want to do it multiple times, as many as needed.
-  private def buildHoistedFilter[T, U, V](coll1: Exp[Traversable[T]], fmFun: Fun[T, Traversable[V]],
+  private def buildHoistedFilter[T, U, V](coll1: Exp[Traversable[T]], fmFun: FunSym[T, Traversable[V]],
                                           coll2: Exp[Traversable[U]],
-                                          filterFun: Fun[U, Boolean], firstFilter: Exp[Boolean], otherFilters: Option[Exp[Boolean]],
-                                          fmFun2: Fun[U, Traversable[V]]): Exp[Traversable[V]] = {
+                                          filterFun: FunSym[U, Boolean], firstFilter: Exp[Boolean], otherFilters: Option[Exp[Boolean]],
+                                          fmFun2: FunSym[U, Traversable[V]]): Exp[Traversable[V]] = {
     coll1.withFilter(Fun.makefun(firstFilter, fmFun.x).f).flatMap(
       Fun.makefun(otherFilters.fold(identity[Exp[Traversable[U]]] _)
-                    ((filters: Exp[Boolean]) => (_ filter Fun.makefun(filters, filterFun.x))) apply
+                    ((filters: Exp[Boolean]) => (_ filter Fun.makefun(filters, filterFun.x).f)) apply
                   stripView(coll2) flatMap fmFun2.f, fmFun.x).f)
   }
 
     //This is to apply (recursively) after joining consecutive filters
   val hoistFilter: Exp[_] => Exp[_] = {
-    case e @ FlatMap(coll1, fmFun@FuncExpBody(FlatMap(Filter(coll2: Exp[Traversable[u]], filterFun), fmFun2))) =>
+    case Sym(e @ FlatMap(coll1, FunSym(fmFun@FuncExpBody(Sym(FlatMap(Sym(Filter(coll2: Exp[Traversable[u]], filterFun)), fmFun2)))))) =>
       val (firstFilter, otherFilters) = filterFun.body match {
-        case And(firstFilter, otherFilters) =>
+        case Sym(And(firstFilter, otherFilters)) =>
           (firstFilter, Some(otherFilters))
         case body => (body, None)
       }
@@ -99,20 +99,20 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
 
   private def
   buildMapToFlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]]
-  (c: Exp[Repr], f: Fun[T, U], cbf: CanBuildFrom[Repr, U, That]): Exp[That] =
-    (c flatMap Fun.makefun(Seq(f.body), f.x))(cbf)
+  (c: Exp[Repr], f: FunSym[T, U], cbf: CanBuildFrom[Repr, U, That]): Exp[That] =
+    (c flatMap Fun.makefun(Seq(f.body), f.x).f)(cbf)
 
   val mapToFlatMap: Exp[_] => Exp[_] = {
-    case m @ MapNode(c, f) =>
+    case Sym(m @ MapNode(c, f)) =>
       buildMapToFlatMap(c, f, m.c)
     case e => e
   }
 
   private def buildFlatMapToMap[T, U](c: Exp[Traversable[T]], body: Exp[U], f: Fun[T, Traversable[U]]): Exp[Traversable[U]] =
-    c map Fun.makefun(body, f.x)
+    c map Fun.makefun(body, f.x).f
 
   val flatMapToMap: Exp[_] => Exp[_] = {
-    case FlatMap(c, f@FuncExpBody(ExpSeq(Seq(body)))) =>
+    case Sym(FlatMap(c, FunSym(f@FuncExpBody(Sym(ExpSeq(Seq(body))))))) =>
       buildFlatMapToMap(c, body, f)
     case e => e
   }
@@ -126,29 +126,29 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
   //
   //Expects a query in map normal form.
   val filterToWithFilter: Exp[_] => Exp[_] = {
-    case FlatMap(Filter(coll, p), f) =>
+    case Sym(FlatMap(Sym(Filter(coll, p)), f)) =>
       fmap(fmap(coll, p, 'TraversableLike)('withFilter, _ withFilter _), f, 'FilterMonadic)('flatMap, _ flatMap _)
       //WithFilter(coll, p) flatMap f //wrong return type, still view-based...
-    case MapNode(Filter(coll, p), f) => //Since flatMap after this query will not be transformed into maps, we need to have
+    case Sym(MapNode(Sym(Filter(coll, p)), f)) => //Since flatMap after this query will not be transformed into maps, we need to have
       //a separate case.
       fmap(fmap(coll, p, 'TraversableLike)('withFilter, _ withFilter _), f, 'FilterMonadic)('map, _ map _)
     case e => e
   }
 
   val betterExists: Exp[_] => Exp[_] = {
-    case IsEmpty(Filter(coll, pred)) => !Exists(coll, pred)
+    case Sym(IsEmpty(Sym(Filter(coll, pred)))) => !asExp(Exists(coll, pred))
 //    //XXX We have this special case, instead of relying on simplification of
 //    //Not(Not(x)) => x, just because we run this optimization at the very end
 //    //of the pipeline.
 //    case Not(IsEmpty(Filter(coll, pred))) => Exists(coll, pred)
     //That case won't trigger since the traversal is bottom up. So instead:
-    case Not(Not(x)) => x
+    case Sym(Not(Sym(Not(x)))) => x
     case e => e
   }
 
   val normalizer: Exp[_] => Exp[_] = {
-    case p@Plus(x, y) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum)
-    case e@Eq(x, y) => Eq(Exp.min(x, y), Exp.max(x, y))
+    case Sym(p@Plus(x, y)) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum)
+    case Sym(e@Eq(x, y)) => Eq(Exp.min(x, y), Exp.max(x, y))
     case e => e
   }
 }
