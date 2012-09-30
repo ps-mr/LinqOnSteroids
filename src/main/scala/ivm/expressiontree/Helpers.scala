@@ -35,5 +35,5 @@ object Helpers {
   def squopt_isInstanceOf[T: ClassTag: TypeTag](a: Exp[Any]): Exp[Boolean] =
     IsInstanceOf(a)
   def squopt_asInstanceOf[T: ClassTag: TypeTag](a: Exp[Any]): Exp[T] =
-    AsInstanceOf(a)
+    AsInstanceOf[Any, T](a)
 }
