@@ -1,12 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-  <name>LinqOnSteroids</name>
-  <buildSpec>
-    <buildCommand>
-      <name>org.scala-ide.sdt.core.scalabuilder</name>
-    </buildCommand>
-  </buildSpec>
-  <natures>
-    <nature>org.scala-ide.sdt.core.scalanature</nature>
-    <nature>org.eclipse.jdt.core.javanature</nature>
-  </natures>
+	<name>LinqOnSteroids</name>
+	<comment></comment>
+	<projects>
+		<project>los-sampleapp</project>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.scala-ide.sdt.core.scalabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.scala-ide.sdt.core.scalanature</nature>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+	</natures>
 </projectDescription>

@@ -1,20 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-  <classpathentry output="target/scala-2.10/classes" path="src/main/scala" kind="src"></classpathentry>
-  <classpathentry output="target/scala-2.10/classes" path="src/main/java" kind="src"></classpathentry>
-  <classpathentry output="target/scala-2.10/test-classes" path="src/test/scala" kind="src"></classpathentry>
-  <classpathentry output="target/scala-2.10/test-classes" path="src/test/java" kind="src"></classpathentry>
-  <classpathentry path="./lib/scopt_2.10.0-M7.jar" kind="lib"></classpathentry>
-  <classpathentry path="./sampleapp/lib/bat-core_2.10-1.0.0-SNAPSHOT-sources.jar" kind="lib"></classpathentry>
-  <classpathentry path="./sampleapp/lib/bat-core_2.10.0-M7-1.0.0-SNAPSHOT.jar" kind="lib"></classpathentry>
-  <classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"></classpathentry>
-  <classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_COMPILER_CONTAINER"></classpathentry>
-  <classpathentry path="/Users/pgiarrusso/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.10.0-SNAPSHOT.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/pgiarrusso/.ivy2/cache/org.scala-lang/scala-actors/jars/scala-actors-2.10.0-SNAPSHOT.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/pgiarrusso/.ivy2/cache/org.scalatest/scalatest_2.10.0-M7/jars/scalatest_2.10.0-M7-1.9-2.10.0-M7-B1.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/pgiarrusso/.ivy2/cache/com.google.guava/guava/jars/guava-13.0.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/pgiarrusso/.ivy2/cache/com.google.code.findbugs/jsr305/jars/jsr305-1.3.9.jar" kind="lib"></classpathentry>
-  <classpathentry path="/Users/pgiarrusso/.ivy2/cache/junit/junit/jars/junit-4.8.2.jar" kind="lib"></classpathentry>
-  <classpathentry exported="true" path="/los-sampleapp" kind="src" combineaccessrules="false"></classpathentry>
-  <classpathentry path="org.eclipse.jdt.launching.JRE_CONTAINER" kind="con"></classpathentry>
-  <classpathentry path="bin" kind="output"></classpathentry>
+	<classpathentry kind="src" output="target/scala-2.10/classes" path="src/main/scala"/>
+	<classpathentry kind="src" path="target/scala-2.10/src_managed/main"/>
+	<classpathentry kind="src" output="target/scala-2.10/classes" path="src/main/java"/>
+	<classpathentry excluding="*" kind="src" output="target/scala-2.10/test-classes" path="src/test/scala"/>
+	<classpathentry kind="src" output="target/scala-2.10/test-classes" path="src/test/java"/>
+	<classpathentry kind="lib" path="lib/scopt_2.10.0-M7.jar"/>
+	<classpathentry kind="lib" path="sampleapp/lib/bat-core_2.10-1.0.0-SNAPSHOT-sources.jar"/>
+	<classpathentry kind="lib" path="sampleapp/lib/bat-core_2.10.0-M7-1.0.0-SNAPSHOT.jar"/>
+	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
+	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_COMPILER_CONTAINER"/>
+	<classpathentry kind="lib" path="/Users/pgiarrusso/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.10.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/Users/pgiarrusso/.ivy2/cache/org.scala-lang/scala-actors/jars/scala-actors-2.10.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/Users/pgiarrusso/.ivy2/cache/org.scalatest/scalatest_2.10.0-M7/jars/scalatest_2.10.0-M7-1.9-2.10.0-M7-B1.jar"/>
+	<classpathentry kind="lib" path="/Users/pgiarrusso/.ivy2/cache/com.google.guava/guava/jars/guava-13.0.jar"/>
+	<classpathentry kind="lib" path="/Users/pgiarrusso/.ivy2/cache/com.google.code.findbugs/jsr305/jars/jsr305-1.3.9.jar"/>
+	<classpathentry kind="lib" path="/Users/pgiarrusso/.ivy2/cache/junit/junit/jars/junit-4.8.2.jar"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/los-sampleapp"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>
