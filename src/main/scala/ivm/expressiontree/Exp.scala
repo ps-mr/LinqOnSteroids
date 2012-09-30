@@ -202,9 +202,14 @@ case class Sym[+T](d: Def[T]) extends Exp[T] {
     //transformer(d.genericConstructor(children mapConserve (_ transformImpl transformer)))
   }
 }
-class FunSym[-S, +T](override val d: Fun[S, T]) extends Sym[S => T](d)
+class FunSym[-S, +T](override val d: Fun[S, T]) extends Sym[S => T](d) {
+  def x = d.x
+  def body = d.body
+  def f = d.f
+}
 object FunSym {
   def apply[S, T](d: Fun[S, T]) = new FunSym(d)
+  def unapply[S, T](s: FunSym[S, T]): Some[Fun[S, T]] = Some(s.d)
 }
 
 case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) extends Exp[T] {
