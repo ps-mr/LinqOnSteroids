@@ -11,14 +11,14 @@ import OptimizationUtil._
  */
 
 trait TypeFilterOptim {
-  private def buildTypeFilter[S: TypeTag, T, U](coll: Exp[Traversable[T]], classS: Class[S], f: Fun[S, Traversable[U]], origFmFun: Fun[T, Traversable[U]]): Exp[Traversable[U]] = {
+  private def buildTypeFilter[S: TypeTag, T, U](coll: Exp[Traversable[T]], classS: Class[S], f: FunSym[S, Traversable[U]], origFmFun: FunSym[T, Traversable[U]]): Exp[Traversable[U]] = {
     val res = coll.typeFilterClass(classS).flatMap(f.f)
     //Check that the transformed expression has overall the same type as the original one:
     Util.checkSameTypeAndRet(coll flatMap origFmFun)(res)
   }
 
   private def tryBuildTypeFilter[T, U](coll: Exp[Traversable[T]],
-                                       fmFun: Fun[T, Traversable[U]],
+                                       fmFun: FunSym[T, Traversable[U]],
                                        e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
     val X = fmFun.x
     //Correct safety condition for this optimization: The variable of fmFun must appear always wrapped in the same
@@ -26,15 +26,15 @@ trait TypeFilterOptim {
     val containingXParent = fmFun.body.findTotFun(_.children.flatMap(_.children).contains(X))
     val containingX = fmFun.body.findTotFun(_.children.contains(X))
     containingX.headOption match {
-      case Some(instanceOfNode: IfInstanceOf[_, s]) if instanceOfNode.x == X && containingX.forall(_ == instanceOfNode) =>
+      case Some(instanceOfNodeSym @ Sym(instanceOfNode: IfInstanceOf[_, s])) if instanceOfNode.x == X && containingX.forall(_ == instanceOfNodeSym) =>
         val typeTagS: TypeTag[s] = instanceOfNode.tS
         val classS = instanceOfNode.classS.asInstanceOf[Class[s]]
         val v = Fun.gensym[s]()
-        if (containingXParent.forall(_ == (instanceOfNode: Exp[Iterable[_]]))) {
-          val transformed = fmFun.body.substSubTerm(containingXParent.head, Seq(v))
+        if (containingXParent.forall(_ == (Sym[Option[s]](instanceOfNode): Exp[Iterable[s]]))) {
+          val transformed = fmFun.body.substSubTerm(containingXParent.head, Seq(asExp(v)))
           buildTypeFilter(coll, classS, Fun.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)(typeTagS)
         } else {
-          val transformed = fmFun.body.substSubTerm(instanceOfNode, Some(v))
+          val transformed = fmFun.body.substSubTerm(instanceOfNode, Some(asExp(v)))
           //Note: on the result we would really like to drop all the 'Option'-ness, but that's a separate step.
           //Also, if we are in this branch, it means the client code is really using the 'Option'-ness of the value, say
           //via orElse or getOrElse, so we can't drop it.
@@ -52,7 +52,7 @@ trait TypeFilterOptim {
    */
 
   val toTypeFilter: Exp[_] => Exp[_] = {
-    case e@FlatMap(coll, fmFun: Fun[t, u]) =>
+    case Sym(e@FlatMap(coll, fmFun: Fun[t, u])) =>
       tryBuildTypeFilter(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
     case e => e
   }
@@ -71,7 +71,7 @@ trait TypeFilterOptim {
   //This optimization does not extend to normal Let bindings as used in FindBugsAnalyses. There we need to produce the usual
   //desugaring of Let - i.e. to use letExp; that's done in letTransformer.
   private def tryRemoveRedundantLet[T, U](coll: Exp[Traversable[T]],
-                                          fmFun: Fun[T, Traversable[U]],
+                                          fmFun: FunSym[T, Traversable[U]],
                                           e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
     val insideConv = fmFun.body
     // The safety condition for this optimization is two-fold:
@@ -85,16 +85,16 @@ trait TypeFilterOptim {
     //@tailrec
     def isSupported(insideConv: Exp[_], LetNode: Exp[_]): Boolean =
       insideConv match {
-        case MapNode(subColl, f) => isSupported(subColl, LetNode) && !f.body.isOrContains(X)
-        case Filter(subColl, f) => isSupported(stripViewUntyped(subColl), LetNode) && !f.body.isOrContains(X)
-        case FlatMap(subColl, f) => isSupported(subColl, LetNode) && !f.body.isOrContains(X)
+        case Sym(MapNode(subColl, f)) => isSupported(subColl, LetNode) && !f.body.isOrContains(X)
+        case Sym(Filter(subColl, f)) => isSupported(stripViewUntyped(subColl), LetNode) && !f.body.isOrContains(X)
+        case Sym(FlatMap(subColl, f)) => isSupported(subColl, LetNode) && !f.body.isOrContains(X)
         case LetNode => true
         case _ => false
       }
 
     val containingX = insideConv.findTotFun(_.children.contains(X))
     containingX.headOption match {
-      case Some(letNode@ExpSeq(Seq(X))) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
+      case Some(Sym(letNode@ExpSeq(Seq(X)))) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
         insideConv.substSubTerm(letNode, coll)
       case _ =>
         e
@@ -102,7 +102,7 @@ trait TypeFilterOptim {
   }
 
   val removeRedundantOption: Exp[_] => Exp[_] = {
-    case e@FlatMap(coll, (fmFun: Fun[_, Traversable[u]])) =>
+    case Sym(e@FlatMap(coll, (fmFun: FunSym[_, Traversable[u]]))) =>
       tryRemoveRedundantLet(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
     case e => e
   }
