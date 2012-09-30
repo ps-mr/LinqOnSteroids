@@ -1,5 +1,6 @@
 package ivm.expressiontree
 
+/*
 case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) extends Arity0Exp[T] {
   import Const._
 
@@ -8,6 +9,7 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
   override def toCode = throw new RuntimeException("Const.toCode should never be called")
   override def toString = Const toString (x, productPrefix)
 }
+*/
 
 //This class has much faster hashing and comparison; we use it when we can semantically afford it, that is within asSquopt.
 class ConstByIdentity[T](content: T, wit: ClassTag[T], wit2: TypeTag[T]) extends Const(content)(wit, wit2) {

@@ -1,5 +1,6 @@
 package ivm.expressiontree
 
+/*
 trait Exp[+T] /*extends MsgSeqPublisher[T, Exp[T]]*/ {
   /*
   type RootType
@@ -90,6 +91,69 @@ trait Exp[+T] /*extends MsgSeqPublisher[T, Exp[T]]*/ {
   def toCode: String = ""
   def persistValues() { children foreach (_.persistValues()) }
 }
+*/
+trait ExpTransformer {
+  def apply[T](e: Exp[T]): Exp[T]
+}
+object ExpTransformer {
+  implicit def apply(f: Exp[_] => Exp[_]) = new ExpTransformer {
+    def apply[T](e: Exp[T]): Exp[T] = f(e).asInstanceOf[Exp[T]]
+  }
+}
+
+trait TreeNode[+T] {
+  //This method computes the contained value
+  def interpret(): T
+  def children: List[Exp[_]]
+  def persistValues() { children foreach (_.persistValues()) }
+}
+
+sealed trait Exp[+T] extends TreeNode[T] {
+  def transform(transformer: ExpTransformer): Exp[T]
+
+  //This method returns the cached value (if any) or invokes interpret().
+  def value(): T = interpret()
+
+  //This could use as interface some Foldable-like stuff (or Haskell's Traversable, IIRC).
+  def treeMap[S](mapper: (Exp[_], Seq[S]) => S): S = {
+    val mappedChilds = for (c <- children) yield c.treeMap(mapper)
+    mapper(this, mappedChilds)
+  }
+
+  /* I renamed this method to avoid conflicts with Matcher.find. XXX test if
+  * just making it private also achieves the same result.
+  */
+  def __find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = {
+    val baseSeq =
+      if (PartialFunction.cond(this)(filter))
+        Seq(this)
+      else
+        Seq.empty
+    children.map(_ __find filter).fold(baseSeq)(_ ++ _)
+  }
+
+  // This overload is not called find because that would confuse type inference - it would fail to infer that filter's
+  // domain type is Exp[_].
+  def findTotFun(filter: Exp[_] => Boolean): Seq[Exp[_]] = __find(filter.asPartial)
+
+  def isOrContains(e: Exp[_]): Boolean =
+    (this findTotFun (_ == e)).nonEmpty
+
+  def substSubTerm[S](SubTerm: Exp[_], e: Exp[S]) =
+    this transform ExpTransformer{{
+      case SubTerm => e
+      case exp => exp
+    }}
+
+  def freeVars: Set[Var] = {
+    def mapper(e: Exp[_], c: Seq[Set[Var]]): Set[Var] = e match {
+      case v@Var(_) => Set(v)
+      case fe@Fun(_) => c.fold(Set.empty)(_ union _).filter(!_.equals(fe.x))
+      case _ => c.fold(Set.empty)(_ union _)
+    }
+    treeMap(mapper)
+  }
+}
 
 object Exp {
   private def ordering[T] = new Ordering[Exp[T]] {
@@ -98,6 +162,54 @@ object Exp {
   def min[T](a: Exp[T], b: Exp[T]): Exp[T] = ordering.min(a,b)
   def max[T](a: Exp[T], b: Exp[T]): Exp[T] = ordering.max(a,b)
 }
+
+trait Def[+T] extends TreeNode[T] {
+  def nodeArity: Int
+
+  def children: List[Exp[_]]
+  protected def checkedGenericConstructor(v: List[Exp[_]]): Def[T]
+
+  def genericConstructor(v: List[Exp[_]]): Def[T] =
+    if (v.length == nodeArity)
+      checkedGenericConstructor(v)
+    else
+      throw new IllegalArgumentException()
+  def toCode: String = ""
+}
+
+object Sym {
+  private val gensymId: () => Int = new Util.GlobalIDGenerator
+}
+object SymWithId {
+  def unapply[T](s: Sym[T]): Some[(Def[T], Int)] = {
+    Some((s.d, s.id))
+  }
+}
+case class Sym[+T](d: Def[T]) extends Exp[T] {
+  val id: Int = Sym.gensymId()
+  def interpret() = d.interpret()
+  def children = d.children
+  def transform(transformer: ExpTransformer): Exp[T] = {
+    val transformedChildren = children mapConserve (_ transform transformer)
+    val newSelf: Exp[T] =
+      if (transformedChildren eq children)
+        this
+      else
+        BaseLangImpl toAtom (d genericConstructor transformedChildren)
+    transformer(newSelf)
+    //transformer(d.genericConstructor(children mapConserve (_ transform transformer)))
+  }
+}
+
+case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) extends Exp[T] {
+  import Const._
+
+  def interpret() = x
+  def children: List[Exp[_]] = Nil
+  def transform(transformer: ExpTransformer): Exp[T] = this
+  override def toString = Const toString (x, productPrefix)
+}
+
 object Const {
   private val maxInlineStringLength = 10
   val allowInlineInEval = false

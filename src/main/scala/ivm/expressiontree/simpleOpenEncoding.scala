@@ -20,7 +20,14 @@ trait BaseLangIntf {
 }
 
 trait BaseLangImpl {
+  import BaseLangImpl._
   type Rep[+T] = Exp[T]
+  implicit def toAtomImpl[T](d: Def[T]): Exp[T] = toAtom(d)
+}
+object BaseLangImpl {
+  private def definitions: mutable.Map[Def[_], Sym[_]] = new mutable.HashMap()
+  def toAtom[T](d: Def[T]): Exp[T] =
+    definitions.asInstanceOf[mutable.Map[Def[T], Sym[T]]].getOrElseUpdate(d, Sym[T](d))
 }
 
 trait IfElseLangIntf extends BaseLangIntf {
