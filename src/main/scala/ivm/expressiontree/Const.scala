@@ -1,36 +1,5 @@
 package ivm.expressiontree
 
-object Const {
-  private val maxInlineStringLength = 10
-  val allowInlineInEval = false
-
-  def toString[T](x: T, productPrefix: String): String = {
-    val s =
-      x match {
-        //Printing all elements and then cutting the output is horribly expensive for huge collections, so try to avoid it.
-        //Of course, this does not work when x is not a collection but e.g. contains one, or when for any reason toString()
-        //takes a lot of time for any reason. Still, better than nothing.
-        case coll: Traversable[_] =>
-          coll.take(3).toString() + (if (coll.size > 3) "..." else "")
-        case s: String if s.length < maxInlineStringLength =>
-          "\"%s\"" format s
-        case c: Char =>
-          "'%c'" format c
-        case _ =>
-          String valueOf x
-      }
-    val shortened =
-      if (s.length() > 100) {
-        val begin = s take 100
-        val quoteCloser = if (begin.contains('"')) "\"" else if (begin.contains('\'')) "'" else ""
-        begin + "..." + quoteCloser + ")" * (begin.count(_  == '(') - begin.count(_ == ')'))
-      }
-      else
-        s
-    productPrefix + "(" + shortened + ")"
-  }
-}
-
 case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) extends Arity0Exp[T] {
   import Const._
 
