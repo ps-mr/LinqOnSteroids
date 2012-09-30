@@ -124,8 +124,6 @@ object Compile {
   //Note: this map should be a concurrent map, not ThreadLocals!
   //new ScalaThreadLocal(mutable.Map[Exp[_], Option[Constructor[_]]]())
 
-  //We must remove Const.toCode :-).
-
   //*Reset methods are just (or mostly?) for testing {{{
   def precompileReset() {
     cspMap.get().clear()
