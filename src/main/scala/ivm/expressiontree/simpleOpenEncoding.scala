@@ -23,41 +23,6 @@ trait BaseLangImpl {
   type Rep[+T] = Exp[T]
 }
 
-trait ScalaLangIntf extends BaseLangIntf {
-  this: LiftingConvsLangIntf =>
-  implicit def expToRepOps[T](t: Rep[T]): RepOps[T]
-  implicit def toRepOps[T: ClassTag: TypeTag](t: T): RepOps[T] = expToRepOps(t)
-  abstract class RepOps[+T] {
-    def ==#(that: Rep[Any]): Rep[Boolean]
-    // This variant is needed because null <: S but also null <: Rep[S], so the needed call to pure won't be inserted
-    // manually when that is statically known to be null.
-    def ==#(that: Null): Rep[Boolean]
-
-    def !=#(that: Rep[Any]): Rep[Boolean]
-    def !=#(that: Null): Rep[Boolean]
-
-    def isInstanceOf_#[S: ClassTag: TypeTag]: Rep[Boolean]
-    def asInstanceOf_#[S: ClassTag: TypeTag]: Rep[S]
-  }
-}
-
-trait ScalaLangImpl extends ScalaLangIntf with BaseLangImpl {
-  this: LiftingConvsLangIntf =>
-  override implicit def expToRepOps[T](t: Rep[T]): RepOps[T] = new RepOps(t)
-  class RepOps[+T](e: Exp[T]) extends super.RepOps[T] {
-    def ==#(that: Exp[Any]): Exp[Boolean] = Eq(e, that)
-    // e variant is needed because null <: S but also null <: Exp[S], so the needed call to pure won't be inserted
-    // manually when that is statically known to be null.
-    def ==#(that: Null): Exp[Boolean] = Eq(e, Const(null))
-
-    def !=#(that: Exp[Any]): Exp[Boolean] = Not(e ==# that)
-    def !=#(that: Null): Exp[Boolean] = Not(e ==# that)
-
-    def isInstanceOf_#[S: ClassTag: TypeTag]: Exp[Boolean] = IsInstanceOf[T, S](e)
-    def asInstanceOf_#[S: ClassTag: TypeTag]: Exp[S] = AsInstanceOf[T, S](e)
-  }
-}
-
 trait IfElseLangIntf extends BaseLangIntf {
   type ElseableImpl[T] <: Elseable[T]
   abstract class Elseable[T] {
@@ -144,6 +109,41 @@ trait LiftingConvs extends ConversionDisabler with ExtraConversions with Lifting
 
   class WithAsSquopt[T](t: T) extends super.WithAsSquopt(t) {
     override def asSquopt(implicit conv: T => Exp[T]) = conv(t)
+  }
+}
+
+trait ScalaLangIntf extends BaseLangIntf {
+  this: LiftingConvsLangIntf =>
+  implicit def expToRepOps[T](t: Rep[T]): RepOps[T]
+  implicit def toRepOps[T: ClassTag: TypeTag](t: T): RepOps[T] = expToRepOps(t)
+  abstract class RepOps[+T] {
+    def ==#(that: Rep[Any]): Rep[Boolean]
+    // This variant is needed because null <: S but also null <: Rep[S], so the needed call to pure won't be inserted
+    // manually when that is statically known to be null.
+    def ==#(that: Null): Rep[Boolean]
+
+    def !=#(that: Rep[Any]): Rep[Boolean]
+    def !=#(that: Null): Rep[Boolean]
+
+    def isInstanceOf_#[S: ClassTag: TypeTag]: Rep[Boolean]
+    def asInstanceOf_#[S: ClassTag: TypeTag]: Rep[S]
+  }
+}
+
+trait ScalaLangImpl extends ScalaLangIntf with BaseLangImpl {
+  this: LiftingConvsLangIntf =>
+  override implicit def expToRepOps[T](t: Rep[T]): RepOps[T] = new RepOps(t)
+  class RepOps[+T](e: Exp[T]) extends super.RepOps[T] {
+    def ==#(that: Exp[Any]): Exp[Boolean] = Eq(e, that)
+    // e variant is needed because null <: S but also null <: Exp[S], so the needed call to pure won't be inserted
+    // manually when that is statically known to be null.
+    def ==#(that: Null): Exp[Boolean] = Eq(e, Const(null))
+
+    def !=#(that: Exp[Any]): Exp[Boolean] = Not(e ==# that)
+    def !=#(that: Null): Exp[Boolean] = Not(e ==# that)
+
+    def isInstanceOf_#[S: ClassTag: TypeTag]: Exp[Boolean] = IsInstanceOf[T, S](e)
+    def asInstanceOf_#[S: ClassTag: TypeTag]: Exp[S] = AsInstanceOf[T, S](e)
   }
 }
 
