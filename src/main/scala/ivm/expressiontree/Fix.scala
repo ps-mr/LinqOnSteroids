@@ -13,12 +13,11 @@ object Fix {
   }
 }
 
-/*
 //Exploration into the design space.
-case class Fix[T](col: Exp[Traversable[T]], f: Fun[Traversable[T], Traversable[T]])
-  extends Arity2Op[Exp[Traversable[T]], Fun[Traversable[T], Traversable[T]], Traversable[T], Fix[T]](col, f)
+case class Fix[T](col: Exp[Traversable[T]], f: FunSym[Traversable[T], Traversable[T]])
+  extends Arity2Op[Exp[Traversable[T]], FunSym[Traversable[T], Traversable[T]], Traversable[T], Fix[T]](col, f)
 {
-  def copy(col: Exp[Traversable[T]], f: Fun[Traversable[T], Traversable[T]]) = Fix(col, f)
+  def copy(col: Exp[Traversable[T]], f: FunSym[Traversable[T], Traversable[T]]) = Fix(col, f)
   override def interpret() = {
     // XXX: very very basic implementation of fixpoint computation
     Fix.fix(f.interpret(), col.interpret())
@@ -40,4 +39,3 @@ case class TransitiveClosure[T](rel: Exp[Traversable[(T, T)]]) extends Arity1OpE
     Fix.fix(close _, relInt)
   }
 }
-*/
