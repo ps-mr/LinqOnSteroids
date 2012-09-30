@@ -41,12 +41,12 @@ trait NumericOptimTransforms {
         l match {
           case Const(a) => //R1
             a + rV
-          case Plus(Const(a), b) => //R9 - must be before R2!
+          case Sym(Plus(Const(a), b)) => //R9 - must be before R2!
             buildSum(a + rV, b)
           case _ => //R2 - must be after R1!
             buildSum(r, l)
         }
-      case Plus(rl, rr) => //R7
+      case Sym(Plus(rl, rr)) => //R7
         buildSum(buildSum(l, rl), rr)
       case _ =>
         l + r
@@ -78,12 +78,12 @@ trait NumericOptimTransforms {
         l match {
           case Const(a) => //R1
             a * rV
-          case Times(Const(a), b) => //R9 - must be before R2!
+          case Sym(Times(Const(a), b)) => //R9 - must be before R2!
             buildProd(a * rV, b)
           case _ => //R2 - must be after R1!
             buildProd(r, l)
         }
-      case Times(rl, rr) => //R7
+      case Sym(Times(rl, rr)) => //R7
         buildProd(buildProd(l, rl), rr)
       case _ =>
         l * r
@@ -91,13 +91,13 @@ trait NumericOptimTransforms {
   }
 
   val reassociateOps: Exp[_] => Exp[_] = {
-    case n@Negate(constNode@Const(c)) =>
+    case Sym(n@Negate(constNode@Const(c))) =>
       implicit val cTag = constNode.cTag
       implicit val tTag = constNode.tTag
       n.isNum.negate(c)
-    case p@Plus(l, r) =>
+    case Sym(p@Plus(l, r)) =>
       buildSum(l, r)(p.isNum)
-    case t@Times(l, r) =>
+    case Sym(t@Times(l, r)) =>
       buildProd(l, r)(t.isNum)
     case e => e
   }
