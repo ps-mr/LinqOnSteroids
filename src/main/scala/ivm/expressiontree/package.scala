@@ -10,7 +10,7 @@ package object expressiontree {
   def typeTag[T](implicit ttag: TypeTag[T]) = ttag
 
 
-  implicit def toAtomImpl[T](d: Def[T]): Exp[T] = BaseLangImpl toAtom d
+  implicit def toAtomImplicit[T](d: Def[T]): Exp[T] = BaseLangImpl toAtom d
   implicit def toFunSymImplicit[S, T](f: Fun[S, T]): FunSym[S, T] = BaseLangImpl toFunSym f
 
   /*
