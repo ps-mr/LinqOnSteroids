@@ -6,7 +6,7 @@ object IfInstanceOf {
    * "If this Class object represents a primitive type, this method returns false.", which makes sense since an Object
    * can never be an instance of a primitive type.
    */
-  def apply[T, S: ClassTag: TypeTag](x: Exp[T]): IfInstanceOf[T, S] = apply[T, S](x, ClassUtil.boxedErasure(classTag[S]))
+  def apply[T, S: ClassTag: TypeTag](x: Exp[T]): IfInstanceOf[T, S] = apply[T, S](x, ClassUtil boxedErasure classTag[S])
 }
 
 //Equality comparison must consider also classS. Therefore, classS must be a class parameter.
