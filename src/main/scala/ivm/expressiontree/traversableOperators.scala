@@ -91,6 +91,7 @@ case class IsEmpty[T, Repr <: Traversable[T]](t: Exp[Repr with Traversable[T]]) 
   def operator = "isEmpty"
 }
 
+/*
 //Note: this class also handles IVM, though in an incomplete way
 case class Forall[T](coll: Exp[Traversable[T]], f: Fun[T, Boolean])
   extends Arity1OpExp[Traversable[T], Boolean, Forall[T]](coll) with EvtTransformerEl[Traversable[T], Boolean, Traversable[T]]
@@ -124,6 +125,7 @@ case class Forall[T](coll: Exp[Traversable[T]], f: Fun[T, Boolean])
     }
   }
 }
+*/
 
 case class IndexBy[T: ClassTag: TypeTag, Repr <: Traversable[T] with TraversableLike[T, Repr]: TypeTag, K](base: Exp[Repr], f: Exp[T => K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr]) extends Arity2OpExp[Repr,
   T => K, immutable.Map[K, Repr], IndexBy[T, Repr, K]](base, f) with PersistValue[CanBuildFrom[Repr, T, Repr]] {

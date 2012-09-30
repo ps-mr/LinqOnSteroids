@@ -1,3 +1,4 @@
+/*
 package performancetests
 
 import ivm._
@@ -20,7 +21,6 @@ import optimization.Optimization
  * Date: 2/11/2011
  */
 
-/*
 class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil with Benchmarking {
   val maxN = if (debugBench) 9 else 17
   val mapCounts = (1 until (maxN, 4)) :+ maxN

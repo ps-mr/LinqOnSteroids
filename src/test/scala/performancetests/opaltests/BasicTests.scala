@@ -15,7 +15,7 @@ import Java6Framework.ClassFile
 import resolved.Attributes
 import java.util.zip.ZipFile
 import java.io.File
-import collections.{TypeMapping, IncHashSet}
+import collections.TypeMapping
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.FunSuite
 import collection.TraversableLike

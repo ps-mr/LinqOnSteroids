@@ -1,3 +1,4 @@
+/*
 package ivm
 package tests
 
@@ -16,7 +17,6 @@ import ivm.expressiontree.Lifting
  */
 
 
-/*
 class IVMFlatMapTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
   import Lifting._
 

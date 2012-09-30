@@ -6,7 +6,7 @@ import collection.mutable.{SetLike, HashSet, Set}
 import collection.generic.{GenericCompanion, CanBuildFrom, MutableSetFactory, GenericSetTemplate}
 import expressiontree._
 
-
+/*
 /*
 //Failed attempt to make this trait typecheck
 trait IncSetLike[T,
@@ -77,4 +77,4 @@ object IncHashSet extends MutableSetFactory[IncHashSet] {
   // through empty, because one of the two is supposed to be overriden; not doing so results in infinite recursion.
   // Thus there's a test for that in QueryableTest.emptyIncHashSet.
 }
-
+*/

@@ -1,6 +1,7 @@
 package ivm
 package collections
 
+/*
 import collection.mutable.{Builder, BufferLike, ArrayBuffer, IndexedSeqOptimized}
 import collection.generic.{SeqFactory, GenericTraversableTemplate}
 import expressiontree.{TravMsgSeqPublisher, Queryable, ObservableBuffer}
@@ -26,3 +27,4 @@ object IncArrayBuffer extends SeqFactory[IncArrayBuffer] {
   override def newBuilder[U] = new IncArrayBuffer[U]
   implicit def canBuildFrom[U] = new GenericCanBuildFrom[U]
 }
+*/
