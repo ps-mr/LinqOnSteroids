@@ -21,11 +21,10 @@ object ExprTreesWithCSE {
     //This method computes the contained value
     def interpret(): T
     def children: List[Exp[_]]
+    def persistValues() { children foreach (_.persistValues()) }
   }
 
   sealed trait Exp[+T] extends TreeNode[T] {
-    /*def transform(transformer: Exp[_] => Exp[_]): Exp[T] =
-      transform(ExpTransformer(transformer))*/
     def transform(transformer: ExpTransformer): Exp[T]
 
     //This method returns the cached value (if any) or invokes interpret().
@@ -70,14 +69,15 @@ object ExprTreesWithCSE {
       }
       treeMap(mapper)
     }
-    def toCode: String = ""
-    def persistValues() { children foreach (_.persistValues()) }
   }
   def definitions: mutable.Map[Def[_], Sym[_]] = new mutable.HashMap()
   implicit def toAtom[T](d: Def[T]): Exp[T] =
     definitions.asInstanceOf[mutable.Map[Def[T], Sym[T]]].getOrElseUpdate(d, Sym[T](d))//.asInstanceOf[Sym[T]]
 
-  case class Sym[+T] private[ExprTreesWithCSE](d: Def[T]) extends Exp[T] {
+  object Sym {
+    private val gensymId: () => Int = new Util.GlobalIDGenerator
+  }
+  case class Sym[+T] private[ExprTreesWithCSE](d: Def[T], id: Int = Sym.gensymId()) extends Exp[T] {
     def interpret() = d.interpret()
     def children = d.children
     def transform(transformer: ExpTransformer): Exp[T] = {
@@ -109,5 +109,30 @@ object ExprTreesWithCSE {
         checkedGenericConstructor(v)
       else
         throw new IllegalArgumentException()
+    def toCode: String = ""
+  }
+  val transf: Exp[_] => Exp[_] = {
+    case e => e
+  }
+  //Test that this code compiles:
+  def tr[T](e: Exp[T]) = e transform transf
+  def compile[T](e: Exp[T]): String = {
+    val symDecls = e __find {
+      case Sym(_, _) => true
+    } map {
+      case Sym(defNode, id) => s"val s${id} = ${defNode.toCode}"
+      case _ => throw new Throwable()
+    } mkString ("\n")
+    val constlessE = e transform {
+      case c: Const[_] =>
+        CrossStagePersistence.persist(c.x)(c.cTag, c.tTag)
+      case Sym(_, id) => NamedVar("s" + id)
+    }
+
+    val body = ""
+    s"""{
+    |  ${symDecls}
+    |  ${body}
+    |}""".stripMargin
   }
 }
