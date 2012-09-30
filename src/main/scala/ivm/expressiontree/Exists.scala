@@ -1,6 +1,7 @@
 package ivm
 package expressiontree
 
+/*
 import collection.TraversableLike
 
 case class Exists[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base: Exp[Repr with Traversable[T]],
@@ -9,5 +10,6 @@ case class Exists[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](base:
   override def copy(base: Exp[Repr], f: Fun[T, Boolean]) = Exists(base, f)
   def operator = "exists"
 }
+*/
 
 // vim: set ts=4 sw=4 et:

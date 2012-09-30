@@ -13,6 +13,7 @@ object Fix {
   }
 }
 
+/*
 //Exploration into the design space.
 case class Fix[T](col: Exp[Traversable[T]], f: Fun[Traversable[T], Traversable[T]])
   extends Arity2Op[Exp[Traversable[T]], Fun[Traversable[T], Traversable[T]], Traversable[T], Fix[T]](col, f)
@@ -39,3 +40,4 @@ case class TransitiveClosure[T](rel: Exp[Traversable[(T, T)]]) extends Arity1OpE
     Fix.fix(close _, relInt)
   }
 }
+*/

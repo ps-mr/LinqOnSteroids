@@ -15,7 +15,7 @@ case class IfInstanceOf[T, S](x: Exp[T], classS: Class[_])(implicit val tS: Type
   def interpret() =
     Util.ifInstanceOfBody(x.interpret(), classS)
   //ifInstanceOfBody has type parameters which by default are deduced to be Nothing - and has _two_ of them. To avoid needing a TypeTag for T, use ascription on the result.
-  override def toCode = "ivm.expressiontree.Util.ifInstanceOfBody(%s, %s): Option[%s]" format (x.toCode, persistedValue, Compile manifestToString tS)
+  override def toCode = "ivm.expressiontree.Util.ifInstanceOfBody(%s, %s): Option[%s]" format (x.toCode, persistedValue, ??? /*Compile manifestToString tS*/)
 }
 
 case class IsInstanceOf[T, S](x: Exp[T])(implicit val cS: ClassTag[S], val tS: TypeTag[S]) extends Arity1OpExp[T, Boolean, IsInstanceOf[T, S]](x) {
@@ -24,11 +24,11 @@ case class IsInstanceOf[T, S](x: Exp[T])(implicit val cS: ClassTag[S], val tS: T
     val res = x.interpret()
     res != null && (cS.runtimeClass isInstance res)
   }
-  override def toCode = "%s.isInstanceOf[%s]" format (x.toCode, Compile manifestToString tS)
+  override def toCode = "%s.isInstanceOf[%s]" format (x.toCode, ??? /*Compile manifestToString tS*/)
 }
 
 case class AsInstanceOf[T, S](x: Exp[T])(implicit val cS: ClassTag[S], val tS: TypeTag[S]) extends Arity1OpExp[T, S, AsInstanceOf[T, S]](x) {
   def copy(x: Exp[T]) = AsInstanceOf(x)
   def interpret() = (cS.runtimeClass cast x.interpret()).asInstanceOf[S]
-  override def toCode = "%s.asInstanceOf[%s]" format (x.toCode, Compile manifestToString tS)
+  override def toCode = "%s.asInstanceOf[%s]" format (x.toCode, ??? /*Compile manifestToString tS*/)
 }

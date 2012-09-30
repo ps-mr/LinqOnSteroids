@@ -1,5 +1,5 @@
 package schema
-
+/*
 import annotation.switch
 //import ivm.expressiontree.{Lifting, ExpSelection, Arity1Op, Exp}
 import ivm.expressiontree._
@@ -16,4 +16,5 @@ package object squopt {<%
   }
 %>
 }
+*/
 // vim: set ts=4 sw=4 et:

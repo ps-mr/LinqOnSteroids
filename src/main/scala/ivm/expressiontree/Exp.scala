@@ -109,6 +109,7 @@ trait TreeNode[+T] {
 }
 
 sealed trait Exp[+T] extends TreeNode[T] {
+  def toCode: String = ???
   def transform(transformer: ExpTransformer): Exp[T]
 
   //This method returns the cached value (if any) or invokes interpret().
