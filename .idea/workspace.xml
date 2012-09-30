@@ -6,11 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="b17c806b-e12f-4a90-823c-dcf67b529430" name="Default" comment="OpenEncoding: make CanBuildExp extends a function type + testcases + misc&#10;&#10;Testcases: apparently, toExpTempl returns different types depending on the specific context, even if the context should be the same&#10;Misc: fix comments, drop dead code, and try to make FuncExp arguments *variant">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build.sbt" afterPath="$PROJECT_DIR$/build.sbt" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/codeStyleSettings.xml" afterPath="$PROJECT_DIR$/.idea/codeStyleSettings.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/encodings.xml" afterPath="$PROJECT_DIR$/.idea/encodings.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/ivm/optimization/Optimization.scala" afterPath="$PROJECT_DIR$/src/main/scala/ivm/optimization/Optimization.scala" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/ivm/optimization/OptimizationTransforms.scala" afterPath="$PROJECT_DIR$/src/main/scala/ivm/optimization/OptimizationTransforms.scala" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/ivm/optimization/NumericOptimTransforms.scala" afterPath="$PROJECT_DIR$/src/main/scala/ivm/optimization/NumericOptimTransforms.scala" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/scala/performancetests/Benchmarking.scala" afterPath="$PROJECT_DIR$/src/main/scala/performancetests/Benchmarking.scala" />
     </list>
     <ignored path="linqonsteroids.iws" />
@@ -34,6 +30,21 @@
     <disable_hints />
   </component>
   <component name="DebuggerManager">
+    <line_breakpoints>
+      <breakpoint url="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Compile.scala" line="148" class="ivm.expressiontree.Compile$" package="ivm.expressiontree">
+        <option name="ENABLED" value="true" />
+        <option name="LOG_ENABLED" value="false" />
+        <option name="LOG_EXPRESSION_ENABLED" value="false" />
+        <option name="SUSPEND_POLICY" value="SuspendAll" />
+        <option name="COUNT_FILTER_ENABLED" value="false" />
+        <option name="COUNT_FILTER" value="0" />
+        <option name="CONDITION_ENABLED" value="false" />
+        <option name="CLASS_FILTERS_ENABLED" value="false" />
+        <option name="INSTANCE_FILTERS_ENABLED" value="false" />
+        <option name="CONDITION" value="" />
+        <option name="LOG_MESSAGE" value="" />
+      </breakpoint>
+    </line_breakpoints>
     <breakpoint_any>
       <breakpoint>
         <option name="NOTIFY_CAUGHT" value="true" />
@@ -99,48 +110,73 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
+      <file leaf-file-name="PaperTutorial.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/tests/PaperTutorial.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="82" column="0" selection-start="3215" selection-end="3215" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Compile.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Compile.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="148" column="0" selection-start="4534" selection-end="4534" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Exp.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Exp.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="48" column="0" selection-start="1362" selection-end="1362" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="OptimizationTransforms.scala" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/OptimizationTransforms.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="80" column="13" selection-start="4389" selection-end="4389" vertical-scroll-proportion="0.0">
-              <folding>
-                <element signature="e#34#57#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Optimization.scala" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/Optimization.scala">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="173" column="4" selection-start="8294" selection-end="8294" vertical-scroll-proportion="0.704918">
+            <state line="20" column="7" selection-start="817" selection-end="817" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="SubquerySharing.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/SubquerySharing.scala">
+      <file leaf-file-name="NumericOptimTransforms.scala" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/NumericOptimTransforms.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="452" column="52" selection-start="25478" selection-end="25478" vertical-scroll-proportion="0.0">
+            <state line="93" column="30" selection-start="4416" selection-end="4416" vertical-scroll-proportion="0.9501661">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="BooleanOperators.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/BooleanOperators.scala">
+      <file leaf-file-name="Const.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Const.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="26" column="6" selection-start="990" selection-end="990" vertical-scroll-proportion="0.0">
+            <state line="2" column="7" selection-start="35" selection-end="35" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="OptimTests.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/optimization/OptimTests.scala">
+      <file leaf-file-name="package.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/package.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="66" column="72" selection-start="1639" selection-end="1639" vertical-scroll-proportion="0.0">
+            <state line="3" column="39" selection-start="84" selection-end="84" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="package.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar://$USER_HOME$/.ivy2/cache/org.scala-lang/scala-reflect/srcs/scala-reflect-2.10.0-M7-sources.jar!/scala/reflect/runtime/package.scala">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="5" column="11" selection-start="168" selection-end="168" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -155,37 +191,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Fun.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Fun.scala">
+      <file leaf-file-name="TypeTags.scala" pinned="false" current="false" current-in-tab="false">
+        <entry file="jar://$USER_HOME$/.ivy2/cache/org.scala-lang/scala-library/srcs/scala-library-2.10.0-M7-sources.jar!/scala/reflect/base/TypeTags.scala">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="154" column="7" selection-start="6447" selection-end="6447" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="SIC_INNER_SHOULD_BE_STATIC_ANON.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/SIC_INNER_SHOULD_BE_STATIC_ANON.scala">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="202" column="13" selection-start="7616" selection-end="7616" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ITA_INEFFICIENT_TO_ARRAY.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/ITA_INEFFICIENT_TO_ARRAY.scala">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="73" column="50" selection-start="2674" selection-end="2674" vertical-scroll-proportion="0.0">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR.scala" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR.scala">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="17" column="59" selection-start="451" selection-end="451" vertical-scroll-proportion="0.0">
+            <state line="210" column="0" selection-start="12165" selection-end="12165" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -214,22 +223,22 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/src/main/scala/performancetests/opaltests/FBUnusedFields.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Exp.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/optimization/NumericOptimTransforms.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Lifting.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/NumConvOps.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/simpleOpenEncoding.scala" />
-        <option value="$PROJECT_DIR$/src/test/scala/ivm/optimization/OptimTests.scala" />
-        <option value="$PROJECT_DIR$/src/test/scala/ivm/tests/PaperTutorial.scala" />
+        <option value="$PROJECT_DIR$/src/test/scala/macrotest/TestSquoptMacroOutsideOfPackage.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/MacroFrontend.scala" />
         <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/traversableOps.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/performancetests/opaltests/FBAnalysesBase.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/performancetests/QueryBenchmarking.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/performancetests/opaltests/FindBugsAnalyses.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/optimization/Fusion.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/optimization/OptimizationTransforms.scala" />
-        <option value="$PROJECT_DIR$/src/main/scala/ivm/optimization/Optimization.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/performancetests/Benchmarking.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/ExprTreesWithCSE.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Exp.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Eq.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Lifting.scala" />
+        <option value="$PROJECT_DIR$/project/sampleapp/sampleLibrary.scala" />
+        <option value="$PROJECT_DIR$/src/main/resources/SampleWrapperGenerator.ssp" />
+        <option value="$PROJECT_DIR$/src/test/scala/ivm/tests/IVMTest1.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/simpleOpenEncoding.scala" />
+        <option value="$PROJECT_DIR$/src/test/scala/ivm/tests/PaperTutorial.scala" />
+        <option value="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/classes.jar!/java/lang/ClassLoader.class" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/optimization/NumericOptimTransforms.scala" />
+        <option value="$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Const.scala" />
       </list>
     </option>
   </component>
@@ -412,13 +421,21 @@
   </component>
   <component name="ProjectStructureProblems">
     <ignored-problems>
+      <problem id="library-invalid-classes-path(library:project:bat-core_2.10-1.0.0-SNAPSHOT.jar)" />
+      <problem id="unused-library(library:project:bat-core_2.10-1.0.0-SNAPSHOT.jar)" />
+      <problem id="unused-library(library:project:com.typesafe_config_0.4.0)" />
       <problem id="unused-library(library:project:de.tud.cs.st_bat-core_2.9.2_1.0.0-SNAPSHOT)" />
       <problem id="unused-library(library:project:junit_junit_4.8.2)" />
       <problem id="unused-library(library:project:org.fusesource.scalate_scalate-core_1.5.3)" />
       <problem id="unused-library(library:project:org.fusesource.scalate_scalate-util_1.5.3)" />
+      <problem id="unused-library(library:project:org.scala-lang_scala-actors_2.10.0-M5)" />
+      <problem id="unused-library(library:project:org.scala-lang_scala-compiler_2.10.0-M5)" />
       <problem id="unused-library(library:project:org.scala-lang_scala-compiler_2.9.1)" />
       <problem id="unused-library(library:project:org.scala-lang_scala-compiler_2.9.2)" />
+      <problem id="unused-library(library:project:org.scala-lang_scala-library_2.10.0-M5)" />
       <problem id="unused-library(library:project:org.scala-lang_scala-library_2.9.2)" />
+      <problem id="unused-library(library:project:org.scala-lang_scala-reflect_2.10.0-M5)" />
+      <problem id="unused-library(library:project:org.scalatest_scalatest_2.10.0-M5_1.9-2.10.0-M5-B2)" />
       <problem id="unused-library(library:project:org.scalatest_scalatest_2.9.2_1.7.1)" />
       <problem id="unused-library(library:project:org.slf4j_slf4j-api_1.6.1)" />
       <problem id="unused-library(library:project:scala-2.9.2)" />
@@ -1087,24 +1104,24 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="22" width="1280" height="721" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
-      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.29647437" sideWeight="0.32061687" order="8" side_tool="false" content_ui="tabs" x="24" y="282" width="1231" height="195" />
+      <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.29589844" sideWeight="0.32061687" order="8" side_tool="false" content_ui="tabs" x="24" y="282" width="1231" height="195" />
       <window_info id="JetGradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="false" weight="0.32901135" sideWeight="0.5897436" order="4" side_tool="false" content_ui="tabs" x="437" y="70" width="406" height="624" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33333334" sideWeight="0.496875" order="1" side_tool="false" content_ui="tabs" x="24" y="281" width="1231" height="197" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33173078" sideWeight="0.496875" order="1" side_tool="false" content_ui="tabs" x="24" y="281" width="1231" height="197" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="true" internal_type="DOCKED" type="FLOATING" visible="false" weight="0.24797407" sideWeight="0.6833603" order="7" side_tool="false" content_ui="tabs" x="487" y="70" width="306" height="619" />
-      <window_info id="SBT Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4070513" sideWeight="0.32009724" order="9" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="723" />
+      <window_info id="SBT Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4198718" sideWeight="0.3153682" order="9" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="723" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.5" sideWeight="0.0" order="3" side_tool="false" content_ui="combo" x="28" y="203" width="1231" height="354" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4070513" sideWeight="0.67423016" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.5488281" sideWeight="0.68089646" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32905984" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.31730768" sideWeight="0.5" order="14" side_tool="false" content_ui="tabs" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39455783" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.31640625" sideWeight="0.5" order="14" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.39453125" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.18800648" sideWeight="0.6833603" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32901135" sideWeight="0.5608974" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3987034" sideWeight="0.6576433" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3176661" sideWeight="0.6666667" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.43910256" sideWeight="0.6604538" order="2" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="716" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.43910256" sideWeight="0.6604538" order="2" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="716" />
       <window_info id="Documentation" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" x="0" y="22" width="1280" height="723" />
       <window_info id="Analyze Dataflow from" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.24866596" sideWeight="0.78564405" order="1" side_tool="false" content_ui="combo" />
@@ -1213,64 +1230,52 @@
     <option name="FILTER_TARGETS" value="false" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/target/scala-2.10/src_managed/main/BATGenerator.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/scala/squopt/package.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="81" column="33" selection-start="5649" selection-end="5658" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/Fusion.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="14" column="0" selection-start="223" selection-end="223" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.ivy2/cache/org.scala-lang/scala-library/srcs/scala-library-2.10.0-M5-sources.jar!/scala/Option.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="155" column="20" selection-start="5456" selection-end="5456" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/FBAnalysesBase.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="218" column="0" selection-start="7407" selection-end="7407" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="45" column="33" selection-start="1500" selection-end="1500" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/MS_PKGPROTECT.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="114" column="47" selection-start="4364" selection-end="4364" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/SIC_INNER_SHOULD_BE_STATIC_ANON.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="202" column="13" selection-start="7616" selection-end="7616" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/ITA_INEFFICIENT_TO_ARRAY.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="73" column="50" selection-start="2674" selection-end="2674" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/performancetests/opaltests/analyses/UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="17" column="59" selection-start="451" selection-end="451" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Fun.scala">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="154" column="7" selection-start="6447" selection-end="6447" vertical-scroll-proportion="0.0">
+        <state line="13" column="8" selection-start="398" selection-end="398" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/OptimizationTransforms.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/simpleOpenEncoding.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="80" column="13" selection-start="4389" selection-end="4389" vertical-scroll-proportion="0.0">
-          <folding>
-            <element signature="e#34#57#0" expanded="true" />
-          </folding>
+        <state line="366" column="8" selection-start="16897" selection-end="16897" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar:///System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/classes.jar!/java/lang/ClassLoader.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="97" column="41" selection-start="5902" selection-end="5902" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.ivy2/cache/org.scala-lang/scala-library/srcs/scala-library-2.10.0-M7-sources.jar!/scala/collection/mutable/ArrayBuilder.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="123" column="0" selection-start="4155" selection-end="4155" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.ivy2/cache/org.scala-lang/scala-reflect/srcs/scala-reflect-2.10.0-M7-sources.jar!/scala/reflect/internal/SymbolTable.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="212" column="0" selection-start="7286" selection-end="7286" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.ivy2/cache/org.scala-lang/scala-reflect/srcs/scala-reflect-2.10.0-M7-sources.jar!/scala/reflect/runtime/SymbolLoaders.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="30" column="0" selection-start="1093" selection-end="1093" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.ivy2/cache/org.scala-lang/scala-library/srcs/scala-library-2.10.0-M7-sources.jar!/scala/reflect/base/TypeTags.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="210" column="0" selection-start="12165" selection-end="12165" vertical-scroll-proportion="0.0">
+          <folding />
         </state>
       </provider>
     </entry>
@@ -1281,30 +1286,58 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/BooleanOperators.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/OptimizationTransforms.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="26" column="6" selection-start="990" selection-end="990" vertical-scroll-proportion="0.0">
+        <state line="20" column="7" selection-start="817" selection-end="817" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/SubquerySharing.scala">
+    <entry file="jar://$USER_HOME$/.ivy2/cache/org.scala-lang/scala-reflect/srcs/scala-reflect-2.10.0-M7-sources.jar!/scala/reflect/runtime/package.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="452" column="52" selection-start="25478" selection-end="25478" vertical-scroll-proportion="0.0">
+        <state line="5" column="11" selection-start="168" selection-end="168" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/optimization/OptimTests.scala">
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/package.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="66" column="72" selection-start="1639" selection-end="1639" vertical-scroll-proportion="0.0">
+        <state line="3" column="39" selection-start="84" selection-end="84" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/Optimization.scala">
+    <entry file="file://$PROJECT_DIR$/src/test/scala/ivm/tests/PaperTutorial.scala">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="173" column="4" selection-start="8294" selection-end="8294" vertical-scroll-proportion="0.704918">
+        <state line="82" column="0" selection-start="3215" selection-end="3215" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Exp.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="48" column="0" selection-start="1362" selection-end="1362" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Compile.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="148" column="0" selection-start="4534" selection-end="4534" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/expressiontree/Const.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="2" column="7" selection-start="35" selection-end="35" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/scala/ivm/optimization/NumericOptimTransforms.scala">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="93" column="30" selection-start="4416" selection-end="4416" vertical-scroll-proportion="0.9501661">
           <folding />
         </state>
       </provider>
@@ -1374,7 +1407,7 @@
       </state>
       <state key="ProjectLibrariesConfigurable.UI">
         <settings>
-          <last-edited>bat-core_2.10-1.0.0-SNAPSHOT.jar</last-edited>
+          <last-edited>bat-core_2.10.0-M7-1.0.0-SNAPSHOT.jar</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
