@@ -1,7 +1,7 @@
 package ivm
 package expressiontree
 
-import performancetests.Benchmarking
+//import performancetests.Benchmarking
 import java.lang.reflect.Constructor
 
 /**
@@ -14,6 +14,7 @@ trait Compiled[T] {
 }
 
 object ScalaCompile {
+  def debugBench: Boolean = ??? //Benchmarking.debugBench
   /*
    * Derived from
    * virtualization-lms-core/src/internal/ScalaCompile.scala, branch delite-develop,
@@ -56,7 +57,7 @@ object ScalaCompile {
   }
 
   def invokeCompiler[T: TypeTag](sourceStr: String, className: String): Option[Class[_]] = {
-    if (Benchmarking.debugBench)
+    if (debugBench)
       Console.err println sourceStr
     if (this.compiler eq null)
       setupCompiler()
@@ -88,7 +89,7 @@ object ScalaCompile {
       Some(cls)
     } else {
       Console.err println "compilation: had errors"
-      if (!Benchmarking.debugBench)
+      if (!debugBench)
         Console.err println sourceStr
       None
     }
