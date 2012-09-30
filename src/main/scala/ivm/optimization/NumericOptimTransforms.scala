@@ -92,7 +92,8 @@ trait NumericOptimTransforms {
 
   val reassociateOps: Exp[_] => Exp[_] = {
     case n@Negate(constNode@Const(c)) =>
-      implicit val manifest = constNode.cTag
+      implicit val cTag = constNode.cTag
+      implicit val tTag = constNode.tTag
       n.isNum.negate(c)
     case p@Plus(l, r) =>
       buildSum(l, r)(p.isNum)
