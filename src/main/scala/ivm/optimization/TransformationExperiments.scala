@@ -35,15 +35,15 @@ object TransformationExperiments {
     //case a: App[s, t] => a.f(a.t) //causes a warning
   //}
   val mergeFlatMaps: Exp[_] => Exp[_] = {
-    case FlatMap(MapNode(coll, f), g) =>
+    case Sym(FlatMap(Sym(MapNode(coll, f)), g)) =>
       mergeFlatMaps(coll flatMap (x => letExp(f(x))(g))) //The body is not really typechecked, unlike in buildMergedFlatMap1.
     //XXX is the case below useful? Never tested. It's probably better to see what shortcut fusion would do instead.
-    case MapNode(FlatMap(coll, f), g) =>
+    case Sym(MapNode(Sym(FlatMap(coll, f)), g)) =>
       mergeFlatMaps(coll flatMap (x => letExp(f(x))(_ map g)))
     case e => e
   }
 
-  def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: Fun[T, U], g: Fun[U, V]): Exp[Traversable[V]] =
+  def buildMergedMaps[T, U, V](coll: Exp[Traversable[T]], f: FunSym[T, U], g: FunSym[U, V]): Exp[Traversable[V]] =
     coll.map(f.f andThen g.f) //Old implementation, equivalent to inlining f(x) in the body of g. This might duplicate work!
   //OptimizationTransforms.buildMergedMaps avoids that problem.
 
@@ -58,7 +58,7 @@ object TransformationExperiments {
 
   val mergeMaps2: Transformer = new Transformer {
     def apply[T](e: Exp[T]) = e match {
-      case MapNode(MapNode(coll, f1), f2) =>
+      case Sym(MapNode(Sym(MapNode(coll, f1)), f2)) =>
         mergeMaps2(buildMergedMaps(coll, f1, f2)).
           //Note the need for this cast.
           asInstanceOf[Exp[T]]
@@ -68,7 +68,7 @@ object TransformationExperiments {
 
   val mergeMaps3: Transformer = new Transformer {
     def apply[T](e: Exp[T]) = e match {
-      case m: MapNode[t, repr, u, that] =>
+      case Sym(m: MapNode[t, repr, u, that]) =>
         Util.assertType[Exp[repr]](m.base)
         (m.base map m.f)(m.c)
       //Outdated comments:
@@ -94,7 +94,7 @@ object TransformationExperiments {
   }*/
 
   val mergeMaps: PartialFunction[Exp[_], Exp[_]] = {
-    case MapNode(m@MapNode(coll, f), g) =>
+    case Sym(MapNode(Sym(m@MapNode(coll, f)), g)) =>
       //coll.map(g.f andThen f.f)  //This line passes the typechecker happily, even if wrong. Hence the actual code
       //exploits parametricity: it generates the new body in a generic function which can be typechecked, and calls it
       //with Any, Any, Any as type parameters since that's what type inference will deduce:
@@ -106,7 +106,7 @@ object TransformationExperiments {
     //This case, together with inlinng and transformedFilterToFilter, is equivalent to what Tillmann suggested and
     //then dismissed.
 
-    case MapNode(Filter(coll, pred @ FuncExpBody(test)), mapFun) =>
+    case Sym(MapNode(Sym(Filter(coll, FunSym(pred @ FuncExpBody(test)))), mapFun)) =>
       //This transformation cancels with transformedFilterToFilter + flatMapToMap. Not sure if it's ever useful.
       //It could be useful as a separate stage, if this turns out to be a faster implementation.
       //After this optimization, we need to float the if_# to around the body of mapFun
@@ -117,7 +117,7 @@ object TransformationExperiments {
           Seq(mapFun(pred.x))
         } else_# {
           Seq.empty
-        }, pred.x)
+        }, pred.x).f
   }
   /*val mapToFlatMap: Exp[_] => Exp[_] = {
     case Call2(OptionOps.OptionMapId, _, c: Exp[Option[t]], f: Fun[_, u]) =>
@@ -127,14 +127,14 @@ object TransformationExperiments {
     //import optimization.&
     def apply[T](e: Exp[T]) = e match {
       //case (m: MapNode[t, repr, u, that]) & MapNode(c, base) => //doesn't refine the type of c and base.
-      case m: MapNode[t, repr, u, that] => //T = that
+      case Sym(m: MapNode[t, repr, u, that]) => //T = that
         Util.assertType[Exp[repr]](m.base)
         val ret1 = (m.base map m.f)(m.c)
         Util.assertType[Exp[that]](ret1)
         Util.assertType[Exp[T]](ret1)
 
         m.base match {
-          case m2: MapNode[t2, repr2, u2, that2] =>
+          case Sym(m2: MapNode[t2, repr2, u2, that2]) =>
             Some((expToTraversableLikeOps[t /*u2*/, /*that2*/ repr]((m2.base map m2.f)(m2.c)) map m.f)(m.c)) //works
           case _ => None
         }
