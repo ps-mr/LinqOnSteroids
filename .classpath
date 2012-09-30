@@ -3,7 +3,7 @@
 	<classpathentry kind="src" output="target/scala-2.10/classes" path="src/main/scala"/>
 	<classpathentry kind="src" path="target/scala-2.10/src_managed/main"/>
 	<classpathentry kind="src" output="target/scala-2.10/classes" path="src/main/java"/>
-	<classpathentry excluding="*" kind="src" output="target/scala-2.10/test-classes" path="src/test/scala"/>
+	<classpathentry kind="src" output="target/scala-2.10/test-classes" path="src/test/scala"/>
 	<classpathentry kind="src" output="target/scala-2.10/test-classes" path="src/test/java"/>
 	<classpathentry kind="lib" path="lib/scopt_2.10.0-M7.jar"/>
 	<classpathentry kind="lib" path="sampleapp/lib/bat-core_2.10-1.0.0-SNAPSHOT-sources.jar"/>
