@@ -126,10 +126,12 @@ object ExprTreesWithCSE {
     val constlessE = e transform {
       case c: Const[_] =>
         CrossStagePersistence.persist(c.x)(c.cTag, c.tTag)
-      case Sym(_, id) => NamedVar("s" + id)
+      case Sym(_, id) => e
+      //This has the wrong type and crashes the compiler (?)
+        //NamedVar("s" + id)
     }
 
-    val body = ""
+    val body = constlessE.toCode
     s"""{
     |  ${symDecls}
     |  ${body}
