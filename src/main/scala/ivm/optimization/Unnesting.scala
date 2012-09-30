@@ -15,8 +15,8 @@ import collection.generic.CanBuildFrom
 trait Unnesting {
   //This simplification cleans up after existsUnnester and existsRenester.
   val resimplFilterIdentity: Exp[_] => Exp[_] = {
-    case IsEmpty(FlatMap(coll, f @ FuncExpBody(Filter(coll2, FuncExpIdentity())))) =>
-      (coll flatMap Fun.makefun(coll2, f.x)).isEmpty
+    case Sym(IsEmpty(Sym(FlatMap(coll, FunSym(f @ FuncExpBody(Sym(Filter(coll2, FuncExpIdentity())))))))) =>
+      (coll flatMap Fun.makefun(coll2, f.x).f).isEmpty
     case e => e
   }
 
@@ -55,16 +55,16 @@ trait Unnesting {
     //where restQuery = x => [x1 |-> x0]B
     //However, that's only valid if the return value of the expression is an idempotent monoid, as stated there. We can workaround that by converting
     //the result of flatMap to a set.
-    case fm @ FlatMap(Filter(c0, f@FuncExpBody(Not(IsEmpty(Filter(c, p))))), fmFun) =>
+    case Sym(fm @ FlatMap(Sym(Filter(c0, FunSym(f@FuncExpBody(Sym(Not(Sym(IsEmpty(Sym(Filter(c, p)))))))))), fmFun)) =>
       //Since x0 = f.x, and fmFun = x1 => B, then [x1 |-> x0]B is (x1 => B) x0, that is fmFun(f.x), and restQuery = x => [x1 |-> x0]B =
       //val restQuery = Fun.makefun(fmFun(f.x), p.x) //Hmm, this is a bit of a hack. The scope of p.x does not extend over f.x.
       //Hence, that code might as well use a fresh variable. In fact, that's a function which ignores its argument -
       //const fmFun(f.x). Hence:
-      val restQuery = Fun[Any, Traversable[Any]](x => fmFun(f.x))
+      val restQuery = Fun[Any, Traversable[Any]](x => fmFun(f.x)).f
 
       if (isCbfIdempotent(fm.c)) {
         //Use the standard rule to unnest exists into an idempotent comprehension
-        stripView(c0) flatMap Fun.makefun(stripView(c) filter p flatMap restQuery, f.x)
+        stripView(c0) flatMap Fun.makefun(stripView(c) filter p flatMap restQuery, f.x).f
       } else {
         //Use an original rule to unnest exists into a non-idempotent comprehension while still doing the needed duplicate
         //elimination
@@ -78,22 +78,22 @@ trait Unnesting {
         //A problem, in both cases, is that the result of this transformation looks slower than the original query.
         //Is duplicate elimination after applying restQuery valid? I guess not: the flatMapped function might just produce an element multiple times.
         //So we produce instead a Set of booleans to do duplicate elimination and then filter with identity!
-        stripView(c0) flatMap Fun.makefun((((stripView(c) map p)(collection.breakOut): Exp[Set[Boolean]]) filter identity flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x)
+        stripView(c0) flatMap Fun.makefun((((stripView(c) map p)(collection.breakOut): Exp[Set[Boolean]]) filter identity flatMap restQuery)(collection.breakOut): Exp[Traversable[Any]], f.x).f
       }
     case e => e
   }
 
   private def rebuildExists[T, U, V](coll: Exp[Traversable[T]],
                                   coll2: Exp[Traversable[U]],
-                                  p: Fun[U, Boolean],
-                                  f: Fun[T, Traversable[V]],
-                                  f2: Fun[U, Traversable[V]]): Exp[Traversable[V]] =
-    coll filter Fun.makefun(coll2 exists p, f.x) flatMap Fun.makefun(f2.body, f.x)
+                                  p: FunSym[U, Boolean],
+                                  f: FunSym[T, Traversable[V]],
+                                  f2: FunSym[U, Traversable[V]]): Exp[Traversable[V]] =
+    coll filter Fun.makefun(coll2 exists p, f.x).f flatMap Fun.makefun(f2.body, f.x).f
 
   //This is useful, because exists has a more efficient execution strategy than the nested iteration: exists can stop
   //as soon as the existence witness is found.
   val existsRenester: Exp[_] => Exp[_] = {
-    case e @ FlatMap(coll, f@FuncExpBody(FlatMap(Filter(coll2, p), f2))) if !f2.body.isOrContains(f2.x) =>
+    case Sym(e @ FlatMap(coll, FunSym(f@FuncExpBody(Sym(FlatMap(Sym(Filter(coll2, p)), f2)))))) if !f2.body.isOrContains(f2.x) =>
       rebuildExists(coll, coll2, p, f, f2)
     case e => e
   }
@@ -123,13 +123,13 @@ trait Unnesting {
             case _ => throw new RuntimeException
           }).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
           */
-    case outer @ FlatMap(inner @ FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e))
+    case Sym(outer @ FlatMap(Sym(inner @ FlatMap(collEp, FunSym(fxp@FuncExpBody(ep)))), fy@FunSym(FuncExpBody(e))))
       if { import PartialOrderingExt.Implicits._; inner.c <= outer.c } =>
       //Why and when do we call generalUnnesting again?
       //Subexpressions are already optimized, but subexpressions we build are not. In particular, if ep is a FlatMap node, when we invoke flatMap/filter on ep the result might require further unnesting.
-      collEp flatMap Fun.makefun(generalUnnesting(ep flatMap fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
-    case Filter(FlatMap(collEp, fxp@FuncExpBody(ep)), fy@FuncExpBody(e)) =>
-      collEp flatMap Fun.makefun(generalUnnesting(ep filter fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x)
+      collEp flatMap Fun.makefun(generalUnnesting(ep flatMap fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x).f
+    case Sym(Filter(Sym(FlatMap(collEp, FunSym(fxp@FuncExpBody(ep)))), fy@FunSym(FuncExpBody(e)))) =>
+      collEp flatMap Fun.makefun(generalUnnesting(ep filter fy).asInstanceOf[Exp[Traversable[Any]]], fxp.x).f
     case e => e
   }
 
@@ -137,7 +137,7 @@ trait Unnesting {
   //It's important that this is applied after a full bottom-up pass of existsRenester, and not as
   //exp.transform(existsRenester orElse dropUnusedBindings).
   val dropUnusedBindings: Exp[_] => Exp[_] = {
-    case fm @ FlatMap(coll, f @ FuncExpBody(body)) if !(body isOrContains f.x) && isCbfIdempotent(fm.c) =>
+    case Sym(fm @ FlatMap(coll, FunSym(f @ FuncExpBody(body)))) if !(body isOrContains f.x) && isCbfIdempotent(fm.c) =>
       if_# (coll.nonEmpty) { body } else_# { Seq.empty }
     //case MapNode(coll, f @ FuncExpBody(body)) if !(body isOrContains f.x) =>
       //Seq(body)
