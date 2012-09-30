@@ -8,7 +8,10 @@ package object expressiontree {
   type TypeTag[T] = u.TypeTag[T]
   def classTag[T](implicit c: ClassTag[T]) = c
   def typeTag[T](implicit ttag: TypeTag[T]) = ttag
+
+
   implicit def toAtomImpl[T](d: Def[T]): Exp[T] = BaseLangImpl toAtom d
+  implicit def toFunSymImplicit[S, T](f: Fun[S, T]): FunSym[S, T] = BaseLangImpl toFunSym f
 
   /*
   type TravMessage[+T] = Message[Traversable[T]]
