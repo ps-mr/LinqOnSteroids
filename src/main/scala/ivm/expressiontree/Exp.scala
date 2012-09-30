@@ -96,7 +96,7 @@ trait ExpTransformer {
   def apply[T](e: Exp[T]): Exp[T]
 }
 object ExpTransformer {
-  implicit def apply(f: Exp[_] => Exp[_]) = new ExpTransformer {
+  def apply(f: Exp[_] => Exp[_]) = new ExpTransformer {
     def apply[T](e: Exp[T]): Exp[T] = f(e).asInstanceOf[Exp[T]]
   }
 }
@@ -110,7 +110,8 @@ trait TreeNode[+T] {
 
 sealed trait Exp[+T] extends TreeNode[T] {
   def toCode: String = ???
-  def transform(transformer: ExpTransformer): Exp[T]
+  def transformImpl(transformer: ExpTransformer): Exp[T]
+  def transform(f: Exp[_] => Exp[_]) = transformImpl(ExpTransformer(f))
 
   //This method returns the cached value (if any) or invokes interpret().
   def value(): T = interpret()
@@ -141,10 +142,10 @@ sealed trait Exp[+T] extends TreeNode[T] {
     (this findTotFun (_ == e)).nonEmpty
 
   def substSubTerm[S](SubTerm: Exp[_], e: Exp[S]) =
-    this transform ExpTransformer{{
+    this transform {
       case SubTerm => e
       case exp => exp
-    }}
+    }
 
   def freeVars: Set[Var] = {
     def mapper(e: Exp[_], c: Seq[Set[Var]]): Set[Var] = e match {
@@ -190,15 +191,15 @@ case class Sym[+T](d: Def[T]) extends Exp[T] {
   val id: Int = Sym.gensymId()
   def interpret() = d.interpret()
   def children = d.children
-  def transform(transformer: ExpTransformer): Exp[T] = {
-    val transformedChildren = children mapConserve (_ transform transformer)
+  def transformImpl(transformer: ExpTransformer): Exp[T] = {
+    val transformedChildren = children mapConserve (_ transformImpl transformer)
     val newSelf: Exp[T] =
       if (transformedChildren eq children)
         this
       else
         BaseLangImpl toAtom (d genericConstructor transformedChildren)
     transformer(newSelf)
-    //transformer(d.genericConstructor(children mapConserve (_ transform transformer)))
+    //transformer(d.genericConstructor(children mapConserve (_ transformImpl transformer)))
   }
 }
 
@@ -207,7 +208,7 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
 
   def interpret() = x
   def children: List[Exp[_]] = Nil
-  def transform(transformer: ExpTransformer): Exp[T] = this
+  def transformImpl(transformer: ExpTransformer): Exp[T] = this
   override def toString = Const toString (x, productPrefix)
 }
 
