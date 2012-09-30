@@ -1,8 +1,8 @@
 package ivm
 package expressiontree
 
-import performancetests.Benchmarking
 import java.lang.reflect.Constructor
+import ivm.tests.Debug
 
 /**
  * User: pgiarrusso
@@ -56,7 +56,7 @@ object ScalaCompile {
   }
 
   def invokeCompiler[T: TypeTag](sourceStr: String, className: String): Option[Class[_]] = {
-    if (Benchmarking.debugBench)
+    if (Debug.active)
       Console.err println sourceStr
     if (this.compiler eq null)
       setupCompiler()
@@ -88,7 +88,7 @@ object ScalaCompile {
       Some(cls)
     } else {
       Console.err println "compilation: had errors"
-      if (!Benchmarking.debugBench)
+      if (!Debug.active)
         Console.err println sourceStr
       None
     }
