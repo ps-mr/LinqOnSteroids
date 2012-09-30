@@ -43,7 +43,7 @@ case class TypeFilter2[T, D[+_], Repr <: TraversableLike[D[T], Repr], S, That](b
   def copy(base: Exp[Repr], f: Exp[D[T] => T]) = TypeFilter2[T, D, Repr, S, That](base, f)
 }
 
-case class TypeCase[Case, +Res](classS: Class[_], guard: Fun[Case, Boolean], f: Fun[Case, Res]) {
+case class TypeCase[Case, +Res](classS: Class[_], guard: FunSym[Case, Boolean], f: FunSym[Case, Res]) {
   //The setters for this field use Res in contravariant position, hence it is important to make them private.
   private[this] var _guardInt: Case => Boolean = _
   private[this] var _fInt: Case => Res = _
@@ -61,10 +61,10 @@ case class TypeCase[Case, +Res](classS: Class[_], guard: Fun[Case, Boolean], f: 
 //parameter, it will be erased to java.lang.Object and even primitive types will be passed boxed.
 //Hence in practice v: Res can be casted to AnyRef and compared against null.
 //- What happens if the underlying function returns null? Argh. You shouldn't do that!
-case class TypeCaseExp[BaseT, Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr], Res: TypeTag, +That /*XXX to drop*/](e: Exp[Repr with TraversableLike[BaseT, Repr]], cases: Seq[TypeCase[_ /*Case_i*/, Res]])/*(implicit protected[this] val c: CanBuildFrom[TraversableView[BaseT, Repr], Res, That])*/ extends Exp[immutable.Set[Res]] {
+case class TypeCaseExp[BaseT, Repr <: Traversable[BaseT] with TraversableLike[BaseT, Repr], Res: TypeTag, +That /*XXX to drop*/](e: Exp[Repr with TraversableLike[BaseT, Repr]], cases: Seq[TypeCase[_ /*Case_i*/, Res]])/*(implicit protected[this] val c: CanBuildFrom[TraversableView[BaseT, Repr], Res, That])*/ extends Def[immutable.Set[Res]] {
   override def nodeArity = 2 * cases.length + 1
   override def children = e +: (cases.toList.flatMap /*[Exp[_], Seq[Exp[_]]] */(c => Seq[Exp[_]](c.guard, c.f)))
-  override protected def checkedGenericConstructor(v: List[Exp[_]]): Exp[immutable.Set[Res]] =
+  override protected def checkedGenericConstructor(v: List[Exp[_]]): Def[immutable.Set[Res]] =
     TypeCaseExp(
     v.head.asInstanceOf[Exp[Repr]],
       (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS, guard.asInstanceOf[Fun[Any, Boolean]], f.asInstanceOf[Fun[Any, Res]])})
@@ -99,7 +99,7 @@ case class TypeCaseExp[BaseT, Repr <: Traversable[BaseT] with TraversableLike[Ba
       }
       yield """if (el.isInstanceOf[%s] && %s) {
               |  Seq(%s)
-              |} else""".stripMargin format (className, t.guard.f(namedVar).toCode, t.f.f(namedVar).toCode)
+              |} else""".stripMargin format (className, t.guard.d.f(namedVar).toCode, t.f.d.f(namedVar).toCode)
     """(%s flatMap { el =>
       | %s
       |   Seq.empty

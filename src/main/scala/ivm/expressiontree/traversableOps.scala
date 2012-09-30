@@ -143,13 +143,13 @@ trait TraversableOps extends TraversableOpsLangIntf {
   def newMapOp[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U] with TraversableLike[U, That]](base: Exp[Repr],
                                                                                                    f: Fun[T, U])
                                                                                                   (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-    MapNode(base, f)
+    MapNode[T, Repr, U, That](base, f)
   def newFlatMap[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]](base: Exp[Repr], f: Fun[T, Traversable[U]])
                                         (implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-    FlatMap(base, f)
+    FlatMap[T, Repr, U, That](base, f)
 
   def newUnion[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U >: T, That <: Traversable[U]](base: Exp[Repr with Traversable[T]], that: Exp[Traversable[U]])(implicit c: CanBuildFrom[Repr, U, That]): Exp[That] =
-    Union(base, that)
+    Union[U, Repr, That](base, that)
 
   def groupBySelImpl[T: ClassTag: TypeTag, Repr <: Traversable[T] with
     TraversableLike[T, Repr]: TypeTag, K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](t: Exp[Repr], f: Exp[T] => Exp[K],
@@ -169,7 +169,7 @@ trait TraversableOps extends TraversableOpsLangIntf {
     def withFilter(f: Exp[T] => Exp[Boolean]): Exp[Repr] =
       newWithFilter(this.t, Fun(f))
 
-    def exists(f: Exp[T] => Exp[Boolean]) = !IsEmpty(this withFilter f)//(withFilter f).isEmpty
+    def exists(f: Exp[T] => Exp[Boolean]) = !asExp(IsEmpty(this withFilter f))//(withFilter f).isEmpty
     //The awkward use of andThen below is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
     def forall(f: Exp[T] => Exp[Boolean]) = IsEmpty(this withFilter (f andThen (!(_)))) //Forall(this.t, Fun(f))
 
@@ -216,7 +216,7 @@ trait TraversableOps extends TraversableOpsLangIntf {
                                      innerKeySelector: Exp[S] => Exp[TKey],
                                      resultSelector: Exp[(T, S)] => Exp[TResult])
                                     (implicit cbf: CanBuildFrom[Repr, TResult, That]): Exp[That]
-    = Join(this.t, innerColl, Fun(outerKeySelector), Fun(innerKeySelector), Fun(resultSelector))
+    = Join[T,Repr,S,TKey,TResult,That](this.t, innerColl, Fun(outerKeySelector), Fun(innerKeySelector), Fun(resultSelector))
 
     //def forall(f: Exp[T] => Exp[Boolean]) = Forall(this.t, Fun(f))
     //This awkward form is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
@@ -269,7 +269,7 @@ trait TraversableOps extends TraversableOpsLangIntf {
     ViewColl <: TraversableViewLike[T, Repr, ViewColl] with TraversableView[T, Repr] with TraversableLike[T, ViewColl]](tp: Exp[ViewColl])
     extends TraversableLikeOps[T, ViewColl](tp)
   {
-    def force[That](implicit bf: CanBuildFrom[Repr, T, That]): Exp[That] = Force(this.t)
+    def force[That](implicit bf: CanBuildFrom[Repr, T, That]): Exp[That] = Force[T, Repr, ViewColl, That](this.t)
 
     //def withFilter(f: Exp[T] => Exp[Boolean]): Exp[ViewColl] =
       //newFilter[T, ViewColl](this.t, Fun(f))
@@ -632,8 +632,8 @@ trait TypeFilterOps {
   implicit def expToTypeFilterOps[T, C[+X] <: TraversableLike[X, C[X]], D[+_]](t: Exp[C[D[T]]]) = new TypeFilterOps[T, C, D](t)
 
   class TypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](val t: Exp[TypeMapping[C, D, Base]]) {
-    def get[T](implicit cS: ClassTag[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): TypeMappingApp[C, D, Base, T] = get[T](ClassUtil.boxedErasure(cS))
-    def get[T](classS: Class[_])(implicit m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): TypeMappingApp[C, D, Base, T] = TypeMappingApp(t, classS)
+    def get[T](implicit cS: ClassTag[T], m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): Exp[C[D[T]]] = get[T](ClassUtil.boxedErasure(cS))
+    def get[T](classS: Class[_])(implicit m: MaybeSub[Base, T], cbf: CanBuildFrom[C[D[Base]], D[T], C[D[T]]]): Exp[C[D[T]]] = TypeMappingApp[C, D, Base, T](t, classS)
   }
   implicit def expToTypeMappingAppOps[C[+X] <: TraversableLike[X, C[X]], D[+_], Base](t: Exp[TypeMapping[C, D, Base]]) = new TypeMappingAppOps[C, D, Base](t)
 
@@ -650,12 +650,12 @@ trait TypeFilterOps {
   }
 
   class GroupByTupleTypeOps1[T: ClassTag, U, C[X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
-    def groupByTupleType1(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[T]) */ = GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, Fun(_._1))
+    def groupByTupleType1(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[T]) */ = GroupByType[T, C, PartialApply1Of2[Tuple2, U]#Flip](this.t, toAtomImplicit(Fun(_._1)))
   }
   implicit def expToGroupByTupleType1[T: ClassTag, U, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps1(t)
 
   class GroupByTupleTypeOps2[T, U: ClassTag, C[X] <: TraversableLike[X, C[X]]](val t: Exp[C[(T, U)]]) {
-    def groupByTupleType2(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, Fun(_._2))
+    def groupByTupleType2(implicit cbf: CanBuildFrom[C[(T, U)], (T, U), C[(T, U)]]) /*(f: Exp[(T, U)] => Exp[U]) */ = GroupByType[U, C, PartialApply1Of2[Tuple2, T]#Apply](this.t, toAtomImplicit(Fun(_._2)))
   }
   implicit def expToGroupByTupleType2[T, U: ClassTag, C[X] <: TraversableLike[X, C[X]]](t: Exp[C[(T, U)]]) = new GroupByTupleTypeOps2(t)
 

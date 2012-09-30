@@ -70,19 +70,19 @@ trait OptionLifting extends BaseExps {
     //provide a default which will never fail evalution through exceptions but only evaluate to None.
     //def getOrElse[U >: T](v: /*=> */ Exp[U]) = fmap(t, v)('Option$getOrElse, _ getOrElse _)
     def orElse[U >: T](v: /*=> */ Exp[Option[U]]) = fmap(t, v)('Option$orElse, _ orElse _)
-    def getOrElse[U >: T](default: /*=> */ Exp[U]) = OptionGetOrElse(t, default) //fmap(t, v)('Option$getOrElse, _ getOrElse _)
+    def getOrElse[U >: T](default: /*=> */ Exp[U]): Exp[U] = OptionGetOrElse(t, default) //fmap(t, v)('Option$getOrElse, _ getOrElse _)
   }
 
   //Note: even though ExpOption does not directly contain Exp nodes, it contains them indirectly, and they also need to be
   //transformed.
-  case class ExpOption[T](e: Option[Exp[T]]) extends Exp[Option[T]] {
+  case class ExpOption[T](e: Option[Exp[T]]) extends Def[Option[T]] {
     override def children = e.toList
     override def nodeArity = if (e.nonEmpty) 1 else 0
-    override protected def checkedGenericConstructor(v: List[Exp[_]]): Exp[Option[T]] = v match {
+    override protected def checkedGenericConstructor(v: List[Exp[_]]): Def[Option[T]] = v match {
       //Note: the length of the input sequence is checked by genericConstructor and will match the current one.
       //Knowing that does not lead to simplifying this code though.
       case Nil =>
-        ExpOption(None)
+        ExpOption[T](None)
       case e :: Nil =>
         ExpOption(Some(e.asInstanceOf[Exp[T]]))
       case _ =>
