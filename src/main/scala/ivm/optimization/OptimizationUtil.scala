@@ -20,31 +20,31 @@ object OptimizationUtil {
   }
 
   object FuncExpIdentity {
-    def unapply[S, T](f: Fun[S, T]): Boolean = f.body == f.x
+    def unapply[S, T](f: FunSym[S, T]): Boolean = f.body == f.x
   }
 
   //Pattern match to connect two conditions
   object & { def unapply[A](a: A) = Some((a, a)) }
 
   object AnyMapBinding {
-    def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _])] = e match {
-      case FlatMap(base, f) => Some((base, f))
-      case MapNode(base, f) => Some((base, f))
+    def unapply(e: Exp[_]): Option[(Exp[_], FunSym[_, _])] = e match {
+      case Sym(FlatMap(base, f)) => Some((base, f))
+      case Sym(MapNode(base, f)) => Some((base, f))
       case _ => None
     }
   }
 
   object BaseBinding {
-    def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _])] = e match {
-      case FlatMap(base, f) => Some((base, f))
-      case Filter(base, f) => Some((base, f))
+    def unapply(e: Exp[_]): Option[(Exp[_], FunSym[_, _])] = e match {
+      case Sym(FlatMap(base, f)) => Some((base, f))
+      case Sym(Filter(base, f)) => Some((base, f))
       case _ => None
     }
   }
   object Binding {
-    def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _])] =
+    def unapply(e: Exp[_]): Option[(Exp[_], FunSym[_, _])] =
       BaseBinding.unapply(e) orElse (e match {
-        case MapNode(base, f) => Some((base, f))
+        case Sym(MapNode(base, f)) => Some((base, f))
         case _ => None
       })
   }
@@ -54,16 +54,16 @@ object OptimizationUtil {
   val MapNodeId = 2
 
   object BaseBindingWithT {
-    def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _], Int)] = e match {
-      case FlatMap(base, f) => Some((base, f, FlatMapId))
-      case Filter(base, f) => Some((base, f, FilterId))
+    def unapply(e: Exp[_]): Option[(Exp[_], FunSym[_, _], Int)] = e match {
+      case Sym(FlatMap(base, f)) => Some((base, f, FlatMapId))
+      case Sym(Filter(base, f)) => Some((base, f, FilterId))
       case _ => None
     }
   }
   object BindingWithT {
-    def unapply(e: Exp[_]): Option[(Exp[_], Fun[_, _], Int)] =
+    def unapply(e: Exp[_]): Option[(Exp[_], FunSym[_, _], Int)] =
       BaseBindingWithT.unapply(e) orElse (e match {
-        case MapNode(base, f) => Some((base, f, MapNodeId))
+        case Sym(MapNode(base, f)) => Some((base, f, MapNodeId))
         case _ => None
       })
   }
@@ -72,7 +72,7 @@ object OptimizationUtil {
   //This type is incorrect whenever T is a view type. Be careful!
   def stripViewUntyped[T](coll: Exp[T]): Exp[T] =
     coll match {
-      case View(coll2) => coll2.asInstanceOf[Exp[T]]
+      case Sym(View(coll2)) => coll2.asInstanceOf[Exp[T]]
       case _ => coll
     }
 
