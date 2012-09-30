@@ -117,7 +117,7 @@ object ExprTreesWithCSE {
   //Test that this code compiles:
   def tr[T](e: Exp[T]) = e transform transf
   def compile[T](e: Exp[T]): String = {
-    val symDecls = e __find {
+    /*val symDecls = e __find {
       case Sym(_, _) => true
     } map {
       case Sym(defNode, id) => s"val s${id} = ${defNode.toCode}"
@@ -136,5 +136,7 @@ object ExprTreesWithCSE {
     |  ${symDecls}
     |  ${body}
     |}""".stripMargin
+    */
+    ""
   }
 }
