@@ -14,7 +14,7 @@ case class App[T, U](f: Exp[T => U], t: Exp[T]) extends Arity2OpExp[T => U, T, U
   override def toCode = "ivm.expressiontree.Util.let(%s)(%s)" format (t.toCode, f.toCode)
 }
 
-abstract class FuncExpBase[-S, +T, +Type] extends Exp[Type] with Equals {
+abstract class FuncExpBase[-S, +T, +Type] extends Def[Type] with Equals {
   import Fun._
   val f: Exp[S] => Exp[T]
 

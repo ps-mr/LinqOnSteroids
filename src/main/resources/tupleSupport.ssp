@@ -39,7 +39,7 @@ import annotation.switch
 ///////////////////////////////////////////////////
 
 //Passing Self allows to prevent statically the only boilerplate-related copy-n-paste bug in defining tree classes.
-trait Arity${arity}OpTrait[${paramsLoopComma("A%d <: Exp[_]")}, +R, +Self <: Exp[R]] extends Exp[R] {<%--
+trait Arity${arity}OpTrait[${paramsLoopComma("A%d <: Exp[_]")}, +R, +Self <: Def[R]] extends Def[R] {<%--
   //Ensure that Self is actually correct: --%>
   this: Self =>
   ${paramsLoop("\n  ")("def " + argPfx + "%d: A%<d")}
@@ -52,19 +52,19 @@ trait Arity${arity}OpTrait[${paramsLoopComma("A%d <: Exp[_]")}, +R, +Self <: Exp
   def copy(${paramsLoopComma(argPfx + "%d: A%<d")}): Self
 }
 
-trait Arity${arity}OpExpTrait[${tparams}, +R, +Self <: Exp[R]]
+trait Arity${arity}OpExpTrait[${tparams}, +R, +Self <: Def[R]]
   extends Arity${arity}OpTrait[${paramsLoopComma("Exp[" + tpPfx + "%d]")}, R, Self] {
   this: Self =>
 }
 
-abstract class Arity${arity}Op[${paramsLoopComma(tpPfx + "%d <: Exp[_]")}, +R, +Self <: Exp[R]](${paramsLoopComma("val " + argPfx + "%d: A%<d")}) extends Arity${arity}OpTrait[${tparams}, R, Self] {
+abstract class Arity${arity}Op[${paramsLoopComma(tpPfx + "%d <: Exp[_]")}, +R, +Self <: Def[R]](${paramsLoopComma("val " + argPfx + "%d: A%<d")}) extends Arity${arity}OpTrait[${tparams}, R, Self] {
   this: Self =>
 }
 <%--
 Should this inherit from Arity2OpExpTrait or from Arity2Op? Does it matter? I hope not - these classes should
 stay an implementation detail.
 --%>
-abstract class Arity${arity}OpExp[${tparams}, +R, +Self <: Exp[R]](${paramsDeclOverride})
+abstract class Arity${arity}OpExp[${tparams}, +R, +Self <: Def[R]](${paramsDeclOverride})
   extends Arity${arity}Op[${paramsLoopComma("Exp[" + tpPfx + "%d]")}, R, Self](${params}) {
   this: Self =>
 }
@@ -130,9 +130,9 @@ trait AutoTupleOpsLangIntf {
   ////////////////////////////////////////////
   <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2; foreachParam = p._3 %>
 
-  implicit def tuple${arity}ToTuple${arity}Exp[${tparams}](tuple: (${paramsLoopComma("Rep[" + tpPfx + "%d]")})): LiftTuple${arity}[${tparams}]
+  implicit def tuple${arity}ToTuple${arity}Exp[${tparams}](tuple: (${paramsLoopComma("Rep[" + tpPfx + "%d]")})): Exp[(${tparams})]
 
-  implicit def product${arity}ToProduct${arity}Exp[${tparams}](tuple: Product${arity}[${paramsLoopComma("Rep[" + tpPfx + "%d]")}]): LiftProduct${arity}[${tparams}]
+  implicit def product${arity}ToProduct${arity}Exp[${tparams}](tuple: Product${arity}[${paramsLoopComma("Rep[" + tpPfx + "%d]")}]): Exp[Product${arity}[${tparams}]]
 
   abstract class Product${arity}Ops[${tparams}] {
 <% foreachParam("\n    ") { %>
@@ -154,16 +154,16 @@ trait AutoTupleOps extends AutoTupleOpsLangIntf {
   ////////////////////////////////////////////
   <% val p = defParamsLoops(arity); paramsLoop = p._1; paramsLoopComma = p._2; foreachParam = p._3 %>
 
-  implicit def tuple${arity}ToTuple${arity}Exp[${tparams}](tuple: (${paramsLoopComma("Exp[" + tpPfx + "%d]")})): LiftTuple${arity}[${tparams}] =
+  implicit def tuple${arity}ToTuple${arity}Exp[${tparams}](tuple: (${paramsLoopComma("Exp[" + tpPfx + "%d]")})): Exp[(${tparams})] =
     LiftTuple${arity}[${tparams}](${paramsLoopComma("tuple._%d")})
 
-  implicit def product${arity}ToProduct${arity}Exp[${tparams}](tuple: Product${arity}[${paramsLoopComma("Exp[" + tpPfx + "%d]")}]): LiftProduct${arity}[${tparams}] =
+  implicit def product${arity}ToProduct${arity}Exp[${tparams}](tuple: Product${arity}[${paramsLoopComma("Exp[" + tpPfx + "%d]")}]): Exp[Product${arity}[${tparams}]] =
     LiftProduct${arity}[${tparams}](${paramsLoopComma("tuple._%d")})
 
   class Product${arity}Ops[${tparams}](p: Exp[Product${arity}[${tparams}]]) extends super.Product${arity}Ops[${tparams}] {
 <% foreachParam("\n    ") { %>
     def _${pIdx}: Exp[${tpPfx}${pIdx}] = p match {
-      case LiftTuple${arity}(${params}) => ${argPfx}${pIdx}
+      case Sym(LiftTuple${arity}(${params})) => ${argPfx}${pIdx}
       case _ => Product${arity}Proj${pIdx}(p)
     }
 
@@ -230,7 +230,7 @@ object TupleSupport2 {
 #for (arity <- minTupleArity to maxArity)
       case ${arity} =>
         (idx: @switch) match {
-          ${baseParLoop(arity)(i => "case %d => Product%dProj%d(e.asInstanceOf[Exp[(%s)]])" format (i - 1, arity, i, nothingN(arity)), "\n          ")}
+          ${baseParLoop(arity)(i => "case %d => Product%dProj%d[%s](e.asInstanceOf[Exp[(%<s)]])" format (i - 1, arity, i, nothingN(arity)), "\n          ")}
         }
 #end
     }

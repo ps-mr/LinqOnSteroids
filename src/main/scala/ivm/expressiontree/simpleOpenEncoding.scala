@@ -22,7 +22,6 @@ trait BaseLangIntf {
 trait BaseLangImpl {
   import BaseLangImpl._
   type Rep[+T] = Exp[T]
-  implicit def toAtomImpl[T](d: Def[T]): Exp[T] = toAtom(d)
 }
 object BaseLangImpl {
   private def definitions: mutable.Map[Def[_], Sym[_]] = new mutable.HashMap()
@@ -225,7 +224,7 @@ trait FunctionOps extends FunctionOpsLangIntf with AutoFunctionOps {
   implicit def app[A, B](f: Exp[A => B]): Exp[A] => Exp[B] =
     f match {
       //This line should be dropped, but then we'll need to introduce a beta-reducer:
-      case fe: Fun[a, b] => fe.f
+      case Sym(fe: Fun[a, b]) => fe.f
       // KO: Why do we need a beta-reducer? Since we use HOAS this is just Scala function application
       // and already available in App.interpret
       // But it may still make sense to evaluate such applications right away
@@ -253,7 +252,7 @@ trait FunctionOps extends FunctionOpsLangIntf with AutoFunctionOps {
 
   implicit def toIfInstanceOfOps[T](t: Exp[T]) = new IfInstanceOfOps(t)
   class IfInstanceOfOps[T](t: Exp[T]) extends super.IfInstanceOfOps[T] {
-    def ifInstanceOf[S: ClassTag: TypeTag]: Exp[Option[S]] = IfInstanceOf(t)
+    def ifInstanceOf[S: ClassTag: TypeTag]: Exp[Option[S]] = IfInstanceOf[T, S](t)
   }
 
   // Some experimental implicit conversions.

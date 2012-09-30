@@ -6,17 +6,17 @@ import math.{Integral, Fractional}
 //Root node for all binary, associative and commutative operations. The
 //intuition is that many operations (including optimizations) might apply
 //for all of those - e.g. expression normalization.
-trait CommutativeOp[T, Self <: Exp[T]] extends Arity2OpSymmExp[T, T, Self] {
+trait CommutativeOp[T, Self <: Def[T]] extends Arity2OpSymmExp[T, T, Self] {
   this: Self =>
 }
 
-trait BinOp[T, Self <: Exp[T]] extends CommutativeOp[T, Self] {
+trait BinOp[T, Self <: Def[T]] extends CommutativeOp[T, Self] {
   this: Self =>
   def op: (T, T) => T
   def interpret() = op(t1.interpret(), t2.interpret())
 }
 
-trait CommOp[T, Self <: Exp[T]] extends BinOp[T, Self] with CommutativeOp[T, Self] {
+trait CommOp[T, Self <: Def[T]] extends BinOp[T, Self] with CommutativeOp[T, Self] {
   this: Self =>
 }
 

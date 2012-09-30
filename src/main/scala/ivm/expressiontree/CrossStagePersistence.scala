@@ -24,7 +24,7 @@ object CrossStagePersistence {
 }
 
 trait PersistValue[T] {
-  this: Exp[_] =>
+  this: Def[_] =>
   def valueToPersist: T
   implicit def cTagT: ClassTag[T]
   implicit def tTagT: TypeTag[T]
@@ -35,7 +35,7 @@ trait PersistValue[T] {
 }
 
 trait PersistClassS extends PersistValue[Class[_]]{
-  this: Exp[_] =>
+  this: Def[_] =>
   def classS: Class[_]
   override def valueToPersist = classS
   override def cTagT = classTag

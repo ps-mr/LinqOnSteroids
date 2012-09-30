@@ -15,7 +15,7 @@ package ivm.expressiontree
    of D, we are in effect invoking D.name. A correct solution is to never generate, in such a case, a wrapper node
    for D.name.
  */
-trait Call[Res] extends Exp[Res] with MethodPrinting {
+trait Call[Res] extends Def[Res] with MethodPrinting {
   val name: Symbol
   val restId: Symbol
   //val recvManifest: OptManifest[Any /*Recv*/].

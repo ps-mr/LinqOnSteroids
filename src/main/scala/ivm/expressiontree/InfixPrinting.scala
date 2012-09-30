@@ -6,7 +6,7 @@ package ivm.expressiontree
  */
 
 trait InfixPrinting {
-  this: Exp[_] =>
+  this: Def[_] =>
   def isSymbol = operator.matches("[A-Za-z_][A-Za-z_0-9]*")
   override def toCode: String = {
     val hasArgs = children.tail.nonEmpty
@@ -17,23 +17,23 @@ trait InfixPrinting {
 }
 
 trait MethodPrinting extends InfixPrinting {
-  this: Exp[_] =>
+  this: Def[_] =>
   override def isSymbol = true
 }
 
 trait OperatorPrinting extends InfixPrinting {
-  this: Exp[_] =>
+  this: Def[_] =>
   override def isSymbol = false
 }
 
 trait PrefixPrinting {
-  this: Exp[_] =>
+  this: Def[_] =>
   override def toCode = children.map(_.toCode).mkString(prefix + "(", ", ", ")")
   def prefix: String
 }
 
 trait FormatPrinting {
-  this: Exp[_] =>
+  this: Def[_] =>
   override def toCode = formatStr format (children map (_.toCode): _*)
   def formatStr: String
 }
