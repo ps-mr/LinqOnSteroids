@@ -197,7 +197,7 @@ case class Sym[+T](d: Def[T]) extends Exp[T] {
       if (transformedChildren eq children)
         this
       else
-        BaseLangImpl toAtom (d genericConstructor transformedChildren)
+        d genericConstructor transformedChildren
     transformer(newSelf)
     //transformer(d.genericConstructor(children mapConserve (_ transformImpl transformer)))
   }
