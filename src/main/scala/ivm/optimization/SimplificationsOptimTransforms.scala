@@ -14,7 +14,7 @@ import Subst.subst
 trait SimplificationsOptimTransforms {
   this: Inlining =>
   val ifSimplify: Exp[_] => Exp[_] = {
-    case IfThenElse(x @ Var(_), thenBranch, elseBranch) if (thenBranch isOrContains x) || (elseBranch isOrContains x) =>
+    case Sym(IfThenElse(x @ Var(_), thenBranch, elseBranch)) if (thenBranch isOrContains x) || (elseBranch isOrContains x) =>
       val thenBranchSub = thenBranch substSubTerm (x, true)
       val elseBranchSub = elseBranch substSubTerm (x, false)
       if_#(x) { thenBranchSub } else_# { elseBranchSub }
@@ -23,23 +23,23 @@ trait SimplificationsOptimTransforms {
 
   //Valid but unneeded
   val foldRedundantIf: Exp[_] => Exp[_] = {
-    case IfThenElse(x, Const(true), Const(false)) => x
+    case Sym(IfThenElse(x, Const(true), Const(false))) => x
     case e => e
   }
 
   val simplifyForceView: Exp[_] => Exp[_] = Transformer {
-    case View(Force(coll)) => coll
-    case Force(View(coll)) => coll
+    case Sym(View(Sym(Force(coll)))) => coll
+    case Sym(Force(Sym(View(coll)))) => coll
   } orElse (Transformer {
     //Fusion
-    case Force(coll @ Force(_)) => coll
-    case View(coll @ View(_)) => coll
+    case Sym(Force(Sym(coll @ Force(_)))) => coll
+    case Sym(View(Sym(coll @ View(_)))) => coll
 
     case e => e
   })
 
   val removeTrivialFilters: Exp[_] => Exp[_] = {
-    case Filter(coll, FuncExpBody(Const(true))) =>
+    case Sym(Filter(coll, FunSym(FuncExpBody(Const(true))))) =>
       stripViewUntyped(coll)
     case e => e
   }
@@ -47,13 +47,13 @@ trait SimplificationsOptimTransforms {
   //Move constants on the right-side of a boolean connective. Also, move nested connectives of the same type to the
   //left: since these operators are left-associative, that's the natural order.
   val reassociateBoolOps: Exp[_] => Exp[_] = {
-    case And(l@Const(_), r) =>
+    case Sym(And(l@Const(_), r)) =>
       r && l
-    case And(l, r@And(ra, rb)) =>
+    case Sym(And(l, r@Sym(And(ra, rb)))) =>
       (l && ra) && rb
-    case Or(l@Const(_), r) =>
+    case Sym(Or(l@Const(_), r)) =>
       r || l
-    case Or(l, r@Or(ra, rb)) =>
+    case Sym(Or(l, r@Sym(Or(ra, rb)))) =>
       (l || ra) || rb
     case e => e
   }
@@ -62,17 +62,17 @@ trait SimplificationsOptimTransforms {
   //The code could be optimized to save repeated matches on And and Or in the different functions, but that seems premature.
   val simplifyConditions: Exp[_] => Exp[_] =
     reassociateBoolOps andThen {
-      case And(x, Const(true)) => x
-      case And(x, c@Const(false)) => c
-      case Or(x, Const(false)) => x
-      case Or(x, c@Const(true)) => c
-      case Not(Not(c)) => c
-      case Not(Const(b)) => !b
+      case Sym(And(x, Const(true))) => x
+      case Sym(And(x, c@Const(false))) => c
+      case Sym(Or(x, Const(false))) => x
+      case Sym(Or(x, c@Const(true))) => c
+      case Sym(Not(Sym(Not(c)))) => c
+      case Sym(Not(Const(b))) => !b
       case e => e
     }
 
   val removeIdentityMaps: Exp[_] => Exp[_] = {
-    case MapNode(col, FuncExpIdentity()) =>
+    case Sym(MapNode(col, FuncExpIdentity())) =>
       col
     case e => e
   }
@@ -107,7 +107,7 @@ trait SimplificationsOptimTransforms {
   //This is used only at the end, to convert the remaining Let()s into function applications; they are however
   //_not_ beta-reduced, so that computation is not duplicated.
   val letTransformer: Exp[_] => Exp[_] = {
-    case FlatMap(ExpSeq(Seq(v)), f) => letExp(v)(f)
+    case Sym(FlatMap(Sym(ExpSeq(Seq(v))), f)) => letExp(v)(f)
     case e => e
   }
 
@@ -117,17 +117,17 @@ trait SimplificationsOptimTransforms {
   }
 
   val deltaReductionIsEmpty: PartialFunction[Exp[_], Exp[_]] = {
-    case IsEmpty(ExpSeq(seq)) => seq.isEmpty
+    case Sym(IsEmpty(Sym(ExpSeq(seq)))) => seq.isEmpty
   }
 
   val betaReduction: PartialFunction[Exp[_], Exp[_]] = {
     //To ensure termination, this must only apply if this rule changes behavior, that is, if App contains a Fun!
     //Otherwise fToFunOps will recreate a new App node.
-    case appNode@App(fun: Fun[_, _], arg) if isTrivial(arg) || usesArgAtMostOnce(fun)
+    case Sym(appNode@App(fun: FunSym[_, _], arg)) if isTrivial(arg) || usesArgAtMostOnce(fun)
       //if ((body findTotFun (_ == fun.x)).length == 1) //Inlining side conditions. Damn, we need to use unrestricted inlining as here, simplify, and then use CSE again,
       //to have a robust solution.
     =>
-      subst(fun)(arg)
+      subst(fun.d)(arg)
   }
 
   //This is the shortest way of writing identity.

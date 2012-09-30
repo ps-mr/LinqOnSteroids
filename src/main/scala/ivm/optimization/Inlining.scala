@@ -26,7 +26,7 @@ trait Inlining {
   //XXX: also reduce lets where the variable is only used once. Papers on the GHC inliner explain how to do this and why
   //a linear type system is needed for that.
   val letTransformerTrivial: Exp[_] => Exp[_] = {
-    case FlatMap(ExpSeq(Seq(v)), f) if isTrivial(v) => subst(f)(v)
+    case Sym(FlatMap(Sym(ExpSeq(Seq(v))), FunSym(f))) if isTrivial(v) => subst(f)(v)
     case e => e
   }
 
@@ -48,13 +48,13 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
   private def usesArgAtMostOnceNotUnderLambda(exp: Exp[_], v1: Exp[_]): Boolean =
     exp.findTotFun(_ == v1).length <= 1 &&
       (exp.__find {
-        case f: Fun[_, _] => true
+        case f: FunSym[_, _] => true
       } forall (!_.isOrContains(v1)))
 
   //Problem here: this assumes that the variable does not appear under explicit lambdas
-  @tailrec private def usesArgAtMostOnce(f: Fun[_, _], v1: Exp[_]): Boolean = {
+  @tailrec private def usesArgAtMostOnce(f: FunSym[_, _], v1: Exp[_]): Boolean = {
     f match {
-      case FuncExpBody(Binding(ExpSeq(Seq(exp2)), g)) if !exp2.isOrContains(v1) =>
+      case FunSym(FuncExpBody(Sym(Binding(Sym(ExpSeq(Seq(exp2))), g)))) if !exp2.isOrContains(v1) =>
         //This allows to inline id1 in cases like:
         //v1 <- Let(exp1)
         //v2 <- Let(exp2) //v1 not free in exp2, that is, !v2.isOrContains(v1)
@@ -63,7 +63,7 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
         //Note that it is crucial that all bindings act on single-element collections; we check that by looking for when this is statically known, i.e. we look for ExpSeq(Seq(_)), but we might want to extend that to
         //Const(seq) if seq has "at runtime" just one element.
         usesArgAtMostOnce(g, v1)
-      case FuncExpBody(baseUsingV) =>
+      case FunSym(FuncExpBody(baseUsingV)) =>
         //Let's assume that unnesting has already happened, hence all functions we find are just function definitions and not nested FlatMaps to further analyze.
         //Since functions might be applied multiple times, we just make sure that nested function definitions do not refer to g.
         usesArgAtMostOnceNotUnderLambda(baseUsingV, v1)
@@ -74,11 +74,11 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
   //Cannot be written as default argument - this is a dependent default argument, and it can't be part of the same
   //parameter list; using a separate parameter list with only a default argument means that the caller must provide
   // a second parameter list, possibly empty - producing call syntaxes like "usesArgAtMostOnce(f)()".
-  def usesArgAtMostOnce[S, T](f: Fun[S, T]): Boolean = usesArgAtMostOnce(f, f.x)
+  def usesArgAtMostOnce[S, T](f: FunSym[S, T]): Boolean = usesArgAtMostOnce(f, f.x)
 
   //This allows to inline definitions if they are used at most once.
   val letTransformerUsedAtMostOnce: Exp[_] => Exp[_] = {
-    case FlatMap(ExpSeq(Seq(exp1)), f) if usesArgAtMostOnce(f) => subst(f)(exp1)
+    case Sym(FlatMap(Sym(ExpSeq(Seq(exp1))), f @ FunSym(_))) if usesArgAtMostOnce(f) => subst(f.d)(exp1)
     // XXX: The following case is also a valid optimization, but I expect code to which it applies to never be created,
     // for now (say by inlining Lets). Hence for now disable it. Reenable later.
     //case App(f: Fun[_, _], exp1) if usesArgAtMostOnce(f) => subst(f)(exp1)
@@ -88,10 +88,11 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
   //XXX to test
   //This implements rules from "How to Comprehend Queries Functionally", page 14, rules (12a, b).
   val constantFoldSequences: Exp[_] => Exp[_] = {
-    case FlatMap(ExpSeq(seq), f) =>
+    case Sym(FlatMap(Sym(ExpSeq(seq)), f)) =>
       //Rewrite this as a sequence of expressions.
       (seq map (x => asExp(Seq(x)) flatMap f)).  //map is at the meta-level, flatMap at the object level.
       //(seq map (letExp(_)(f))).
         fold[Exp[Traversable[Any]]] (Seq.empty) (_ ++ _)
+    case e => e
   }
 }
