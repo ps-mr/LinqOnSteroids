@@ -100,7 +100,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
   //Rewrite (if possible) coll.withFilter(elem => F[elem] ==# k && OtherConds[elem]) to (coll.indexBy(elem => F[elem]))(k).withFilter(x => OtherConds[x]),
   //with F and OtherConds expression contexts and under the condition that coll.indexBy(f) is already available as a precomputed subquery (i.e. an index).
   val groupByShare: Exp[_] => Exp[_] = {
-    case Sym(e @ Filter(c: Exp[Traversable[_ /*t*/]], f: FunSym[t, _ /*Boolean*/])) if c.freeVars == Set.empty =>
+    case e @ Sym(Filter(c: Exp[Traversable[_ /*t*/]], f: FunSym[t, _ /*Boolean*/])) if c.freeVars == Set.empty =>
       val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
       val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationUtil.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f.x)(_))
       optimized.getOrElse(e)

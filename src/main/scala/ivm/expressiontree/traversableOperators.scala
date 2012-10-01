@@ -184,7 +184,8 @@ Arity5Op[Exp[Repr],
 
 import collection.immutable.Seq
 object ExpSeq {
-  def apply[T](children: Traversable[Exp[T]]): Exp[Seq[T]] = ExpSeq(children.toList)
+  //The type ascription ensures that this method does not become recursive!
+  def apply[T](children: Traversable[Exp[T]]): Exp[Seq[T]] = ExpSeq(children.toList): Def[Seq[T]]
 }
 
 case class ExpSeq[T](children: List[Exp[T]]) extends Def[Seq[T]] with PrefixPrinting {

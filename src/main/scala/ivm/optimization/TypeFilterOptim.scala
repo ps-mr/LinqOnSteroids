@@ -102,7 +102,7 @@ trait TypeFilterOptim {
   }
 
   val removeRedundantOption: Exp[_] => Exp[_] = {
-    case Sym(e@FlatMap(coll, (fmFun: FunSym[_, Traversable[u]]))) =>
+    case e@Sym(FlatMap(coll, (fmFun: FunSym[_, Traversable[u]]))) =>
       tryRemoveRedundantLet(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
     case e => e
   }
