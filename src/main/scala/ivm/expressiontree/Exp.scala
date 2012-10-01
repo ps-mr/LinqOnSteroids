@@ -87,6 +87,25 @@ trait TreeNode[+T] {
   def interpret(): T
   def children: List[Exp[_]]
   def persistValues()
+
+  /* I renamed this method to avoid conflicts with Matcher.find. XXX test if
+  * just making it private also achieves the same result.
+  */
+  def __find(filter: PartialFunction[TreeNode[_], Boolean]): Seq[TreeNode[_]] = {
+    val baseSeq =
+      if (PartialFunction.cond(this)(filter))
+        Seq(this)
+      else
+        Seq.empty
+    children.map(_ __find filter).fold(baseSeq)(_ ++ _)
+  }
+
+  // This overload is not called find because that would confuse type inference - it would fail to infer that filter's
+  // domain type is Exp[_].
+  def findTotFun(filter: TreeNode[_] => Boolean): Seq[TreeNode[_]] = __find(filter.asPartial)
+
+  def isOrContains(e: TreeNode[_]): Boolean =
+    (this findTotFun (_ == e)).nonEmpty
 }
 
 sealed trait Exp[+T] extends TreeNode[T] /*with MsgSeqPublisher[T, Exp[T]]*/ {
@@ -121,25 +140,6 @@ sealed trait Exp[+T] extends TreeNode[T] /*with MsgSeqPublisher[T, Exp[T]]*/ {
     val mappedChilds = for (c <- children) yield c.treeMap(mapper)
     mapper(this, mappedChilds)
   }
-
-  /* I renamed this method to avoid conflicts with Matcher.find. XXX test if
-  * just making it private also achieves the same result.
-  */
-  def __find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = {
-    val baseSeq =
-      if (PartialFunction.cond(this)(filter))
-        Seq(this)
-      else
-        Seq.empty
-    children.map(_ __find filter).fold(baseSeq)(_ ++ _)
-  }
-
-  // This overload is not called find because that would confuse type inference - it would fail to infer that filter's
-  // domain type is Exp[_].
-  def findTotFun(filter: Exp[_] => Boolean): Seq[Exp[_]] = __find(filter.asPartial)
-
-  def isOrContains(e: Exp[_]): Boolean =
-    (this findTotFun (_ == e)).nonEmpty
 
   def substSubTerm[S](SubTerm: Exp[_], e: Exp[S]) =
     this transform {
