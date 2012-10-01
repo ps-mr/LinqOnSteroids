@@ -26,7 +26,12 @@ trait BaseLangImpl {
 object BaseLangImpl {
   private def definitions: mutable.Map[Def[_], Sym[_]] = new mutable.HashMap()
   def toAtom[T](d: Def[T]): Exp[T] =
-    definitions.asInstanceOf[mutable.Map[Def[T], Sym[T]]].getOrElseUpdate(d, Sym(d))
+    d match {
+      case df: Fun[s, t] => toFunSym[s, t](df).asInstanceOf[Exp[T]]
+      case _ =>
+        definitions.asInstanceOf[mutable.Map[Def[T], Sym[T]]].getOrElseUpdate(d, Sym(d))
+    }
+
   def toFunSym[S, T](d: Fun[S, T]): FunSym[S, T] =
     definitions.asInstanceOf[mutable.Map[Fun[S, T], FunSym[S, T]]].getOrElseUpdate(d, FunSym(d))
 }
