@@ -79,7 +79,7 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
 
     //This is to apply (recursively) after joining consecutive filters
   val hoistFilter: Exp[_] => Exp[_] = {
-    case Sym(e @ FlatMap(coll1, FunSym(fmFun@FuncExpBody(Sym(FlatMap(Sym(Filter(coll2: Exp[Traversable[u]], filterFun)), fmFun2)))))) =>
+    case e @ Sym(FlatMap(coll1, FunSym(fmFun@FuncExpBody(Sym(FlatMap(Sym(Filter(coll2: Exp[Traversable[u]], filterFun)), fmFun2)))))) =>
       val (firstFilter, otherFilters) = filterFun.body match {
         case Sym(And(firstFilter, otherFilters)) =>
           (firstFilter, Some(otherFilters))
@@ -148,7 +148,7 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
 
   val normalizer: Exp[_] => Exp[_] = {
     case Sym(p@Plus(x, y)) => Plus(Exp.min(x, y), Exp.max(x, y))(p.isNum)
-    case Sym(e@Eq(x, y)) => Eq(Exp.min(x, y), Exp.max(x, y))
+    case Sym(Eq(x, y)) => Eq(Exp.min(x, y), Exp.max(x, y))
     case e => e
   }
 }

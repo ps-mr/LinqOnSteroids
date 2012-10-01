@@ -42,14 +42,14 @@ trait FoldPhysicalOperators {
    */
   //XXX: rewrite to expect only flatMap nodes, i.e. after mapToFlatMap, and see what happens.
   val cartProdToJoin: Exp[_] => Exp[_] = {
-    case Sym(e@FlatMap(fmColl,
+    case e @ Sym(d @ FlatMap(fmColl,
     FunSym(fmFun@FuncExpBody(Sym(MapNode(Sym(Filter(filterColl, FunSym(filterFun@FuncExpBody(Sym(Eq(lhs, rhs)))))), moFun))))))
       if !filterColl.isOrContains(fmFun.x)
     =>
       if (!(lhs.isOrContains(filterFun.x)) && !(rhs.isOrContains(fmFun.x)))
-        buildJoin(fmColl, filterColl, lhs, rhs, moFun, fmFun, filterFun, e)
+        buildJoin(fmColl, filterColl, lhs, rhs, moFun, fmFun, filterFun, Sym(d))
       else if (!(rhs.isOrContains(filterFun.x)) && !(lhs.isOrContains(fmFun.x)))
-        buildJoin(fmColl, filterColl, rhs, lhs, moFun, fmFun, filterFun, e)
+        buildJoin(fmColl, filterColl, rhs, lhs, moFun, fmFun, filterFun, Sym(d))
       else
         e
     case e => e
@@ -78,7 +78,7 @@ trait FoldPhysicalOperators {
   }
 
   val cartProdToAntiJoin: Exp[_] => Exp[_] = {
-    case Sym(e@Filter(filteredColl,
+    case e@Sym(Filter(filteredColl,
     //XXX: doesn't work, add unit test - Forall nodes are just not generated.
     FunSym(filterFun@FuncExpBody(Sym(Not(Sym(Exists(forallColl, FunSym(forallFun@FuncExpBody(Sym(Not(Sym(Eq(lhs, rhs))))))))))))))
       //case FlatMap(fmColl,
@@ -97,7 +97,7 @@ trait FoldPhysicalOperators {
   //Recognize relational-algebra set operations; they can be executed more efficiently if one of the two members is indexed.
   //However, sets are already always indexed, so these optimizations will not have a huge impact by themselves.
   val setIntersection: Exp[_] => Exp[_] = {
-    case Sym(e@Filter(col, FunSym(predFun@FuncExpBody(Sym(Contains(col2, x)))))) if (x == predFun.x) =>
+    case e@Sym(Filter(col, FunSym(predFun@FuncExpBody(Sym(Contains(col2, x)))))) if (x == predFun.x) =>
       //XXX transformation not implemented
       e //col.join(col2)(identity, identity, _._1) //Somewhat expensive implementation of intersection.
     //e //Intersect(col, col2)
@@ -106,7 +106,7 @@ trait FoldPhysicalOperators {
 
   //We want to support anti-joins. Is this one? This is an anti-join where a set is involved and with identity selectors.
   val setDifference: Exp[_] => Exp[_] = {
-    case Sym(e@Filter(col, FunSym(predFun@FuncExpBody(Sym(Not(Sym(Contains(col2, x)))))))) if (x == predFun.x) =>
+    case e@Sym(Filter(col, FunSym(predFun@FuncExpBody(Sym(Not(Sym(Contains(col2, x)))))))) if (x == predFun.x) =>
       //XXX transformation not implemented
       e //Diff(col, col2) //We cannot use Diff because col is not a Set - but we can build a more complex operator for this case.
     case e => e

@@ -52,7 +52,7 @@ trait TypeFilterOptim {
    */
 
   val toTypeFilter: Exp[_] => Exp[_] = {
-    case Sym(e@FlatMap(coll, fmFun: Fun[t, u])) =>
+    case e @ Sym(FlatMap(coll, fmFun: Fun[t, u])) =>
       tryBuildTypeFilter(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
     case e => e
   }

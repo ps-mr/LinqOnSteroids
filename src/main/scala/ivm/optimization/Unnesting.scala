@@ -93,7 +93,7 @@ trait Unnesting {
   //This is useful, because exists has a more efficient execution strategy than the nested iteration: exists can stop
   //as soon as the existence witness is found.
   val existsRenester: Exp[_] => Exp[_] = {
-    case Sym(e @ FlatMap(coll, FunSym(f@FuncExpBody(Sym(FlatMap(Sym(Filter(coll2, p)), f2)))))) if !f2.body.isOrContains(f2.x) =>
+    case Sym(FlatMap(coll, FunSym(f@FuncExpBody(Sym(FlatMap(Sym(Filter(coll2, p)), f2)))))) if !f2.body.isOrContains(f2.x) =>
       rebuildExists(coll, coll2, p, f, f2)
     case e => e
   }

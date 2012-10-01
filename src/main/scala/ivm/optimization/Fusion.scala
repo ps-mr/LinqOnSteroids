@@ -38,7 +38,7 @@ trait Fusion {
   }
 
   /*val mergeFilters: Exp[_] => Exp[_] = {
-    case Sym(e@Filter(col, f)) =>
+    case e@Sym(Filter(col, f)) =>
       stripViewUntyped(col) match {
         case Sym(Filter(col2, f2)) =>
           //No need to call mergeFilters again on the result, since the traversal is top-down.
