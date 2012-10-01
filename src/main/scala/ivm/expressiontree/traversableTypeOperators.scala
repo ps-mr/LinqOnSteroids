@@ -99,7 +99,7 @@ case class TypeCaseExp[BaseT, Repr <: Traversable[BaseT] with TraversableLike[Ba
       }
       yield """if (el.isInstanceOf[%s] && %s) {
               |  Seq(%s)
-              |} else""".stripMargin format (className, t.guard.d.f(namedVar).toCode, t.f.d.f(namedVar).toCode)
+              |} else""".stripMargin format (className, t.guard.defNode.f(namedVar).toCode, t.f.defNode.f(namedVar).toCode)
     """(%s flatMap { el =>
       | %s
       |   Seq.empty

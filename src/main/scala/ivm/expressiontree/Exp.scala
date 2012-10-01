@@ -185,34 +185,34 @@ object Sym {
 }
 object SymWithId {
   def unapply[T](s: Sym[T]): Some[(Def[T], Int)] = {
-    Some((s.d, s.id))
+    Some((s.defNode, s.id))
   }
 }
-case class Sym[+T](d: Def[T]) extends Exp[T] {
+case class Sym[+T](defNode: Def[T]) extends Exp[T] {
   val id: Int = Sym.gensymId()
-  def toCode: String = d.toCode
-  def interpret() = d.interpret()
-  def children = d.children
-  def persistValues() { d persistValues () }
+  def toCode: String = defNode.toCode
+  def interpret() = defNode.interpret()
+  def children = defNode.children
+  def persistValues() { defNode persistValues () }
   def transformImpl(transformer: ExpTransformer): Exp[T] = {
     val transformedChildren = children mapConserve (_ transformImpl transformer)
     val newSelf: Exp[T] =
       if (transformedChildren eq children)
         this
       else
-        d genericConstructor transformedChildren
+        defNode genericConstructor transformedChildren
     transformer(newSelf)
     //transformer(d.genericConstructor(children mapConserve (_ transformImpl transformer)))
   }
 }
-class FunSym[-S, +T](override val d: Fun[S, T]) extends Sym[S => T](d) {
-  def x = d.x
-  def body = d.body
-  def f = d.f
+class FunSym[-S, +T](override val defNode: Fun[S, T]) extends Sym[S => T](defNode) {
+  def x = defNode.x
+  def body = defNode.body
+  def f = defNode.f
 }
 object FunSym {
   def apply[S, T](d: Fun[S, T]) = new FunSym(d)
-  def unapply[S, T](s: FunSym[S, T]): Some[Fun[S, T]] = Some(s.d)
+  def unapply[S, T](s: FunSym[S, T]): Some[Fun[S, T]] = Some(s.defNode)
 }
 
 case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) extends Exp[T] {

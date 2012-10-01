@@ -196,7 +196,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
             case _ => Seq.empty
           }.fold(Seq.empty)(_ union _).toSet[Equality[_]]
         //Seq((e, (ff, conds, foundEqs), fvSeq /*allFVSeq*/))
-        Seq((e, FoundFilter[T, Repr](c, f.d, conds, foundEqs), fvSeq /*allFVSeq*/))
+        Seq((e, FoundFilter[T, Repr](c, f.defNode, conds, foundEqs), fvSeq /*allFVSeq*/))
       case Sym(t1: TypeCaseExp[baseT, repr, res, that]) =>
         val t = t1.asInstanceOf[TypeCaseExp[T, Repr, res, that]]
         Seq((e, FoundTypeCase(t), fvSeq))

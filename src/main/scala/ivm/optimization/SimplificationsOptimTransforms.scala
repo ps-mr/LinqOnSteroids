@@ -127,7 +127,7 @@ trait SimplificationsOptimTransforms {
       //if ((body findTotFun (_ == fun.x)).length == 1) //Inlining side conditions. Damn, we need to use unrestricted inlining as here, simplify, and then use CSE again,
       //to have a robust solution.
     =>
-      subst(fun.d)(arg)
+      subst(fun.defNode)(arg)
   }
 
   //This is the shortest way of writing identity.
