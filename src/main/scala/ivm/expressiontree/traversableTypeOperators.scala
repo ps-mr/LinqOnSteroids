@@ -67,7 +67,7 @@ case class TypeCaseExp[BaseT, Repr <: Traversable[BaseT] with TraversableLike[Ba
   override protected def checkedGenericConstructor(v: List[Exp[_]]): Def[immutable.Set[Res]] =
     TypeCaseExp(
     v.head.asInstanceOf[Exp[Repr]],
-      (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS, guard.asInstanceOf[Fun[Any, Boolean]], f.asInstanceOf[Fun[Any, Res]])})
+      (cases, v.tail.grouped(2).toSeq).zipped map {case (tc, Seq(guard, f)) => TypeCase(tc.classS, guard.asInstanceOf[FunSym[Any, Boolean]], f.asInstanceOf[FunSym[Any, Res]])})
 
   private def checkF(v: BaseT): Res = {
     for (t <- cases.asInstanceOf[Seq[TypeCase[Any, Res]]]) {
