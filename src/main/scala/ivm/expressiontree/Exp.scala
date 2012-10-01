@@ -86,7 +86,7 @@ trait TreeNode[+T] {
   //This method computes the contained value
   def interpret(): T
   def children: List[Exp[_]]
-  def persistValues() { children foreach (_.persistValues()) }
+  def persistValues()
 }
 
 sealed trait Exp[+T] extends TreeNode[T] /*with MsgSeqPublisher[T, Exp[T]]*/ {
@@ -168,6 +168,7 @@ object Exp {
 trait Def[+T] extends TreeNode[T] {
   def nodeArity: Int
 
+  def persistValues() { children foreach (_.persistValues()) }
   def children: List[Exp[_]]
   protected def checkedGenericConstructor(v: List[Exp[_]]): Def[T]
 
@@ -192,6 +193,7 @@ case class Sym[+T](d: Def[T]) extends Exp[T] {
   def toCode: String = d.toCode
   def interpret() = d.interpret()
   def children = d.children
+  def persistValues() { d persistValues () }
   def transformImpl(transformer: ExpTransformer): Exp[T] = {
     val transformedChildren = children mapConserve (_ transformImpl transformer)
     val newSelf: Exp[T] =
@@ -218,6 +220,7 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
 
   def interpret() = x
   def children: List[Exp[_]] = Nil
+  def persistValues() {}
   def transformImpl(transformer: ExpTransformer): Exp[T] = transformer(this)
   override def toString = Const toString (x, productPrefix)
   def toCode = throw new RuntimeException("Const.toCode should never be called")
