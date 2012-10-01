@@ -20,7 +20,7 @@ object OptimizationUtil {
   }
 
   object FuncExpIdentity {
-    def unapply[S, T](f: FunSym[S, T]): Boolean = f.body == f.x
+    def unapply[S, T](f: FunSym[S, T]): Boolean = f.body == Sym(f.x)
   }
 
   //Pattern match to connect two conditions
