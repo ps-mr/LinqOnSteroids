@@ -2,25 +2,6 @@ package ivm.expressiontree
 
 /*
 trait Exp[+T] /*extends MsgSeqPublisher[T, Exp[T]]*/ {
-  /*
-  type RootType
-  private[ivm] def activateIVM() {}
-
-  //XXX: does this really belong here?
-  private[ivm] def pullAndPropagateContent() {}
-  def isRoot = roots.isEmpty
-
-  def roots: Seq[Exp[RootType]] = Nil
-  def visitPreorderRoots(visitor: Exp[_] => Unit) = visitPreorder(visitor, _.roots)
-
-  def visitPreorder(visitor: Exp[_] => Unit, childSelector: Exp[_] => Seq[Exp[_]]) {
-    visitor(this)
-    for (c <- childSelector(this)) {
-      c.visitPreorder(visitor, childSelector)
-    }
-  }
-   */
-
   //This method recomputes the contained value
   def interpret(): T
 
@@ -110,6 +91,24 @@ trait TreeNode[+T] {
 
 sealed trait Exp[+T] extends TreeNode[T] {
   def toCode: String = ???
+  /*
+  type RootType
+  private[ivm] def activateIVM() {}
+
+  //XXX: does this really belong here?
+  private[ivm] def pullAndPropagateContent() {}
+  def isRoot = roots.isEmpty
+
+  def roots: Seq[Exp[RootType]] = Nil
+  def visitPreorderRoots(visitor: Exp[_] => Unit) = visitPreorder(visitor, _.roots)
+
+  def visitPreorder(visitor: Exp[_] => Unit, childSelector: Exp[_] => Seq[Exp[_]]) {
+    visitor(this)
+    for (c <- childSelector(this)) {
+      c.visitPreorder(visitor, childSelector)
+    }
+  }
+   */
   def transformImpl(transformer: ExpTransformer): Exp[T]
   def transform(f: Exp[_] => Exp[_]) = transformImpl(ExpTransformer(f))
 
