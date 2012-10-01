@@ -145,7 +145,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   //def this() = this(Seq("src/test/resources/scalatest-1.6.1.jar"))
   def this(config: FBConfig) =
       this(config.zipFiles, config.onlyOptimized, config.onlyBaseline, config.onlyInFindBugs, config.debugBench, config.executionCycles)
-  def this() = this(FBConfig(zipFiles = List("src/test/resources/Bugs.zip")))
+  def this() = this(FBConfig(zipFiles = List("src/test/resources/Bugs.zip"), debugBench = Benchmarking.debugBench))
 
   /* XXX:
    * This test is currently pointless. Either I do it with a single query, where it'll benchmark cache lookup time;
