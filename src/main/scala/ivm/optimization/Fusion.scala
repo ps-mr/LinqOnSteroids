@@ -66,7 +66,7 @@ trait Fusion {
     case Sym(Filter(Sym(MapNode(coll, mapFun)), pred)) =>
       //We preserve sharing here with letExp; currently, subsequent stages will do indiscriminate inlining and replicate the map, but
       //the inliner will later be improved.
-      coll flatMap Fun.makefun(letExp(mapFun.body)(Fun.makefun(if_#(pred.body)(Seq(pred.x)) else_# (Seq.empty), pred.x).f), mapFun.x).f
+      coll flatMap Fun.makefun(letExp(mapFun.body)(Fun.makefun(if_#(pred.body) { Seq(asExp(pred.x)) } else_# (Seq.empty), pred.x).f), mapFun.x).f
     case e => e
   }
 
