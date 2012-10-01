@@ -5,7 +5,7 @@ import collection.mutable
 
 import expressiontree._
 import Lifting._
-import performancetests.Benchmarking
+import tests.Debug
 
 object Optimization {
   //Should the two normal forms (after flatMapToMap and after mapToFlatMap) be distinguished by different types?
@@ -63,7 +63,7 @@ object Optimization {
   //Check that optim(exp) == exp, but only if we are in debugging mode (flag Benchmarking.debugBench) and
   //if we are not recursively executing this check (flag doCheck)
   private def checkIdempotent[T](orig: Exp[T], doCheck: Boolean, name: String)(optim: Exp[T] => Exp[T])(exp: Exp[T]): Exp[T] = {
-    if (Benchmarking.debugBench && doCheck) {
+    if (Debug.active && doCheck) {
       val reOptim = optim(exp)
       if (exp != reOptim)
         Console.err.println("%s not idempotent.\nOriginal query:\n>>>>> %s\nOptim. query:\n>>>>> %s\nReoptimized query:\n>>>>> %s"
