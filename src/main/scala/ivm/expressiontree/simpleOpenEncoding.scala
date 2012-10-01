@@ -24,6 +24,7 @@ trait BaseLangImpl {
   type Rep[+T] = Exp[T]
 }
 object BaseLangImpl {
+  //XXX This map should be thread-local (iff Sym.gensymId is thread-local, as it is currently).
   private def definitions: mutable.Map[Def[_], Sym[_]] = new mutable.HashMap()
   def toAtom[T](d: Def[T]): Exp[T] =
     d match {
