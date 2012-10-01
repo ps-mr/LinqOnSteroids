@@ -89,8 +89,7 @@ trait TreeNode[+T] {
   def persistValues() { children foreach (_.persistValues()) }
 }
 
-sealed trait Exp[+T] extends TreeNode[T] {
-  def toCode: String = ???
+sealed trait Exp[+T] extends TreeNode[T] /*with MsgSeqPublisher[T, Exp[T]]*/ {
   /*
   type RootType
   private[ivm] def activateIVM() {}
@@ -109,6 +108,8 @@ sealed trait Exp[+T] extends TreeNode[T] {
     }
   }
    */
+
+  def toCode: String
   def transformImpl(transformer: ExpTransformer): Exp[T]
   def transform(f: Exp[_] => Exp[_]) = transformImpl(ExpTransformer(f))
 
@@ -188,6 +189,7 @@ object SymWithId {
 }
 case class Sym[+T](d: Def[T]) extends Exp[T] {
   val id: Int = Sym.gensymId()
+  def toCode: String = d.toCode
   def interpret() = d.interpret()
   def children = d.children
   def transformImpl(transformer: ExpTransformer): Exp[T] = {
@@ -218,6 +220,7 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
   def children: List[Exp[_]] = Nil
   def transformImpl(transformer: ExpTransformer): Exp[T] = this
   override def toString = Const toString (x, productPrefix)
+  def toCode = throw new RuntimeException("Const.toCode should never be called")
 }
 
 object Const {

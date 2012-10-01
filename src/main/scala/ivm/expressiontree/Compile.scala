@@ -181,6 +181,31 @@ object Compile {
     (transfExp, cspValues)
   }
 
+  //For now experimental. This should respect the binding structure! You can't define everything at the beginning.
+  def compile2[T](e: Exp[T]): String = {
+    val symDecls = e __find {
+      case _: Sym[_] => true
+    } map {
+      case SymWithId(defNode, id) => "val %s = %s" format (id, defNode.toCode) //s"val s${id} = ${defNode.toCode}"
+      case _ => throw new Throwable()
+    } mkString ("\n")
+    val constlessE = e transform {
+      case c: Const[_] =>
+        CrossStagePersistence.persist(c.x)(c.cTag, c.tTag)
+      case SymWithId(_, id) => e
+      //This has the wrong type and crashes the compiler (?)
+        //NamedVar("s" + id)
+    }
+
+    val body = constlessE.toCode
+    "{\n  %s\n  %s\n}" format (symDecls, body)
+    s"""{
+    |  ${symDecls}
+    |  ${body}
+    |}""".stripMargin
+    /*""*/
+  }
+
   def toValue[T: TypeTag](e: Exp[T]): T = {
     val (transfExp, cspValues) = extractConsts(e)
     val staticData = getStaticData(cspValues)
