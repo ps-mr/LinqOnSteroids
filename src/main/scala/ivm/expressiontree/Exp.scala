@@ -218,7 +218,7 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
 
   def interpret() = x
   def children: List[Exp[_]] = Nil
-  def transformImpl(transformer: ExpTransformer): Exp[T] = this
+  def transformImpl(transformer: ExpTransformer): Exp[T] = transformer(this)
   override def toString = Const toString (x, productPrefix)
   def toCode = throw new RuntimeException("Const.toCode should never be called")
 }

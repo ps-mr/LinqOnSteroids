@@ -176,6 +176,10 @@ object Compile {
 
   private def extractConsts[T: TypeTag](e: Exp[T]): (Exp[T], Seq[(Any, CSPVar)]) = {
     val transfExp = removeConsts(e)
+    assert((transfExp __find {
+      case c: Const[_] =>
+        true
+    }).isEmpty)
     transfExp.persistValues()
     val cspValues = cspMap.get().toList.toSeq //toList forces immutability.
     (transfExp, cspValues)
