@@ -24,16 +24,25 @@ trait BaseLangImpl {
   type Rep[+T] = Exp[T]
 }
 object BaseLangImpl {
+  //Fast version.
+  def toAtom[T](d: Def[T]): Exp[T] = d match {
+    case df: Fun[s, t] => toFunSym[s, t](df).asInstanceOf[Exp[T]]
+    case _ => Sym(d)
+  }
+
+  def toFunSym[S, T](d: Fun[S, T]): FunSym[S, T] = FunSym(d)
+
+  //This is the version for CSE, but it cannot be used during transformations - it's hundred of times slower.
   //XXX This map should be thread-local (iff Sym.gensymId is thread-local, as it is currently).
   private def definitions: mutable.Map[Def[_], Sym[_]] = new mutable.HashMap()
-  def toAtom[T](d: Def[T]): Exp[T] =
+  def toAtomCSE[T](d: Def[T]): Exp[T] =
     d match {
-      case df: Fun[s, t] => toFunSym[s, t](df).asInstanceOf[Exp[T]]
+      case df: Fun[s, t] => toFunSymCSE[s, t](df).asInstanceOf[Exp[T]]
       case _ =>
         definitions.asInstanceOf[mutable.Map[Def[T], Sym[T]]].getOrElseUpdate(d, Sym(d))
     }
 
-  def toFunSym[S, T](d: Fun[S, T]): FunSym[S, T] =
+  def toFunSymCSE[S, T](d: Fun[S, T]): FunSym[S, T] =
     definitions.asInstanceOf[mutable.Map[Fun[S, T], FunSym[S, T]]].getOrElseUpdate(d, FunSym(d))
 }
 
