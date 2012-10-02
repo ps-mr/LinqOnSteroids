@@ -205,12 +205,6 @@ object Compile {
         case (id, boundNode) => "    val %s%d = %s" format (symValPrefix, id, boundNode.toCode)
       } mkString "\n"
       wrappedExp match {
-        case FunSym(f: Fun[_, _]) =>
-          s"""{
-          |  ${f.x.toCode} =>
-          |${symDecls}
-          |    ${f.body.toCode}
-          |  }""".stripMargin
         case _ =>
           s"""{
           |${symDecls}
@@ -274,9 +268,13 @@ object Compile {
         case s @ SymWithId(defNode, id) =>
           def computeNewDefNode = defNode.genericConstructor(s.children mapConserve topDownTraverse[Any])
           defNode match {
-            //Do we really want CSE on functions? I don't think so. For one, we'd need manifests for that.
+            //Do we really want CSE on functions? I don't think so. For one, we'd need to annotate functions with their
+            // parameter type, and we'd need manifests for that.
             case f @ FuncExpBody(body) =>
-              withNewScope(Scope(Some(f.x)), toAtomCSE(computeNewDefNode))
+              //We call withNewScope on the body! This way, a FunSym stays a FunSym (which is important).
+              //Moreover, it becomes simpler to do code generation.
+              toAtomCSE(f genericConstructor List(withNewScope(Scope(Some(f.x)), topDownTraverse(body))))
+              //withNewScope(Scope(Some(f.x)), toAtomCSE(computeNewDefNode))
             case ifExpr @ IfThenElse(cond, thenBody, elseBody) =>
               toSymRef(scopeList, IfThenElse(topDownTraverse(cond),
                 withNewScope(Scope(None), topDownTraverse(thenBody)),

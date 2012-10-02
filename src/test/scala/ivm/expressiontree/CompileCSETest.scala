@@ -51,4 +51,11 @@ class CompileCSETest extends FunSuite with ShouldMatchers {
       }
     } + 2) should be (8)
   }
+  test("CSE works on for comprehensions") {
+    reset()
+    toValueCSE(for {
+      i <- (1 to 10).asSquopt
+      if i % 2 ==# 0
+    } yield i) should be (2 to (10, step = 2))
+  }
 }
