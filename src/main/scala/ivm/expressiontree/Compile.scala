@@ -127,6 +127,7 @@ object Compile {
   //new ScalaThreadLocal(mutable.Map[Exp[_], Option[Constructor[_]]]())
 
   //*Reset methods are just (or mostly?) for testing {{{
+  //XXX: Actually, we should do most map resets at exit, not at entry to avoid memory leaks.
   def precompileReset() {
     cspMap.get().clear()
     varId.localReset()
@@ -144,9 +145,14 @@ object Compile {
   //}}}
   def removeConsts[T](e: Exp[T]) = {
     precompileReset()
+    val constNodes = new mutable.HashMap[Const[_], Exp[_]]
+    def persistConst[U](c: Const[U]): Exp[U] =
+      constNodes.asInstanceOf[mutable.Map[Const[U], Exp[U]]].getOrElseUpdate(c,
+        CrossStagePersistence.persist(c.x)(c.cTag, c.tTag))
+
     e transform {
       case c: Const[_] =>
-        CrossStagePersistence.persist(c.x)(c.cTag, c.tTag)
+        persistConst(c)
       case exp => exp
     }
   }
@@ -193,84 +199,78 @@ object Compile {
     override def copy(defNode: Exp[T]) = Attach(defNode, attachment)
     override def interpret() = wrappedExp.interpret()
     override def toCode = {
-      val symDecls = attachment.bindings map {
-        case (id, boundNode) => "val %s = %s" format (id, boundNode.toCode)
+      val symDecls = attachment.bindings.toList sortBy (_._1) map {
+        case (id, boundNode) => "    val %s%d = %s" format (symValPrefix, id, boundNode.toCode)
       } mkString "\n"
       s"""{
-      |  ${symDecls}
-      |  ${wrappedExp.toCode}
-      |}""".stripMargin
+      |${symDecls}
+      |    ${wrappedExp.toCode}
+      |  }""".stripMargin
     }
   }
 
-  //This is the version for CSE, but it cannot be used during transformations - it's hundred of times slower.
-  //XXX This map should be thread-local (iff Sym.gensymId is thread-local, as it is currently).
-  private def definitions: mutable.Map[Def[_], Sym[_]] = new mutable.HashMap()
-  private def toAtomCSE[T](d: Def[T]): Exp[T] =
-    d match {
-      case df: Fun[s, t] =>
-        //We don't do CSE on functions.
-        BaseLangImpl.toFunSym[s, t](df).asInstanceOf[Exp[T]]
-      case _ =>
-        definitions.asInstanceOf[mutable.Map[Def[T], Sym[T]]].getOrElseUpdate(d, Sym(d))
-    }
   private val symValPrefix = "s"
   //For now experimental. This should respect the binding structure! You can't define everything at the beginning.
   //Since my only binder is lambda (right?) it should be easy to identify those nodes and treat them specially. Special
   //synthetic nodes (like NasmedVar) might be needed for the translation.
-  private def toValueCSE[T: TypeTag](e: Exp[T]): T = {
-    /*
-    //We need a top-down traversal...
-    def topDownTraverse1[U](e: Exp[U])(matcher: ExpTransformer): Exp[U] = {
-      e match {
-        case c @ Const(_ ) => matcher(c)
-        case s @ Sym(defin) => defin.genericConstructor(matcher(e).children map (topDownTraverse1(_)(matcher)))
-      }
+  def toValueCSE[T: TypeTag](e: Exp[T]): T = {
+    //This is the version for CSE, but it cannot be used during transformations - it's hundred of times slower.
+    val definitions: mutable.Map[Def[_], Sym[_]] = new mutable.HashMap()
+    // We add another implicit conversion in scope to prevent application of the toAtomImplicit, which does not share
+    // symbols. Note that this conversion is more specific and is sometimes chosen where the other does not apply, but
+    // that's safe.
+    implicit def toAtomCSE[U]: Def[U] => Sym[U] = {
+      case funDef: Fun[s, t] =>
+        //We don't do CSE on functions.
+        //The type ascription + cast makes sure that the cast is not doing more than it should.
+        (BaseLangImpl.toFunSym[s, t](funDef): Sym[s => t]).asInstanceOf[Sym[U]]
+      case defNode =>
+        definitions.asInstanceOf[mutable.Map[Def[U], Sym[U]]].getOrElseUpdate(defNode, Sym(defNode))
     }
-    */
 
     //Precondition: the bottom of scopeList is a scope without a bound variable.
     @annotation.tailrec
     def toSymRef[U](scopeList: List[Scope], s: Sym[U]): Exp[U] = {
       //Hoist symbols out of functions if possible. Hm. That makes sense only for loops, not for all function bodies. And
-      //it's an optim we don't do yet (
+      //it's an optim we don't do yet :-(.
       val scope = scopeList.head
       scope.boundVar match {
         case Some(boundVar) if !(s.defNode isOrContains boundVar) =>
           toSymRef(scopeList.tail, s)
         case _ =>
           scope.bindings put (s.id, s.defNode)
-          NamedVar(symValPrefix + s.id)
+          toAtomCSE(NamedVar(symValPrefix + s.id))
       }
     }
 
     def collectSymbols[U](e: Exp[U]): Exp[U] = {
       var scopeList = List[Scope](Scope())
-      def withNewScope[U](scope: Scope, f: => Exp[U]): Exp[U] = {
+      def withNewScope[V](scope: Scope, f: => Exp[V]): Exp[V] = {
         val oldScopeList = scopeList
         scopeList = scope :: scopeList
         val res = f
         val filledScope = scopeList.head
         scopeList = oldScopeList
-        Attach(res, filledScope)
+        toAtomCSE(Attach(res, filledScope))
       }
 
       //We need a top-down traversal...
       //...but with a visitor controlling the traversal (a state monad would also work to make this non-imperative).
       def topDownTraverse[V]: Exp[V] => Exp[V] = {
         case c @ Const(_) => c
+        case s @ Sym(NamedVar(_)) => s
         case s @ SymWithId(defNode, id) =>
-          def computeNewDefNode = defNode.genericConstructor(e.children mapConserve topDownTraverse[Any])
+          def computeNewDefNode = defNode.genericConstructor(s.children mapConserve topDownTraverse[Any])
           defNode match {
             //Do we really want CSE on functions? I don't think so. For one, we'd need manifests for that.
             case f @ FuncExpBody(body) =>
-              withNewScope(Scope(Some(f.x)), computeNewDefNode)
+              withNewScope(Scope(Some(f.x)), toAtomCSE(computeNewDefNode))
             case ifExpr @ IfThenElse(cond, thenBody, elseBody) =>
-              toSymRef(scopeList, Sym(IfThenElse(topDownTraverse(cond),
+              toSymRef(scopeList, IfThenElse(topDownTraverse(cond),
                 withNewScope(Scope(None), topDownTraverse(thenBody)),
-                withNewScope(Scope(None), topDownTraverse(elseBody)))))
+                withNewScope(Scope(None), topDownTraverse(elseBody))))
             case _ =>
-              toSymRef(scopeList, Sym(computeNewDefNode))
+              toSymRef(scopeList, computeNewDefNode)
           }
       }
       withNewScope(Scope(), topDownTraverse(e))
@@ -279,19 +279,18 @@ object Compile {
     val constNodes = new mutable.HashMap[Const[_], Const[_]]
     def rebuildConst[U](c: Const[U]): Const[U] = constNodes.asInstanceOf[mutable.Map[Const[U], Const[U]]].getOrElseUpdate(c, c)
 
-    //First step: rewrite the tree while sharing common subexpression, producing a DAG.
-    val cseExp = e transform {
-      case Sym(defNode) => toAtomCSE(defNode)
-      case c: Const[t] => rebuildConst(c) //Allow CSE to help!
-    }
-
-    //XXX: This will visit each shared subexpression multiple times: not good! But unavoidable if we don't track visited
-    // nodes (as in graph algorithms). Will also persist constants multiple times (easy to fix).
-    val (constlessExp, cspValues) = extractConsts(cseExp)
-    val symlessExp = collectSymbols(constlessExp)
-
+    val (constlessExp, cspValues) = extractConsts(e)
     val staticData = getStaticData(cspValues)
 
+    //rewrite the tree while sharing common subexpression, producing a DAG.
+    val cseExp = constlessExp transform {
+      case Sym(defNode) => toAtomCSE(defNode) //XXX We need to build here a symbol which does consider the id in the equality!
+        //XXX useless
+      case c: Const[t] => rebuildConst(c) //Allow CSE to help! (Hm, pretending CSE would consider node identities, which it does not).
+      //In fact, it won't distinguish between Symbols in different scopes, since the IDs are not part of equality comparison. Darn!
+    }
+
+    val symlessExp = collectSymbols(cseExp)
     val maybeCons = expCodeCache.getOrElseUpdate(symlessExp, {
       val (prefix, restSourceCode, className) = compileConstlessExp(symlessExp, cspValues)
       ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls.getConstructor(staticData.map(_._1.runtimeClass):_*))
