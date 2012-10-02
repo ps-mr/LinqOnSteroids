@@ -16,7 +16,7 @@ object TypeFilter {
 
 //Just like for IfInstanceOf, equality comparison must consider also classS. Therefore, classS must be a class parameter.
 case class TypeFilter[T, C[+X] <: TraversableLike[X, C[X]], D[+_], S /* is this too strict? <: T */](base: Exp[C[D[T]]], f: Exp[D[T] => T], classS: Class[_])(implicit cdsTTag: TypeTag[C[D[S]]])
-  extends Arity2Op[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]], TypeFilter[T, C, D, S]](base, f) with PersistClassS {
+  extends Arity2Op[Exp[C[D[T]]], Exp[D[T] => T], C[D[S]], TypeFilter[T, C, D, S]](base, f) with PersistClassS[C[D[S]]] {
   override def interpret() = {
     val b: C[D[T]] = base.interpret()
     b.filter(x => classS.isInstance(f.interpret()(x))).asInstanceOf[C[D[S]]]
