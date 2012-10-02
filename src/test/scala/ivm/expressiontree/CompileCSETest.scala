@@ -9,9 +9,9 @@ import Lifting._
  * Date: 2/10/2012
  */
 class CompileCSETest extends FunSuite with ShouldMatchers {
-  Compile.reset()
-  import Compile.toValueCSE
+  import Compile.{reset, toValueCSE}
   test("basic") {
+    reset()
     val v1 = asExp(1) + 2
     toValueCSE(v1) should be (3)
     toValueCSE(v1 + v1) should be (6)
@@ -19,6 +19,7 @@ class CompileCSETest extends FunSuite with ShouldMatchers {
   }
 
   test("show exponential savings") {
+    reset()
     val v1 = asExp(1) + 2
     def doubleNTimes(v: Exp[Int]): Int => Exp[Int] = {
       case 0 => v
@@ -32,6 +33,7 @@ class CompileCSETest extends FunSuite with ShouldMatchers {
   }
 
   test("CSE respects scopes") {
+    reset()
     toValueCSE(letExp(1) {
       x => {
         val y = x + 1
@@ -41,6 +43,7 @@ class CompileCSETest extends FunSuite with ShouldMatchers {
   }
 
   test("CSE respects if") {
+    reset()
     toValueCSE(letExp(1) {
       x => {
         val y = x + 1

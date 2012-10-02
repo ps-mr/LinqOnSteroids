@@ -190,7 +190,7 @@ trait Def[+T] extends TreeNode[T, TreeNode[_, _]] {
 }
 
 object Sym {
-  private val gensymId: () => Int = new Util.ThreadLocalIDGenerator
+  val gensymId = new Util.ThreadLocalIDGenerator
 }
 object SymWithId {
   def unapply[T](s: Sym[T]): Some[(Def[T], Int)] = {

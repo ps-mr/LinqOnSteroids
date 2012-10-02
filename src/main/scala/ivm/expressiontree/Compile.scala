@@ -136,8 +136,10 @@ object Compile {
   def reset() {
     precompileReset()
     classId.reset()
+    Sym.gensymId.localReset()
   }
 
+  //Clears the cache of compiled programs!
   def completeReset() {
     expCodeCache.clear()
     reset()
