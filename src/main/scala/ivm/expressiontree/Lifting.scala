@@ -3,6 +3,7 @@ package ivm.expressiontree
 import collection.TraversableLike
 import collection.generic.CanBuildFrom
 import ivm.collections.TypeMapping
+import ivm.optimization.Optimization
 
 trait OptionLifting extends BaseExps {
   this: TraversableOps =>
@@ -209,6 +210,16 @@ trait MiscLifting extends BaseExps with BaseTypesOps with TraversableOps with Se
 
   // maybe this is not the best place to define this function
   //def filterByType[S: Manifest]: Exp[PartialFunction[Any, S]] = new PartialFuncExp(x => x.ifInstanceOf[S])
+
+  implicit def withOptimize[T](t: Exp[T]) = new WithOptimize(t)
+  class WithOptimize[T](t: Exp[T]) {
+    def optimize = Optimization.optimize(t)
+  }
+
+  implicit def withEval[T: TypeTag](t: Exp[T]) = new WithEval(t)
+  class WithEval[T: TypeTag](t: Exp[T]) {
+    def eval = Compile toValue t
+  }
 }
 
 trait LiftingLangIntf
