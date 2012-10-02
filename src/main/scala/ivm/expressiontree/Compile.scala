@@ -201,8 +201,15 @@ object Compile {
   private case class Attach[T](wrappedExp: Exp[T], attachment: Scope) extends Arity1OpExp[T, T, Attach[T]](wrappedExp) {
     override def copy(defNode: Exp[T]) = Attach(defNode, attachment)
     override def interpret() = wrappedExp.interpret()
+    private def bindings = attachment.bindings.toList
+
+    override def persistValues() {
+      bindings map (_._2) map (_ persistValues ())
+      super.persistValues()
+    }
+
     override def toCode = {
-      val symDecls = attachment.bindings.toList sortBy (_._1) map {
+      val symDecls = bindings sortBy (_._1) map {
         case (id, boundNode) => "    val %s%d = %s" format (symValPrefix, id, boundNode.toCode)
       } mkString "\n"
       wrappedExp match {

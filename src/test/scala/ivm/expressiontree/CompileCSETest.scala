@@ -58,4 +58,8 @@ class CompileCSETest extends FunSuite with ShouldMatchers {
       if i % 2 ==# 0
     } yield i) should be (2 to (10, step = 2))
   }
+  test("CSE works on persistent nodes") {
+    reset()
+    toValueCSE(asExp(1).ifInstanceOf[Int]) should be (Some(1))
+  }
 }
