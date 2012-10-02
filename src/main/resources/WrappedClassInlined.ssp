@@ -73,6 +73,6 @@ val classFile: String %>
 #end
     }
   }
-  def ${className}${getParametersAsString(n)} = ${wrapperClassName}${getParameterNamesAsString(n)}
+  def ${className}${getParametersAsString(n)}: Exp[${className}] = ${wrapperClassName}${getParameterNamesAsString(n)}
 <% i += 1 }
   } %>
