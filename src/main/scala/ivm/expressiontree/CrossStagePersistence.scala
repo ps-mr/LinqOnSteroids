@@ -29,6 +29,7 @@ trait PersistValue[T, PersistValueT] extends Def[T] {
   implicit def tTagT: TypeTag[PersistValueT]
   protected var persistedValue: Def[PersistValueT] = _
   override def persistValues() {
+    super.persistValues()
     persistedValue = CrossStagePersistence persist valueToPersist
   }
 }
