@@ -24,7 +24,7 @@ trait TypeFilterOptim {
     //Correct safety condition for this optimization: The variable of fmFun must appear always wrapped in the same
     //IfInstanceOf node (with the same type manifest...)
     //implicit def noPureForTreeNode[T](t: TreeNode[T]): Exp[TreeNode[T]] = ???
-    val containingXParent = fmFun.body.findTotFun(_.children.flatMap(_.children).contains(X))
+    val containingXParent: Seq[Exp[_]] = fmFun.body.findTotFun(_.children.flatMap(_.children).contains(X))
     val containingX = fmFun.body.findTotFun(_.children.contains(X))
     containingX.headOption match {
       case Some(instanceOfNodeSym @ Sym(instanceOfNode: IfInstanceOf[_, s])) if instanceOfNode.x == X && containingX.forall(_ == instanceOfNodeSym) =>
@@ -32,7 +32,7 @@ trait TypeFilterOptim {
         val classS = instanceOfNode.classS.asInstanceOf[Class[s]]
         val v = Fun.gensym[s]()
         if (containingXParent.forall(_ == (Sym[Option[s]](instanceOfNode): Exp[Iterable[s]]))) {
-          val transformed = fmFun.body.substSubTerm((containingXParent.head: TreeNode[_]).asInstanceOf[Exp[_]], Seq(asExp(v)))
+          val transformed = fmFun.body.substSubTerm(containingXParent.head, Seq(asExp(v)))
           buildTypeFilter(coll, classS, Fun.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)(typeTagS)
         } else {
           val transformed = fmFun.body.substSubTerm(instanceOfNode, Some(asExp(v)))

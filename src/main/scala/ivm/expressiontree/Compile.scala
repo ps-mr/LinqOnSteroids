@@ -235,7 +235,7 @@ object Compile {
       //it's an optim we don't do yet :-(.
       val scope = scopeList.head
       scope.boundVar match {
-        case Some(boundVar) if !(s.defNode isOrContains boundVar) =>
+        case Some(boundVar) if !(s.defNode isOrContainsGen boundVar) =>
           toSymRef(scopeList.tail, s)
         case _ =>
           scope.bindings put (s.id, s.defNode)

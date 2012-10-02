@@ -1,5 +1,7 @@
 package ivm.expressiontree
 
+import annotation.unchecked.uncheckedVariance
+
 /*
 trait Exp[+T] /*extends MsgSeqPublisher[T, Exp[T]]*/ {
   //This method recomputes the contained value
@@ -82,7 +84,8 @@ object ExpTransformer {
   }
 }
 
-trait TreeNode[+T] {
+sealed trait TreeNode[+T, +MyType >: Exp[_]/* <: TreeNode[_, MyType]*/] {
+  this: MyType =>
   //This method computes the contained value
   def interpret(): T
   def children: List[Exp[_]]
@@ -91,24 +94,29 @@ trait TreeNode[+T] {
   /* I renamed this method to avoid conflicts with Matcher.find. XXX test if
   * just making it private also achieves the same result.
   */
-  def __find(filter: PartialFunction[TreeNode[_], Boolean]): Seq[TreeNode[_]] = {
+  def __findGen(filter: PartialFunction[MyType, Boolean]): Seq[MyType] = {
     val baseSeq =
       if (PartialFunction.cond(this)(filter))
         Seq(this)
       else
         Seq.empty
-    children.map(_ __find filter).fold(baseSeq)(_ ++ _)
+    children.map(_ __find filter.asInstanceOf[PartialFunction[Exp[_], Boolean]]).fold[Seq[MyType]](baseSeq)(_ ++ _)
   }
 
   // This overload is not called find because that would confuse type inference - it would fail to infer that filter's
   // domain type is Exp[_].
-  def findTotFun(filter: TreeNode[_] => Boolean): Seq[TreeNode[_]] = __find(filter.asPartial)
+  def findTotFunGen(filter: MyType => Boolean): Seq[MyType] = __findGen(filter.asPartial)
 
-  def isOrContains(e: Exp[_]): Boolean =
-    (this findTotFun (_ == e)).nonEmpty
+  //Using @uncheckedVariance here is safe: a subclass with a more specific MyType might be upcast and get an unexpected
+  //value, but the code will work anyway since it is only passing e to Any's ==(Any) method.
+  def isOrContainsGen(e: MyType @uncheckedVariance): Boolean =
+    (this findTotFunGen (_ == e)).nonEmpty
 }
 
-sealed trait Exp[+T] extends TreeNode[T] /*with MsgSeqPublisher[T, Exp[T]]*/ {
+sealed trait Exp[+T] extends TreeNode[T, Exp[_]] /*with MsgSeqPublisher[T, Exp[T]]*/ {
+  def __find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = __findGen(filter)
+  def findTotFun(filter: Exp[_] => Boolean): Seq[Exp[_]] = findTotFunGen(filter)
+  def isOrContains(e: Exp[_]): Boolean = isOrContainsGen(e)
   /*
   type RootType
   private[ivm] def activateIVM() {}
@@ -166,7 +174,7 @@ object Exp {
   def max[T](a: Exp[T], b: Exp[T]): Exp[T] = ordering.max(a,b)
 }
 
-trait Def[+T] extends TreeNode[T] {
+trait Def[+T] extends TreeNode[T, TreeNode[_, _]] {
   def nodeArity: Int
 
   def persistValues() { children foreach (_.persistValues()) }
