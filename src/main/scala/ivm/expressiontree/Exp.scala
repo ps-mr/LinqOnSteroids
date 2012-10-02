@@ -104,7 +104,7 @@ trait TreeNode[+T] {
   // domain type is Exp[_].
   def findTotFun(filter: TreeNode[_] => Boolean): Seq[TreeNode[_]] = __find(filter.asPartial)
 
-  def isOrContains(e: TreeNode[_]): Boolean =
+  def isOrContains(e: Exp[_]): Boolean =
     (this findTotFun (_ == e)).nonEmpty
 }
 
