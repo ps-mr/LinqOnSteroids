@@ -10,8 +10,9 @@ import org.junit.Test
 import collection.TraversableView
 
 class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
+  type QRes = Exp[Traversable[Int]]
   val l: Exp[Traversable[Int]] = pure(Vector.range(1, 10))
-  def withFilterQueries = {
+  def withFilterQueries: (QRes, QRes) = {
     val q1 = for (
                x <- for (c <- l if c + 3 ==# 7; if c + 8 ==# 19) yield c
                if x ==# 19)
@@ -48,7 +49,7 @@ class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
   def testRemoveIdentityMaps() {
     val (_, q2) = withFilterQueries
 
-    val desiredResult = Filter(
+    val desiredResult: QRes = Filter(
                          Filter(
                            Filter(
                              l,
@@ -60,7 +61,7 @@ class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
     // now merge the filters
 
     val q3 = Optimization.mergeFilters(q2)
-    val finalResult = newWithFilter(
+    val finalResult: QRes = newWithFilter(
                              l,
                              Fun((v:Exp[Int]) => And(And(Eq(Plus(v,3),7), Eq(Plus(v,8),19)), Eq(v,19))))
 

@@ -28,7 +28,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     val composedF = f(f(f(x)))
 
     val optF = testIdempotence(composedF)
-    optF should be (Plus(Const(3), x))
+    optF should be (Sym(Plus(Const(3), x)))
   }
 
   @Test
@@ -36,14 +36,14 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     def g(e: Exp[Int]) = 1 + e
     val composedG = g(g(g(x)))
     val optG = testIdempotence(composedG)
-    optG should be (Plus(Const(3), x))
+    optG should be (Sym(Plus(Const(3), x)))
   }
 
   @Test
   def reassociateOpsH() {
     val h = 1 + (1 + x) + 1
     val optH = testIdempotence(h)
-    optH should be (Plus(Const(3), x))
+    optH should be (Sym(Plus(Const(3), x)))
   }
 
   //Optimization results below are not the best, but it's hard to get this kind of patterns right in general
@@ -52,14 +52,14 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   def reassociateOpsI() {
     val i = x + x + 1 + x + 1
     val optI = testIdempotence(i)
-    optI should be (Plus(Plus(Plus(Const(2), x), x), x))
+    optI should be (Sym(Plus(Plus(Plus(Const(2), x), x), x)))
   }
 
   @Test
   def reassociateOpsJ() {
     val j = x + 1 + x + 1
     val optJ = testIdempotence(j)
-    optJ should be (Plus(Plus(Const(2), x), x))
+    optJ should be (Sym(Plus(Plus(Const(2), x), x)))
   }
 
   @Test

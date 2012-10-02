@@ -5,7 +5,7 @@ import org.scalatest._
 import org.scalatest.matchers.ShouldMatchers
 
 class TestWrapMacroAdequacy extends FunSuite with ShouldMatchers {
-  val expected = Plus(Const(1), Const(2))
+  val expected = Sym(Plus(Const(1), Const(2)))
 
   //Convert some compile-time failures into run-time ones.
   //Tillmann took this idea from a blog post to me :-)
