@@ -70,10 +70,7 @@ object ScalaCompile {
     compiler.settings.outputDirs.setSingleOutput(fileSystem)
     //      compiler.genJVM.outputDir = fileSystem
 
-    //Apparently, this compiler setup does not load the files from the executing application. Prepending the "correct"
-    //source code works fine enough for now!
-    val prefix = "import ivm.expressiontree.Compiled\n"
-    run.compileSources(List(new util.BatchSourceFile("<stdin>", prefix + sourceStr)))
+    run.compileSources(List(new util.BatchSourceFile("<stdin>", sourceStr)))
     reporter.printSummary()
     val hasErrors = reporter.hasErrors
 
@@ -183,7 +180,7 @@ object Compile {
     val declsStr = getDecls(cspValues) mkString ", "
     val prefix = "class %s" format className
     val restSourceCode =
-      """(%s) extends Compiled[%s] {
+      """(%s) extends ivm.expressiontree.Compiled[%s] {
         |  override def result = %s
         |}""".stripMargin format(declsStr, manifestToString(typ), body)
     (prefix, restSourceCode, className)
