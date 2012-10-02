@@ -34,7 +34,7 @@ trait FBCovariantCompareToMethods {
       for {
         allComparables ← classHierarchy.subtypes(comparableType).toList.asSquopt
         comparable ← allComparables
-        classFile ← getClassFile.get(comparable) //getClassFile is lifted through Const and makes optimization expensive.
+        classFile ← getClassFile.get(comparable)
         method ← classFile.methods //if parameterType != ObjectType.Object
         if method.name ==# "compareTo" && method.descriptor.returnType ==# IntegerType
         parameterTypes <- Let(method.descriptor.parameterTypes)
