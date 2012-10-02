@@ -123,9 +123,10 @@ trait SimplificationsOptimTransforms {
   val betaReduction: PartialFunction[Exp[_], Exp[_]] = {
     //To ensure termination, this must only apply if this rule changes behavior, that is, if App contains a Fun!
     //Otherwise fToFunOps will recreate a new App node.
-    case Sym(appNode@App(fun: FunSym[_, _], arg)) if isTrivial(arg) || usesArgAtMostOnce(fun)
-      //if ((body findTotFun (_ == fun.x)).length == 1) //Inlining side conditions. Damn, we need to use unrestricted inlining as here, simplify, and then use CSE again,
+    case Sym(appNode@App(fun: FunSym[_, _], arg))
+      //Inlining side conditions. Damn, we need to use unrestricted inlining as here, simplify, and then use CSE again,
       //to have a robust solution.
+      if isTrivial(arg) || usesArgAtMostOnce(fun)
     =>
       subst(fun.defNode)(arg)
   }

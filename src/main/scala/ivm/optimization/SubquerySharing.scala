@@ -80,10 +80,10 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
 
   private def tryGroupBy[T](c: Exp[Traversable[T]],
                             allConds: Set[Exp[Boolean]],
-                            fx: Var)
-                           (cond: Exp[Boolean]): Option[Exp[Traversable[T]]] =
-    cond match {
-      case eq: Eq[u] =>
+                            fx: Var):
+                           Exp[Boolean] => Option[Exp[Traversable[T]]] =
+    {
+      case Sym(eq: Eq[u]) =>
         val oq: Option[Exp[Traversable[T]]] =
           if (eq.t1.isOrContains(fx) && !eq.t2.isOrContains(fx))
             groupByShareBody[T, u](c, fx, eq, eq.t2, eq.t1)
@@ -162,7 +162,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
   //case object FoundNothing extends FoundNode
   //case class FoundFlatMap[T, U](c: Either[Exp[Option[T]], Exp[Traversable[T]]], f: Fun[T, Traversable[U]], isOption: Boolean = false) extends FoundNode
 
-  def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = e.findTotFun { case v: Var => fvContains(v); case _ => false }.nonEmpty
+  def defUseFVars(fvContains: Var => Boolean)(e: Exp[_]) = (e findTotFun { case Sym(v: Var) => fvContains(v); case _ => false }).nonEmpty
 
   def localLookupIndexableExps[T, Repr <: Traversable[T] with TraversableLike[T, Repr], U, That <: Traversable[U]](e: FlatMap[T, Repr, U, That],
                           freeVars: Set[Var] = Set.empty,
@@ -186,7 +186,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
         }.fold(Set.empty)(_ union _)
         val foundEqs =
           conds.map {
-            case Sym(eq @ Eq(l, r)) if (eq __find {case Var(_) => true}).nonEmpty =>
+            case Sym(eq @ Eq(l, r)) if (eq __find {case Sym(Var(_)) => true}).nonEmpty =>
               if (usesFVars(l) && !usesFVars(r))
                 Seq(Equality(l, r, eq))
               else if (usesFVars(r) && !usesFVars(l))
@@ -223,14 +223,14 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
     require (fvSeq.toSet == freeVars)
 
     val otherRes = e match {
-      case f: Fun[_, _] =>
+      case Sym(f: Fun[_, _]) =>
         lookupIndexableExps(f.body, freeVars + f.x, fvSeq :+ f.x)
       case exp => exp.children flatMap {
         lookupIndexableExps(_, freeVars, fvSeq)
       }
     }
     otherRes ++ (e match {
-      case f: FlatMap[t, repr, u, that] =>
+      case Sym(f: FlatMap[t, repr, u, that]) =>
       //case FlatMap(c: Exp[Traversable[t]], _: Fun[_ /*t*/, Traversable[u]]) =>
         localLookupIndexableExps(f, freeVars, fvSeq)
       case _ => Seq.empty
@@ -313,13 +313,11 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
     val usesFVars = defUseFVars(allFVMap contains _) _
     //Filter-specific
     assert(usesFVars(eq.varEqSide) && !usesFVars(eq.constantEqSide))
-    def tuplingTransform[T, TupleT](e: Exp[T], tupleVar: TypedVar[TupleT]) = e.transform(
-      exp => exp match {
-        case v: Var if allFVMap contains v =>
-          TupleSupport2.projectionTo(tupleVar, allFVSeq.length, allFVMap(v))
-        case _ =>
-          exp
-      })
+    def tuplingTransform[T, TupleT](e: Exp[T], tupleVar: TypedVar[TupleT]) = e transform {
+      case Sym(v: Var) if allFVMap contains v =>
+        TupleSupport2.projectionTo(tupleVar, allFVSeq.length, allFVMap(v))
+      case exp => exp
+    }
 
     //We never want to duplicate variables and take care of scoping.
     //However, we can reuse fx here while still getting a free variable in the end.
@@ -387,17 +385,16 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
     val allFVSeq = FVSeq :+ fx
     val FVMap = FVSeq.zipWithIndex.toMap
     //val usesFVars = defUseFVars(allFVMap contains _) _
-    def tuplingTransform[T, U, TupleT](e: Exp[T], tupleVar: TypedVar[(TupleT, U)]) = e.transform(
-      exp => exp match {
-        case v: Var if v == fx || (FVMap contains v) =>
+    def tuplingTransform[T, U, TupleT](e: Exp[T], tupleVar: TypedVar[(TupleT, U)]) = e transform
+      {
+        case Sym(v: Var) if v == fx || (FVMap contains v) =>
           if (v == fx)
             asExp(tupleVar)._2 //Disable member _1 of tupleVar.
           else
             //TupleSupport2.projectionTo(tupleVar._1, allFVSeq.length, FVMap(v)) //now this is incorrect!
             TupleSupport2.projectionTo(tupleVar, FVSeq.length, FVMap(v)).substSubTerm(tupleVar, asExp(tupleVar)._1)
-        case _ =>
-          exp
-      })
+        case exp => exp
+      }
 
     //We never want to duplicate variables and take care of scoping.
     //However, we can reuse fx here while still getting a free variable in the end.
@@ -424,7 +421,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
 
   val groupByShareNested: Exp[_] => Exp[_] =
     {
-      case e: Fun[_, _] => e
+      case Sym(e: Fun[_, _]) => e
       case e =>
         collectFirst(lookupIndexableExps(e)) {
           case ((parentNode: FlatMap[t, repr, u, that/*T, Repr, U, That*/]), fn1: FoundNode[_, _], allFVSeq) =>

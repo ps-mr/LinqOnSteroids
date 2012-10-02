@@ -136,6 +136,7 @@ sealed trait Exp[+T] extends TreeNode[T] /*with MsgSeqPublisher[T, Exp[T]]*/ {
   def value(): T = interpret()
 
   //This could use as interface some Foldable-like stuff (or Haskell's Traversable, IIRC).
+  //Write it as a fold on the tree!!!
   def treeMap[S](mapper: (Exp[_], Seq[S]) => S): S = {
     val mappedChilds = for (c <- children) yield c.treeMap(mapper)
     mapper(this, mappedChilds)
@@ -149,8 +150,8 @@ sealed trait Exp[+T] extends TreeNode[T] /*with MsgSeqPublisher[T, Exp[T]]*/ {
 
   def freeVars: Set[Var] = {
     def mapper(e: Exp[_], c: Seq[Set[Var]]): Set[Var] = e match {
-      case v@Var(_) => Set(v)
-      case fe@Fun(_) => c.fold(Set.empty)(_ union _).filter(!_.equals(fe.x))
+      case Sym(v@Var(_)) => Set(v)
+      case FunSym(fe@Fun(_)) => c.fold(Set.empty)(_ union _).filter(!_.equals(fe.x))
       case _ => c.fold(Set.empty)(_ union _)
     }
     treeMap(mapper)

@@ -20,9 +20,10 @@ trait TypeFilterOptim {
   private def tryBuildTypeFilter[T, U](coll: Exp[Traversable[T]],
                                        fmFun: FunSym[T, Traversable[U]],
                                        e: Exp[Traversable[U]]): Exp[Traversable[U]] = {
-    val X = fmFun.x
+    val X: Exp[Any] = fmFun.x //Trigger implicit conversion to Sym.
     //Correct safety condition for this optimization: The variable of fmFun must appear always wrapped in the same
     //IfInstanceOf node (with the same type manifest...)
+    //implicit def noPureForTreeNode[T](t: TreeNode[T]): Exp[TreeNode[T]] = ???
     val containingXParent = fmFun.body.findTotFun(_.children.flatMap(_.children).contains(X))
     val containingX = fmFun.body.findTotFun(_.children.contains(X))
     containingX.headOption match {
@@ -31,7 +32,7 @@ trait TypeFilterOptim {
         val classS = instanceOfNode.classS.asInstanceOf[Class[s]]
         val v = Fun.gensym[s]()
         if (containingXParent.forall(_ == (Sym[Option[s]](instanceOfNode): Exp[Iterable[s]]))) {
-          val transformed = fmFun.body.substSubTerm(containingXParent.head, Seq(asExp(v)))
+          val transformed = fmFun.body.substSubTerm((containingXParent.head: TreeNode[_]).asInstanceOf[Exp[_]], Seq(asExp(v)))
           buildTypeFilter(coll, classS, Fun.makefun(transformed.asInstanceOf[Exp[Traversable[U]]], v), fmFun)(typeTagS)
         } else {
           val transformed = fmFun.body.substSubTerm(instanceOfNode, Some(asExp(v)))
@@ -52,7 +53,7 @@ trait TypeFilterOptim {
    */
 
   val toTypeFilter: Exp[_] => Exp[_] = {
-    case e @ Sym(FlatMap(coll, fmFun: Fun[t, u])) =>
+    case e @ Sym(FlatMap(coll, fmFun: FunSym[t, u])) =>
       tryBuildTypeFilter(coll, fmFun, e.asInstanceOf[Exp[Traversable[u]]])
     case e => e
   }
@@ -79,7 +80,7 @@ trait TypeFilterOptim {
     //    Let node
     // 2. Only supported Traversable operations must appear.
 
-    val X = fmFun.x
+    val X: Exp[Any] = fmFun.x
 
     //Check safety condition, part 2.
     //@tailrec
@@ -94,7 +95,7 @@ trait TypeFilterOptim {
 
     val containingX = insideConv.findTotFun(_.children.contains(X))
     containingX.headOption match {
-      case Some(Sym(letNode@ExpSeq(Seq(X)))) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
+      case Some(letNode@Sym(ExpSeq(Seq(X)))) if containingX.forall(_ == letNode) && isSupported(insideConv, letNode) =>
         insideConv.substSubTerm(letNode, coll)
       case _ =>
         e
