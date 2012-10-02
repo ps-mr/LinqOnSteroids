@@ -225,12 +225,12 @@ object TupleSupport2 {
     (arity: @switch) match {
       case 1 =>
         idx match {
-          case 0 => e.asInstanceOf[Exp[Nothing]]
+          case 0 => (e: Exp[_]).asInstanceOf[Exp[Nothing]]
         }
 #for (arity <- minTupleArity to maxArity)
       case ${arity} =>
         (idx: @switch) match {
-          ${baseParLoop(arity)(i => "case %d => Product%dProj%d[%s](e.asInstanceOf[Exp[(%<s)]])" format (i - 1, arity, i, nothingN(arity)), "\n          ")}
+          ${baseParLoop(arity)(i => "case %d => Product%dProj%d[%s]((e: Exp[_]).asInstanceOf[Exp[(%<s)]])" format (i - 1, arity, i, nothingN(arity)), "\n          ")}
         }
 #end
     }
