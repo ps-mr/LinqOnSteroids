@@ -3,6 +3,8 @@ package expressiontree
 
 import java.lang.reflect.Constructor
 import ivm.tests.Debug
+import optimization.OptimizationUtil.FuncExpBody
+import collection.mutable
 
 /**
  * User: pgiarrusso
@@ -185,29 +187,116 @@ object Compile {
     (transfExp, cspValues)
   }
 
+  private case class Scope(boundVar: Option[Var] = None, bindings: mutable.Map[Int, Def[_]] = mutable.Map.empty)
+
+  private case class Attach[T](wrappedExp: Exp[T], attachment: Scope) extends Arity1OpExp[T, T, Attach[T]](wrappedExp) {
+    override def copy(defNode: Exp[T]) = Attach(defNode, attachment)
+    override def interpret() = wrappedExp.interpret()
+    override def toCode = {
+      val symDecls = attachment.bindings map {
+        case (id, boundNode) => "val %s = %s" format (id, boundNode.toCode)
+      } mkString "\n"
+      s"""{
+      |  ${symDecls}
+      |  ${wrappedExp.toCode}
+      |}""".stripMargin
+    }
+  }
+
+  //This is the version for CSE, but it cannot be used during transformations - it's hundred of times slower.
+  //XXX This map should be thread-local (iff Sym.gensymId is thread-local, as it is currently).
+  private def definitions: mutable.Map[Def[_], Sym[_]] = new mutable.HashMap()
+  private def toAtomCSE[T](d: Def[T]): Exp[T] =
+    d match {
+      case df: Fun[s, t] =>
+        //We don't do CSE on functions.
+        BaseLangImpl.toFunSym[s, t](df).asInstanceOf[Exp[T]]
+      case _ =>
+        definitions.asInstanceOf[mutable.Map[Def[T], Sym[T]]].getOrElseUpdate(d, Sym(d))
+    }
+  private val symValPrefix = "s"
   //For now experimental. This should respect the binding structure! You can't define everything at the beginning.
-  def compile2[T](e: Exp[T]): String = {
-    val symDecls = e __find {
-      case _: Sym[_] => true
-    } map {
-      case SymWithId(defNode, id) => "val %s = %s" format (id, defNode.toCode) //s"val s${id} = ${defNode.toCode}"
-      case _ => throw new Throwable()
-    } mkString ("\n")
-    val constlessE = e transform {
-      case c: Const[_] =>
-        CrossStagePersistence.persist(c.x)(c.cTag, c.tTag)
-      case SymWithId(_, id) => e
-      //This has the wrong type and crashes the compiler (?)
-        //NamedVar("s" + id)
+  //Since my only binder is lambda (right?) it should be easy to identify those nodes and treat them specially. Special
+  //synthetic nodes (like NasmedVar) might be needed for the translation.
+  private def toValueCSE[T: TypeTag](e: Exp[T]): T = {
+    /*
+    //We need a top-down traversal...
+    def topDownTraverse1[U](e: Exp[U])(matcher: ExpTransformer): Exp[U] = {
+      e match {
+        case c @ Const(_ ) => matcher(c)
+        case s @ Sym(defin) => defin.genericConstructor(matcher(e).children map (topDownTraverse1(_)(matcher)))
+      }
+    }
+    */
+
+    //Precondition: the bottom of scopeList is a scope without a bound variable.
+    @annotation.tailrec
+    def toSymRef[U](scopeList: List[Scope], s: Sym[U]): Exp[U] = {
+      //Hoist symbols out of functions if possible. Hm. That makes sense only for loops, not for all function bodies. And
+      //it's an optim we don't do yet (
+      val scope = scopeList.head
+      scope.boundVar match {
+        case Some(boundVar) if !(s.defNode isOrContains boundVar) =>
+          toSymRef(scopeList.tail, s)
+        case _ =>
+          scope.bindings put (s.id, s.defNode)
+          NamedVar(symValPrefix + s.id)
+      }
     }
 
-    val body = constlessE.toCode
-    "{\n  %s\n  %s\n}" format (symDecls, body)
-    s"""{
-    |  ${symDecls}
-    |  ${body}
-    |}""".stripMargin
-    /*""*/
+    def collectSymbols[U](e: Exp[U]): Exp[U] = {
+      var scopeList = List[Scope](Scope())
+      def withNewScope[U](scope: Scope, f: => Exp[U]): Exp[U] = {
+        val oldScopeList = scopeList
+        scopeList = scope :: scopeList
+        val res = f
+        val filledScope = scopeList.head
+        scopeList = oldScopeList
+        Attach(res, filledScope)
+      }
+
+      //We need a top-down traversal...
+      //...but with a visitor controlling the traversal (a state monad would also work to make this non-imperative).
+      def topDownTraverse[V]: Exp[V] => Exp[V] = {
+        case c @ Const(_) => c
+        case s @ SymWithId(defNode, id) =>
+          def computeNewDefNode = defNode.genericConstructor(e.children mapConserve topDownTraverse[Any])
+          defNode match {
+            //Do we really want CSE on functions? I don't think so. For one, we'd need manifests for that.
+            case f @ FuncExpBody(body) =>
+              withNewScope(Scope(Some(f.x)), computeNewDefNode)
+            case ifExpr @ IfThenElse(cond, thenBody, elseBody) =>
+              toSymRef(scopeList, Sym(IfThenElse(topDownTraverse(cond),
+                withNewScope(Scope(None), topDownTraverse(thenBody)),
+                withNewScope(Scope(None), topDownTraverse(elseBody)))))
+            case _ =>
+              toSymRef(scopeList, Sym(computeNewDefNode))
+          }
+      }
+      withNewScope(Scope(), topDownTraverse(e))
+    }
+
+    val constNodes = new mutable.HashMap[Const[_], Const[_]]
+    def rebuildConst[U](c: Const[U]): Const[U] = constNodes.asInstanceOf[mutable.Map[Const[U], Const[U]]].getOrElseUpdate(c, c)
+
+    //First step: rewrite the tree while sharing common subexpression, producing a DAG.
+    val cseExp = e transform {
+      case Sym(defNode) => toAtomCSE(defNode)
+      case c: Const[t] => rebuildConst(c) //Allow CSE to help!
+    }
+
+    //XXX: This will visit each shared subexpression multiple times: not good! But unavoidable if we don't track visited
+    // nodes (as in graph algorithms). Will also persist constants multiple times (easy to fix).
+    val (constlessExp, cspValues) = extractConsts(cseExp)
+    val symlessExp = collectSymbols(constlessExp)
+
+    val staticData = getStaticData(cspValues)
+
+    val maybeCons = expCodeCache.getOrElseUpdate(symlessExp, {
+      val (prefix, restSourceCode, className) = compileConstlessExp(symlessExp, cspValues)
+      ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls.getConstructor(staticData.map(_._1.runtimeClass):_*))
+    })
+    buildInstance[T](maybeCons, staticData)
   }
 
   def toValue[T: TypeTag](e: Exp[T]): T = {
