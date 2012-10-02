@@ -112,7 +112,7 @@ trait SimplificationsOptimTransforms {
   }
 
   val deltaReductionTuple: PartialFunction[Exp[_], Exp[_]] = {
-    case ExpSelection(arity, selected, e: ExpProduct) =>
+    case ExpSelection(arity, selected, Sym(e: ExpProduct)) =>
       e.metaProductElement(selected - 1)
   }
 

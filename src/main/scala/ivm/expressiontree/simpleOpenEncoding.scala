@@ -306,7 +306,7 @@ trait ExpSelection[TupleT] {
 //class ExpSelection[TupleT](val arity: Int, val pos: Int, val body: Exp[TupleT])
 object ExpSelection {
   def unapply(f: Exp[_]): Option[(Int, Int, Exp[_])] = f match {
-    case v: ExpSelection[t] => Some(v.body)
+    case Sym(v: ExpSelection[t]) => Some(v.body)
     case _ => None
   }
 }

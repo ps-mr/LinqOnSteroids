@@ -15,7 +15,7 @@ object Subst {
     // transformations duplicate terms. Map fusion uses letExp, to allow for a smarter inliner - I hope I was
     // consistent in doing this.
     fun.f(arg) transform {
-      case fun: Fun[_, _] => Fun.rename(fun)
+      case Sym(fun: Fun[_, _]) => Fun.rename(fun)
       case e => e
     }
   }

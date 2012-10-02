@@ -18,8 +18,8 @@ import Subst.subst
 trait Inlining {
   def isTrivial(v: Exp[_]): Boolean = v match {
     case ExpSelection(_, _, e) => isTrivial(e)
-    case e: ExpProduct with Exp[_] => e.children forall isTrivial
-    case _: TypedVar[_] => true
+    case Sym(e: ExpProduct with Def[_]) => e.children forall isTrivial
+    case Sym(_: TypedVar[_]) => true
     case _ => false
   }
 
