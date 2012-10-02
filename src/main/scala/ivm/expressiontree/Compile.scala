@@ -202,10 +202,19 @@ object Compile {
       val symDecls = attachment.bindings.toList sortBy (_._1) map {
         case (id, boundNode) => "    val %s%d = %s" format (symValPrefix, id, boundNode.toCode)
       } mkString "\n"
-      s"""{
-      |${symDecls}
-      |    ${wrappedExp.toCode}
-      |  }""".stripMargin
+      wrappedExp match {
+        case FunSym(f: Fun[_, _]) =>
+          s"""{
+          |  ${f.x.toCode} =>
+          |${symDecls}
+          |    ${f.body.toCode}
+          |  }""".stripMargin
+        case _ =>
+          s"""{
+          |${symDecls}
+          |    ${wrappedExp.toCode}
+          |  }""".stripMargin
+      }
     }
   }
 
@@ -229,14 +238,14 @@ object Compile {
     }
 
     //Precondition: the bottom of scopeList is a scope without a bound variable.
-    @annotation.tailrec
+    //@annotation.tailrec
     def toSymRef[U](scopeList: List[Scope], s: Sym[U]): Exp[U] = {
       //Hoist symbols out of functions if possible. Hm. That makes sense only for loops, not for all function bodies. And
       //it's an optim we don't do yet :-(.
       val scope = scopeList.head
       scope.boundVar match {
-        case Some(boundVar) if !(s.defNode isOrContainsGen boundVar) =>
-          toSymRef(scopeList.tail, s)
+        //case Some(boundVar) if !(s.defNode isOrContainsGen boundVar) =>
+          //toSymRef(scopeList.tail, s)
         case _ =>
           scope.bindings put (s.id, s.defNode)
           toAtomCSE(NamedVar(symValPrefix + s.id))
@@ -258,6 +267,7 @@ object Compile {
       //...but with a visitor controlling the traversal (a state monad would also work to make this non-imperative).
       def topDownTraverse[V]: Exp[V] => Exp[V] = {
         case c @ Const(_) => c
+        case s @ Sym(v: Var) => s
         case s @ Sym(NamedVar(_)) => s
         case s @ SymWithId(defNode, id) =>
           def computeNewDefNode = defNode.genericConstructor(s.children mapConserve topDownTraverse[Any])
