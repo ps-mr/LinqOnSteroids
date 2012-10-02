@@ -2,7 +2,7 @@ package ivm
 package tests
 
 import expressiontree.Lifting._
-import expressiontree.{And, Fun, Exp, Plus, Eq, View, Filter}
+import expressiontree._
 import optimization.Optimization
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit

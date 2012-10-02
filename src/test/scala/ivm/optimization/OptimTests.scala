@@ -1,10 +1,10 @@
 package ivm
 package optimization
 
-import squopt.imports._
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import org.junit.{Ignore, Test}
-import expressiontree.{Const, Plus, Fun, Exp}
+import expressiontree._
+import Lifting._
 import tests.TestUtil
 import collection.generic.CanBuildFrom
 
@@ -14,7 +14,7 @@ import collection.generic.CanBuildFrom
  */
 
 class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
-  val x = Fun.gensym[Int]()
+  val x: Exp[Int] = Fun.gensym[Int]()
 
   def testIdempotence[T](e: Exp[T]) = {
     val opt = Optimization.reassociateOps(e)
@@ -131,7 +131,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
 
   @Test
   def testIfInstanceOfAndTypeFilterEq() {
-    val v = Fun.gensym[Int]()
+    val v: Exp[Int] = Fun.gensym[Int]()
     v.ifInstanceOf[Int] should not be v.ifInstanceOf[Long]
     baseCol.typeFilter[Int] should not be (baseCol.typeFilter[Long])
   }

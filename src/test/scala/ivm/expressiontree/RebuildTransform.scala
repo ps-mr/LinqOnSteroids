@@ -18,10 +18,10 @@ case class MySize[T, Repr <: Traversable[T] with TraversableLike[T, Repr]](t: Ex
     case Filter(coll, p) => coll filter p
     case Size(coll) => coll.size
     */
-    case e: MapNode[t, repr, u, that] => (e.base map e.f)(e.c)
-    case e: FlatMap[t, repr, u, that] => (e.base flatMap e.f)(e.c) //coll flatMap f
-    case e: Filter[t, repr] => e.base filter e.f
-    case e: Size[t, repr] => e.t.size
+    case Sym(e: MapNode[t, repr, u, that]) => (e.base map e.f)(e.c)
+    case Sym(e: FlatMap[t, repr, u, that]) => (e.base flatMap e.f)(e.c) //coll flatMap f
+    case Sym(e: Filter[t, repr]) => e.base filter e.f
+    case Sym(e: Size[t, repr]) => e.t.size
     //case e: MySize[t, repr] => MySize(e.t)
     case other => other
   }

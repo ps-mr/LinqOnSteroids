@@ -4,7 +4,7 @@ package tests
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import org.junit.Test
 
-import expressiontree.{Fun, Exp}
+import expressiontree._
 import expressiontree.Lifting._
 import optimization.Optimization
 import collection.mutable.ArrayBuffer
@@ -19,7 +19,7 @@ trait TransformTestHelper {
   this: JUnitSuite with ShouldMatchersForJUnit =>
   val forceRebuild: Exp[_] => Exp[_] =
     e => e match {
-      case f: Fun[_, _] => Fun(f.f)
+      case Sym(f: Fun[_, _]) => Fun(f.f)
       case _ => e
     }
 
