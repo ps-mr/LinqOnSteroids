@@ -107,9 +107,10 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
    * This is simply a different traversal strategy - but we needn't integrate it in Exp (we have enough access).
    */
   type EnvEntry = (Var, Exp[Traversable[_]])
+  /*
   def transformWithEnv[T](e: Exp[T], env: List[EnvEntry], transformer: (Exp[_], Seq[EnvEntry]) => Exp[_]): Exp[T] = {
     val transformedChilds = e match {
-      case FlatMap(coll: Exp[Traversable[_]], fmFun) =>
+      case Sym(FlatMap(coll: Exp[Traversable[_]], fmFun)) =>
         val newEnv: List[EnvEntry] = (fmFun.x, coll) :: env
         List(transformWithEnv(coll, env, transformer),
           // The new binding is only in scope in the _body_ of the function, not in the whole of it,
@@ -124,13 +125,14 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
         e genericConstructor transformedChilds
     transformer(newself, env).asInstanceOf[Exp[T]]
   }
+  */
   //Calling this app hides the existing implicit conversion.
   def app2[A, B](f: Exp[A => B]): Exp[A] => Exp[B] = arg => App(f, arg)
 
-  case class MapOp2[T, Repr, U, That](base: Exp[TraversableLike[T, Repr]], f: Fun[T, U])
-                                     (implicit /*protected[this] */val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[TraversableLike[T, Repr]], Fun[T, U], That, MapOp2[T, Repr, U, That]](base, f) {
+  case class MapOp2[T, Repr, U, That](base: Exp[TraversableLike[T, Repr]], f: FunSym[T, U])
+                                     (implicit /*protected[this] */val c: CanBuildFrom[Repr, U, That]) extends Arity2Op[Exp[TraversableLike[T, Repr]], FunSym[T, U], That, MapOp2[T, Repr, U, That]](base, f) {
     override def interpret() = base.interpret() map f.interpret()
-    override def copy(base: Exp[TraversableLike[T, Repr]], f: Fun[T, U]) = MapOp2[T, Repr, U, That](base, f)
+    override def copy(base: Exp[TraversableLike[T, Repr]], f: FunSym[T, U]) = MapOp2[T, Repr, U, That](base, f)
   }
 
   import collection.TraversableLike
@@ -154,14 +156,14 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
   // c map (f andThen g)
   val mergeMapsSimplified = new Transformer {
     def apply[T](e: Exp[T]) = e match {
-      case m: MapNode[t, repr, u, that] => //T = that
+      case Sym(m: MapNode[t, repr, u, that]) => //T = that
         Util.assertType[Exp[repr]](m.base)
         val ret1 = (m.base map m.f)(m.c) //This code typechecks
         Util.assertType[Exp[that]](ret1)
         Util.assertType[Exp[T]](ret1)
 
         m.base match {
-          case m2: MapNode[t2, repr2, u2, that2] =>
+          case Sym(m2: MapNode[t2, repr2, u2, that2]) =>
             //((m2.base map m2.f)(m2.c) map m.f)(m.c) //doesn't work
             expToTraversableLikeOps[t, repr](m2.base.map(m2.f)(m2.c)).map(m.f)(m.c) //works
           case _ => e
@@ -175,14 +177,14 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
     //import optimization.&
     def apply[T](e: Exp[T]) = e match {
       //case (m: MapNode[t, repr, u, that]) & MapNode(c, base) => //doesn't refine the type of c and base.
-      case m: MapNode[t, repr, u, that] => //T = that
+      case Sym(m: MapNode[t, repr, u, that]) => //T = that
         Util.assertType[Exp[repr]](m.base)
         val ret1 = (m.base map m.f)(m.c)
         Util.assertType[Exp[that]](ret1)
         Util.assertType[Exp[T]](ret1)
 
         m.base match {
-          case m2: MapNode[t2, repr2, u2, that2] =>
+          case Sym(m2: MapNode[t2, repr2, u2, that2]) =>
           //case m2: MapNode[t2, repr2, `t` /*u2*/, that2] =>//gives a warning
             //Scalac gets that2 = repr, but not that u2 = t.
             //What type inference could deduce:
