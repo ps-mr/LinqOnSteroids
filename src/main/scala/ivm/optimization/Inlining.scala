@@ -23,8 +23,8 @@ trait Inlining {
     case _ => false
   }
 
-  //XXX: also reduce lets where the variable is only used once. Papers on the GHC inliner explain how to do this and why
-  //a linear type system is needed for that.
+  //We also reduce lets where the variable is only used once. Papers on the GHC inliner explain how to do this and why
+  //a linear type system is needed for that. See letTransformerUsedAtMostOnce.
   val letTransformerTrivial: Exp[_] => Exp[_] = {
     case Sym(FlatMap(Sym(ExpSeq(Seq(v))), FunSym(f))) if isTrivial(v) => subst(f)(v)
     case e => e
