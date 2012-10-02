@@ -152,11 +152,16 @@ object Compile {
       constNodes.asInstanceOf[mutable.Map[Const[U], Exp[U]]].getOrElseUpdate(c,
         CrossStagePersistence.persist(c.x)(c.cTag, c.tTag))
 
-    e transform {
+    val transfExp = e transform {
       case c: Const[_] =>
         persistConst(c)
       case exp => exp
     }
+    assert((transfExp __find {
+      case c: Const[_] =>
+        true
+    }).isEmpty)
+    transfExp
   }
 
   private def getStaticData(cspValues: Seq[(Any, CSPVar)]): Seq[(ClassTag[_], Any)] =
@@ -184,15 +189,11 @@ object Compile {
     (prefix, restSourceCode, className)
   }
 
-  private def extractConsts[T: TypeTag](e: Exp[T]): (Exp[T], Seq[(Any, CSPVar)]) = {
-    val transfExp = removeConsts(e)
-    assert((transfExp __find {
-      case c: Const[_] =>
-        true
-    }).isEmpty)
-    transfExp.persistValues()
+  private def extractCSPData[T: TypeTag](e: Exp[T]): (Seq[(Any, CSPVar)], Seq[(ClassTag[_], Any)]) = {
+    e.persistValues()
     val cspValues = cspMap.get().toList.toSeq //toList forces immutability.
-    (transfExp, cspValues)
+    val staticData = getStaticData(cspValues)
+    (cspValues, staticData)
   }
 
   private case class Scope(boundVar: Option[Var] = None, bindings: mutable.Map[Int, Def[_]] = mutable.Map.empty)
@@ -286,46 +287,44 @@ object Compile {
       withNewScope(Scope(), topDownTraverse(e))
     }
 
-    val (constlessExp, cspValues) = extractConsts(e)
-    val staticData = getStaticData(cspValues)
-
     //rewrite the tree while sharing common subexpression, producing a DAG.
-    val cseExp = constlessExp transform {
-      case Sym(defNode) =>
-        //XXX We need to build here a symbol which does consider the id in the equality! But write a test for that first.
-        //Otherwise, CSE won't distinguish between Symbols in different scopes, since the IDs are not part of equality comparison. Darn!
-        toAtomCSE(defNode)
-      case c: Const[t] => throw new RuntimeException("Const expression in constlessExp")
+    def doCSE[U](constlessExp: Exp[U]): Exp[U] = {
+      constlessExp transform {
+        case Sym(defNode) =>
+          //XXX We need to build here a symbol which does consider the id in the equality! But write a test for that first.
+          //Otherwise, CSE won't distinguish between Symbols in different scopes, since the IDs are not part of equality comparison. Darn!
+          toAtomCSE(defNode)
+        case c: Const[t] => throw new RuntimeException("Const expression in constlessExp")
+      }
     }
 
-    val symlessExp = collectSymbols(cseExp)
-    val maybeCons = expCodeCache.getOrElseUpdate(symlessExp, {
-      val (prefix, restSourceCode, className) = compileConstlessExp(symlessExp, cspValues)
-      ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls.getConstructor(staticData.map(_._1.runtimeClass):_*))
-    })
-    buildInstance[T](maybeCons, staticData)
+    precompiledExpToValue(collectSymbols(doCSE(removeConsts(e))))
   }
 
-  def toValue[T: TypeTag](e: Exp[T]): T = {
-    val (transfExp, cspValues) = extractConsts(e)
-    val staticData = getStaticData(cspValues)
+  def toValue[T: TypeTag](e: Exp[T]): T =
+    precompiledExpToValue(removeConsts(e))
 
-    val maybeCons = expCodeCache.getOrElseUpdate(transfExp, {
-      val (prefix, restSourceCode, className) = compileConstlessExp(transfExp, cspValues)
-      ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls.getConstructor(staticData.map(_._1.runtimeClass):_*))
+  private def precompiledExpToValue[T: TypeTag](precompiledExp: Exp[T]): T = {
+    val (cspValues, staticData) = extractCSPData(precompiledExp)
+
+    val maybeCons = expCodeCache.getOrElseUpdate(precompiledExp, {
+      val (prefix, restSourceCode, className) = compileConstlessExp(precompiledExp, cspValues)
+      ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls
+        .getConstructor(staticData.map(_._1.runtimeClass): _*))
     })
     buildInstance(maybeCons, staticData)
   }
 
   //Only for testing
   private[expressiontree] def toCode[T: TypeTag](e: Exp[T]): String = {
-    val (transfExp, _) = extractConsts(e)
-    transfExp.toCode
+    removeConsts(e).toCode
   }
 
   private[expressiontree] def emitSource[T: TypeTag](e: Exp[T]): String = {
-    val (transfExp, cspValues) = extractConsts(e)
-    val (prefix, restSourceCode, _) = compileConstlessExp(transfExp, cspValues)
+    val precompiledExp = removeConsts(e)
+    val (cspValues, _) = extractCSPData(precompiledExp)
+
+    val (prefix, restSourceCode, _) = compileConstlessExp(precompiledExp, cspValues)
     prefix + restSourceCode
   }
 
