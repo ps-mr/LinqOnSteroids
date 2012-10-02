@@ -268,7 +268,7 @@ object Macros extends ReusableMacrosParams {
   def squopt[T](expr: T): Any = macro squopt_impl[T]
   override protected def prefix = "squopt_"
 
-  override protected val macroDebug = true
+  override protected val macroDebug = false
   override protected def implementationPkgName = "ivm.expressiontree"
   override protected def implementationClsName = "Lifting"
 
