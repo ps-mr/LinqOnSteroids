@@ -218,6 +218,7 @@ class FunSym[-S, +T](override val defNode: Fun[S, T]) extends Sym[S => T](defNod
   def x = defNode.x
   def body = defNode.body
   def f = defNode.f
+  override def productPrefix = "FunSym"
 }
 object FunSym {
   def apply[S, T](d: Fun[S, T]) = new FunSym(d)
