@@ -276,18 +276,16 @@ object Compile {
       withNewScope(Scope(), topDownTraverse(e))
     }
 
-    val constNodes = new mutable.HashMap[Const[_], Const[_]]
-    def rebuildConst[U](c: Const[U]): Const[U] = constNodes.asInstanceOf[mutable.Map[Const[U], Const[U]]].getOrElseUpdate(c, c)
-
     val (constlessExp, cspValues) = extractConsts(e)
     val staticData = getStaticData(cspValues)
 
     //rewrite the tree while sharing common subexpression, producing a DAG.
     val cseExp = constlessExp transform {
-      case Sym(defNode) => toAtomCSE(defNode) //XXX We need to build here a symbol which does consider the id in the equality!
-        //XXX useless
-      case c: Const[t] => rebuildConst(c) //Allow CSE to help! (Hm, pretending CSE would consider node identities, which it does not).
-      //In fact, it won't distinguish between Symbols in different scopes, since the IDs are not part of equality comparison. Darn!
+      case Sym(defNode) =>
+        //XXX We need to build here a symbol which does consider the id in the equality! But write a test for that first.
+        //Otherwise, CSE won't distinguish between Symbols in different scopes, since the IDs are not part of equality comparison. Darn!
+        toAtomCSE(defNode)
+      case c: Const[t] => throw new RuntimeException("Const expression in constlessExp")
     }
 
     val symlessExp = collectSymbols(cseExp)
