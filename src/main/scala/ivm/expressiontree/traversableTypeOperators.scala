@@ -90,7 +90,6 @@ case class TypeCaseExp[BaseT, Repr <: Traversable[BaseT] with TraversableLike[Ba
     } yield f(v)).toSet
   }
   override def toCode = {
-    //val namedVar = NamedVar("el")
     val caseCode =
       for {
         t <- cases.asInstanceOf[Seq[TypeCase[Any, Res]]]
@@ -98,30 +97,14 @@ case class TypeCaseExp[BaseT, Repr <: Traversable[BaseT] with TraversableLike[Ba
         namedVar = NamedVar("el.asInstanceOf[%s]" format className) //Use instead an AsInstanceOf node, to add!
       }
       yield
-        /*s"""
-          |if (el.isInstanceOf[${className}}] && ivm.expressiontree.Util.let(el.asInstanceOf[${className}])(${t.guard.toCode})) {
-          |  Seq(ivm.expressiontree.Util.let(el.asInstanceOf[${className}])(${t.f.toCode})
-          |} else
-        """.stripMargin*/
         s"""  case el: ${className} if ivm.expressiontree.Util.let(el)(${t.guard.toCode}) =>
            |    Seq(ivm.expressiontree.Util.let(el)(${t.f.toCode}))""".stripMargin
-        /*s"""
-          |if (el.isInstanceOf[${className}}]) {
-          |  val el2 = el.asInstanceOf[${className}]
-          |  if (ivm.expressiontree.Util.let(el2)(${t.guard.toCode}))
-          |    Seq(ivm.expressiontree.Util.let(el.asInstanceOf[${className}])(${t.f.toCode})
-          |} else
-        """.stripMargin*/
-    /*yield """if (el.isInstanceOf[%s] && %s) {
-|  Seq(%s)
-|} else""".stripMargin format (className, t.guard.defNode.f(namedVar).toCode, t.f.defNode.f(namedVar).toCode)*/
+    //Alternative: fix substitution in Attach and write:
+    //t.guard.defNode.f(namedVar).toCode, t.f.defNode.f(namedVar).toCode)
     """(%s flatMap {
       |%s
       |  case _ => Seq.empty
       |}).toSet[%s]""".stripMargin.format(e.toCode, caseCode.mkString("\n"), Compile.manifestToString(typeTag[Res]))
-    /*s"""
-      |${e.toCode} flatMap
-    """.stripMargin*/
   }
   //cases map { case TypeCase(classS, f) => (v: Base) => if (v == null || !classS.isInstance(v)) Util.ifInstanceOfBody(v, classS)}
 }
