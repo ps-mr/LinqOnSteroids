@@ -42,6 +42,10 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
   println("Numer of methods: " + methodsSQuOpt().interpret().size)
 
 
+  def boolOptionGet(optionVal: Exp[Iterable[Boolean]]): Exp[Boolean] =
+    optionGetOrElse(optionVal, false)
+  def optionGetOrElse[T](optionVal: Exp[Iterable[T]], default: Exp[T]): Exp[T] = optionVal.foldLeft(default)(_._2)
+
   def fieldsNative() = {
     import schema._
     for {
