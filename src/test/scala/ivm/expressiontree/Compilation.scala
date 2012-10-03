@@ -43,7 +43,7 @@ class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
     Compile.precompileReset()
     val exp = asExp(1).ifInstanceOf[Int].ifInstanceOf[Option[Int]]
     toCode(exp) should be (
-      "ivm.expressiontree.Util.ifInstanceOfBody(ivm.expressiontree.Util.ifInstanceOfBody(x1, x2): Option[Int], x3): Option[Option[Int]]")
+      "ivm.expressiontree.Util.ifInstanceOfBody(ivm.expressiontree.Util.ifInstanceOfBody(x1, x2): Option[Int], x3): Option[scala.Option[Int]]")
     Compile toValue exp should be (Some(Some(1)))
   }
 
