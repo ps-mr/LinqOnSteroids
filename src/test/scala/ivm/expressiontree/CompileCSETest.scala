@@ -51,6 +51,7 @@ class CompileCSETest extends FunSuite with ShouldMatchers {
       }
     } + 2) should be (8)
   }
+
   test("CSE works on for comprehensions") {
     reset()
     toValueCSE(for {
@@ -58,8 +59,23 @@ class CompileCSETest extends FunSuite with ShouldMatchers {
       if i % 2 ==# 0
     } yield i) should be (2 to (10, step = 2))
   }
+
   test("CSE works on persistent nodes") {
     reset()
     toValueCSE(asExp(1).ifInstanceOf[Int]) should be (Some(1))
+  }
+
+  test("CSE does not move non-terminating expressions out of functions") {
+    reset()
+    //val empty = Seq.empty.asSquopt //too hard for Scalac sometimes.
+    val empty = Seq.empty[Int].asSquopt
+    toValueCSE(empty.filter(x => empty.head != null)) should be (Seq.empty)
+    toValueCSE(empty.map(x => empty.head)) should be (Seq.empty)
+  }
+
+  test("CSE does not move non-terminating expressions out of ifs") {
+    reset()
+    val empty = Seq.empty.asSquopt
+    toValueCSE(if_# (asExp(1) % 2 ==# 0) {empty.head} else_# {0}) should be (0)
   }
 }
