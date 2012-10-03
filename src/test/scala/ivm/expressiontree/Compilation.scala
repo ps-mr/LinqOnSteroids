@@ -48,12 +48,12 @@ class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
   test("output") {
     if (Const.allowInlineInEval) {
       Compile.emitSource(e) should be(
-        """class Outclass1() extends Compiled[Int] {
+        """class Outclass1() extends ivm.expressiontree.Compiled[Int] {
           |  override def result = ((1) + (2)) * (3)
           |}""".stripMargin)
     } else {
       Compile.emitSource(e) should be(
-        """class Outclass1(val x1: Int, val x2: Int, val x3: Int) extends Compiled[Int] {
+        """class Outclass1(val x1: Int, val x2: Int, val x3: Int) extends ivm.expressiontree.Compiled[Int] {
           |  override def result = ((x1) + (x2)) * (x3)
           |}""".stripMargin)
     }
