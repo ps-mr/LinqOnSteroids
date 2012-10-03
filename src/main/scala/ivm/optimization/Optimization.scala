@@ -73,6 +73,22 @@ object Optimization {
     exp
   }
 
+  /*
+  TODO:
+  sealed trait ExpNormalForm[T]
+  case class FlatMapNF[T](e: Exp[T]) extends ExpNormalForm[T]
+  case class MapNF[T](e: Exp[T]) extends ExpNormalForm[T]
+  implicit def flatMapToExp: FlatMapNF[T] => Exp[T] = {
+    case FlatMapNF(e) => e
+  }
+  implicit def mapToExp: MapNF[T] => Exp[T] = {
+    case MapNF(e) => e
+  }
+  def mapToFlatMap[T]: Exp[T] => FlatMapNF[T]
+  def flatMapToMap[T]: Exp[T] => MapNF[T]
+  Maybe even tag the transformer and have Exp.transform produce the right type.
+  */
+
   //Optimization entry points and major phases {{{
 
   //After letTransformer (an inliner), we can reduce redexes which arised; let's not do that, to avoid inlining
@@ -166,12 +182,13 @@ object Optimization {
     (cartProdToAntiJoin[T] _ compose optimizeCartProdToJoin[T] compose flatMapToMap[T])(exp)
   //cartProdToAntiJoin(optimizeCartProdToJoin(
 
+  //Requires flatMap normal form
   private def newHandleFilters[T](exp: Exp[T]): Exp[T] =
     (handleFilters[T] _ compose simplifyConditions[T])(exp)
 
   //Requires flatMap normal form
   def handleFilters[T](exp: Exp[T]): Exp[T] =
-    hoistFilter(mergeFilters(exp))
+    removeTrivialFilters(hoistFilter(mergeFilters(exp)))
 
   //Accepts either normal form
   private def filterFusion[T](exp: Exp[T]): Exp[T] =

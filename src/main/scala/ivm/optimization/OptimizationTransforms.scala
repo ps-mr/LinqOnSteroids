@@ -80,20 +80,29 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
     //This is to apply (recursively) after joining consecutive filters
   val hoistFilter: Exp[_] => Exp[_] = {
     case e @ Sym(FlatMap(coll1, fmFun @ FunSym(FuncExpBody(Sym(FlatMap(Sym(Filter(coll2: Exp[Traversable[u]], filterFun)), fmFun2)))))) =>
-      val (firstFilter, otherFilters) = filterFun.body match {
+      /*val (firstFilter, otherFilters) = filterFun.body match {
         case Sym(And(firstFilter, otherFilters)) =>
           (firstFilter, Some(otherFilters))
         case body => (body, None)
-      }
+      }*/
+      val allFilters = collectConds(filterFun.body)
+      val (filtersToLeave, filtersToHoist) = allFilters partition (_ isOrContains filterFun.x)
+      if (filtersToHoist.nonEmpty)
+        //Maybe just use fold without checking nonEmpty? Hm, a bit wasteful.
+        buildHoistedFilter(coll1, fmFun, coll2, filterFun, filtersToHoist reduce (_ && _), Some((filtersToLeave fold (asExp(true))) (_ && _)), fmFun2)
+      else
+        e
       /*coll1 withFilter Fun.makefun(firstFilter, fmFun.x).f flatMap
       Fun.makefun(otherFilters.fold(identity[Exp[Traversable[u]]] _)
                   ((filters: Exp[Boolean]) => (_ filter Fun.makefun(filters, filterFun.x))) apply stripView(coll2) flatMap fmFun2.f, fmFun.x).f*/
 
+      /*
       //A recursive call is needed here to lift further filters.
-      if (!firstFilter.isOrContains(filterFun.x))
+      if (!firstFilter isOrContains filterFun.x)
         hoistFilter(buildHoistedFilter(coll1, fmFun, coll2, filterFun, firstFilter, otherFilters, fmFun2))
       else
         e
+        */
     case e => e
   }
 

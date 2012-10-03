@@ -177,7 +177,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     Yquery.optimize should be (expected)
   }
 
-  @Ignore @Test
+  @Test
   def unnestingFromPaperPart2() {
     //this example works now even in practice! Making it work requires various forms of fusion and inlining, together with filter hoisting.
     val Zquery = for {
