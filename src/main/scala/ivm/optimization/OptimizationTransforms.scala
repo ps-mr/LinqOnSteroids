@@ -51,9 +51,6 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
     ret
   }
 
-  //The body moves the filter up one level, but we want to do it multiple times, as many as needed.
-  //However, we needn't apply this optimization in a fixpoint loop: the optimization is applied bottom up, which is
-  //exactly what we need!
   //Scalac miscompiles this code if I write it the obvious way - without optimizations enabled!
   //coll1 >>= (\x. (filter coll2 (\y. filterFun y)) >>= fmFun2)
   val hoistFilter: Exp[_] => Exp[_] = {
@@ -66,43 +63,31 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
     case e => e
   }
   */
-  //The body moves the filter up one level, but we want to do it multiple times, as many as needed.
   private def buildHoistedFilter[T, U, V](coll1: Exp[Traversable[T]], fmFun: FunSym[T, Traversable[V]],
                                           coll2: Exp[Traversable[U]],
-                                          filterFun: FunSym[U, Boolean], firstFilter: Exp[Boolean], otherFilters: Option[Exp[Boolean]],
-                                          fmFun2: FunSym[U, Traversable[V]]): Exp[Traversable[V]] = {
-    coll1.withFilter(Fun.makefun(firstFilter, fmFun.x).f).flatMap(
-      Fun.makefun(otherFilters.fold(identity[Exp[Traversable[U]]] _)
-                    ((filters: Exp[Boolean]) => (_ filter Fun.makefun(filters, filterFun.x).f)) apply
-                  stripView(coll2) flatMap fmFun2.f, fmFun.x).f)
+                                          filterFun: FunSym[U, Boolean], filtersToHoist: Seq[Exp[Boolean]], otherFilters: Seq[Exp[Boolean]],
+                                          fmFun2: FunSym[U, Traversable[V]]): Option[Exp[Traversable[V]]] = {
+    if (filtersToHoist.nonEmpty) {
+      val hoistedPred = Fun.makefun(filtersToHoist reduce (_ && _), fmFun.x)
+      val coll2WithOtherFilters =
+        ExpTransformer(removeTrivialFilters) {
+          stripView(coll2) filter Fun.makefun((otherFilters fold asExp(true)) (_ && _), filterFun.x).f
+        }
+      Some(coll1 withFilter hoistedPred.f flatMap Fun.makefun(coll2WithOtherFilters flatMap fmFun2.f, fmFun.x).f)
+    } else
+      None
   }
 
-    //This is to apply (recursively) after joining consecutive filters
+
+  //This is to apply after joining consecutive filters
+  //The body moves the filter up one level, but we want to do it multiple times, as many as needed.
+  //However, we needn't apply this optimization in a fixpoint loop: the optimization is applied bottom up, which is
+  //exactly what we need!
   val hoistFilter: Exp[_] => Exp[_] = {
     case e @ Sym(FlatMap(coll1, fmFun @ FunSym(FuncExpBody(Sym(FlatMap(Sym(Filter(coll2: Exp[Traversable[u]], filterFun)), fmFun2)))))) =>
-      /*val (firstFilter, otherFilters) = filterFun.body match {
-        case Sym(And(firstFilter, otherFilters)) =>
-          (firstFilter, Some(otherFilters))
-        case body => (body, None)
-      }*/
       val allFilters = collectConds(filterFun.body)
-      val (filtersToLeave, filtersToHoist) = allFilters partition (_ isOrContains filterFun.x)
-      if (filtersToHoist.nonEmpty)
-        //Maybe just use fold without checking nonEmpty? Hm, a bit wasteful.
-        buildHoistedFilter(coll1, fmFun, coll2, filterFun, filtersToHoist reduce (_ && _), Some((filtersToLeave fold (asExp(true))) (_ && _)), fmFun2)
-      else
-        e
-      /*coll1 withFilter Fun.makefun(firstFilter, fmFun.x).f flatMap
-      Fun.makefun(otherFilters.fold(identity[Exp[Traversable[u]]] _)
-                  ((filters: Exp[Boolean]) => (_ filter Fun.makefun(filters, filterFun.x))) apply stripView(coll2) flatMap fmFun2.f, fmFun.x).f*/
-
-      /*
-      //A recursive call is needed here to lift further filters.
-      if (!firstFilter isOrContains filterFun.x)
-        hoistFilter(buildHoistedFilter(coll1, fmFun, coll2, filterFun, firstFilter, otherFilters, fmFun2))
-      else
-        e
-        */
+      val (otherFilters, filtersToHoist) = allFilters partition (_ isOrContains filterFun.x)
+      buildHoistedFilter(coll1, fmFun, coll2, filterFun, filtersToHoist, otherFilters, fmFun2) getOrElse e
     case e => e
   }
 

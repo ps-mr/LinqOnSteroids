@@ -188,7 +188,7 @@ object Optimization {
 
   //Requires flatMap normal form
   def handleFilters[T](exp: Exp[T]): Exp[T] =
-    removeTrivialFilters(hoistFilter(mergeFilters(exp)))
+    hoistFilter(mergeFilters(exp))
 
   //Accepts either normal form
   private def filterFusion[T](exp: Exp[T]): Exp[T] =
