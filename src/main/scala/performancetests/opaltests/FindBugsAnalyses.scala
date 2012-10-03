@@ -78,10 +78,10 @@ object FindBugsAnalyses {
   val parser = new OptionParser[FBConfig]("FindBugsAnalyses", "0.1") {
     def options = Seq(
       //XXX: these should all use flag, not booleanOpt.
-      booleanOpt("onlyOptimized", "") { (v, c) => c.copy(onlyOptimized = v) },
-      booleanOpt("onlyBaseline", "") { (v, c) => c.copy(onlyBaseline = v) },
-      booleanOpt("onlyInFindBugs", "") { (v, c) => c.copy(onlyInFindBugs = v) },
-      booleanOpt("debugBench", "") { (v, c) => c.copy(debugBench = v) },
+      flag("onlyOptimized", "") { _.copy(onlyOptimized = true) },
+      flag("onlyBaseline", "") { _.copy(onlyBaseline = true) },
+      flag("onlyInFindBugs", "") { _.copy(onlyInFindBugs = true) },
+      flag("debugBench", "") { _.copy(debugBench = true) },
       intOpt("executionCycles",
         "how many cycles of each benchmark should be timed as one unit? Default 1") {
         (v, c) => c.copy(executionCycles = v)

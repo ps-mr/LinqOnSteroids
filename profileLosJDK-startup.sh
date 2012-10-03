@@ -20,12 +20,12 @@ echo "Git version: $gitV" > $out
 
 for ((i=0; i < $nIters; i++)); do
   {
-    $(which time) -f "$gitV;%e;%U;%S;%P" ./start.sh data/rt.jar --onlyOptimized 1 --onlyInFindBugs 1 --debugBench 1
+    $(which time) -f "$gitV;%e;%U;%S;%P" ./start.sh data/rt.jar --onlyOptimized --onlyInFindBugs --debugBench
   } >>$out 2>&1
   tail -1 $out >> $outCSVOptimized
 
   {
-    $(which time) -f "$gitV;%e;%U;%S;%P" ./start.sh data/rt.jar --onlyBaseline 1 --onlyInFindBugs 1 --debugBench 1
+    $(which time) -f "$gitV;%e;%U;%S;%P" ./start.sh data/rt.jar --onlyBaseline --onlyInFindBugs --debugBench
   } >>$out 2>&1
   tail -1 $out >> $outCSVBaseline
 done
