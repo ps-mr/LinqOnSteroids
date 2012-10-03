@@ -137,6 +137,7 @@ trait ScalaLangIntf extends BaseLangIntf {
 
     def isInstanceOf_#[S: ClassTag: TypeTag]: Rep[Boolean]
     def asInstanceOf_#[S: ClassTag: TypeTag]: Rep[S]
+    def toString_# : Rep[String]
   }
 }
 
@@ -154,6 +155,7 @@ trait ScalaLangImpl extends ScalaLangIntf with BaseLangImpl {
 
     def isInstanceOf_#[S: ClassTag: TypeTag]: Exp[Boolean] = IsInstanceOf[T, S](e)
     def asInstanceOf_#[S: ClassTag: TypeTag]: Exp[S] = AsInstanceOf[T, S](e)
+    def toString_# : Exp[String] = ToString(e)
   }
 }
 
