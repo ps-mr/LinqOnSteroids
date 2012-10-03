@@ -37,32 +37,6 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
     case e => e
   }
 
-  /*
-  private def buildHoistedFilter[T, U, V](coll1: Exp[Traversable[T]], fmFun: Fun[T, Traversable[V]],
-                                                    coll2: Exp[Traversable[U]],
-                                                    filterFun: Fun[U, Boolean],
-                                                    fmFun2: Fun[U, Traversable[V]]): Exp[Traversable[V]] = {
-    //Let's show that the source types are correct, in that we can rebuild the original expression:
-    import Util.assertType
-    assertType[Exp[Traversable[V]]](coll1.flatMap(fmFun.f))
-    assertType[Exp[Traversable[V]]](coll1.flatMap(Fun.makefun(coll2.filter(filterFun.f).flatMap(fmFun2.f), fmFun.x).f))
-    val ret = coll1.withFilter(Fun.makefun(filterFun.body, fmFun.x).f) flatMap Fun.makefun(stripView(coll2) flatMap fmFun2.f, fmFun.x).f
-    assertType[Exp[Traversable[V]]](ret)
-    ret
-  }
-
-  //Scalac miscompiles this code if I write it the obvious way - without optimizations enabled!
-  //coll1 >>= (\x. (filter coll2 (\y. filterFun y)) >>= fmFun2)
-  val hoistFilter: Exp[_] => Exp[_] = {
-    //This is wrong, since filterFun is the filter which is executed last on
-    //coll2! We will move it and execute it before the other filters, which we decided not to do.
-    //Alternatively, we could just take any filter and handle null checks specially.
-    case FlatMap(coll1, fmFun@FuncExpBody(FlatMap(Filter(coll2, filterFun), fmFun2)))
-      if !filterFun.body.isOrContains(filterFun.x) =>
-      buildHoistedFilter(coll1, fmFun, coll2, filterFun, fmFun2)
-    case e => e
-  }
-  */
   private def buildHoistedFilter[T, U, V](coll1: Exp[Traversable[T]], fmFun: FunSym[T, Traversable[V]],
                                           coll2: Exp[Traversable[U]],
                                           filterFun: FunSym[U, Boolean], filtersToHoist: Seq[Exp[Boolean]], otherFilters: Seq[Exp[Boolean]],
@@ -78,13 +52,18 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
       None
   }
 
-
-  //This is to apply after joining consecutive filters
+  //Given
+  //coll1 flatMap (x => coll2 filter (y => filterFun) flatMap fmFun2)
+  //split filterFun: Exp[Boolean] into a part which does not refer to y, filtersToHoist, and another part, otherFilters.
+  //Then produce:
+  //coll1 filter (x => filtersToHoist) flatMap (x => coll2 filter (y => otherFilters) flatMap fmFun2)
+  //
+  //This is to apply after fusing consecutive filters.
   //The body moves the filter up one level, but we want to do it multiple times, as many as needed.
   //However, we needn't apply this optimization in a fixpoint loop: the optimization is applied bottom up, which is
   //exactly what we need!
   val hoistFilter: Exp[_] => Exp[_] = {
-    case e @ Sym(FlatMap(coll1, fmFun @ FunSym(FuncExpBody(Sym(FlatMap(Sym(Filter(coll2: Exp[Traversable[u]], filterFun)), fmFun2)))))) =>
+    case e @ Sym(FlatMap(coll1, fmFun @ FunSym(FuncExpBody(Sym(FlatMap(Sym(Filter(coll2, filterFun)), fmFun2)))))) =>
       val allFilters = collectConds(filterFun.body)
       val (otherFilters, filtersToHoist) = allFilters partition (_ isOrContains filterFun.x)
       buildHoistedFilter(coll1, fmFun, coll2, filterFun, filtersToHoist, otherFilters, fmFun2) getOrElse e
