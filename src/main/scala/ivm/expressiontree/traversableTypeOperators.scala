@@ -103,10 +103,8 @@ case class TypeCaseExp[BaseT, Repr <: Traversable[BaseT] with TraversableLike[Ba
           |  Seq(ivm.expressiontree.Util.let(el.asInstanceOf[${className}])(${t.f.toCode})
           |} else
         """.stripMargin*/
-        s"""
-          |  case el: ${className} if ivm.expressiontree.Util.let(el)(${t.guard.toCode}) =>
-          |    Seq(ivm.expressiontree.Util.let(el)(${t.f.toCode}))
-        """.stripMargin
+        s"""  case el: ${className} if ivm.expressiontree.Util.let(el)(${t.guard.toCode}) =>
+           |    Seq(ivm.expressiontree.Util.let(el)(${t.f.toCode}))""".stripMargin
         /*s"""
           |if (el.isInstanceOf[${className}}]) {
           |  val el2 = el.asInstanceOf[${className}]

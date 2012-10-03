@@ -207,13 +207,12 @@ object Compile {
 
     override def toCode = {
       val symDecls = bindings sortBy (_._1) map {
-        case (id, boundNode) => "    val %s%d = %s" format (symValPrefix, id, boundNode.toCode)
-      } mkString "\n"
+        case (id, boundNode) => "    val %s%d = %s\n" format (symValPrefix, id, boundNode.toCode)
+      } mkString ""
       wrappedExp match {
         case _ =>
           s"""{
-          |${symDecls}
-          |    ${wrappedExp.toCode}
+          |${symDecls}    ${wrappedExp.toCode}
           |  }""".stripMargin
       }
     }
@@ -245,7 +244,7 @@ object Compile {
       //it's an optim we don't do yet :-(.
       val scope = scopeList.head
       scope.boundVar match {
-        //case Some(boundVar) if !(s.defNode isOrContainsGen boundVar) =>
+        //case Some(boundVar) if !(s.defNode isOrContainsGen boundVar) => //XXX: I'd have to check for all the symbols bound in scope!
           //toSymRef(scopeList.tail, s)
         case _ =>
           scope.bindings put (s.id, s.defNode)
