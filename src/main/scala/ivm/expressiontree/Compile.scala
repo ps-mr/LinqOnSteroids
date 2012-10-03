@@ -321,7 +321,9 @@ object Compile {
 
   //Only for testing
   private[expressiontree] def toCode[T: TypeTag](e: Exp[T]): String = {
-    removeConsts(e).toCode
+    val precompiledExp = removeConsts(e)
+    precompiledExp.persistValues() //We ignore the return values, but we need the side effects of this call.
+    precompiledExp.toCode
   }
 
   private[expressiontree] def emitSource[T: TypeTag](e: Exp[T]): String = {

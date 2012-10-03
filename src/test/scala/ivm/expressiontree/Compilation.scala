@@ -32,6 +32,21 @@ class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
     toCode(asExp(List(1))) should be("x1")
   }
 
+  test("csp works for PersistValue nodes") {
+    Compile.precompileReset()
+    val exp = asExp(1).ifInstanceOf[Int]
+    toCode(exp) should be ("ivm.expressiontree.Util.ifInstanceOfBody(x1, x2): Option[Int]")
+    Compile toValue exp should be (Some(1))
+  }
+
+  test("csp works for nested PersistValue nodes") {
+    Compile.precompileReset()
+    val exp = asExp(1).ifInstanceOf[Int].ifInstanceOf[Option[Int]]
+    toCode(exp) should be (
+      "ivm.expressiontree.Util.ifInstanceOfBody(ivm.expressiontree.Util.ifInstanceOfBody(x1, x2): Option[Int], x3): Option[Option[Int]]")
+    Compile toValue exp should be (Some(Some(1)))
+  }
+
   val e = benchMark("build expression")(((asExp(1) + 2) * 3))
 
   test("code generation") {
@@ -46,6 +61,7 @@ class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
     toCode(expOption2Iterable(Some(1)).transform(identity)) should be("Option.option2Iterable(x1)")
   }
   test("output") {
+    Compile.reset()
     if (Const.allowInlineInEval) {
       Compile.emitSource(e) should be(
         """class Outclass1() extends ivm.expressiontree.Compiled[Int] {
