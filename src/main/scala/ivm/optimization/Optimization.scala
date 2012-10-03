@@ -185,6 +185,10 @@ object Optimization {
   //Requires flatMap normal form
   private def newHandleFilters[T](exp: Exp[T]): Exp[T] =
     (handleFilters[T] _ compose simplifyConditions[T])(exp)
+  //Shouldn't that be
+  //(handleFilters[T] _ compose simplifyFilters[T])(exp)
+  //? In general, TODO: replace simplifyConditions by simplifyFilters for extra robustness.
+
 
   //Requires flatMap normal form
   def handleFilters[T](exp: Exp[T]): Exp[T] =
