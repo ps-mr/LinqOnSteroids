@@ -52,7 +52,7 @@ trait FI_USELESS {
                method.body.get.instructions.length == 5 &&
                method.body.get.instructions.exists(
             {
-              case INVOKESPECIAL(_, "finalize", `finalizeMethodDescriptor`) ⇒ true;
+              case INVOKESPECIAL(_, "finalize", `finalizeMethodDescriptor`) ⇒ true
               case _                                                ⇒ false
             }                            )
       } yield (classFile, method)
@@ -83,7 +83,7 @@ trait FI_USELESS {
                body.instructions.length == 5 &&
                body.instructions.exists(
                   {
-                    case INVOKESPECIAL(_, "finalize", `finalizeMethodDescriptor`) ⇒ true;
+                    case INVOKESPECIAL(_, "finalize", `finalizeMethodDescriptor`) ⇒ true
                     case _                                                ⇒ false
                   }                            )
       } yield (classFile, method)
