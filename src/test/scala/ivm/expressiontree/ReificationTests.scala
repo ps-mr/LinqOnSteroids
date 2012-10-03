@@ -1,9 +1,8 @@
 package ivm
-package tests
+package expressiontree
 
 import scala.collection.immutable.Vector
-import expressiontree.Lifting._
-import expressiontree._
+import Lifting._
 import org.scalatest.junit.JUnitSuite
 import org.scalatest.junit.ShouldMatchersForJUnit
 import org.junit.{Ignore, Test}
@@ -104,14 +103,19 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
   def testTypeCase() {
     val exp = Seq(1, "foo", 5.0, new AnyRef).asSquopt typeCase (when[Int](_.toString_#), when[String](identity))
     println(exp)
-    println(exp.interpret().force)
+    exp.interpret().force should be (Set("1", "foo"))
+    println(Compile toCode exp)
+    Compile toValue exp should be (Set("1", "foo"))
   }
 
   @Test
   def testTypeCase2() {
     val exp = Seq(1, "foo", 5.0, new AnyRef).asSquopt typeCase (when[Int](_ => true, _ => "an int" /* + _.interpret(); _.toString*/), when[String](_ => true, identity))
     println(exp)
+    exp.interpret().force should be (Set("an int", "foo"))
     println(exp.interpret().force)
+    println(Compile toCode exp)
+    Compile toValue exp should be (Set("an int", "foo"))
   }
 }
 
