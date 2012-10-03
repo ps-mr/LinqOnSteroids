@@ -68,12 +68,14 @@ trait FI_USELESS {
       for { classFile ← classFiles.asSquopt
             if !classFile.isInterfaceDeclaration // performance optimization
             method ← classFile.methods
-            if method.name ==# "finalize" && method.descriptor ==# finalizeMethodDescriptor
-            body <- method.body
-            if body.instructions.length ==# 5 &&
-               body.instructions.exists(instruction => (instruction.ifInstanceOf[INVOKESPECIAL] map { invoke =>
-                 invoke.name ==# "finalize" && invoke.methodDescriptor ==# finalizeMethodDescriptor
-               }).foldLeft(false){ pair => pair._1 || pair._2 })
+            if method.body.isDefined &&
+               method.name ==# "finalize" && method.descriptor ==# finalizeMethodDescriptor &&
+               method.body.get.instructions.length ==# 5 &&
+               method.body.get.instructions.exists( instruction => instruction.isInstanceOf_#[INVOKESPECIAL] &&
+                 {
+                    val invoke = instruction.asInstanceOf_#[INVOKESPECIAL]
+                    invoke.name ==# "finalize" && invoke.methodDescriptor ==# finalizeMethodDescriptor
+                 })
       } yield (classFile, method)
   }
 
@@ -103,9 +105,11 @@ trait FI_USELESS {
             if !concreteMethodRecord.classFile.isInterfaceDeclaration && // performance optimization
                concreteMethodRecord.method.name ==# "finalize" && concreteMethodRecord.method.descriptor ==# finalizeMethodDescriptor &&
                concreteMethodRecord.body.instructions.length ==# 5 &&
-               concreteMethodRecord.body.instructions.exists(instruction => (instruction.ifInstanceOf[INVOKESPECIAL] map { invoke =>
-                 invoke.name ==# "finalize" && invoke.methodDescriptor ==# finalizeMethodDescriptor
-               }).foldLeft(false){ pair => pair._1 || pair._2 })
+               concreteMethodRecord.body.instructions.exists( instruction => instruction.isInstanceOf_#[INVOKESPECIAL] &&
+                 {
+                    val invoke = instruction.asInstanceOf_#[INVOKESPECIAL]
+                    invoke.name ==# "finalize" && invoke.methodDescriptor ==# finalizeMethodDescriptor
+                 })
       } yield (concreteMethodRecord.classFile, concreteMethodRecord.method)
     }
 
