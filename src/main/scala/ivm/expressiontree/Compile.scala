@@ -124,16 +124,17 @@ object Compile {
   //new ScalaThreadLocal(mutable.Map[Exp[_], Option[Constructor[_]]]())
 
   //*Reset methods are just (or mostly?) for testing {{{
-  //XXX: Actually, we should do most map resets at exit, not at entry to avoid memory leaks.
+  //XXX: Actually, we should do most map resets at exit, not at entry to avoid holding until next compilation onto
+  // things we won't need, that is, and memory leaks.
   def precompileReset() {
     cspMap.get().clear()
     varId.localReset()
+    Sym.gensymId.localReset()
   }
 
   def reset() {
     precompileReset()
     classId.reset()
-    Sym.gensymId.localReset()
   }
 
   //Clears the cache of compiled programs!
