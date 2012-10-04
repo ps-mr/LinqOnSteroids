@@ -73,12 +73,12 @@ trait ITA_INEFFICIENT_TO_ARRAY{
            if instructionsWithIndex(0)._1 ==# ICONST_0 &&
               instructionsWithIndex(1)._1.isInstanceOf_#[ANEWARRAY] &&
               (
-              (instructionsWithIndex(2)._1.isInstanceOf_#[INVOKEINTERFACE] &&
-                {val third = instructionsWithIndex(2)._1.asInstanceOf_#[INVOKEINTERFACE]
+              boolOptionGet(instructionsWithIndex(2)._1.ifInstanceOf[INVOKEINTERFACE] map {
+                third =>
                  third.name ==# "toArray" && third.methodDescriptor ==# toArrayDescriptor && isCollectionType(third.declaringClass)
                 }) ||
-              (instructionsWithIndex(2)._1.isInstanceOf_#[INVOKEVIRTUAL] &&
-                              {val third = instructionsWithIndex(2)._1.asInstanceOf_#[INVOKEVIRTUAL]
+              boolOptionGet(instructionsWithIndex(2)._1.ifInstanceOf[INVOKEVIRTUAL] map {
+                              third =>
                                third.name ==# "toArray" && third.methodDescriptor ==# toArrayDescriptor && isCollectionType(third.declaringClass)
                               })
               )
@@ -116,12 +116,12 @@ trait ITA_INEFFICIENT_TO_ARRAY{
            if window.instrs.apply(0) ==# ICONST_0 &&  // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
               window.instrs.apply(1).isInstanceOf_#[ANEWARRAY] && // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
               (
-              (window.instrs.apply(2).isInstanceOf_#[INVOKEINTERFACE] && // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
-                {val third = window.instrs.apply(2).asInstanceOf_#[INVOKEINTERFACE]
+              boolOptionGet(window.instrs.apply(2).ifInstanceOf[INVOKEINTERFACE] map { // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
+                third =>
                  third.name ==# "toArray" && third.methodDescriptor ==# toArrayDescriptor && isCollectionType(third.declaringClass)
                 }) ||
-              (window.instrs.apply(2).isInstanceOf_#[INVOKEVIRTUAL] && // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
-                              {val third = window.instrs.apply(2).asInstanceOf_#[INVOKEVIRTUAL]
+              boolOptionGet(window.instrs.apply(2).ifInstanceOf[INVOKEVIRTUAL] map { // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
+                              third =>
                                third.name ==# "toArray" && third.methodDescriptor ==# toArrayDescriptor && isCollectionType(third.declaringClass)
                               })
               )

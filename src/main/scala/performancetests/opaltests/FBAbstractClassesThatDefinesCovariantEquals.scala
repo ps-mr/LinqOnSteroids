@@ -35,7 +35,7 @@ trait FBAbstractClassesThatDefinesCovariantEquals {
       method ← classFile.methods
       if method.isAbstract && method.name ==# "equals" && method.descriptor.returnType ==# BooleanType
       parameterTypes <- Let(method.descriptor.parameterTypes)
-      if parameterTypes.length ==# 1 && parameterTypes(0) ==# classFile.thisClass //parameterTypes(0) !=# ObjectType.Object
+      if parameterTypes.length ==# 1 && boolOptionGet(parameterTypes.headOption map (_ ==# classFile.thisClass)) // _ !=# ObjectType.Object
     } yield (classFile.thisClass, method.name, method.descriptor)
   }
 
@@ -61,7 +61,7 @@ trait FBAbstractClassesThatDefinesCovariantEquals {
       methodRecord ← methodsSQuOpt
       if methodRecord.method.isAbstract && methodRecord.method.name ==# "equals" && methodRecord.method.descriptor.returnType ==# BooleanType
       parameterTypes <- Let(methodRecord.method.descriptor.parameterTypes)
-      if parameterTypes.length ==# 1 && parameterTypes(0) ==# methodRecord.classFile.thisClass //parameterTypes(0) !=# ObjectType.Object
+      if parameterTypes.length ==# 1 && boolOptionGet(parameterTypes.headOption map (_ ==# methodRecord.classFile.thisClass)) // _ !=# ObjectType.Object
     } yield (methodRecord.classFile.thisClass, methodRecord.method.name, methodRecord.method.descriptor)
   }
 

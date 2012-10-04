@@ -36,12 +36,11 @@ trait FBSerializableNoConstructor {
     import ivm.expressiontree.Util.ExtraImplicits._
     val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
       for {
-        superclass ← classHierarchy.superclasses(serializableClasses).asSquopt if getClassFile.asSquopt.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
-        {
-          val superClassFile = getClassFile.asSquopt.apply(superclass)
+        superclass ← classHierarchy.superclasses(serializableClasses).asSquopt if boolOptionGet(getClassFile.asSquopt.get(superclass) map { // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+          superClassFile =>
           !superClassFile.isInterfaceDeclaration &&
             !superClassFile.constructors.exists(_.descriptor.parameterTypes.length ==# 0)
-        }
+        })
       } yield superclass // only the class is returned; there can be at most one method
   }
 
@@ -74,12 +73,11 @@ trait FBSerializableNoConstructor {
       import schema.squopt._
       val serializableClasses = classHierarchy.subclasses(ObjectType("java/io/Serializable")).getOrElse(Set.empty)
             for {
-              superclass ← classHierarchy.superclasses(serializableClasses).asSquopt if getClassFile.asSquopt.isDefinedAt(superclass) && // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
-              {
-                val superClassFile = getClassFile.asSquopt.apply(superclass)
+              superclass ← classHierarchy.superclasses(serializableClasses).asSquopt if boolOptionGet(getClassFile.asSquopt.get(superclass) map {// the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
+                superClassFile =>
                 !superClassFile.isInterfaceDeclaration &&
                   !superClassFile.constructors.exists(_.descriptor.parameterTypes.length ==# 0)
-              }
+              })
             } yield superclass // only the class is returned; there can be at most one method
     }
 
