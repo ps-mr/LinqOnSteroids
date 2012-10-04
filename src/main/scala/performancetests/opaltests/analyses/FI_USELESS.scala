@@ -71,9 +71,9 @@ trait FI_USELESS {
             if method.name ==# "finalize" && method.descriptor ==# finalizeMethodDescriptor
             body <- method.body
             if body.instructions.length ==# 5 &&
-               body.instructions.exists(instruction => boolOptionGet(instruction.ifInstanceOf[INVOKESPECIAL] map { invoke =>
+               body.instructions.exists(instruction => instruction.ifInstanceOf[INVOKESPECIAL].fold(false) { invoke =>
                  invoke.name ==# "finalize" && invoke.methodDescriptor ==# finalizeMethodDescriptor
-               }))
+               })
       } yield (classFile, method)
   }
 
@@ -103,9 +103,9 @@ trait FI_USELESS {
             if !concreteMethodRecord.classFile.isInterfaceDeclaration && // performance optimization
                concreteMethodRecord.method.name ==# "finalize" && concreteMethodRecord.method.descriptor ==# finalizeMethodDescriptor &&
                concreteMethodRecord.body.instructions.length ==# 5 &&
-               concreteMethodRecord.body.instructions.exists(instruction => boolOptionGet(instruction.ifInstanceOf[INVOKESPECIAL] map { invoke =>
+               concreteMethodRecord.body.instructions.exists(instruction => instruction.ifInstanceOf[INVOKESPECIAL].fold(false) { invoke =>
                  invoke.name ==# "finalize" && invoke.methodDescriptor ==# finalizeMethodDescriptor
-               }))
+               })
       } yield (concreteMethodRecord.classFile, concreteMethodRecord.method)
     }
 

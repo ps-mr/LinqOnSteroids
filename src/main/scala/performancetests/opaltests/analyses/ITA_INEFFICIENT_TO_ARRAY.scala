@@ -73,14 +73,14 @@ trait ITA_INEFFICIENT_TO_ARRAY{
            if instructionsWithIndex(0)._1 ==# ICONST_0 &&
               instructionsWithIndex(1)._1.isInstanceOf_#[ANEWARRAY] &&
               (
-              boolOptionGet(instructionsWithIndex(2)._1.ifInstanceOf[INVOKEINTERFACE] map {
+              instructionsWithIndex(2)._1.ifInstanceOf[INVOKEINTERFACE].fold(false){
                 third =>
                  third.name ==# "toArray" && third.methodDescriptor ==# toArrayDescriptor && isCollectionType(third.declaringClass)
-                }) ||
-              boolOptionGet(instructionsWithIndex(2)._1.ifInstanceOf[INVOKEVIRTUAL] map {
+                } ||
+              instructionsWithIndex(2)._1.ifInstanceOf[INVOKEVIRTUAL].fold(false) {
                               third =>
                                third.name ==# "toArray" && third.methodDescriptor ==# toArrayDescriptor && isCollectionType(third.declaringClass)
-                              })
+                              }
               )
       ) yield
         (classFile,method, instructionsWithIndex.last._2)
@@ -116,14 +116,14 @@ trait ITA_INEFFICIENT_TO_ARRAY{
            if window.instrs.apply(0) ==# ICONST_0 &&  // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
               window.instrs.apply(1).isInstanceOf_#[ANEWARRAY] && // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
               (
-              boolOptionGet(window.instrs.apply(2).ifInstanceOf[INVOKEINTERFACE] map { // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
+              window.instrs.apply(2).ifInstanceOf[INVOKEINTERFACE].fold(false) { // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
                 third =>
                  third.name ==# "toArray" && third.methodDescriptor ==# toArrayDescriptor && isCollectionType(third.declaringClass)
-                }) ||
-              boolOptionGet(window.instrs.apply(2).ifInstanceOf[INVOKEVIRTUAL] map { // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
+                } ||
+              window.instrs.apply(2).ifInstanceOf[INVOKEVIRTUAL].fold(false) { // TODO had to add .apply() otherwise required: ivm.expressiontree.OverloadHack.Overloaded2 (why???)
                               third =>
                                third.name ==# "toArray" && third.methodDescriptor ==# toArrayDescriptor && isCollectionType(third.declaringClass)
-                              })
+                              }
               )
         ) yield
           (window.classFile,window.method, window.instrIdxes.last)

@@ -38,7 +38,7 @@ trait FBCovariantCompareToMethods {
         method ← classFile.methods //if parameterType != ObjectType.Object
         if method.name ==# "compareTo" && method.descriptor.returnType ==# IntegerType
         parameterTypes <- Let(method.descriptor.parameterTypes)
-        if parameterTypes.length ==# 1 && boolOptionGet(parameterTypes.headOption map (_ !=# ObjectType.Object))
+        if parameterTypes.length ==# 1 && parameterTypes.headOption.fold(false) (_ !=# ObjectType.Object)
 
       } yield (classFile.thisClass, method.name, method.descriptor)
   }
@@ -73,7 +73,7 @@ trait FBCovariantCompareToMethods {
         method ← classFile.methods //if parameterType != ObjectType.Object
         if method.name ==# "compareTo" && method.descriptor.returnType ==# IntegerType
         parameterTypes <- Let(method.descriptor.parameterTypes)
-        if parameterTypes.length ==# 1 && boolOptionGet(parameterTypes.headOption map (_ !=# ObjectType.Object))
+        if parameterTypes.length ==# 1 && parameterTypes.headOption.fold(false) (_ !=# ObjectType.Object)
 
       } yield (classFile.thisClass, method.name, method.descriptor)
     }
