@@ -63,8 +63,7 @@ trait SE_BAD_FIELD_INNER_CLASS {
   private def analyzeBaseWithoutAbstractions() = {
     val serializableClasses = classHierarchy.subclasses(serializable).getOrElse(Set.empty)
     for(  objectType ← serializableClasses;
-          classFile = getClassFile(objectType);
-          (outerType, thisInnerClassesAccessFlags) ← classFile.outerType
+          (outerType, thisInnerClassesAccessFlags) ← getClassFile(objectType).outerType
           if !hasStaticModifier(thisInnerClassesAccessFlags) &&
              !classHierarchy.isSubtypeOf(outerType, serializable).getOrElse(true /* if we don't know anything about the class, then we don't want to generate a warning */)
     ) yield {
