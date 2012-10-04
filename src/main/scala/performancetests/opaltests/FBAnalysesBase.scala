@@ -187,12 +187,8 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
 
   //Nested tuples don't work so well. Note the use of asExp below:
   def readFieldsSQuOpt: Exp[Set[((ClassFile, Method), (ObjectType, String, FieldType))]] = {
-    import de.tud.cs.st.bat.resolved._
-    import ivm._
-    import expressiontree._
-    import Lifting._
     import BATLifting._
-    import performancetests.opaltests.InstructionLifting._
+    import InstructionLifting._
     (for (classFile ← classFiles.asSquopt if !classFile.isInterfaceDeclaration;
           method ← classFile.methods if method.body.isDefined;
           instruction ← method.body.get.instructions
@@ -213,7 +209,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
   /**
    * Returns a filtered sequence of instructions without the bytecode padding
    */
-  def withIndexNative(instructions: Array[Instruction]): scala.collection.Seq[(Instruction, Int)] = {
+  def withIndexNative(instructions: Array[Instruction]): collection.Seq[(Instruction, Int)] = {
     instructions.zipWithIndex.filter { case (instr, _) => instr != null }
   }
 
@@ -222,8 +218,8 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
   /**
    * Returns a filtered sequence of instructions without the bytecode padding
    */
-  def withIndexSQuOpt(instructions: Exp[scala.collection.Seq[Instruction]]): Exp[scala.collection.Seq[(Instruction, Int)]] = {
-    import ivm.expressiontree.{Exp, Lifting}
+  def withIndexSQuOpt(instructions: Exp[scala.collection.Seq[Instruction]]): Exp[collection.Seq[(Instruction, Int)]] = {
+    import ivm.expressiontree.{Lifting}
     import Lifting._
     instructions.zipWithIndex.filter(_._1 !=# null)
     //.toSeq // RM: Okay this was an IDE Problem of IntelliJ
@@ -246,13 +242,17 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     def getMethodDeclarationSQuOpt(receiver: Exp[ObjectType],
                                    methodName: Exp[String],
                                    methodDescriptor: Exp[MethodDescriptor]): Exp[Option[(ClassFile, Method)]] = {
-      import de.tud.cs.st.bat.resolved._
-      import ivm._
-      import expressiontree._
       import Lifting._
       import BATLifting._
-      import performancetests.opaltests.InstructionLifting._
-      val classFileLookup : Exp[Option[ClassFile]] = getClassFileSQuOpt.get(receiver)
+      val classFileLookup= getClassFileSQuOpt.get(receiver)
+
+      for (classFile ← classFileLookup;
+        methodDecl ← (
+                     for (method ← classFile.methods
+                       if method.name == methodName &&
+                          method.descriptor == methodDescriptor) yield (classFile, method)
+                     ).headOption
+      ) yield methodDecl
 
       if_# (!classFileLookup.isDefined) {
                                        None
@@ -291,12 +291,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
      * Returns true if the method is also declared in the superclass; regardless of abstract or interface methods
      */
     def isOverrideSQuOpt(classFile: Exp[ClassFile])(method: Exp[Method]): Exp[Boolean] = {
-      import de.tud.cs.st.bat.resolved._
-      import ivm._
-      import expressiontree._
-      import Lifting._
       import BATLifting._
-      import performancetests.opaltests.InstructionLifting._
       (for (superClass ← classHierarchySQuOpt.superclasses(classFile.thisClass).getOrElse(Set());
                                methodDecl ← getMethodDeclarationSQuOpt(superClass, method.name, method.descriptor)
       ) yield {
@@ -315,12 +310,11 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
   }
 
   def declaresFieldSQuOpt(classFile: Exp[ClassFile])(name: Exp[String], fieldType: Exp[FieldType]): Exp[Boolean] = {
-    import de.tud.cs.st.bat.resolved._
     import ivm._
     import expressiontree._
     import Lifting._
     import BATLifting._
-    import performancetests.opaltests.InstructionLifting._
+    import InstructionLifting._
     classFile.fields.exists { field => field.name ==# name && field.fieldType ==# fieldType }
   }
 
@@ -329,25 +323,19 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
    */
   def calledSuperConstructorNative(classFile: ClassFile,
                                    constructor: Method): Option[(ClassFile, Method)] = {
-    val superClasses = classHierarchy.superclasses(classFile.thisClass)
-    if (!superClasses.isDefined) {
-       None
-    }
-    else{
-      val superConstructor = constructor.body.get.instructions.collectFirst {
-                                                                                            case INVOKESPECIAL(trgt, n, d)
-                                                                                              if superClasses.get.contains(trgt.asInstanceOf[ObjectType]) =>
-                                                                                              (trgt.asInstanceOf[ObjectType], n, d)
-
-                                                                                          }
-      superConstructor match {
-        case Some((targetType, name, desc)) => getMethodDeclarationNative(targetType, name, desc)
-        case None => None // we encountered java.lang.Object
-      }
+    val superClasses = classHierarchy.superclasses(classFile.thisClass).toList.flatten
+    constructor.body.get.instructions.collectFirst {
+      case INVOKESPECIAL(trgt, n, d)
+        if superClasses.contains(trgt.asInstanceOf[ObjectType]) =>
+        (trgt.asInstanceOf[ObjectType], n, d)
+      // if this is empty, we encountered java.lang.Object, which calls no super constructor.
+    } flatMap {
+      case (targetType, name, desc) => getMethodDeclarationNative(targetType, name, desc)
     }
   }
 
 
+  /*
   // TODO requires collectFirst
   def calledSuperConstructorSQuOptCollectFirst(classFile: Exp[ClassFile],
                                    constructor: Exp[Method]): Exp[Option[(ClassFile, Method)]] = {
@@ -356,7 +344,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
     import expressiontree._
     import Lifting._
     import BATLifting._
-    import performancetests.opaltests.InstructionLifting._
+    import InstructionLifting._
 
 
     val classType : Exp[ObjectType] =classFile.thisClass
@@ -376,34 +364,27 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       }
     }
   }
+  */
 
 
     def calledSuperConstructorSQuOpt(classFile: Exp[ClassFile],
-                                     constructor: Exp[Method]): Exp[Option[(ClassFile, Method)]] = {
-      import de.tud.cs.st.bat.resolved._
-      import ivm._
-      import expressiontree._
-      import Lifting._
+                                     constructor: Exp[Method]): Exp[Iterable[(ClassFile, Method)]] = {
       import BATLifting._
-      import performancetests.opaltests.InstructionLifting._
+      import InstructionLifting._
 
+      val classType: Exp[ObjectType] = classFile.thisClass
+      val superClassesOpt: Exp[Option[Set[ObjectType]]] = classHierarchySQuOpt.superclasses(classType)
 
-      val classType : Exp[ObjectType] =classFile.thisClass
-      val superClasses : Exp[Option[Set[ObjectType]]] = classHierarchySQuOpt.superclasses(classType)
-      if_# (!superClasses.isDefined) {
-        None
-      } else_# {
-        letExp(
-            (for( instruction ← constructor.body.get.instructions;
-                  invokeSpecial ← instruction.ifInstanceOf[INVOKESPECIAL]
-                  if superClasses.get.contains(invokeSpecial.declaringClass.asInstanceOf_#[ObjectType])
-            ) yield invokeSpecial)) (methodCall =>
-        if_# (methodCall.isEmpty) {
-          None
-        } else_# {
-          getMethodDeclarationSQuOpt(methodCall.head.declaringClass.asInstanceOf_#[ObjectType], methodCall.head.name, methodCall.head.methodDescriptor)
-        })
-      }
+      for {
+        superClasses <- superClassesOpt
+        methodCall <- (for {
+          instruction ← constructor.body.get.instructions
+          invokeSpecial ← instruction.ifInstanceOf[INVOKESPECIAL]
+          if superClasses.contains(invokeSpecial.declaringClass.asInstanceOf_#[ObjectType])
+        } yield invokeSpecial).headOption
+        result <- getMethodDeclarationSQuOpt(methodCall.declaringClass.asInstanceOf_#[ObjectType], methodCall.name, methodCall.methodDescriptor)
+      } yield
+        result
     }
 
   //XXX: code like this calls for an INVOKE superclass and extractor to be added to BAT.
@@ -422,13 +403,9 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
                                               }
   }
 
-  def callsSQuOpt(sourceMethod: Exp[Method], targetClass: Exp[ClassFile], targetMethod: Exp[Method]): Exp[Boolean ]= {
-    import de.tud.cs.st.bat.resolved._
-    import ivm._
-    import expressiontree._
-    import Lifting._
+  def callsSQuOpt(sourceMethod: Exp[Method], targetClass: Exp[ClassFile], targetMethod: Exp[Method]): Exp[Boolean] = {
     import BATLifting._
-    import performancetests.opaltests.InstructionLifting._
+    import InstructionLifting._
     // TODO in future versions it would be nice to compare to concrete instances directly ( but just if pattern matching does not work, otherwise I could do the pattern matching)
     /*
     val targetINVOKEINTERFACE = INVOKEINTERFACE(targetClass.thisClass, targetMethod.name, targetMethod.descriptor)
