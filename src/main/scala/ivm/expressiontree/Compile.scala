@@ -279,10 +279,16 @@ object Compile {
               //Moreover, it becomes simpler to do code generation.
               toAtomCSE(f genericConstructor List(withNewScope(Scope(Some(f.x)), topDownTraverse(body))))
               //withNewScope(Scope(Some(f.x)), toAtomCSE(computeNewDefNode))
-            case ifExpr @ IfThenElse(cond, thenBody, elseBody) =>
+            case IfThenElse(cond, thenBody, elseBody) =>
               toSymRef(scopeList, IfThenElse(topDownTraverse(cond),
                 withNewScope(Scope(None), topDownTraverse(thenBody)),
                 withNewScope(Scope(None), topDownTraverse(elseBody))))
+            case And(a, b) =>
+              (toSymRef[Boolean](scopeList, And(
+                withNewScope(Scope(None), topDownTraverse(a)),
+                withNewScope(Scope(None), topDownTraverse(b))))
+                //Stupid Scala GADT inference
+                : Exp[Boolean]).asInstanceOf[Exp[V]]
             case _ =>
               toSymRef(scopeList, computeNewDefNode)
           }
@@ -305,8 +311,8 @@ object Compile {
   }
 
   def toValue[T: TypeTag](e: Exp[T]): T =
-    precompiledExpToValue(removeConsts(e))
-    //toValueCSE(e)
+//    precompiledExpToValue(removeConsts(e))
+    toValueCSE(e)
 
   private def precompiledExpToValue[T: TypeTag](precompiledExp: Exp[T]): T = {
     val (cspValues, staticData) = extractCSPData(precompiledExp)
