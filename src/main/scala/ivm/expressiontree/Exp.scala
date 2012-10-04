@@ -247,7 +247,8 @@ object Const {
         //Of course, this does not work when x is not a collection but e.g. contains one, or when for any reason toString()
         //takes a lot of time for any reason. Still, better than nothing.
         case coll: Traversable[_] =>
-          coll.take(3).toString() + (if (coll.size > 3) "..." else "")
+          s"Instance of ${coll getClass ()}, ID = ${System.identityHashCode(coll)}"
+          //coll.take(3).toString() + (if (coll.size > 3) "..." else "")
         case s: String if s.length < maxInlineStringLength =>
           "\"%s\"" format s
         case c: Char =>
