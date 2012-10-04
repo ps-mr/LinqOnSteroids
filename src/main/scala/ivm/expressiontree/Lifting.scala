@@ -72,6 +72,7 @@ trait OptionLifting extends BaseExps {
     //def getOrElse[U >: T](v: /*=> */ Exp[U]) = fmap(t, v)('Option$getOrElse, _ getOrElse _)
     def orElse[U >: T](v: /*=> */ Exp[Option[U]]) = fmap(t, v)('Option$orElse, _ orElse _)
     def getOrElse[U >: T](default: /*=> */ Exp[U]): Exp[U] = OptionGetOrElse(t, default) //fmap(t, v)('Option$getOrElse, _ getOrElse _)
+    def fold[U](ifEmpty: Exp[U])(f: Exp[T] => Exp[U]): Exp[U] = OptionFold(t, ifEmpty, f)
   }
 
   //Note: even though ExpOption does not directly contain Exp nodes, it contains them indirectly, and they also need to be
