@@ -69,14 +69,20 @@ abstract class Fun[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S 
 
 case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBase[S, Option[T], PartialFunction[S, T]] {
   def interpret(): PartialFunction[S,T] =
-    Function.unlift(Fun(f).interpret())
+    Function.unlift(savedFunF.interpret())
 
   def arrowString = "=(pf)=>"
   def copy[U >: T](t1: Exp[Option[U]]): PartialFuncExp[S, U] = Fun.makePartialFun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[PartialFuncExp[_,_]]
   //Copied from Arity1OpTrait:
   override protected def checkedGenericConstructor(v: List[Exp[_]]) = copy(v.head.asInstanceOf[Exp[Option[T]]])
-  override def toCode = "Function.unlift(%s)" format (Fun(f).toCode)
+  // CSP mutates expression trees, extremely annoyingly. Whenever toCode visits a subtree, persistValues() must have
+  // previously visited that subtree.
+  private[this] val savedFunF = Fun(f)
+  override def persistValues() {
+    savedFunF.persistValues()
+  }
+  override def toCode = "Function.unlift(%s)" format (savedFunF.toCode)
 }
 
 //The higher-order representation is constructed and passed to Fun to share code.
