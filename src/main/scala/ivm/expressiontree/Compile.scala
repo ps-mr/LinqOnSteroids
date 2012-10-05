@@ -68,6 +68,7 @@ object ScalaCompile {
 
     val fileSystem = new VirtualDirectory("<vfs>", None)
     compiler.settings.outputDirs.setSingleOutput(fileSystem)
+    //compiler.settings.debuginfo.tryToSetColon(List("notailcalls"))
     compiler.settings.optimise.tryToSet(Nil)
     //      compiler.genJVM.outputDir = fileSystem
 
@@ -82,6 +83,11 @@ object ScalaCompile {
       println("compilation: ok")
 
       val parent = this.getClass.getClassLoader
+      /*
+      val loader = parent
+
+      val cls: Class[_] = loader.loadClass("Outclass2" /*className*/)
+       */
       val loader = new AbstractFileClassLoader(fileSystem, parent)
 
       val cls: Class[_] = loader.loadClass(className)

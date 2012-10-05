@@ -7,6 +7,14 @@ import de.tud.cs.st.bat.resolved._
  * User: pgiarrusso, Ralf Mitschke
  * Date: 4/8/2012
  */
+
+/**
+ * Found index:
+ * Sym(IndexBy(Sym(FlatMap(Sym(Filter(ConstByIdentity(Instance of class scala.collection.immutable.Vector, ID = 586559162),FunSym(v746 => Sym(ClassFile_isClassDeclaration12(Sym(v746)))))),FunSym(v575 => Sym(FlatMap(Sym(ClassFile_methods7(Sym(v575))),FunSym(v576 => Sym(FlatMap(Sym(GlobalFuncCall1('Option_option2Iterable, ', Sym(Method_body12(Sym(v576))))),FunSym(v577 => Sym(FlatMap(Sym(Code_exceptionHandlers3(Sym(v577))),FunSym(v578 => Sym(MapNode(Sym(GlobalFuncCall1('Option_option2Iterable, ', Sym(ExceptionHandler_catchType3(Sym(v578))))),FunSym(v755 => Sym(LiftTuple5(Sym(v575),Sym(v576),Sym(v577),Sym(v578),Sym(v755)))))))))))))))))),FunSym(v741 => Sym(Product5Proj5(Sym(v741))))))
+ * Not found indexes:
+ * Sym(IndexBy(Sym(FlatMap(Sym(Filter(ConstByIdentity(Instance of class scala.collection.immutable.Vector, ID = 586559162),FunSym(v1883 => Sym(ClassFile_isClassDeclaration12(Sym(v1883)))))),FunSym(v1678 => Sym(FlatMap(Sym(ClassFile_methods7(Sym(v1678))),FunSym(v1677 => Sym(FlatMap(Sym(GlobalFuncCall1('Option_option2Iterable, ', Sym(Method_body12(Sym(v1677))))),FunSym(v1673 => Sym(FlatMap(Sym(Code_exceptionHandlers3(Sym(v1673))),FunSym(v1879 => Sym(MapNode(Sym(GlobalFuncCall1('Option_option2Iterable, ', Sym(ExceptionHandler_catchType3(Sym(v1879))))),FunSym(v1892 => Sym(LiftTuple6(Sym(v1678),Sym(v1677),Sym(v1673),Sym(ConcreteMethodRecordExp0(Sym(v1678),Sym(v1677),Sym(v1673))),Sym(v1879),Sym(v1892)))))))))))))))))),FunSym(v1876 => Sym(Product6Proj6(Sym(v1876))))))
+ * Sym(IndexBy(Sym(FlatMap(ConstByIdentity(Instance of class scala.collection.immutable.Vector, ID = 586559162),FunSym(v1875 => Sym(FlatMap(Sym(ClassFile_methods7(Sym(v1875))),FunSym(v1677 => Sym(FlatMap(Sym(GlobalFuncCall1('Option_option2Iterable, ', Sym(Method_body12(Sym(v1677))))),FunSym(v1673 => Sym(FlatMap(Sym(Code_exceptionHandlers3(Sym(v1673))),FunSym(v1896 => Sym(MapNode(Sym(GlobalFuncCall1('Option_option2Iterable, ', Sym(ExceptionHandler_catchType3(Sym(v1896))))),FunSym(v1905 => Sym(LiftTuple6(Sym(v1875),Sym(v1677),Sym(v1673),Sym(ConcreteMethodRecordExp0(Sym(v1875),Sym(v1677),Sym(v1673))),Sym(v1896),Sym(v1905)))))))))))))))))),FunSym(v1893 => Sym(Product6Proj6(Sym(v1893))))))
+ */
 // FB: IMSE_DONT_CATCH_IMSE
 trait FBCatchIllegalMonitorStateException {
   this: FBAnalysesBase =>
