@@ -120,7 +120,7 @@ object Compile {
   //Cache compilation results. Note: the cache does not identify alpha-equivalent expressions, but it does identify
   // expressions with the same constants!
 
-  private val expCodeCache: collection.concurrent.Map[Exp[_], Option[Constructor[_]]] = Util.buildCache
+  private val expCodeCache: collection.concurrent.Map[(Exp[_], Seq[Class[_]]), Option[Constructor[_]]] = Util.buildCache
   //Note: this map should be a concurrent map, not ThreadLocals!
   //new ScalaThreadLocal(mutable.Map[Exp[_], Option[Constructor[_]]]())
 
@@ -319,7 +319,7 @@ object Compile {
   private def precompiledExpToValue[T: TypeTag](precompiledExp: Exp[T]): T = {
     val (cspValues, cspClasses, cspData) = extractCSPData(precompiledExp)
 
-    val maybeCons = expCodeCache.getOrElseUpdate(precompiledExp, {
+    val maybeCons = expCodeCache.getOrElseUpdate((precompiledExp, cspClasses), {
       val (prefix, restSourceCode, className) = compileConstlessExp(precompiledExp, cspValues)
       ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls
         .getConstructor(cspClasses: _*))
