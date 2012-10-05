@@ -188,11 +188,11 @@ object Compile {
     (prefix, restSourceCode, className)
   }
 
-  private def extractCSPData[T: TypeTag](e: Exp[T]): (Seq[(Any, CSPVar)], Seq[(ClassTag[_], Any)]) = {
+  private def extractCSPData[T: TypeTag](e: Exp[T]): (Seq[(Any, CSPVar)], Seq[Class[_]], Seq[AnyRef]) = {
     e.persistValues()
     val cspValues = cspMap.get().toList.toSeq //toList forces immutability.
     val staticData = getStaticData(cspValues)
-    (cspValues, staticData)
+    (cspValues, staticData.map(_._1.runtimeClass), staticData.map(_._2.asInstanceOf[AnyRef]))
   }
 
   private case class Scope(boundVar: Option[Var] = None, bindings: mutable.Map[Int, Def[_]] = mutable.Map.empty)
@@ -317,14 +317,14 @@ object Compile {
 //    toValueCSE(e)
 
   private def precompiledExpToValue[T: TypeTag](precompiledExp: Exp[T]): T = {
-    val (cspValues, staticData) = extractCSPData(precompiledExp)
+    val (cspValues, cspClasses, cspData) = extractCSPData(precompiledExp)
 
     val maybeCons = expCodeCache.getOrElseUpdate(precompiledExp, {
       val (prefix, restSourceCode, className) = compileConstlessExp(precompiledExp, cspValues)
       ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls
-        .getConstructor(staticData.map(_._1.runtimeClass): _*))
+        .getConstructor(cspClasses: _*))
     })
-    buildInstance(maybeCons, staticData)
+    buildInstance(maybeCons, cspData)
   }
 
   //Only for testing
@@ -336,15 +336,15 @@ object Compile {
 
   private[expressiontree] def emitSource[T: TypeTag](e: Exp[T]): String = {
     val precompiledExp = removeConsts(e)
-    val (cspValues, _) = extractCSPData(precompiledExp)
+    val (cspValues, _, _) = extractCSPData(precompiledExp)
 
     val (prefix, restSourceCode, _) = compileConstlessExp(precompiledExp, cspValues)
     prefix + restSourceCode
   }
 
-  def buildInstance[T](maybeCons: Option[Constructor[_]], staticData: Seq[(ClassTag[_], Any)]): T = maybeCons match {
+  def buildInstance[T](maybeCons: Option[Constructor[_]], cspData: Seq[AnyRef]): T = maybeCons match {
     case Some(cons) =>
-      val obj: T = cons.newInstance(staticData.map(_._2.asInstanceOf[AnyRef]):_*).asInstanceOf[Compiled[T]].result
+      val obj: T = cons.newInstance(cspData: _*).asInstanceOf[Compiled[T]].result
       obj
     case None =>
       throw new CompilationFailedException("")
