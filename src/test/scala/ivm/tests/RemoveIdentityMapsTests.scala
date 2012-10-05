@@ -30,7 +30,7 @@ class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
     val r2 = Optimization.optimizeCartProdToJoin(r)
 
     //Now this will fail with ClassCastException, if we built a Join based on a WithFilter.
-    r2.eval
+    r2.interpret
   }
 
   @Test
@@ -42,7 +42,7 @@ class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
     val r2 = Optimization.optimizeCartProdToJoin(Optimization.removeIdentityMaps(r))
 
     //Now this might fail as above.
-    r2.eval
+    r2.interpret
   }
 
   @Test
