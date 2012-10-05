@@ -13,6 +13,11 @@ import collection.{mutable, TraversableView}
  * Date: 18/11/2011
  */
 
+case class Developer(name: String, website: String)
+case class Library(name: String, depends: Seq[Library], developers: Seq[String]) //To introduce the need for a join,
+// I altered this definition to refer to developers by name, instead of by a direct pointer to the developer itself.
+// I still preserve the original syntax (for now) with this implicit conversion (yes, it's ugly).
+
 class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   import Util.assertType
 
@@ -28,10 +33,6 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
    * - type indexes
    * - how we support incremental view maintenance
    */
-  case class Developer(name: String, website: String)
-  case class Library(name: String, depends: Seq[Library], developers: Seq[String]) //To introduce the need for a join,
-  // I altered this definition to refer to developers by name, instead of by a direct pointer to the developer itself.
-  // I still preserve the original syntax (for now) with this implicit conversion (yes, it's ugly).
   implicit def devToString(d: Developer) = d.name
 
   val devHacker = Developer("A hacker", "")
@@ -44,15 +45,15 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
   //Code to be generated {{{
   implicit def expToDeveloperOps(t: Exp[Developer]) = new DeveloperOps(t)
   class DeveloperOps(t: Exp[Developer]) {
-    def name = fmap(t)('Developer$name, _.name)
-    def website = fmap(t)('Developer$website, _.website)
+    def name = fmap(t, 'Developer)('name, _.name)
+    def website = fmap(t, 'Developer)('website, _.website)
   }
 
   implicit def expToLibraryOps(t: Exp[Library]) = new LibraryOps(t)
   class LibraryOps(t: Exp[Library]) {
-    def name = fmap(t)('Library$name, _.name)
-    def depends = fmap(t)('Library$depends, _.depends)
-    def developers = fmap(t)('Library$developers, _.developers)
+    def name = fmap(t, 'Library)('name, _.name)
+    def depends = fmap(t, 'Library)('depends, _.depends)
+    def developers = fmap(t, 'Library)('developers, _.developers)
   }
   //Code to be generated }}}
 
