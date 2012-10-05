@@ -46,9 +46,6 @@ import Lifting._
 import Util.ExtraImplicits._
 import optimization.Optimization
 
-import org.scalatest.{FunSuite, BeforeAndAfterAll}
-import org.scalatest.matchers.ShouldMatchers
-
 import collection.immutable.Seq
 import collection.{Seq => CSeq}
 
@@ -136,7 +133,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   with analyses.SIC_INNER_SHOULD_BE_STATIC_ANON
   with analyses.SW_SWING_METHODS_INVOKED_IN_SWING_THREAD
   with analyses.UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR
-  with FunSuite with BeforeAndAfterAll with ShouldMatchers with QueryBenchmarking
+  with QueryBenchmarking
 {
   import FindBugsAnalyses.QueryAnd
 
@@ -145,7 +142,6 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   //def this() = this(Seq("src/test/resources/scalatest-1.6.1.jar"))
   def this(config: FBConfig) =
       this(config.zipFiles, config.onlyOptimized, config.onlyBaseline, config.onlyInFindBugs, config.debugBench, config.executionCycles)
-  def this() = this(FBConfig(zipFiles = List("src/test/resources/Bugs.zip"), debugBench = Benchmarking.debugBench))
 
   /* XXX:
    * This test is currently pointless. Either I do it with a single query, where it'll benchmark cache lookup time;
@@ -163,98 +159,6 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
 */
   }
 */
-
-  test("BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION") {
-    analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
-  }
-
-  test("DMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT") {
-    analyzeDMI_LONG_BITS_TO_DOUBLE_INVOKED_ON_INT()
-  }
-
-  test("DP_DO_INSIDE_DO_PRIVILEGED") {
-    analyzeDP_DO_INSIDE_DO_PRIVILEGED()
-  }
-
-  test("FI_USELESS") {
-    analyzeFI_USELESS()
-  }
-
-  test("ITA_INEFFICIENT_TO_ARRAY") {
-    analyzeITA_INEFFICIENT_TO_ARRAY()
-  }
-
-
-  test("MS_PKGPROTECT") {
-    analyzeMS_PKGPROTECT()
-  }
-
-  test("MS_SHOULD_BE_FINAL") {
-    analyzeMS_SHOULD_BE_FINAL()
-  }
-
-  test("SE_BAD_FIELD_INNER_CLASS") {
-    analyzeSE_BAD_FIELD_INNER_CLASS()
-  }
-
-  test("SIC_INNER_SHOULD_BE_STATIC_ANON") {
-    analyzeSIC_INNER_SHOULD_BE_STATIC_ANON()
-  }
-
-  test("SW_SWING_METHODS_INVOKED_IN_SWING_THREAD") {
-    analyzeSW_SWING_METHODS_INVOKED_IN_SWING_THREAD()
-  }
-
-  test("UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR") {
-    analyzeUR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR()
-  }
-
-
-
-
-  test("ProtectedField") {
-    analyzeProtectedFields()
-  }
-
-  test("UnusedFields") {
-    analyzeUnusedFields()
-  }
-
-  test("ExplicitGC") {
-    analyzeExplicitGC()
-  }
-
-  test("PublicFinalizer") {
-    analyzePublicFinalizer()
-  }
-
-  test("PublicFinalizer2") {
-    analyzePublicFinalizer2()
-  }
-
-  test("SerializableNoConstructor") {
-    analyzeSerializableNoConstructor()
-  }
-
-  test("CatchIllegalMonitorStateException") {
-    analyzeCatchIllegalMonitorStateException()
-  }
-
-  test("CovariantCompareToMethods") {
-    analyzeCovariantCompareToMethods()
-  }
-
-  test("AbstractClassesThatDefinesCovariantEquals") {
-    analyzeAbstractClassesThatDefinesCovariantEquals()
-  }
-
-  test("MethodsThatCallRunFinalizersOnExit") {
-    analyzeMethodsThatCallRunFinalizersOnExit()
-  }
-
-  test("CloneableNoClone") {
-    analyzeCloneableNoClone()
-  }
 
   //  CN_IDIOM optimizes no abstractions away (WithAbstractions == WithoutAbstractions
   def analyzeCloneableNoClone() {
@@ -315,11 +219,6 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
       analyzeSQuOptWithAbstractions
     )
   }
-
-  test("SuperCloneMissing") {
-    analyzeCloneDoesNotCallSuperClone()
-  }
-
 
   // FB: CN_IDIOM_NO_SUPER_CALL
   def analyzeCloneDoesNotCallSuperClone() {
@@ -397,11 +296,6 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
     )
   }
 
-  test("NotCloneable") {
-    analyzeCloneButNotCloneable()
-  }
-
-
   // FB: CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE
   def analyzeCloneButNotCloneable() {
 
@@ -462,9 +356,11 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
 
   //Template for new tests:
   /*
+  //In FindBugsAnalysesTest
   test("") {
     analyze()
   }
+  //In a separate trait extended by FindBugsAnalyses
   def analyze() {
     benchQueryComplete("") {
 
@@ -606,9 +502,5 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
     analyzeCloneableNoClone()
     analyzeCloneDoesNotCallSuperClone()
     analyzeCloneButNotCloneable()
-  }
-
-  override def afterAll() {
-    tearDownIndexes()
   }
 }
