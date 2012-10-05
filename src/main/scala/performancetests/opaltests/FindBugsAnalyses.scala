@@ -139,7 +139,6 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
 
   override val defaultExecLoops = executionCycles
 
-  //def this() = this(Seq("src/test/resources/scalatest-1.6.1.jar"))
   def this(config: FBConfig) =
       this(config.zipFiles, config.onlyOptimized, config.onlyBaseline, config.onlyInFindBugs, config.debugBench, config.executionCycles)
 
@@ -372,23 +371,6 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
   }
    */
 
-  /*
-  def setupAnalysis(zipFiles: Seq[String]) {
-    classFiles = benchMark("Reading all class files", execLoops = 1, warmUpLoops = 0, sampleLoops = 1) {
-      for (zipFile ← zipFiles; classFile ← Java6Framework.ClassFiles(zipFile)) yield classFile
-    }
-    // This operation is not incrementalizable by itself. If classHierarchy supports removing classes, we might
-    // provide a way to setup a listener easily.
-    for (classFile ← classFiles)
-      classHierarchy += classFile
-    //As an alternative, classHierarchy might support IVM directly.
-    //classHierarchy.update(classFiles)
-
-    getClassFile = classFiles.map(cf ⇒ (cf.thisClass, cf)).toMap
-    println("Number of class files: " + classFiles.length)
-  }
-  */
-
   // Debug code to count max method length - relevant for the issue on Streams.
   /*
   println((for {
@@ -435,37 +417,6 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
 
     Optimization.popEnableDebugLog()
   }
-
-  //def setupIndexes() {
-    /*
-    import BATLifting._
-    (for {
-      classFile ← classFiles.asSquopt
-      method ← classFile.methods
-    } yield (classFile, method)).size
-    */
-
-    /*
-    methodNameIdx = (for {
-      classFile ← classFiles.asSquopt
-      method ← classFile.methods
-    } yield (classFile, method)).indexBy(_._2.name)
-
-    val methodNameIdxVal = (for {
-      classFile ← classFiles
-      method ← classFile.methods
-    } yield (classFile, method)).indexBy(_._2.name)
-
-    val idxBase = for {
-      classFile ← classFiles.asSquopt if classFile.isClassDeclaration
-      method ← classFile.methods
-      body ← method.body
-      exceptionHandler ← body.exceptionHandlers
-    } yield (classFile, method, body, exceptionHandler)
-    excHandlerTypeIdx = idxBase indexBy (_._4.catchType)
-    */
-
-  //}
 
   def tearDownIndexes() {
     if (!onlyOptimized && !onlyBaseline) {
