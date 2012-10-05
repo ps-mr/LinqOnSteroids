@@ -1,4 +1,5 @@
-package performancetests.opaltests
+package performancetests
+package opaltests
 
 import org.scalatest.{FunSuite, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
