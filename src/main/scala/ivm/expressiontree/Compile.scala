@@ -68,6 +68,7 @@ object ScalaCompile {
 
     val fileSystem = new VirtualDirectory("<vfs>", None)
     compiler.settings.outputDirs.setSingleOutput(fileSystem)
+    compiler.settings.optimise.tryToSet(Nil)
     //      compiler.genJVM.outputDir = fileSystem
 
     run.compileSources(List(new util.BatchSourceFile("<stdin>", sourceStr)))
