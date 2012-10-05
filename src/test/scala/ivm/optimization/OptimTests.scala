@@ -239,4 +239,8 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     val compr = for { x <- Seq(1, 2, 3, 4).asSquopt; if ((1 to 10) ++ (1 to 10)).asSquopt exists (y => y * 2 ==# x) } yield x
     testRenestingExistsGeneric(compr)
   }
+  @Test def testCompilationTypes() {
+    val compr = for { x <- Seq[Long](1, 2, 3, 4).asSquopt; if ((1 to 10) ++ (1 to 10)).asSquopt exists (y => y * 2 ==# x) } yield x
+    testRenestingExistsGeneric(compr)
+  }
 }
