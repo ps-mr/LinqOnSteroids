@@ -4,6 +4,8 @@
       <root url="jar://$PROJECT_DIR$/sampleapp/lib/bat-core_2.10.0-M7-1.0.0-SNAPSHOT.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/sampleapp/lib/bat-core_2.10-1.0.0-SNAPSHOT-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>
