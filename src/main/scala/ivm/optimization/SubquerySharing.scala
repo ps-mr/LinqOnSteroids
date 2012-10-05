@@ -421,7 +421,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
 
   val groupByShareNested: Exp[_] => Exp[_] =
     {
-      case Sym(e: Fun[_, _]) => e
+      case e @ Sym(_: Fun[_, _]) => e
       case e =>
         collectFirst(lookupIndexableExps(e)) {
           case ((parentNode: FlatMap[t, repr, u, that/*T, Repr, U, That*/]), fn1: FoundNode[_, _], allFVSeq) =>
