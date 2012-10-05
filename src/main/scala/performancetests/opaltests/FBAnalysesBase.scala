@@ -372,8 +372,7 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       import BATLifting._
       import InstructionLifting._
 
-      val classType: Exp[ObjectType] = classFile.thisClass
-      val superClassesOpt: Exp[Option[Set[ObjectType]]] = classHierarchySQuOpt.superclasses(classType)
+      val superClassesOpt: Exp[Option[Set[ObjectType]]] = classHierarchySQuOpt.superclasses(classFile.thisClass)
 
       for {
         superClasses <- superClassesOpt

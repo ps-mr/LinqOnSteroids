@@ -99,7 +99,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
              instruction ← withIndexSQuOpt(method.body.get.instructions)
              getField ← instruction._1.ifInstanceOf[GETFIELD]
              constructor ← classFile.constructors
-             if declaresFieldSQuOpt(classFile)(getField.name, getField.fieldType);
+             if declaresFieldSQuOpt(classFile)(getField.name, getField.fieldType)
              calledSuperConstructorInfo ← calledSuperConstructorSQuOpt(classFile, constructor)
              if (callsSQuOpt(calledSuperConstructorInfo._2, calledSuperConstructorInfo._1, method))
         } yield
@@ -109,7 +109,7 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
 
     private def analyzeBaseWithAbstractions() = {
         for (schema.BytecodeInstrIndexed(classFile, method,
-             GETFIELD(declaringClass, name, fieldType), idx) ← methodBodiesInstructionsIndexedModularNative
+             GETFIELD(declaringClass, name, fieldType), idx) ← methodBodiesInstructionsIndexedModularNative()
              if
                 method.name != "<init>" &&
                 !method.isStatic &&
@@ -132,14 +132,14 @@ trait UR_UNINIT_READ_CALLED_FROM_SUPER_CONSTRUCTOR{
             import performancetests.opaltests.InstructionLifting._
             import ivm.expressiontree.Util.ExtraImplicits._
             import schema.squopt._
-          for { instructionWithIndex ← methodBodiesInstructionsIndexedModularSQuOpt
+          for { instructionWithIndex ← methodBodiesInstructionsIndexedModularSQuOpt()
                 getField ← instructionWithIndex.instruction.ifInstanceOf[GETFIELD]
-                if(
+                if
                      instructionWithIndex.method.name !=# "<init>" &&
                      !instructionWithIndex.method.isStatic &&
-                     isOverrideSQuOpt(instructionWithIndex.classFile)(instructionWithIndex.method))
+                     isOverrideSQuOpt(instructionWithIndex.classFile)(instructionWithIndex.method)
                constructor ← instructionWithIndex.classFile.constructors
-               if declaresFieldSQuOpt(instructionWithIndex.classFile)(getField.name, getField.fieldType);
+               if declaresFieldSQuOpt(instructionWithIndex.classFile)(getField.name, getField.fieldType)
                calledSuperConstructorInfo ← calledSuperConstructorSQuOpt(instructionWithIndex.classFile, constructor)
                if (callsSQuOpt(calledSuperConstructorInfo._2, calledSuperConstructorInfo._1, instructionWithIndex.method))
           } yield
