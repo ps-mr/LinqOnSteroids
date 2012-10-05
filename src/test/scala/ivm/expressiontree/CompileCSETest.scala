@@ -78,4 +78,19 @@ class CompileCSETest extends FunSuite with ShouldMatchers {
     val empty = Seq.empty.asSquopt
     toValueCSE(if_# (asExp(1) % 2 ==# 0) {empty.head} else_# {0}) should be (0)
   }
+
+  test("Differently-typed ifInstanceOf, asInstanceOf_# nodes are not considered the same by CSE") {
+    reset()
+
+    val instr = asExp(new StringBuffer)
+    toValueCSE(if_#(instr.isInstanceOf_#[String]) {
+      instr.asInstanceOf_#[String]
+    } else_# if_#(instr.isInstanceOf_#[StringBuffer]) {
+      instr.asInstanceOf_#[StringBuffer].toString_#
+    } else_# {
+      NULL
+    }) should be ("")
+
+    toValueCSE(instr.ifInstanceOf[StringBuffer] map (x => instr.ifInstanceOf[String] map (y => x.toString_# + y))) should be (List(List()))
+  }
 }
