@@ -94,7 +94,7 @@ object OpalTestData {
   //Use this for debugging - the actual data is too big and slows down debugging too much.
   //val testdata: Set[ClassFile]  = Set.empty
   val testdata: Set[ClassFile]  = getTestData.toSet
-  val queryData = pure(testdata)
+  val queryData = asExp(testdata)
 
   //Size of the expected query results. 84 has been simply measured when the results were correct.
   //Not very pretty, but better than nothing
