@@ -12,7 +12,7 @@ import org.scalatest.junit.ShouldMatchersForJUnit
 trait IVMTestUtil {
   this: ShouldMatchersForJUnit =>
   def checkIncRes[T](coll: IncrementalResult[T]) {
-    coll.interpret() should be (coll.base.interpret())
+    coll.eval should be (coll.base.eval)
   }
 
   def show[T: Ordering](name: String, coll: IncrementalResult[T]) {

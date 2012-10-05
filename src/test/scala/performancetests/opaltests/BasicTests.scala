@@ -35,7 +35,7 @@ object BATLiftingExperimental {
       Exp[Attributes])] = {
       if (t ne null) {
         //Calling interpret here makes the result an exotic term - doesn't it?
-        t.interpret() match {
+        t.eval match {
           case ca: Code =>
             assert(ca != null) //This is satisfied because of the pattern match.
             Some((ca.maxStack, ca.maxLocals,
@@ -65,7 +65,7 @@ object BATLiftingExperimental {
   }
   object INSTANCEOF {
     def unapply(t: Exp[_]): Option[Exp[ReferenceType]] = {
-      if ((t ne null) && t.interpret().isInstanceOf[INSTANCEOF])
+      if ((t ne null) && t.eval.isInstanceOf[INSTANCEOF])
         Some(fmap(t.asInstanceOf[Exp[INSTANCEOF]])('referenceType, _.referenceType))
       else None
     }
@@ -145,7 +145,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       yield attrib
 
     val methods: Traversable[Attribute] = benchMark("los simple") {
-      methodsQuery.interpret()
+      methodsQuery.eval
     }
 
     //Result on my system (PG - Core 2 @2.66 GHz):
@@ -167,8 +167,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         (for (superClass <- classFile.interfaces) yield (superClass, classFile.thisClass)) :+ ((classFile.superClass.get, classFile.thisClass)))
     val superClassesMap: Exp[Map[ObjectType, CSet[ObjectType]]] = superClasses.groupBySel(_._2, _._1)
     val subClassesMap: Exp[Map[ObjectType, CSet[ObjectType]]] = superClasses.groupBySel(_._1, _._2)
-    superClassesMap.interpret()
-    subClassesMap.interpret()
+    superClassesMap.eval
+    subClassesMap.eval
   }
 
   // compute all method names that make an instance-of check in their body, using the .instructions member.
@@ -203,7 +203,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       println(methodsLos1) //Fails because the terms are inadequate
 
       val m1Int: Traversable[String] = benchMark("los1-new") {
-        methodsLos1.interpret()
+        methodsLos1.eval
       }
       methodsNative should equal (m1Int)
     }
@@ -215,7 +215,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .map(_ => m.name)))
 
     val m2Int: Traversable[String] = benchMark("los2-new") {
-      methodsLos2.interpret()
+      methodsLos2.eval
     }
     methodsNative should equal (m2Int)
 
@@ -226,7 +226,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .map(_ => m.name))))
 
     benchMark("los2-new") {
-      methodsLos2_1.interpret()
+      methodsLos2_1.eval
     } should equal (methodsNative)
 
 
@@ -238,7 +238,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         io <- mBody.instructions.typeFilter[INSTANCEOF]
       } yield m.name
     val m5Int: Traversable[String] = benchMark("los5-new") {
-      methodsLos5.interpret()
+      methodsLos5.eval
     }
     methodsNative should equal (m5Int)
 
@@ -250,7 +250,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         io <- mBody.instructions.typeFilter[INSTANCEOF]
       } yield m.name).toSet
     val m5SeqInt: Traversable[String] = benchMark("los5-new-Seq") {
-      methodsLos5Seq.interpret()
+      methodsLos5Seq.eval
     }
     methodsNative should equal (m5SeqInt)
   }
@@ -286,7 +286,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       println(methodsLos1) //Fails because the terms are inadequate
 
       val m1Int: Traversable[String] = benchMark("los1") {
-        methodsLos1.interpret()
+        methodsLos1.eval
       }
       methodsNative should equal (m1Int)
     }
@@ -299,7 +299,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .map( _ => m.name)))
 
     val m2Int: Traversable[String] = benchMark("los2") {
-      methodsLos2.interpret()
+      methodsLos2.eval
     }
     methodsNative should equal (m2Int)
 
@@ -318,7 +318,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .map( _ => m.name)))
 
     val m3Int: Traversable[String] = benchMark("los3") {
-      methodsLos3.interpret()
+      methodsLos3.eval
     }
     methodsNative should equal (m3Int)
 
@@ -333,7 +333,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         if fmap(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
       } yield m.name
     val m4Int: Traversable[String] = benchMark("los4") {
-      methodsLos4.interpret()
+      methodsLos4.eval
     }
     methodsNative should equal (m4Int)
 
@@ -347,12 +347,12 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
         io <- ca.instructions.typeFilter[INSTANCEOF]
       } yield m.name
     val m5Int: Traversable[String] = benchMark("los5") {
-      methodsLos5.interpret()
+      methodsLos5.eval
     }
     methodsNative should equal (m5Int)
 
     val m5SeqInt: Traversable[String] = benchMark("los5-Seq") {
-      methodsLos5Seq.interpret()
+      methodsLos5Seq.eval
     }
     methodsNative should equal (m5SeqInt)
 
@@ -363,7 +363,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .flatMap(ca => ca.instructions.typeFilter[INSTANCEOF]
       .map(io => m.name))))
     //No benchmarking as this code is the same as methodsLos5; this just checks that we indeed got the desugaring right.
-    methodsNative should equal (methodsLos5Desugared.interpret())
+    methodsNative should equal (methodsLos5Desugared.eval)
   }
 
   val methodsLos5Seq =
@@ -405,7 +405,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       ca <- m.attributes.typeFilter[Code]
       i <- ca.instructions
     } yield (m, i)
-    benchMark("los6 index-base creation")(typeIdxBase.interpret())
+    benchMark("los6 index-base creation")(typeIdxBase.eval)
 
     val typeIdxBaseSeq: Exp[Seq[PairMethodAnd[Instruction]]] = for {
       cf <- queryData.toSeq
@@ -413,18 +413,18 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       ca <- m.attributes.typeFilter[Code]
       i <- ca.instructions
     } yield (m, i)
-    benchMark("los6 Seq-index-base creation")(typeIdxBaseSeq.interpret())
+    benchMark("los6 Seq-index-base creation")(typeIdxBaseSeq.eval)
     //Let us accept some limited overhead with explicit type annotations to create the index
     //val typeindex = q.groupByType(_._2)
     val typeIdx = typeIdxBase.groupByTupleType2
     val typeIdxSeq = typeIdxBaseSeq.groupByTupleType2
     //This is normalization-by-evaluation over terms instead of functions (and who said it is limited to functions?)
-    /*val evaluatedtypeindex: Exp[TypeMapping[Seq, PairMethodAnd, Instruction]] = //benchMark("los6 index creation"){ asExp(typeIdx.interpret()) } //XXX
-      benchMark("los6 Seq-index creation"){ asExp(typeIdxSeq.interpret()) }
+    /*val evaluatedtypeindex: Exp[TypeMapping[Seq, PairMethodAnd, Instruction]] = //benchMark("los6 index creation"){ asExp(typeIdx.eval) } //XXX
+      benchMark("los6 Seq-index creation"){ asExp(typeIdxSeq.eval) }
     //println(evaluatedtypeindex.map.keys)
 
     //val methodsLos6 = Const(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
-    //XXX this code, instead of using typeindex: Exp[...], uses pure(typeindex.interpret()), which is a hack. The goal
+    //XXX this code, instead of using typeindex: Exp[...], uses pure(typeindex.eval), which is a hack. The goal
     //is to have the index evaluated at all - otherwise there would be no speed-up. However, the proper solution is to
     //wrap the query result in something similar to IncrementalResult's constructor: Exp[T] -> Exp[T] - so that the result
     //is materialized and incrementally maintained.
@@ -442,7 +442,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
 [error]      val methodsLos6 = expToTypeMappingAppOps(evaluatedtypeindex).get[INSTANCEOF].map(_._1.name)
     */
     val m6Int: Traversable[String] = benchMark("los6 (with index)") {
-      methodsLos6.interpret()
+      methodsLos6.eval
     }
     methodsNative should equal (m6Int)*/
 
@@ -492,7 +492,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       Optimization.removeIndex(typeIdx)
 
       val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized)") {
-        methodsLos6.interpret()
+        methodsLos6.eval
       }
       methodsNative should equal (m6Int)*/
     }
@@ -505,7 +505,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     } yield (m, ca)
     val typeIdx1 = idx1Base.groupByTupleType2
     //NOTE: it is crucial to mention SND here.
-    /*val evTypeIdx1: Exp[TypeMapping[Seq, PairMethodAnd, Attribute]] = benchMark("los7: creation of index typeIdx1"){ asExp(typeIdx1.interpret()) }
+    /*val evTypeIdx1: Exp[TypeMapping[Seq, PairMethodAnd, Attribute]] = benchMark("los7: creation of index typeIdx1"){ asExp(typeIdx1.eval) }
     //Hmm: this index inverts a 1-1 mapping, is that a good idea performance-wise?
     val idx1 = idx1Base.groupBySel(_._2, _._1)
     val idx1BaseWithSeqs = for {
@@ -514,8 +514,8 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       ca <- m.attributes
     } yield Seq(m, ca)
     val idx1WithSeqs = idx1BaseWithSeqs.groupBySel(_(1), _(0))
-    val evIdx1 = benchMark("los7: creation of index idx1"){ asExp(idx1.interpret()) }
-    val evIdx1WithSeqs = benchMark("los7: creation of index idx1 with seqs"){ asExp(idx1WithSeqs.interpret()) }
+    val evIdx1 = benchMark("los7: creation of index idx1"){ asExp(idx1.eval) }
+    val evIdx1WithSeqs = benchMark("los7: creation of index idx1 with seqs"){ asExp(idx1WithSeqs.eval) }
 
     type PairCodeAttributeAnd[+T] = (Code, T)
     /*
@@ -525,7 +525,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       i <- ca.instructions
     } yield (ca, i)
     val idx2 = idx2Base.groupByTupleType2
-    val evIdx2: Exp[TypeMapping[Set, PairCodeAttribute, Instruction]] = idx2.interpret()
+    val evIdx2: Exp[TypeMapping[Set, PairCodeAttribute, Instruction]] = idx2.eval
     */
     //val idx2BaseOpt = evIdx1.get[Code].flatMap(ca => ca.instructions.map(i => (ca, i)))
     val idx2BaseOpt /*: Exp[Set[PairCodeAttribute[Attribute]]]*/ = for {
@@ -533,12 +533,12 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       i <- pair._2.instructions
     } yield (pair._2, i)
     val typeIdx2Opt = idx2BaseOpt.groupByTupleType2
-    val evTypeIdx2Opt: Exp[TypeMapping[Seq, PairCodeAttributeAnd, Instruction]] = benchMark("los7: creation of index typeIdx2Opt"){ asExp(typeIdx2Opt.interpret()) }
+    val evTypeIdx2Opt: Exp[TypeMapping[Seq, PairCodeAttributeAnd, Instruction]] = benchMark("los7: creation of index typeIdx2Opt"){ asExp(typeIdx2Opt.eval) }
 
     val methodsLos7 = evTypeIdx2Opt.get[INSTANCEOF].flatMap(x => evIdx1(x._1).map(_.name))
 
     val m7Int: Traversable[String] = benchMark("los7 (with hierarchical indexing)") {
-      methodsLos7.interpret().toSet
+      methodsLos7.eval.toSet
     }
     methodsNative should equal (m7Int)*/
   }
@@ -554,12 +554,12 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
     } yield (asExp((cf, m)), i)
 
     val typeIdx = typeIdxBase.groupByTupleType2
-    /*val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation, with fixed type indexing"){ asExp(typeIdx.interpret()) }
+    /*val evaluatedtypeindex: Exp[TypeMapping[Seq, QueryAnd, Instruction]] = benchMark("los6 Seq-index (less manually optimized) creation, with fixed type indexing"){ asExp(typeIdx.eval) }
 
     val methodsLos6 = evaluatedtypeindex.get[INSTANCEOF].map(_._1._2.name).toSet
 
     val m6Int: Traversable[String] = benchMark("los6 (with index, less manually optimized, fixed type indexing)") {
-      methodsLos6.interpret()
+      methodsLos6.eval
     }
     methodsNative should equal (m6Int)*/
   }

@@ -104,10 +104,10 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   test("same results") {
     showExp(recordsQuery, "recordsQuery")
-    recordsQuery.interpret() should be (records)
+    recordsQuery.eval should be (records)
     val recordsQueryOpt = Optimization.optimize(recordsQuery)
     showExp(recordsQueryOpt, "recordsQueryOpt")
-    recordsQueryOpt.interpret() should be (records)
+    recordsQueryOpt.eval should be (records)
     //The call to optimize is needed to get the same query as recordsQueryOpt for two reasons:
     //- we need to replace the index with the preevaluated one (not with an equal collection, but the same one)
     //- optimize also normalizes some details of the query.
@@ -143,10 +143,10 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   test("processedRecords should have the same results as the lifted version") {
     showExp(processedRecordsQuery, "processedRecordsQuery")
-    processedRecordsQuery.interpret() should be (processedRecords)
+    processedRecordsQuery.eval should be (processedRecords)
     val processedRecordsQueryOpt = Optimization.optimize(processedRecordsQuery)
     showExp(processedRecordsQueryOpt, "processedRecordsQueryOpt")
-    processedRecordsQueryOpt.interpret() should be (processedRecords)
+    processedRecordsQueryOpt.eval should be (processedRecords)
     processedRecordsOptimizedRes should be (processedRecords)
     //showExp(processedQueryExpectedOptimRes, "processedQueryExpectedOptimRes")
     if (!doIndex)
@@ -160,9 +160,9 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
 
   //... and test that it works:
   test("processedRecords should have the same results as the lifted function version") {
-    processedRecordsQueryOptRes.interpret() should be (processedRecords)
+    processedRecordsQueryOptRes.eval should be (processedRecords)
     showExp(processedRecordsQueryOptRes, "processedRecordsQueryOptRes")
-    processedRecordsQueryOptRes.interpret() should be (processedRecords)
+    processedRecordsQueryOptRes.eval should be (processedRecords)
     if (!doIndex)
       processedRecordsQueryOptRes should be (processedQueryExpectedOptimRes)
     //if doIndex, the expression tree will have another form.
@@ -190,9 +190,9 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
     println(query)
     val optim = query.optimize
     println(optim)
-    val res = query.interpret()
+    val res = query.eval
     println(res)
-    query.optimize.interpret() should be (res)
+    query.optimize.eval should be (res)
   }
 
   {

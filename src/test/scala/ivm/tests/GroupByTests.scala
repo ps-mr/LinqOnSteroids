@@ -15,6 +15,6 @@ class GroupByTests extends JUnitSuite with ShouldMatchersForJUnit {
   def testGroupBy() {
     val q = l.indexBy(_ <= 5)
     val q1 = q(true)
-    q1.interpret() should be (Vector(1,2,3,4,5))
+    q1.eval should be (Vector(1,2,3,4,5))
   }
 }

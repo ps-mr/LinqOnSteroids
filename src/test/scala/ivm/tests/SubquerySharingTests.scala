@@ -21,7 +21,7 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   @Test def testSimpleSharing() {
     val s1 = l.map(p => (p._1 + 1, p._2 + 2))
-    val ress1 = s1.interpret()
+    val ress1 = s1.eval
     Optimization.addIndex(s1, Some(ress1))
 
     val q = l.map(p => (p._1 + 1, p._2 + 2)).withFilter(_._1 ==# 5)
@@ -38,10 +38,10 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
 
   def shareSubqueriesOpt[T](x: Exp[T]) = Optimization filterToWithFilter (Optimization simplifyFilters (Optimization shareSubqueries x))
 
-  def indexingTest[T, U: TypeTag, TupleT: TypeTag](query: Exp[Seq[T]], idx: Exp[Map[U, TupleT]], fullOptim: Boolean = true)(expectedOptQueryProducer: Exp[Map[U, TupleT]] => Exp[Traversable[T]]) {
-    val idxRes = idx.interpret()
+  def indexingTest[T: TypeTag, U: TypeTag, TupleT: TypeTag](query: Exp[Seq[T]], idx: Exp[Map[U, TupleT]], fullOptim: Boolean = true)(expectedOptQueryProducer: Exp[Map[U, TupleT]] => Exp[Traversable[T]]) {
+    val idxRes = idx.eval
     val expectedOptQuery = expectedOptQueryProducer(idxRes)
-    query.interpret() should be (expectedOptQuery.interpret().force) //The call to force makes sure that
+    query.eval should be (expectedOptQuery.eval.force) //The call to force makes sure that
     // the expected value in error messages shows the actual collection contents.
     def constantFolding[T](t: Exp[T]) = /*Optimization constantFolding */ t
 
@@ -54,9 +54,9 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
     Optimization.removeIndex(idx)
 
     optQuery should be (Optimization filterToWithFilter (constantFolding(expectedOptQuery)))
-    //We assumed that if optQuery == expectedOptQuery, then optQuery.interpret() == expectedOptQuery.interpret() == query.interpret()
+    //We assumed that if optQuery == expectedOptQuery, then optQuery.eval == expectedOptQuery.eval == query.eval
     //but manifests could be different!
-    optQuery.interpret() should be (expectedOptQuery.interpret())
+    optQuery.eval should be (expectedOptQuery.eval)
   }
 
   val l2: Exp[Seq[Int]] =

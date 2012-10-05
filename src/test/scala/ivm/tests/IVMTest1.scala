@@ -72,7 +72,7 @@ class IVMTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
 
     println("vPlusOne: " + vPlusOne)
     println("vQueryablePlusOne: " + vQueryablePlusOne)
-    println("vQueryablePlusOne.interpret(): " + vQueryablePlusOne.interpret())
+    println("vQueryablePlusOne.eval: " + vQueryablePlusOne.eval)
 
     val vColl: HashSet[Int] = v.asCollection //This is a simple upcast...
     println("vColl: " + vColl)

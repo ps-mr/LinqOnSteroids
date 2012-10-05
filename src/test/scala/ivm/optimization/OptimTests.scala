@@ -73,8 +73,8 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
         if i < 3
       } yield (i, j)
     val opt = optim(query)
-    query.interpret() should be (for (i <- 1 to 2; j <- 1 to 5) yield (i, j))
-    opt.interpret() should be (query.interpret())
+    query.eval should be (for (i <- 1 to 2; j <- 1 to 5) yield (i, j))
+    opt.eval should be (query.eval)
     opt should be (
       for {
         i <- base
@@ -92,7 +92,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
         if i < 3
       } yield (i, j, l)
     val opt2 = optim(query2)
-    query2.interpret() should be (for (i <- 1 to 2; j <- 1 to 5; k <- 1 to 5; l <- 1 to 5) yield (i, j, l))
+    query2.eval should be (for (i <- 1 to 2; j <- 1 to 5; k <- 1 to 5; l <- 1 to 5) yield (i, j, l))
     opt2 should be (
       for {
         i <- base
@@ -102,7 +102,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
         l <- base
       } yield (i, j, l)
     )
-    opt2.interpret() should be (query2.interpret())
+    opt2.eval should be (query2.eval)
 
     val opt21 = optim(opt2)
     opt21 should be (
@@ -114,7 +114,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
         l <- base
       } yield (i, j, l)
     )
-    opt21.interpret() should be (query2.interpret())
+    opt21.eval should be (query2.eval)
   }
 
   val baseCol = Seq(1).asSquopt
@@ -125,7 +125,7 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     val query = for (i <- baseCol.typeFilter[Int]; j <- Let(i) if j % 2 ==# 1) yield j
     Optimization.toTypeFilter(query0) should be (query)
     val opt = Optimization.removeRedundantOption(query)
-    opt.interpret() should be (query.interpret())
+    opt.eval should be (query.eval)
     opt should be (for (i <- baseCol.typeFilter[Int]; if i % 2 ==# 1) yield i)
   }
 
@@ -215,13 +215,13 @@ class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     existsRenester(existsUnnester(e1)) should be (e1)
   }
 
-  def testRenestingExistsGeneric[T](e: Exp[T]) {
+  def testRenestingExistsGeneric[T: TypeTag](e: Exp[T]) {
     import Optimization._
     val e1 = mapToFlatMap(removeIdentityMaps(e))
     println(e1)
     val unnested = existsUnnester(e1)
     println(unnested)
-    unnested.interpret() should be (e1.interpret())
+    unnested.eval should be (e1.eval)
     val e2 = existsRenester(mapToFlatMap(unnested))
     println(e2)
     val e3 = generalUnnesting(e2)

@@ -79,8 +79,8 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     println("Result of native query: " format LibrariesAndHackersBase)
 
     def checkResult(res: Exp[Traversable[(Library, Developer)]]) {
-      LibrariesAndHackersBase should be (res.interpret())
-      LibrariesAndHackersBase should be (Optimization.optimize(res).interpret())
+      LibrariesAndHackersBase should be (res.eval)
+      LibrariesAndHackersBase should be (Optimization.optimize(res).eval)
     } //XXX: we want Seq here, not Traversable.
 
     val LibrariesAndHackersSmart = for {

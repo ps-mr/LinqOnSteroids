@@ -55,12 +55,12 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
   def testReification() {
     q should equal (newMapOp[Int, Traversable[Int], Int, Traversable[Int]](newWithFilter(l, Fun((v2: Exp[Int]) => LEq(v2, 5))),Fun((v3: Exp[Int]) => Plus(3, v3))))
     /*println(q.exec())
-    println(optimize(q).interpret().exec())
+    println(optimize(q).eval.exec())
     //val r = l.flatMap( (k) => j.withFilter( (k2 ) => k ==# k2).map( (k2:Exp[Int]) => k+k2))
     println(r);
     println(optimize(r))
     println(r.exec())
-    println(optimize(r).interpret().exec())
+    println(optimize(r).eval.exec())
     println(r1);
     println(optimize(r1))
     println(r.exec())
@@ -70,7 +70,7 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
     println(r3);
     println(optimize(r3))
     println(r3.exec())
-    println(optimize(r3).interpret().exec())*/
+    println(optimize(r3).eval.exec())*/
   }
 
   @Test
@@ -82,8 +82,8 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
     println(r)
     println(rAntiJoin)
     println(rOpt)
-    r.interpret() should equal (rAntiJoin.interpret())
-    r.interpret() should equal (rOpt.interpret())
+    r.eval should equal (rAntiJoin.eval)
+    r.eval should equal (rOpt.eval)
   }
 
   @Test
@@ -103,17 +103,17 @@ class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
   def testTypeCase() {
     val exp = Seq(1, "foo", 5.0, new AnyRef).asSquopt typeCase (when[Int](_.toString_#), when[String](identity))
     println(exp)
-    exp.interpret().force should be (Set("1", "foo"))
+    exp.eval.force should be (Set("1", "foo"))
     println(Compile toCode exp)
     Compile toValue exp should be (Set("1", "foo"))
   }
 
   @Test
   def testTypeCase2() {
-    val exp = Seq(1, "foo", 5.0, new AnyRef).asSquopt typeCase (when[Int](_ => true, _ => "an int" /* + _.interpret(); _.toString*/), when[String](_ => true, identity))
+    val exp = Seq(1, "foo", 5.0, new AnyRef).asSquopt typeCase (when[Int](_ => true, _ => "an int" /* + _.eval; _.toString*/), when[String](_ => true, identity))
     println(exp)
-    exp.interpret().force should be (Set("an int", "foo"))
-    println(exp.interpret().force)
+    exp.eval.force should be (Set("an int", "foo"))
+    println(exp.eval.force)
     println(Compile toCode exp)
     Compile toValue exp should be (Set("an int", "foo"))
   }

@@ -129,7 +129,7 @@ class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IV
       println(query)
       testFillAndUpdateArrayBuffer("IncArrayBuffer & Inc Res(%d times map(_ + 1)) - opt %b, useMap2 %b" format
         (n, optimize, useMap2), v)
-      incrementalResult.interpret() should be (incrementalResult.base.interpret().toSet)
+      incrementalResult.eval should be (incrementalResult.base.eval.toSet)
     }
   }
 
