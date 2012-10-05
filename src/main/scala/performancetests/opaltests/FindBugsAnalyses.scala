@@ -407,11 +407,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
     Optimization.pushEnableDebugLog(false)
 
     //XXX now we have compilation, so stop playing this game. No native index please!
-    benchMark("Method-name index creation (for e.g. FINALIZER_NOT_PROTECTED)"/* FB:  FI_PUBLIC_SHOULD_BE_PROTECTED*/)(Optimization.addIndex(methodNameIdx, Some(
-      CollectionUtils.groupBy(for {
-        classFile ← classFiles
-        method ← classFile.methods
-      } yield (classFile, method))(_._2.name))))
+    benchMark("Method-name index creation (for e.g. FINALIZER_NOT_PROTECTED)"/* FB:  FI_PUBLIC_SHOULD_BE_PROTECTED*/)(Optimization.addIndex(methodNameIdx))
     benchMark("Exception-handler-type index creation (for e.g. DONT_CATCH_IMSE)"/* FB: DONT_CATCH_IMSE*/)(Optimization.addIndex(excHandlerTypeIdx))
     benchMark("Instructions type-index creation")(Optimization.addIndex(typeIdx))
 
