@@ -36,7 +36,7 @@ trait TraversableOpsLangIntf {
 
     def view: Rep[TraversableView[T, Repr]]
 
-    def indexBy[K](f: Rep[T] => Rep[K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr], cTag: ClassTag[T], tTag: TypeTag[T], tTag2: TypeTag[Repr]): Rep[Map[K, Repr]]
+    def indexBy[K, That](f: Rep[T] => Rep[K])(implicit cbf: CanBuildFrom[Repr, T, That], cTag: ClassTag[T], tTag: TypeTag[T], tTag2: TypeTag[Repr], tTag3: TypeTag[That]): Rep[Map[K, That]]
 
     def groupBySel[K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](f: Rep[T] => Rep[K], g: Rep[T] => Rep[Rest])
                                                                                        (implicit cbf: CanBuildFrom[Repr, T, Repr],
@@ -200,8 +200,8 @@ trait TraversableOps extends TraversableOpsLangIntf {
 
     def view: Exp[TraversableView[T, Repr]] = View(this.t)
 
-    def indexBy[K](f: Exp[T] => Exp[K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, Repr], cTag: ClassTag[T], tTag: TypeTag[T], tTag2: TypeTag[Repr]): Exp[Map[K, Repr]] =
-      IndexBy(this.t, Fun(f))
+    override def indexBy[K, That](f: Exp[T] => Exp[K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, That], cTag: ClassTag[T], tTag: TypeTag[T], tTag2: TypeTag[Repr], tTag3: TypeTag[That]): Exp[Map[K, That]] =
+      IndexBy[T, Repr, K, That](this.t, Fun(f))
 
     def groupBySel[K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](f: Exp[T] => Exp[K], g: Exp[T] => Exp[Rest])
                                                                                        (implicit cbf: CanBuildFrom[Repr, T, Repr],
@@ -462,14 +462,14 @@ object CollectionUtils {
     None
   }
 
-  def groupBy[A, K, Repr <: Traversable[A]](coll: Repr with Traversable[A])(f: A => K)(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, A, Repr]): immutable.Map[K, Repr] = {
-    val m = mutable.Map.empty[K, Builder[A, Repr]]
+  def groupBy[A, K, Repr <: Traversable[A], That](coll: Repr with Traversable[A])(f: A => K)(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, A, That]): immutable.Map[K, That] = {
+    val m = mutable.Map.empty[K, Builder[A, That]]
     for (elem <- coll) {
       val key = f(elem)
       val bldr = m.getOrElseUpdate(key, cbf(coll) /*coll.companion.newBuilder[A]*/)
       bldr += elem
     }
-    val b = immutable.Map.newBuilder[K, Repr]
+    val b = immutable.Map.newBuilder[K, That]
     for ((k, v) <- m)
       b += ((k, v.result()))
 

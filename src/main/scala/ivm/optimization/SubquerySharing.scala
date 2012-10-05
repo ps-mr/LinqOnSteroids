@@ -59,7 +59,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
   private def groupByShareBody[T, U](c: Exp[Traversable[T]],
                                       fx: Var,
                                       fEqBody: Eq[U], constantEqSide: Exp[U], varEqSide: Exp[U]) = {
-    val groupedBy = c.indexBy[U](Fun.makefun[T, U](varEqSide, fx).f)(implicitly, null, null, null) //XXX argh!
+    val groupedBy = c.indexBy[U, Traversable[T]](Fun.makefun[T, U](varEqSide, fx).f)(implicitly, null, null, null, null) //XXX argh!
     // Luckily, we don't compile the node built above, but just look it up in the cache.
 
     assertType[Exp[U => Traversable[T]]](groupedBy) //Just for documentation.
@@ -275,7 +275,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
     val tries = Seq((indexBaseToLookup, Const(true)), (baseNoFilter, filterCond))
     collectFirst(tries) {
       case (base, cond) =>
-        val groupedBy = base.indexBy[U](Fun.makefun[TupleT, U](varEqSideTransf, fx).f)(implicitly, null, null, null) //XXX argh!
+        val groupedBy = base.indexBy[U, Traversable[TupleT]](Fun.makefun[TupleT, U](varEqSideTransf, fx).f)(implicitly, null, null, null, null) //XXX argh!
 
         assertType[Exp[U => Traversable[TupleT]]](groupedBy) //Just for documentation.
         val toLookup = normalizeBeforeLookup(groupedBy)

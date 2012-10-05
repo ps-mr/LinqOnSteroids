@@ -9,8 +9,7 @@ import ivm.optimization.Optimization
 import ivm.expressiontree.Lifting._
 
 class GroupByTests extends JUnitSuite with ShouldMatchersForJUnit {
-  //val l: Exp[Traversable[Int]] = pure(Vector.range(1, 10))
-  val l = pure(Vector.range(1, 10))
+  val l: Exp[Traversable[Int]] = pure(Vector.range(1, 10))
 
   @Test
   def testGroupBy() {
