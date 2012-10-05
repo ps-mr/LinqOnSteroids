@@ -313,8 +313,8 @@ object Compile {
   }
 
   def toValue[T: TypeTag](e: Exp[T]): T =
-//    precompiledExpToValue(removeConsts(e))
-    toValueCSE(e)
+    precompiledExpToValue(removeConsts(e))
+//    toValueCSE(e)
 
   private def precompiledExpToValue[T: TypeTag](precompiledExp: Exp[T]): T = {
     val (cspValues, staticData) = extractCSPData(precompiledExp)
