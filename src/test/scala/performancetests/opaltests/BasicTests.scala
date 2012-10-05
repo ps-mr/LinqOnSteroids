@@ -35,7 +35,7 @@ object BATLiftingExperimental {
       Exp[Attributes])] = {
       if (t ne null) {
         //Calling interpret here makes the result an exotic term - doesn't it?
-        t.eval match {
+        t.interpret() match {
           case ca: Code =>
             assert(ca != null) //This is satisfied because of the pattern match.
             Some((ca.maxStack, ca.maxLocals,
@@ -65,7 +65,7 @@ object BATLiftingExperimental {
   }
   object INSTANCEOF {
     def unapply(t: Exp[_]): Option[Exp[ReferenceType]] = {
-      if ((t ne null) && t.eval.isInstanceOf[INSTANCEOF])
+      if ((t ne null) && t.interpret().isInstanceOf[INSTANCEOF])
         Some(fmap(t.asInstanceOf[Exp[INSTANCEOF]])('referenceType, _.referenceType))
       else None
     }
@@ -75,7 +75,7 @@ object BATLiftingExperimental {
   object INSTANCEOFNew {
     def unapply(t: Exp[_]): Exp[Option[ReferenceType]] = {
       if (t ne null)
-        t.ifInstanceOf[INSTANCEOF].map(_.referenceType).asInstanceOf[Exp[Option[ReferenceType]]] //XXX will fail at runtime.
+        t.ifInstanceOf[INSTANCEOF].map(_.referenceType).asInstanceOf_#[Option[ReferenceType]]
       else None
     }
   }
@@ -215,7 +215,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .map(_ => m.name)))
 
     val m2Int: Traversable[String] = benchMark("los2-new") {
-      methodsLos2.eval
+      methodsLos2.interpret()
     }
     methodsNative should equal (m2Int)
 
@@ -226,7 +226,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .map(_ => m.name))))
 
     benchMark("los2-new") {
-      methodsLos2_1.eval
+      methodsLos2_1.interpret()
     } should equal (methodsNative)
 
 
@@ -299,7 +299,7 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .map( _ => m.name)))
 
     val m2Int: Traversable[String] = benchMark("los2") {
-      methodsLos2.eval
+      methodsLos2.interpret()
     }
     methodsNative should equal (m2Int)
 
@@ -318,20 +318,21 @@ class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
       .map( _ => m.name)))
 
     val m3Int: Traversable[String] = benchMark("los3") {
-      methodsLos3.eval
+      methodsLos3.interpret()
     }
     methodsNative should equal (m3Int)
 
-    //Best performance and quite clear code.
+    //Best performance and quite clear code. XXX I didn't retest performance after some important changes, but this code is not current anyway.
     val methodsLos4 =
       for {
         cf <- queryData
         m <- cf.methods
         a <- m.attributes
-        if fmap(a)('instanceOf$CodeAttribute, _.isInstanceOf[Code])
-        i <- a.asInstanceOf[Exp[Code]].instructions //This cast works perfectly
-        if fmap(i)('instanceOf$INSTANCEOF, _.isInstanceOf[INSTANCEOF])
+        if a.isInstanceOf_#[Code]
+        i <- a.asInstanceOf_#[Code].instructions //This cast works perfectly
+        if i.isInstanceOf_#[INSTANCEOF]
       } yield m.name
+
     val m4Int: Traversable[String] = benchMark("los4") {
       methodsLos4.eval
     }
