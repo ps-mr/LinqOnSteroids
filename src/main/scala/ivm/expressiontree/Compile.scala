@@ -163,12 +163,6 @@ object Compile {
     transfExp
   }
 
-  private def getStaticData(cspValues: Seq[(Any, CSPVar)]): Seq[(ClassTag[_], Any)] =
-    cspValues map {
-      case (value, CSPVar(memberName, memberCtag, memberType)) =>
-        (memberCtag, value)
-    }
-
   private def getDecls(cspValues: Seq[(Any, CSPVar)]) =
     cspValues map {
       case (value, CSPVar(memberName, memberCtag, memberType)) =>
@@ -191,8 +185,12 @@ object Compile {
   private def extractCSPData[T: TypeTag](e: Exp[T]): (Seq[(Any, CSPVar)], Seq[Class[_]], Seq[AnyRef]) = {
     e.persistValues()
     val cspValues = cspMap.get().toList.toSeq //toList forces immutability.
-    val staticData = getStaticData(cspValues)
-    (cspValues, staticData.map(_._1.runtimeClass), staticData.map(_._2.asInstanceOf[AnyRef]))
+    val staticData =
+      cspValues map {
+        case (value, CSPVar(memberName, memberCtag, memberType)) =>
+          (memberCtag.runtimeClass, value.asInstanceOf[AnyRef])
+      }
+    (cspValues, staticData.map(_._1), staticData.map(_._2))
   }
 
   private case class Scope(boundVar: Option[Var] = None, bindings: mutable.Map[Int, Def[_]] = mutable.Map.empty)
