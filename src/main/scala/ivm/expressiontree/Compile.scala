@@ -126,7 +126,7 @@ object Compile {
   //Cache compilation results. Note: the cache does not identify alpha-equivalent expressions, but it does identify
   // expressions with the same constants!
 
-  private val expCodeCache: collection.concurrent.Map[(Exp[_], Seq[TypeTag[_]]), Option[Constructor[_]]] = Util.buildCache
+  private val expCodeCache: collection.concurrent.Map[(Exp[_], Seq[String]), Option[Constructor[_]]] = Util.buildCache
   //Note: this map should be a concurrent map, not ThreadLocals!
   //new ScalaThreadLocal(mutable.Map[Exp[_], Option[Constructor[_]]]())
 
@@ -188,15 +188,15 @@ object Compile {
     (prefix, restSourceCode, className)
   }
 
-  private def extractCSPData[T: TypeTag](e: Exp[T]): (Seq[(Any, CSPVar)], (Seq[Class[_]], Seq[TypeTag[_]], Seq[AnyRef])) = {
+  private def extractCSPData[T: TypeTag](e: Exp[T]): (Seq[(Any, CSPVar)], (Seq[Class[_]], Seq[String], Seq[AnyRef])) = {
     e.persistValues()
     val cspValues = cspMap.get().toList.toSeq //toList forces immutability.
     val staticData =
       cspValues map {
         case (value, CSPVar(memberName, memberCtag, memberType)) =>
-          (memberCtag.runtimeClass, memberType, value.asInstanceOf[AnyRef])
+          (memberCtag.runtimeClass, manifestToString(memberType), value.asInstanceOf[AnyRef])
       }
-    (cspValues, staticData.unzip3[Class[_], TypeTag[_], AnyRef])
+    (cspValues, staticData.unzip3[Class[_], String, AnyRef])
   }
 
   private case class Scope(boundVar: Option[Var] = None, bindings: mutable.Map[Int, Def[_]] = mutable.Map.empty)
@@ -321,9 +321,9 @@ object Compile {
     toValueCSE(e)
 
   private def precompiledExpToValue[T: TypeTag](precompiledExp: Exp[T]): T = {
-    val (cspValues, (cspClasses, cspTypeTags, cspData)) = extractCSPData(precompiledExp)
+    val (cspValues, (cspClasses, cspTypeNames, cspData)) = extractCSPData(precompiledExp)
 
-    val maybeCons = expCodeCache.getOrElseUpdate((precompiledExp, cspTypeTags), {
+    val maybeCons = expCodeCache.getOrElseUpdate((precompiledExp, cspTypeNames), {
       val (prefix, restSourceCode, className) = compileConstlessExp(precompiledExp, cspValues)
       ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls
         .getConstructor(cspClasses: _*))
