@@ -52,16 +52,26 @@ class CompileCSETest extends FunSuite with ShouldMatchers {
     } + 2) should be (8)
   }
 
+  private val nestedSeq: Seq[Seq[Int]] = for {
+    i <- (1 to 5)
+  } yield (1 to i)
+
   test("CSE does not reorder side effects around &&") {
     reset()
-    val data: Seq[Seq[Int]] = for {
-      i <- (1 to 5)
-    } yield (1 to i)
-
     val queryRes = toValueCSE(
       for {
-        coll <- data.asSquopt
+        coll <- nestedSeq.asSquopt
         if coll.length > 2 && coll(2) ==# 3
+      } yield coll(2))
+    println(queryRes)
+  }
+
+  test("CSE does not reorder side effects around ||") {
+    reset()
+    val queryRes = toValueCSE(
+      for {
+        coll <- nestedSeq.asSquopt
+        if coll.length <= || && coll(2) ==# 3
       } yield coll(2))
     println(queryRes)
   }

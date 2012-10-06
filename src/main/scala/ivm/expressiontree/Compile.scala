@@ -297,12 +297,10 @@ object Compile {
               toSymRef(scopeList, IfThenElse(topDownTraverse(cond),
                 withNewScope(Scope(None), topDownTraverse(thenBody)),
                 withNewScope(Scope(None), topDownTraverse(elseBody))))
-            case ShortCircuitBoolOp(a, b) =>
-              (toSymRef[Boolean](scopeList, And(
+            case boolNode @ ShortCircuitBoolOp(a, b) =>
+              (toSymRef(scopeList, boolNode genericConstructor List(
                 topDownTraverse(a),
-                withNewScope(Scope(None), topDownTraverse(b))))
-                //Stupid Scala GADT inference
-                : Exp[Boolean]).asInstanceOf[Exp[V]]
+                withNewScope(Scope(None), topDownTraverse(b)))))
             case _ =>
               toSymRef(scopeList, computeNewDefNode)
           }
