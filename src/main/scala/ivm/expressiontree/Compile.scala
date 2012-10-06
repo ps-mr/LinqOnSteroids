@@ -318,7 +318,7 @@ object Compile {
 
   //For now experimental. This should respect the binding structure! You can't define everything at the beginning.
   //Since my only binder is lambda (right?) it should be easy to identify those nodes and treat them specially. Special
-  //synthetic nodes (like NasmedVar) might be needed for the translation.
+  //synthetic nodes (like NamedVar) might be needed for the translation.
   def toValueCSE[T: TypeTag](e: Exp[T]): T = {
     definitions.clear()
     precompiledExpToValue(collectSymbols(doCSE(removeConsts(e))))
