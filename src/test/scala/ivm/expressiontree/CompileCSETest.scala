@@ -71,8 +71,8 @@ class CompileCSETest extends FunSuite with ShouldMatchers {
     val queryRes = toValueCSE(
       for {
         coll <- nestedSeq.asSquopt
-        if coll.length <= || && coll(2) ==# 3
-      } yield coll(2))
+        if coll.length <= 2 || coll(2) ==# 3
+      } yield coll(0))
     println(queryRes)
   }
 
