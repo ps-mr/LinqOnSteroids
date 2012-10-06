@@ -270,9 +270,9 @@ object Compile {
       }
 
       object ShortCircuitBoolOp {
-        def unapply(defNode: Def[Boolean]): Option[(Exp[Boolean], Exp[Boolean])] = defNode match {
-          case And(a, b) => Some(a, b)
-          case Or(a, b) => Some(a, b)
+        def unapply(defNode: Def[_]): Option[(Exp[Boolean], Exp[Boolean])] = defNode match {
+          case And(a, b) => Some((a, b))
+          case Or(a, b) => Some((a, b))
           case _ => None
         }
       }
