@@ -320,8 +320,7 @@ object Compile {
   //Since my only binder is lambda (right?) it should be easy to identify those nodes and treat them specially. Special
   //synthetic nodes (like NamedVar) might be needed for the translation.
   def toValueCSE[T: TypeTag](e: Exp[T]): T = {
-    definitions.clear()
-    precompiledExpToValue(collectSymbols(doCSE(removeConsts(e))))
+    precompiledExpToValue(removeConsts(e))
   }
 
   def toValue[T: TypeTag](e: Exp[T]): T =
@@ -332,7 +331,8 @@ object Compile {
     val (cspValues, (cspClasses, cspTypeNames, cspData)) = extractCSPData(precompiledExp)
 
     val maybeCons = expCodeCache.getOrElseUpdate((precompiledExp, cspTypeNames), {
-      val (prefix, restSourceCode, className) = compileConstlessExp(precompiledExp, cspValues)
+      definitions.clear()
+      val (prefix, restSourceCode, className) = compileConstlessExp(collectSymbols(doCSE(precompiledExp)), cspValues)
       ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls
         .getConstructor(cspClasses: _*))
     })
