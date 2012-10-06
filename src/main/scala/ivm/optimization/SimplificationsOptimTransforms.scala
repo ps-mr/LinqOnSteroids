@@ -44,17 +44,17 @@ trait SimplificationsOptimTransforms {
     case e => e
   }
 
-  //Move constants on the right-side of a boolean connective. Also, move nested connectives of the same type to the
-  //left: since these operators are left-associative, that's the natural order.
+  //Move constants on the lhs of a boolean connective. Also, move nested connectives of the same type to the
+  //rhs: CSE calls for right-associative trees, so in a && (b && c) subexpressions in a can be reused in c.
   val reassociateBoolOps: Exp[_] => Exp[_] = {
-    case Sym(And(l@Const(_), r)) =>
+    case Sym(And(l, r@Const(_))) =>
       r && l
-    case Sym(And(l, r@Sym(And(ra, rb)))) =>
-      (l && ra) && rb
-    case Sym(Or(l@Const(_), r)) =>
+    case Sym(And(l@Sym(And(la, lb)), r)) =>
+      la && (lb && r)
+    case Sym(Or(l, r@Const(_))) =>
       r || l
-    case Sym(Or(l, r@Sym(Or(ra, rb)))) =>
-      (l || ra) || rb
+    case Sym(Or(l@Sym(Or(la, lb)), r)) =>
+      la || (lb || r)
     case e => e
   }
 
@@ -62,10 +62,10 @@ trait SimplificationsOptimTransforms {
   //The code could be optimized to save repeated matches on And and Or in the different functions, but that seems premature.
   val simplifyConditions: Exp[_] => Exp[_] =
     reassociateBoolOps andThen {
-      case Sym(And(x, Const(true))) => x
-      case Sym(And(x, c@Const(false))) => c
-      case Sym(Or(x, Const(false))) => x
-      case Sym(Or(x, c@Const(true))) => c
+      case Sym(And(Const(true), x)) => x
+      case Sym(And(c@Const(false), _)) => c
+      case Sym(Or(Const(false), x)) => x
+      case Sym(Or(c@Const(true), _)) => c
       case Sym(Not(Sym(Not(c)))) => c
       case Sym(Not(Const(b))) => !b
       case e => e

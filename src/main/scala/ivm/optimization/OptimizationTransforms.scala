@@ -21,14 +21,14 @@ import collection.TraversableLike
 object OptimizationTransforms extends NumericOptimTransforms with SimplificationsOptimTransforms with
   Inlining with FoldPhysicalOperators with Unnesting with Fusion with TypeFilterOptim
 {
-  //reversed list of conds
-  private def collectCondsReversed(exp: Exp[Boolean]): Seq[Exp[Boolean]] =
+  //list of conds
+  private def collectConds(exp: Exp[Boolean]): Seq[Exp[Boolean]] =
     exp match {
-    //This works because And trees are left-associative, because of && precedence and because of reassociateBoolOps.
-      case Sym(And(a, b)) => b +: collectCondsReversed(a)
+      //This works because And trees are right-associative (because of reassociateBoolOps).
+      case Sym(And(a, b)) => a +: collectConds(b)
       case _ => Seq(exp)
     }
-  private def collectConds = collectCondsReversed _ andThen (_.reverse)
+  //private def collectConds = collectCondsReversed _ andThen (_.reverse)
 
   //Split multiple filters anded together.
   val splitFilters: Exp[_] => Exp[_] = {
@@ -42,10 +42,10 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
                                           filterFun: FunSym[U, Boolean], filtersToHoist: Seq[Exp[Boolean]], otherFilters: Seq[Exp[Boolean]],
                                           fmFun2: FunSym[U, Traversable[V]]): Option[Exp[Traversable[V]]] = {
     if (filtersToHoist.nonEmpty) {
-      val hoistedPred = Fun.makefun(filtersToHoist reduce (_ && _), fmFun.x)
+      val hoistedPred = Fun.makefun(filtersToHoist reduceRight (_ && _), fmFun.x)
       val coll2WithOtherFilters =
         ExpTransformer(removeTrivialFilters) {
-          stripView(coll2) filter Fun.makefun((otherFilters fold asExp(true)) (_ && _), filterFun.x).f
+          stripView(coll2) filter Fun.makefun((otherFilters foldRight asExp(true)) (_ && _), filterFun.x).f
         }
       Some(coll1 withFilter hoistedPred.f flatMap Fun.makefun(coll2WithOtherFilters flatMap fmFun2.f, fmFun.x).f)
     } else
