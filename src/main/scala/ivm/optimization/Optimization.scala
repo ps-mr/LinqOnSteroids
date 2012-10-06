@@ -97,7 +97,7 @@ object Optimization {
   //stuff into App nodes which we beta-reduce only in a second call to the optimizer.
   //In fact, now beta reduction checks the inlining side conditions to guarantee idempotence. This however means that
   //we'll miss some opportunities for inlining and optimization, so maybe it should be reversed.
-  //In that case, we need to call letTransformer(betaDeltaReducer(basicInlining(...))), which is however a bit wasteful.
+  //In that case, we need to call letTransformer(betaDeltaReducer(selectiveLetInliner(...))), which is however a bit wasteful.
   //So use betaDeltaReducer(letTransformer(...)) instead, at least for now.
   def optimize[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
     checkIdempotent(exp, idxLookup, "optimize") {
@@ -143,7 +143,7 @@ object Optimization {
       compose physicalOptimize[T] //returns result of flatMapToMap
       compose betaDeltaReducer[T]
       compose newHandleFilters[T] //3s
-      compose basicInlining[T] //5-7s
+      compose selectiveLetInliner[T] //5-7s
       compose existsUnnester[T] //6s
       compose removeRedundantOption[T] compose toTypeFilter[T] compose sizeToEmpty[T]
       compose generalUnnesting[T] //11s
@@ -161,8 +161,6 @@ object Optimization {
       reassociateOps(betaDeltaReducer(
         mergeMaps(exp))))
 
-  def basicInlining[T](exp: Exp[T]): Exp[T] = letTransformerUsedAtMostOnce(letTransformerTrivial(exp))
-
   /*
   private def preIndexingOld[T](exp: Exp[T]): Exp[T] =
       handleNewMaps(
@@ -171,7 +169,7 @@ object Optimization {
             optimizeCartProdToJoin(
               flatMapToMap(removeRedundantOption(toTypeFilter(
                 //generalUnnesting, in practice, can produce the equivalent of let statements. Hence it makes sense to desugar them _after_ (at least the trivial ones).
-                sizeToEmpty(basicInlining(generalUnnesting(mapToFlatMap(
+                sizeToEmpty(selectiveLetInliner(generalUnnesting(mapToFlatMap(
                   removeIdentityMaps(betaDeltaReducer(exp)))))))))))))
                   */
 
@@ -199,11 +197,13 @@ object Optimization {
     (newHandleFilters[T] _
       //removeIdentityMaps can be triggered by transformedFilterToFilter
       compose mapToFlatMap[T] compose removeIdentityMaps[T] compose flatMapToMap[T]
-      compose transformedFilterToFilter[T] compose betaDeltaReducer[T] compose basicInlining[T]
+      compose transformedFilterToFilter[T] compose betaDeltaReducer[T] compose selectiveLetInliner[T]
       compose mapToFlatMap[T] compose mergeFlatMaps[T] compose mergeMaps[T] compose flatMapToMap[T]
       compose betaDeltaReducer[T] compose ifSimplify[T] compose filterToTransformedFilter[T])(exp)
 
   //Boilerplate {{{
+  def selectiveLetInliner[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.selectiveLetInliner)
+
   def optimizeCartProdToJoin[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.cartProdToJoin)
 
   def cartProdToAntiJoin[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.cartProdToAntiJoin)
@@ -244,10 +244,6 @@ object Optimization {
   def filterToWithFilter[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.filterToWithFilter)
 
   def betterExists[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.betterExists)
-
-  def letTransformerTrivial[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformerTrivial)
-
-  def letTransformerUsedAtMostOnce[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformerUsedAtMostOnce)
 
   def letTransformer[T](exp: Exp[T]): Exp[T] = exp.transform(OptimizationTransforms.letTransformer)
 

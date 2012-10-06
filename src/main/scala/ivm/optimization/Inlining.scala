@@ -23,13 +23,6 @@ trait Inlining {
     case _ => false
   }
 
-  //We also reduce lets where the variable is only used once. Papers on the GHC inliner explain how to do this and why
-  //a linear type system is needed for that. See letTransformerUsedAtMostOnce.
-  val letTransformerTrivial: Exp[_] => Exp[_] = {
-    case Sym(FlatMap(Sym(ExpSeq(Seq(v))), FunSym(f))) if isTrivial(v) => subst(f)(v)
-    case e => e
-  }
-
   /*
    * Inlining: if you bind something and then use it immediately (1), it's used only once; the same if there are in between only other bindings, i.e. iterations over single-element sequences (try to make this into a complete criterion). Example:
 for {
@@ -76,9 +69,21 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
   // a second parameter list, possibly empty - producing call syntaxes like "usesArgAtMostOnce(f)()".
   def usesArgAtMostOnce[S, T](f: FunSym[S, T]): Boolean = usesArgAtMostOnce(f, f.x)
 
-  //This allows to inline definitions if they are used at most once.
-  val letTransformerUsedAtMostOnce: Exp[_] => Exp[_] = {
-    case Sym(FlatMap(Sym(ExpSeq(Seq(exp1))), f @ FunSym(_))) if usesArgAtMostOnce(f) => subst(f.defNode)(exp1)
+  /*
+  val letTransformerTrivial: Exp[_] => Exp[_] = {
+    //XXX having a separate case here is probably a bad idea, we should try to unify this somehow.
+    //constantFoldSequences is probably a more powerful and robust replacement.
+    case Sym(FlatMap(Sym(Filter(seq @ Sym(ExpSeq(Seq(v))), pred)), FunSym(f))) if isTrivial(v) =>
+      seq filter pred flatMap Fun.makefun(subst(f)(v), f.x).f
+  }
+  */
+
+  //This allows to inline definitions if they are used at most once or they are trivial enough.
+  //We also reduce lets where the variable is only used once. Papers on the GHC inliner explain how to do this and why
+  //a linear type system is needed for that. See letTransformerUsedAtMostOnce.
+  val selectiveLetInliner: Exp[_] => Exp[_] = {
+    case Sym(FlatMap(Sym(ExpSeq(Seq(v))), fs @ FunSym(f))) if isTrivial(v) || usesArgAtMostOnce(fs)  =>
+      subst(f)(v)
     // XXX: The following case is also a valid optimization, but I expect code to which it applies to never be created,
     // for now (say by inlining Lets). Hence for now disable it. Reenable later.
     //case App(f: Fun[_, _], exp1) if usesArgAtMostOnce(f) => subst(f)(exp1)
