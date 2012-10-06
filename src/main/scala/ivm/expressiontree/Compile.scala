@@ -251,7 +251,8 @@ object Compile {
         //case Some(boundVar) if !(s.defNode isOrContainsGen boundVar) => //XXX: I'd have to check for all the symbols bound in scope!
         //toSymRef(scopeList.tail, s)
         case _ =>
-          scope.bindings put (s.id, s.defNode)
+          if (!(scopeList.tail exists (scope => scope.bindings contains s.id)))
+            scope.bindings put (s.id, s.defNode)
           toAtomCSE(NamedVar(symValPrefix + s.id))
       }
     }
