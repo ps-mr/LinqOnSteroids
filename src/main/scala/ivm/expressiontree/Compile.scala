@@ -269,6 +269,14 @@ object Compile {
         toAtomCSE(Attach(res, filledScope))
       }
 
+      object ShortCircuitBoolOp {
+        def unapply(defNode: Def[Boolean]): Option[(Exp[Boolean], Exp[Boolean])] = defNode match {
+          case And(a, b) => Some(a, b)
+          case Or(a, b) => Some(a, b)
+          case _ => None
+        }
+      }
+
       //We need a top-down traversal...
       //...but with a visitor controlling the traversal (a state monad would also work to make this non-imperative).
       def topDownTraverse[V]: Exp[V] => Exp[V] = {
@@ -289,7 +297,7 @@ object Compile {
               toSymRef(scopeList, IfThenElse(topDownTraverse(cond),
                 withNewScope(Scope(None), topDownTraverse(thenBody)),
                 withNewScope(Scope(None), topDownTraverse(elseBody))))
-            case And(a, b) =>
+            case ShortCircuitBoolOp(a, b) =>
               (toSymRef[Boolean](scopeList, And(
                 topDownTraverse(a),
                 withNewScope(Scope(None), topDownTraverse(b))))
