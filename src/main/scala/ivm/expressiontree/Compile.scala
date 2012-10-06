@@ -291,7 +291,7 @@ object Compile {
                 withNewScope(Scope(None), topDownTraverse(elseBody))))
             case And(a, b) =>
               (toSymRef[Boolean](scopeList, And(
-                withNewScope(Scope(None), topDownTraverse(a)),
+                topDownTraverse(a),
                 withNewScope(Scope(None), topDownTraverse(b))))
                 //Stupid Scala GADT inference
                 : Exp[Boolean]).asInstanceOf[Exp[V]]

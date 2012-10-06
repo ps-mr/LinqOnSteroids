@@ -52,6 +52,20 @@ class CompileCSETest extends FunSuite with ShouldMatchers {
     } + 2) should be (8)
   }
 
+  test("CSE does not reorder side effects around &&") {
+    reset()
+    val data: Seq[Seq[Int]] = for {
+      i <- (1 to 5)
+    } yield (1 to i)
+
+    val queryRes = toValueCSE(
+      for {
+        coll <- data.asSquopt
+        if coll.length > 2 && coll(2) ==# 3
+      } yield coll(2))
+    println(queryRes)
+  }
+
   test("CSE works on for comprehensions") {
     reset()
     toValueCSE(for {
