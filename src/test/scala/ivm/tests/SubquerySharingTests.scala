@@ -60,7 +60,14 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
   }
 
   object expVector {
-    def range(a: Exp[Int], b: Exp[Int]) = globalFmap(a, b)('range, "Vector", Vector.range(_, _))
+    def range(a: Exp[Int], b: Exp[Int]) = globalFmap(a, b)('range, "Vector.range", Vector.range(_, _))
+  }
+
+  implicit class ExpRichInt(e: Exp[Int]) {
+    def until(end: Exp[Int]): Exp[Range] = fmap(e, end)('until, _ until _)
+    def until(end: Int, step: Int): Exp[Range] = fmap(e, end, step)('until, _ until (_, _))
+    def to(end: Int): Exp[Range.Inclusive] = fmap(e, end)('to, _ to _)
+    def to(end: Int, step: Int): Exp[Range.Inclusive] = fmap(e, end, step)('to, _ to (_, _))
   }
 
   val l2: Exp[Seq[Int]] =
@@ -69,6 +76,13 @@ class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
       j <- expVector.range(1, i)
       if (j ==# 5)
     } yield i + j
+
+  @Test def expVectorTest() {
+    expVector.range(1, 10).eval should be (Vector.range(1, 10))
+    val one = asExp(1)
+    (one to 10).eval should be (1 to 10)
+    (one until 10).eval should be (1 until 10)
+  }
 
   val l2IdxBase = for {
     i <- baseRange
