@@ -225,100 +225,102 @@ object Compile {
   }
 
   private val symValPrefix = "s"
-  //For now experimental. This should respect the binding structure! You can't define everything at the beginning.
-  //Since my only binder is lambda (right?) it should be easy to identify those nodes and treat them specially. Special
-  //synthetic nodes (like NasmedVar) might be needed for the translation.
-  def toValueCSE[T: TypeTag](e: Exp[T]): T = {
-    //This is the version for CSE, but it cannot be used during transformations - it's hundred of times slower.
-    val definitions: mutable.Map[Def[_], Sym[_]] = new mutable.HashMap()
-    // We add another implicit conversion in scope to prevent application of the toAtomImplicit, which does not share
-    // symbols. Note that this conversion is more specific and is sometimes chosen where the other does not apply, but
-    // that's safe.
-    implicit def toAtomCSE[U]: Def[U] => Sym[U] = {
-      case funDef: Fun[s, t] =>
-        //We don't do CSE on functions.
-        //The type ascription + cast makes sure that the cast is not doing more than it should.
-        (BaseLangImpl.toFunSym[s, t](funDef): Sym[s => t]).asInstanceOf[Sym[U]]
-      case defNode =>
-        definitions.asInstanceOf[mutable.Map[Def[U], Sym[U]]].getOrElseUpdate(defNode, Sym(defNode))
-    }
 
+  //This is the version for CSE, but it cannot be used during transformations - it's hundred of times slower.
+  private val definitions: mutable.Map[Def[_], Sym[_]] = new mutable.HashMap()
+  // We add another implicit conversion in scope to prevent application of the toAtomImplicit, which does not share
+  // symbols. Note that this conversion is more specific and is sometimes chosen where the other does not apply, but
+  // that's safe.
+  private implicit def toAtomCSE[U]: Def[U] => Sym[U] = {
+    case funDef: Fun[s, t] =>
+      //We don't do CSE on functions.
+      //The type ascription + cast makes sure that the cast is not doing more than it should.
+      (BaseLangImpl.toFunSym[s, t](funDef): Sym[s => t]).asInstanceOf[Sym[U]]
+    case defNode =>
+      definitions.asInstanceOf[mutable.Map[Def[U], Sym[U]]].getOrElseUpdate(defNode, Sym(defNode))
+  }
+
+  def collectSymbols[U](e: Exp[U]): Exp[U] = {
     //Precondition: the bottom of scopeList is a scope without a bound variable.
     //@annotation.tailrec
-    def toSymRef[U](scopeList: List[Scope], s: Sym[U]): Exp[U] = {
+    def toSymRef[V](scopeList: List[Scope], s: Sym[V]): Exp[V] = {
       //Hoist symbols out of functions if possible. Hm. That makes sense only for loops, not for all function bodies. And
       //it's an optim we don't do yet :-(.
       val scope = scopeList.head
       scope.boundVar match {
         //case Some(boundVar) if !(s.defNode isOrContainsGen boundVar) => //XXX: I'd have to check for all the symbols bound in scope!
-          //toSymRef(scopeList.tail, s)
+        //toSymRef(scopeList.tail, s)
         case _ =>
           scope.bindings put (s.id, s.defNode)
           toAtomCSE(NamedVar(symValPrefix + s.id))
       }
     }
 
-    def collectSymbols[U](e: Exp[U]): Exp[U] = {
-      var scopeList = List[Scope](Scope())
-      def withNewScope[V](scope: Scope, f: => Exp[V]): Exp[V] = {
-        val oldScopeList = scopeList
-        scopeList = scope :: scopeList
-        val res = f
-        val filledScope = scopeList.head
-        scopeList = oldScopeList
-        toAtomCSE(Attach(res, filledScope))
-      }
+    var scopeList = List[Scope](Scope())
+    def withNewScope[V](scope: Scope, f: => Exp[V]): Exp[V] = {
+      val oldScopeList = scopeList
+      scopeList = scope :: scopeList
+      val res = f
+      val filledScope = scopeList.head
+      scopeList = oldScopeList
+      toAtomCSE(Attach(res, filledScope))
+    }
 
-      object ShortCircuitBoolOp {
-        def unapply(defNode: Def[_]): Option[(Exp[Boolean], Exp[Boolean])] = defNode match {
-          case And(a, b) => Some((a, b))
-          case Or(a, b) => Some((a, b))
-          case _ => None
+    object ShortCircuitBoolOp {
+      def unapply(defNode: Def[_]): Option[(Exp[Boolean], Exp[Boolean])] = defNode match {
+        case And(a, b) => Some((a, b))
+        case Or(a, b) => Some((a, b))
+        case _ => None
+      }
+    }
+
+    //We need a top-down traversal...
+    //...but with a visitor controlling the traversal (a state monad would also work to make this non-imperative).
+    def topDownTraverse[V]: Exp[V] => Exp[V] = {
+      case c @ Const(_) => c
+      case s @ Sym(v: Var) => s
+      case s @ Sym(NamedVar(_)) => s
+      case s @ SymWithId(defNode, id) =>
+        def computeNewDefNode = defNode.genericConstructor(s.children mapConserve topDownTraverse[Any])
+        defNode match {
+          //Do we really want CSE on functions? I don't think so. For one, we'd need to annotate functions with their
+          // parameter type, and we'd need manifests for that.
+          case f @ FuncExpBody(body) =>
+            //We call withNewScope on the body! This way, a FunSym stays a FunSym (which is important).
+            //Moreover, it becomes simpler to do code generation.
+            toAtomCSE(f genericConstructor List(withNewScope(Scope(Some(f.x)), topDownTraverse(body))))
+          //withNewScope(Scope(Some(f.x)), toAtomCSE(computeNewDefNode))
+          case IfThenElse(cond, thenBody, elseBody) =>
+            toSymRef(scopeList, IfThenElse(topDownTraverse(cond),
+              withNewScope(Scope(None), topDownTraverse(thenBody)),
+              withNewScope(Scope(None), topDownTraverse(elseBody))))
+          case boolNode @ ShortCircuitBoolOp(a, b) =>
+            (toSymRef(scopeList, boolNode genericConstructor List(
+              topDownTraverse(a),
+              withNewScope(Scope(None), topDownTraverse(b)))))
+          case _ =>
+            toSymRef(scopeList, computeNewDefNode)
         }
-      }
-
-      //We need a top-down traversal...
-      //...but with a visitor controlling the traversal (a state monad would also work to make this non-imperative).
-      def topDownTraverse[V]: Exp[V] => Exp[V] = {
-        case c @ Const(_) => c
-        case s @ Sym(v: Var) => s
-        case s @ Sym(NamedVar(_)) => s
-        case s @ SymWithId(defNode, id) =>
-          def computeNewDefNode = defNode.genericConstructor(s.children mapConserve topDownTraverse[Any])
-          defNode match {
-            //Do we really want CSE on functions? I don't think so. For one, we'd need to annotate functions with their
-            // parameter type, and we'd need manifests for that.
-            case f @ FuncExpBody(body) =>
-              //We call withNewScope on the body! This way, a FunSym stays a FunSym (which is important).
-              //Moreover, it becomes simpler to do code generation.
-              toAtomCSE(f genericConstructor List(withNewScope(Scope(Some(f.x)), topDownTraverse(body))))
-              //withNewScope(Scope(Some(f.x)), toAtomCSE(computeNewDefNode))
-            case IfThenElse(cond, thenBody, elseBody) =>
-              toSymRef(scopeList, IfThenElse(topDownTraverse(cond),
-                withNewScope(Scope(None), topDownTraverse(thenBody)),
-                withNewScope(Scope(None), topDownTraverse(elseBody))))
-            case boolNode @ ShortCircuitBoolOp(a, b) =>
-              (toSymRef(scopeList, boolNode genericConstructor List(
-                topDownTraverse(a),
-                withNewScope(Scope(None), topDownTraverse(b)))))
-            case _ =>
-              toSymRef(scopeList, computeNewDefNode)
-          }
-      }
-      withNewScope(Scope(), topDownTraverse(e))
     }
+    withNewScope(Scope(), topDownTraverse(e))
+  }
 
-    //rewrite the tree while sharing common subexpression, producing a DAG.
-    def doCSE[U](constlessExp: Exp[U]): Exp[U] = {
-      constlessExp transform {
-        case Sym(defNode) =>
-          //XXX We need to build here a symbol which does consider the id in the equality! But write a test for that first.
-          //Otherwise, CSE won't distinguish between Symbols in different scopes, since the IDs are not part of equality comparison. Darn!
-          toAtomCSE(defNode)
-        case c: Const[t] => throw new RuntimeException("Const expression in constlessExp")
-      }
+  //rewrite the tree while sharing common subexpression, producing a DAG.
+  def doCSE[U](constlessExp: Exp[U]): Exp[U] = {
+    constlessExp transform {
+      case Sym(defNode) =>
+        //XXX We need to build here a symbol which does consider the id in the equality! But write a test for that first.
+        //Otherwise, CSE won't distinguish between Symbols in different scopes, since the IDs are not part of equality comparison. Darn!
+        toAtomCSE(defNode)
+      case c: Const[t] => throw new RuntimeException("Const expression in constlessExp")
     }
+  }
 
+  //For now experimental. This should respect the binding structure! You can't define everything at the beginning.
+  //Since my only binder is lambda (right?) it should be easy to identify those nodes and treat them specially. Special
+  //synthetic nodes (like NasmedVar) might be needed for the translation.
+  def toValueCSE[T: TypeTag](e: Exp[T]): T = {
+    definitions.clear()
     precompiledExpToValue(collectSymbols(doCSE(removeConsts(e))))
   }
 
