@@ -86,12 +86,12 @@ trait SIC_INNER_SHOULD_BE_STATIC_ANON{
           import BATLifting._
           import performancetests.opaltests.InstructionLifting._
 
-      letExp(lastIndexOfInnerClassEncoding(classFile))(lastSpecialChar => {
+      val lastSpecialChar = lastIndexOfInnerClassEncoding(classFile)
       val className = classFile.thisClass.className
 
       isInnerClass(classFile) &&
       className.length > lastSpecialChar + 1 &&
-      expCharacter.isDigit(className.charAt(lastSpecialChar + 1))})
+      expCharacter.isDigit(className.charAt(lastSpecialChar + 1))
     }
 
 
