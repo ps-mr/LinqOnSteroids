@@ -92,12 +92,25 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
 
   //XXX to test
   //This implements rules from "How to Comprehend Queries Functionally", page 14, rules (12a, b).
+  //XXX: But maybe filter for whether this enables inlining!
   val constantFoldSequences: Exp[_] => Exp[_] = {
+    //XXX having a separate case here is probably a bad idea, we should try to unify this somehow.
+    //constantFoldSequences is probably a more powerful and robust replacement.
+
+    //XXX: abstract over Filter/FlatMap with a single matcher having a rebuild method (close to what Klaus suggested). The
+    //type signature of rebuild would depend on type parameters specified as a field of the match result.
+    case Sym(Filter(Sym(ExpSeq(seq)), pred)) if seq forall isTrivial =>
+      (seq map (x => asExp(Seq(x)) filter pred)).fold[Exp[Traversable[Any]]](Seq.empty)(_ ++ _)
+      //We need to do more: we need to implement here filter inlining. But that's done in a transformation
+      //turning filters into ifs... isn't it there? XXX
+
+      //seq filter pred flatMap Fun.makefun(subst(f)(v), f.x).f
     case Sym(FlatMap(Sym(ExpSeq(seq)), f)) =>
       //Rewrite this as a sequence of expressions.
       (seq map (x => asExp(Seq(x)) flatMap f)).  //map is at the meta-level, flatMap at the object level.
       //(seq map (letExp(_)(f))).
         fold[Exp[Traversable[Any]]] (Seq.empty) (_ ++ _)
+      //We need also a case for filters!
     case e => e
   }
 }
