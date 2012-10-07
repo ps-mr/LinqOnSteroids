@@ -333,9 +333,7 @@ object Compile {
 
     val maybeCons = expCodeCache.getOrElseUpdate((precompiledExp, cspTypeNames), {
       definitions.clear()
-      val cseExp = collectSymbols(doCSE(precompiledExp))
-      cseExp.persistValues()
-      val (prefix, restSourceCode, className) = compileConstlessExp(cseExp, cspValues)
+      val (prefix, restSourceCode, className) = compileConstlessExp(collectSymbols(doCSE(precompiledExp)), cspValues)
       ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls
         .getConstructor(cspClasses: _*))
     })
