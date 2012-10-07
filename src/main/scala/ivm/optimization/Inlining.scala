@@ -69,6 +69,10 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
   // a second parameter list, possibly empty - producing call syntaxes like "usesArgAtMostOnce(f)()".
   def usesArgAtMostOnce[S, T](f: FunSym[S, T]): Boolean = usesArgAtMostOnce(f, f.x)
 
+  //This is the shortest way of writing identity.
+  val emptyTransform: PartialFunction[Exp[_], Exp[_]] = {
+    case e => e
+  }
 }
 
 trait Inlining extends InliningDefs {

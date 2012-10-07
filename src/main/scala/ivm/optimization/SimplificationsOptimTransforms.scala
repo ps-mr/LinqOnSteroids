@@ -131,11 +131,6 @@ trait SimplificationsOptimTransforms {
       subst(fun.defNode)(arg)
   }
 
-  //This is the shortest way of writing identity.
-  val emptyTransform: PartialFunction[Exp[_], Exp[_]] = {
-    case e => e
-  }
-
   // Fixpoint iteration for beta-delta reduction :-). This works very well because:
   //   (f andThen g).isDefinedAt = f.isDefinedAt. (and g is supposed to be total - this code won't work so well if g is
   // in fact partial, another example of PartialFunction <: Function1 being totally confusing).
