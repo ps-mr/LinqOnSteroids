@@ -15,7 +15,7 @@ import Subst.subst
  * Date: 30/6/2012
  */
 
-trait Inlining {
+trait InliningDefs {
   def isTrivial(v: Exp[_]): Boolean = v match {
     case ExpSelection(_, _, e) => isTrivial(e)
     case Sym(e: ExpProduct with Def[_]) => e.children forall isTrivial
@@ -69,6 +69,9 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
   // a second parameter list, possibly empty - producing call syntaxes like "usesArgAtMostOnce(f)()".
   def usesArgAtMostOnce[S, T](f: FunSym[S, T]): Boolean = usesArgAtMostOnce(f, f.x)
 
+}
+
+trait Inlining extends InliningDefs {
   /*
   val letTransformerTrivial: Exp[_] => Exp[_] = {
     //XXX having a separate case here is probably a bad idea, we should try to unify this somehow.

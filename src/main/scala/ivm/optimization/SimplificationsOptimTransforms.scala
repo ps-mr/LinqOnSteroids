@@ -12,7 +12,7 @@ import Subst.subst
  */
 
 trait SimplificationsOptimTransforms {
-  this: Inlining =>
+  this: InliningDefs =>
   val ifSimplify: Exp[_] => Exp[_] = {
     case Sym(IfThenElse(x @ Var(_), thenBranch, elseBranch)) if (thenBranch isOrContains x) || (elseBranch isOrContains x) =>
       val thenBranchSub = thenBranch substSubTerm (x, true)
