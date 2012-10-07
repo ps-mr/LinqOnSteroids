@@ -13,7 +13,7 @@ import collection.TraversableLike
  */
 
 trait Fusion {
-  this: SimplificationsOptimTransforms =>
+  this: SimplificationsOptimTransforms with InliningDefs =>
   private def buildMergedMaps[
     T, U, V, To <: Traversable[V] with TraversableLike[V, To]](coll: Exp[Traversable[T]],
                                                                f: FunSym[T, U], g: FunSym[U, V],

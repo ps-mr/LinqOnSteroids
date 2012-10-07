@@ -88,26 +88,28 @@ trait Inlining extends InliningDefs {
   //This allows to inline definitions if they are used at most once or they are trivial enough.
   //We also reduce lets where the variable is only used once. Papers on the GHC inliner explain how to do this and why
   //a linear type system is needed for that. See letTransformerUsedAtMostOnce.
-  val selectiveLetInliner: Exp[_] => Exp[_] = {
+  val selectiveLetFlatMapInliner: PartialFunction[Exp[_], Exp[_]] = {
     case Sym(FlatMap(Sym(ExpSeq(Seq(v))), fs @ FunSym(f))) if isTrivial(v) || usesArgAtMostOnce(fs)  =>
       subst(f)(v)
     // XXX: The following case is also a valid optimization, but I expect code to which it applies to never be created,
     // for now (say by inlining Lets). Hence for now disable it. Reenable later.
     //case App(f: Fun[_, _], exp1) if usesArgAtMostOnce(f) => subst(f)(exp1)
-
-    //This case breaks indexing:
-
-    //case Sym(Filter(Sym(ExpSeq(Seq(v))), pred)) =>
-      //if_# (pred(v)) { Seq(v) } else_# { Seq.empty }
-    case e => e
   }
+
+  val selectiveLetFilterInliner: PartialFunction[Exp[_], Exp[_]] = {
+    //This case breaks indexing when part of selectiveLetInliner
+    case Sym(Filter(Sym(ExpSeq(Seq(v))), pred)) =>
+      if_# (pred(v)) { Seq(v) } else_# { Seq.empty }
+  }
+  val selectiveLetInliner: Exp[_] => Exp[_] = selectiveLetFlatMapInliner orElse emptyTransform
+  val selectiveLetCompleteInliner: Exp[_] => Exp[_] = selectiveLetFlatMapInliner orElse selectiveLetFilterInliner orElse emptyTransform
 
   //This implements rules from "How to Comprehend Queries Functionally", page 14, rules (12a, b).
   val selectiveConstantSeqInliner: Exp[_] => Exp[_] = {
     case binder @ BaseBinding(Sym(ExpSeq(seq)), fun) if (seq exists (isTrivial _)) || usesArgAtMostOnce(fun) =>
       //FoldRight means that the zero element is at the left and will set the result type to Seq, which is correct since
       //the original mapping is on a sequence.
-      (seq map (seqEl => ExpTransformer(selectiveLetInliner) apply
+      (seq map (seqEl => ExpTransformer(selectiveLetCompleteInliner) apply
                       Sym(binder.defNode genericConstructor List(asExp(Seq(seqEl)), fun)))).
         foldLeft[Exp[Traversable[Any]]](Seq.empty)(_ ++ _)
     case e => e
