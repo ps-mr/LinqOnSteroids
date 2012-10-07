@@ -98,8 +98,8 @@ trait Inlining extends InliningDefs {
 
   val selectiveLetFilterInliner: PartialFunction[Exp[_], Exp[_]] = {
     //This case breaks indexing when part of selectiveLetInliner
-    case Sym(Filter(Sym(ExpSeq(Seq(v))), pred)) =>
-      if_# (pred(v)) { Seq(v) } else_# { Seq.empty }
+    case Sym(Filter(Sym(ExpSeq(Seq(v))), predSym @ FunSym(pred))) if isTrivial(v) || usesArgAtMostOnce(predSym) =>
+      if_# (subst(pred)(v)) { Seq(v) } else_# { Seq.empty }
   }
   val selectiveLetInliner: Exp[_] => Exp[_] = selectiveLetFlatMapInliner orElse emptyTransform
   val selectiveLetCompleteInliner: Exp[_] => Exp[_] = selectiveLetFlatMapInliner orElse selectiveLetFilterInliner orElse emptyTransform
