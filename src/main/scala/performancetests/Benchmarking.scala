@@ -17,6 +17,8 @@ import java.{util => jUtil, text => jText}
  *     In Proc. Int’l Conf. Object-Oriented Programming, Systems, Languages and Applications,
  *     OOPSLA ’07, ACM, pp. 57–76.
  */
+// XXX: Classes just doing benchmarking should depend only the interface of this trait, to be split in a new trait named
+// BenchmarkingInterface.
 trait Benchmarking {
   import Benchmarking._
 
@@ -24,22 +26,9 @@ trait Benchmarking {
   protected val defaultExecLoops = 1
   protected val defaultMinSampleLoops = 10
   /** Maximum Coefficient of Variation between iterations. */
-  protected val defaultMaxCoV = Some(0.10)
+  protected def defaultMaxCoV: Some[Double] = Some(0.10)
 
-  //Other settings, not intended to be customizable.
-  /** How many benchmark iterations should be remembered? Called k in the paper. */
-  protected val rememberedSampleLoops = 10
-
-  /** How many benchmark iterations at most should be performed? Called q in the paper. */
-  protected val maxLoops = 50
-
-  protected val printAllData = false
-
-  /** Invoke the garbage collector between benchmark iterations. This adds a tremendous slowdown for small benchmarks. */
-  protected val callGC = false
-
-  protected val minIterationIntervalNanoSec = 10 * math.pow(10, 9)
-
+  logMeasurement("theta (maxCov)", defaultMaxCoV.get, 0, 0)
   //Import and re-export to inheritors.
   def debugBench = Benchmarking.debugBench
 
@@ -147,8 +136,7 @@ trait Benchmarking {
 
     val nameToPrint = name.replace(';', '_')
     //Current log.
-    logWriter.println("%s;%s;%s;%f;%f;%f" format (GitVersion.version, testDate, nameToPrint, avgMs, devStdMs, stdErrMs))
-    logWriter.flush()
+    logMeasurement(nameToPrint, avgMs, devStdMs, stdErrMs)
     //Detailed log.
     //Format output for R
     for (v <- if (printAllData) values else stats.samples) {
@@ -256,4 +244,28 @@ object Benchmarking {
   //The JDK 1.6 ignores the grouping separator for the 1.6 locale.
   val defaultLocale = jUtil.Locale.UK //jUtil.Locale getDefault jUtil.Locale.Category.FORMAT
   jText.DecimalFormatSymbols getInstance defaultLocale setGroupingSeparator ' '
+
+  private def logMeasurement[T](nameToPrint: String, avgMs: Double, devStdMs: Double, stdErrMs: Double) {
+    logWriter.println("%s;%s;%s;%f;%f;%f" format(GitVersion.version, testDate, nameToPrint, avgMs, devStdMs, stdErrMs))
+    logWriter.flush()
+  }
+
+  //XXX change these settings back to more reasonable values to reduce standard deviation, and then use the printed
+  // values in the paper.
+  //Other settings, not intended to be customizable.
+  /** How many benchmark iterations should be remembered? Called k in the paper. */
+  protected val rememberedSampleLoops = 10
+  logMeasurement("k (rememberedSampleLoops)", rememberedSampleLoops.toDouble, 0, 0)
+
+  /** How many benchmark iterations at most should be performed? Called q in the paper. */
+  protected val maxLoops = 50
+  logMeasurement("q (maxLoops)", maxLoops.toDouble, 0, 0)
+
+  protected val printAllData = false
+
+  /** Invoke the garbage collector between benchmark iterations. This adds a tremendous slowdown for small benchmarks. */
+  protected val callGC = false
+
+  protected val minIterationIntervalNanoSec = 10 * math.pow(10, 9)
+
 }
