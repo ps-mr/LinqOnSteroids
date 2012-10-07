@@ -316,15 +316,20 @@ object Compile {
   //For now experimental. This should respect the binding structure! You can't define everything at the beginning.
   //Since my only binder is lambda (right?) it should be easy to identify those nodes and treat them specially. Special
   //synthetic nodes (like NamedVar) might be needed for the translation.
-  def toValueCSE[T: TypeTag](e: Exp[T]): T = {
-    precompiledExpToValue(removeConsts(e))
-  }
+  def toConstructorCSE[T: TypeTag](e: Exp[T]): () => T =
+    precompiledExpToConstructor(removeConsts(e))
+
+  def toConstructor[T: TypeTag](e: Exp[T]): () => T =
+//    precompiledExpToConstructor(removeConsts(e))
+    toConstructorCSE(e)
+
+  def toValueCSE[T: TypeTag](e: Exp[T]): T =
+    toConstructorCSE(e)(implicitly)()
 
   def toValue[T: TypeTag](e: Exp[T]): T =
-//    precompiledExpToValue(removeConsts(e))
-    toValueCSE(e)
+    toConstructor(e)(implicitly)()
 
-  private def precompiledExpToValue[T: TypeTag](precompiledExp: Exp[T]): T = {
+  private def precompiledExpToConstructor[T: TypeTag](precompiledExp: Exp[T]): () => T = {
     val (cspValues, (cspClasses, cspTypeNames, cspData)) = extractCSPData(precompiledExp)
 
     //In this lookup, we only need type names from constants
@@ -358,10 +363,10 @@ object Compile {
     prefix + restSourceCode
   }
 
-  def buildInstance[T](maybeCons: Option[Constructor[_]], cspData: Seq[AnyRef]): T = maybeCons match {
+  private def buildInstance[T](maybeCons: Option[Constructor[_]], cspData: Seq[AnyRef]): () => T = maybeCons match {
     case Some(cons) =>
-      val obj: T = cons.newInstance(cspData: _*).asInstanceOf[Compiled[T]].result
-      obj
+      val constructor: () => T = () => cons.newInstance(cspData: _*).asInstanceOf[Compiled[T]].result
+      constructor
     case None =>
       throw new CompilationFailedException("")
   }

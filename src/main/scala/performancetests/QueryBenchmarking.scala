@@ -46,7 +46,8 @@ trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport 
     printDate()
     if (!onlyOptimized)
       showExpNoVal(v, msg)
-    val res = benchMarkWithTime(msg)(Compile.toValue(v).force)
+    val code = Compile.toConstructor(v)
+    val res = benchMarkWithTime(msg)(code().force)
     //if (!onlyOptimized)
       //res._1 should be (v.value().force)
     res
