@@ -90,7 +90,24 @@ trait Inlining extends InliningDefs {
     // XXX: The following case is also a valid optimization, but I expect code to which it applies to never be created,
     // for now (say by inlining Lets). Hence for now disable it. Reenable later.
     //case App(f: Fun[_, _], exp1) if usesArgAtMostOnce(f) => subst(f)(exp1)
+
+    //This case breaks indexing:
+
+    //case Sym(Filter(Sym(ExpSeq(Seq(v))), pred)) =>
+      //if_# (pred(v)) { Seq(v) } else_# { Seq.empty }
     case e => e
+  }
+
+  //This implements rules from "How to Comprehend Queries Functionally", page 14, rules (12a, b).
+  val selectiveConstantSeqInliner: Exp[_] => Exp[_] = {
+    case binder @ BaseBinding(Sym(ExpSeq(seq)), fun) if (seq exists (isTrivial _)) || usesArgAtMostOnce(fun) =>
+      //FoldRight means that the zero element is at the left and will set the result type to Seq, which is correct since
+      //the original mapping is on a sequence.
+      (seq map (seqEl => ExpTransformer(selectiveLetInliner) apply
+                      Sym(binder.defNode genericConstructor List(asExp(Seq(seqEl)), fun)))).
+        foldLeft[Exp[Traversable[Any]]](Seq.empty)(_ ++ _)
+    case e => e
+//    case Sym(FlatMap(Sym(ExpSeq(Seq(v))), fs @ FunSym(f))) if v exists (isTrivial(v) || usesArgAtMostOnce(fs)  =>
   }
 
   //XXX to test
@@ -105,7 +122,8 @@ trait Inlining extends InliningDefs {
     case Sym(Filter(Sym(ExpSeq(seq)), pred)) if seq forall isTrivial =>
       (seq map (x => asExp(Seq(x)) filter pred)).fold[Exp[Traversable[Any]]](Seq.empty)(_ ++ _)
       //We need to do more: we need to implement here filter inlining. But that's done in a transformation
-      //turning filters into ifs... isn't it there? XXX
+      //turning filters into ifs... isn't it there? XXX I was thinking of filterToTransformedFilter,
+      //but it's not optimized for constant-shaped sequences. The new code in selectiveLetInliner works better.
 
       //seq filter pred flatMap Fun.makefun(subst(f)(v), f.x).f
     case Sym(FlatMap(Sym(ExpSeq(seq)), f)) =>

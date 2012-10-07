@@ -35,14 +35,14 @@ object OptimizationUtil {
   }
 
   object BaseBinding {
-    def unapply(e: Exp[_]): Option[(Exp[_], FunSym[_, _])] = e match {
+    def unapply(e: Sym[Traversable[Any]]): Option[(Exp[Traversable[Any]], FunSym[_, _])] = e match {
       case Sym(FlatMap(base, f)) => Some((base, f))
       case Sym(Filter(base, f)) => Some((base, f))
       case _ => None
     }
   }
   object Binding {
-    def unapply(e: Exp[_]): Option[(Exp[_], FunSym[_, _])] =
+    def unapply(e: Sym[Traversable[Any]]): Option[(Exp[Traversable[Any]], FunSym[_, _])] =
       BaseBinding.unapply(e) orElse (e match {
         case Sym(MapNode(base, f)) => Some((base, f))
         case _ => None
