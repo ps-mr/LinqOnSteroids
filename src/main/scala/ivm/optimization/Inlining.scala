@@ -89,11 +89,20 @@ trait Inlining extends InliningDefs {
   //We also reduce lets where the variable is only used once. Papers on the GHC inliner explain how to do this and why
   //a linear type system is needed for that. See letTransformerUsedAtMostOnce.
   val selectiveLetFlatMapInliner: PartialFunction[Exp[_], Exp[_]] = {
-    case Sym(FlatMap(Sym(ExpSeq(Seq(v))), fs @ FunSym(f))) if isTrivial(v) || usesArgAtMostOnce(fs)  =>
+    case Sym(FlatMap(Sym(ExpSeq(Seq(v))), fs @ FunSym(f))) if isTrivial(v) || usesArgAtMostOnce(fs) =>
       subst(f)(v)
     // XXX: The following case is also a valid optimization, but I expect code to which it applies to never be created,
     // for now (say by inlining Lets). Hence for now disable it. Reenable later.
     //case App(f: Fun[_, _], exp1) if usesArgAtMostOnce(f) => subst(f)(exp1)
+
+    //XXX having a separate case here is probably a bad idea, we should try to unify this somehow.
+    //constantFoldSequences is probably a more powerful and robust replacement.
+    //However, we would still need to lift the if upward for this to be useful.
+    case Sym(FlatMap(Sym(Filter(seq @ Sym(ExpSeq(Seq(v))), predSym @ FunSym(pred))), fs @ FunSym(f)))
+      if isTrivial(v) || usesArgAtMostOnce(fs) && usesArgAtMostOnce(predSym)
+    =>
+      if_# (subst(pred)(v)) { subst(f)(v) } else_# { Seq.empty }
+
   }
 
   val selectiveLetFilterInliner: PartialFunction[Exp[_], Exp[_]] = {
