@@ -317,8 +317,7 @@ object Compile {
   //Since my only binder is lambda (right?) it should be easy to identify those nodes and treat them specially. Special
   //synthetic nodes (like NamedVar) might be needed for the translation.
   def toValueCSE[T: TypeTag](e: Exp[T]): T = {
-    definitions.clear()
-    precompiledExpToValue(collectSymbols(doCSE(removeConsts(e))))
+    precompiledExpToValue(removeConsts(e))
   }
 
   def toValue[T: TypeTag](e: Exp[T]): T =
@@ -328,8 +327,16 @@ object Compile {
   private def precompiledExpToValue[T: TypeTag](precompiledExp: Exp[T]): T = {
     val (cspValues, (cspClasses, cspTypeNames, cspData)) = extractCSPData(precompiledExp)
 
+    //In this lookup, we only need type names from constants
     val maybeCons = expCodeCache.getOrElseUpdate((precompiledExp, cspTypeNames), {
-      val (prefix, restSourceCode, className) = compileConstlessExp(precompiledExp, cspValues)
+      definitions.clear()
+      val cseExp = collectSymbols(doCSE(precompiledExp))
+      //Calling this again is a hack, needed because the expression was copied.
+      //However persisting the old values will produce the same IDs, so the result will at least be correct.
+      //XXX: In general, using mutation for CSP and _not_ copying the field value upon transformation
+      //is asking for trouble, as experience has amply shown.
+      cseExp.persistValues()
+      val (prefix, restSourceCode, className) = compileConstlessExp(cseExp, cspValues)
       ScalaCompile.invokeCompiler(prefix + restSourceCode, className) map (cls => cls
         .getConstructor(cspClasses: _*))
     })
