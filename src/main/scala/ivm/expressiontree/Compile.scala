@@ -102,7 +102,7 @@ object ScalaCompile {
 }
 
 object Compile {
-  import CrossStagePersistence.{cspMap, varId}
+  import CrossStagePersistence.{cspMap, varId, reset => resetCSP}
 
   def manifestToString[T](m: TypeTag[T]): String = {
     val str = m.tpe.toString
@@ -134,7 +134,7 @@ object Compile {
   //XXX: Actually, we should do most map resets at exit, not at entry to avoid holding until next compilation onto
   // things we won't need, that is, and memory leaks.
   def precompileReset() {
-    cspMap.get().clear()
+    resetCSP()
     varId.localReset()
     Sym.gensymId.localReset()
   }
@@ -152,14 +152,10 @@ object Compile {
   //}}}
   def removeConsts[T](e: Exp[T]) = {
     precompileReset()
-    val constNodes = new mutable.HashMap[Const[_], Exp[_]]
-    def persistConst[U](c: Const[U]): Exp[U] =
-      constNodes.asInstanceOf[mutable.Map[Const[U], Exp[U]]].getOrElseUpdate(c,
-        CrossStagePersistence.persist(c.x)(c.cTag, c.tTag))
 
     val transfExp = e transform {
       case c: Const[_] =>
-        persistConst(c)
+        CrossStagePersistence persistConst c
       case exp => exp
     }
     assert((transfExp __find {
