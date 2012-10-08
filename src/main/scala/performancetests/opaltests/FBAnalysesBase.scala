@@ -195,11 +195,11 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
           if (instruction.isInstanceOf_#[GETFIELD] || instruction.isInstanceOf_#[GETSTATIC])
     ) yield {
       if_# (instruction.isInstanceOf_#[GETFIELD]) {
-        letExp(instruction.asInstanceOf_#[GETFIELD])(instr =>
-        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType))))
+        val instr = instruction.asInstanceOf_#[GETFIELD]
+        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType)))
       } else_# if_# (instruction.isInstanceOf_#[GETSTATIC]) {
-        letExp(instruction.asInstanceOf_#[GETSTATIC])(instr =>
-        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType))))
+        val instr = instruction.asInstanceOf_#[GETSTATIC]
+        (asExp((classFile, method)), asExp((instr.declaringClass, instr.name, instr.fieldType)))
       } else_# {
         NULL //null causes problems!
       }
@@ -257,11 +257,11 @@ abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
       if_# (!classFileLookup.isDefined) {
                                        None
       } else_# {
-          letExp(classFileLookup.get)(classFile =>
+          val classFile = classFileLookup.get
           (for (method ← classFile.methods
                if method.name ==# methodName && method.descriptor ==# methodDescriptor
                ) yield (classFile, method)
-          ).headOption)
+          ).headOption
       }
       /*
       //PG: the code below should work, but unfortunately it returns Exp[Iterable[...]], while Exp[Option[]] is
