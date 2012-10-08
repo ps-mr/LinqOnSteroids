@@ -109,7 +109,8 @@ object FindBugsAnalyses {
         }
       }
 
-      (new FindBugsAnalyses(config)).analyze()
+      //Only measure index construction time:
+      new FindBugsAnalyses(config)
     } getOrElse {
       sys.exit(1)
     }
