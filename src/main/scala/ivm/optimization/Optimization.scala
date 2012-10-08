@@ -38,8 +38,8 @@ object Optimization {
         val intQuery = res match {
           case Some(v) => v
           case None =>
-            //Compile.toValue(optquery)
-            optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret() again!
+            Compile.toValue(optquery)
+            //optquery.interpret() //XXX: what if query is an incrementally maintained collection? We don't want to call interpret() again!
         }
 
         //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the
