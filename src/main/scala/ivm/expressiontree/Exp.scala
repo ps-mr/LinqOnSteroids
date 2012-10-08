@@ -186,7 +186,7 @@ trait Def[+T] extends TreeNode[T, TreeNode[_, _]] {
       checkedGenericConstructor(v)
     else
       throw new IllegalArgumentException()
-  def toCode: String = ""
+  def toCode: String = ???
 }
 
 object Sym {
