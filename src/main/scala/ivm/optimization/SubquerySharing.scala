@@ -447,6 +447,6 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
   //Entry point
   def shareSubqueries[T](query: Exp[T]): Exp[T] = {
     println("Index lookup on query: " + query)
-    query.transform(directsubqueryShare andThen groupByShare andThen groupByShareNested)
+    query.transform(/*directsubqueryShare andThen*/ groupByShare andThen groupByShareNested)
   }
 }
