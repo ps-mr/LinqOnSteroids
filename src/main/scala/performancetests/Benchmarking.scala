@@ -191,8 +191,7 @@ object Benchmarking {
       sumSq += sample.asInstanceOf[Double] * sample
     }
 
-    def cov =
-      math.sqrt(variance) / avg
+    def cov = devStd / avg
 
     def samples: Seq[Long]
 
