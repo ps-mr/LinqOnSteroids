@@ -50,9 +50,9 @@ trait Fusion {
     case e => e
   }*/
   val mergeFilters: Exp[_] => Exp[_] = {
-    case Sym(Filter(Sym(Filter(col2, f2)), f)) =>
+    case Sym(Filter(Sym(Filter(collection, pred2)), pred1)) =>
       //No need to call mergeFilters again on the result, since the traversal is top-down.
-      col2 withFilter (x => And(f2(x), f(x)))
+      collection withFilter (x => pred2(x) && pred1(x))
     case e => e
   }
 
