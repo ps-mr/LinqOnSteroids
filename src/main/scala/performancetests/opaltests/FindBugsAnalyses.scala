@@ -327,7 +327,6 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
           if !classFile.isAnnotationDeclaration && classFile.superClass.isDefined
           method ← classFile.methods
           if method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"
-          //Shouldn't we have a lifter for this? Yep.
           if !asExp(classHierarchy).isSubtypeOf(classFile.thisClass, ObjectType("java/lang/Cloneable")).getOrElse(false)
         } yield (classFile.thisClass.className, method.name)
       }
