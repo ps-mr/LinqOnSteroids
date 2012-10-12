@@ -8,7 +8,7 @@ manual optimization.
 To compile this project, you can use SBT.
 
 ## Using SBT
-The project uses SBT 0.11.2 - you need to install that or a later version of SBT; a pre-installed SBT 0.7.x will not work.
+The project uses SBT 0.12.0; later versions of SBT will download the right one.
 
 1. To install SBT, follow instructions on this page:
   
