@@ -1,7 +1,7 @@
 package ivm
 package optimization
 
-import expressiontree.{Lifting, Fun, Exp}
+import expressiontree.{Lifting, Fun, Sym, FunSym, Exp}
 import Lifting._
 
 import scalaz._
@@ -29,7 +29,7 @@ class TransformationCombinatorsScalaz[T] {
     def compose[N[_]](f: M[T] => N[T]): Transformer[N] = Transformer { this compose f }
     def &(q: => Transformer[M])(implicit m: Bind[M]): Transformer[M] = {
       lazy val q0 = q
-      Transformer { this >=> q0 }
+      Transformer { kleisli(this) >=> q0 }
     }
     def |(q: => Transformer[M])(implicit plus: Plus[M]): Transformer[M] = {
       lazy val q0 = q
@@ -143,25 +143,25 @@ object TransformationCombinators extends TransformationCombinators /*with App*/ 
   object Foo extends TransformationCombinatorsScalaz[Exp[_]]
   def betaDeltaReducer3 = {
     import Foo._
-    Function.unlift(Transformer {(deltaReductionTuple orElse betaReduction).lift} *)
+    Function.unlift((Transformer {(deltaReductionTuple orElse betaReduction).lift}).*)
   }
 
   def applyFun[A, B] = {
     //\x f -> f x
-    Fun((x: Exp[A]) => Fun((f: Exp[A => B]) => f(x)))
+    FunSym(Fun((x: Exp[A]) => Fun((f: Exp[A => B]) => f(x))))
   }
   def applyFun2[A, B]: Exp[(A => B) => (A => B)] = {
     //\f x -> f x
-    Fun((f: Exp[A => B]) => Fun(f(_)))
+    FunSym(Fun((f: Exp[A => B]) => FunSym(Fun(f(_)))))
   }
   def applyIdFun[A, B]: Exp[A => A] = {
     //\x -> applyFun x id
-    Fun((x: Exp[A]) => applyFun(x)(Fun(x => x)))
+    FunSym(Fun((x: Exp[A]) => applyFun(x)(FunSym(Fun(x => x)))))
   }
   def applyIdFunMoreComplex[A, B]: Exp[A => A] = {
     //\x -> applyFun x id
     //Fun((x: Exp[A]) => applyFun(x)(Fun(x => x)))
-    Fun((x: Exp[A]) => (letExp(x)(applyFun[A, A].f))(Fun(x => x)))
+    FunSym(Fun((x: Exp[A]) => (letExp(x)(applyFun[A, A].f))(FunSym(Fun(x => x)))))
   }
 
   def main(args: Array[String]) {
