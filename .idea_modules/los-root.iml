@@ -39,6 +39,7 @@
     <orderEntry type="library" name="org.scala-lang_scala-actors_2.10.0-M7" level="project" />
     <orderEntry type="library" name="com.google.guava_guava_13.0" level="project" />
     <orderEntry type="library" name="com.google.code.findbugs_jsr305_1.3.9" level="project" />
+    <orderEntry type="library" name="org.scalaz_scalaz-core_2.10.0-M7_6.0.4" level="project" />
     <orderEntry type="library" scope="TEST" name="junit_junit_4.8.2_test" level="project" />
     <orderEntry type="library" name="scopt_2.10.0-M7.jar" level="project" />
     <orderEntry type="library" name="bat-core_2.10.0-M7-1.0.0-SNAPSHOT.jar" level="project" />
