@@ -51,14 +51,19 @@ trait ScalaLanguageFramework extends LanguageFramework {
 trait RemoteFramework {
   this: SerializerFramework with LanguageFramework =>
   type Host <: HostApi
+  trait RepApi[+T, SelfHost] {
+    def host: SelfHost
+  }
   trait HostApi {
-    this: LangIntf =>
+    hostSelf: LangIntf =>
     protected val addr: Option[Address]
-    type Rep[+T] >: AnywhereHost.Rep[T @uncheckedVariance]
+    type Rep[+T] >: AnywhereHost.Rep[T @uncheckedVariance]// <: RepApi[T, hostSelf.type]
     implicit def pureTo[T: ClassTag: TypeTag: Serializator](value: T): Rep[T]
   }
 
-  val AnywhereHost: Host
+  val AnywhereHost: Host /*{
+    type Rep[+T] <: RepApi[T, AnywhereHost.type]
+  }*/
   def moveTo[T: Serializator](value: Host#Rep[T], dest: Host): dest.Rep[T]
   implicit def move[T: Serializator](value: Host#Rep[T])(implicit dest: Host): dest.Rep[T] = moveTo(value, dest)
   //also takes a look at *TypeTag:
