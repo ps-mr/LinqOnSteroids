@@ -197,7 +197,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
         allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSquopt
         cloneable ← allCloneable
         classFile ← getClassFile.get(cloneable)
-        if !(classFile.methods exists (method => method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"))
+        if !(classFile.methods exists (method => method.name ==# "clone" && method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object)))
       } yield classFile.thisClass.className
     }
 
@@ -207,7 +207,7 @@ class FindBugsAnalyses(val zipFiles: List[String], override val onlyOptimized: B
         allCloneable ← classHierarchy.subtypes(ObjectType("java/lang/Cloneable")).toList.asSquopt
         cloneable ← allCloneable
         classFile ← getClassFile.get(cloneable)
-        if !(classFile.methods exists (method => method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object) && method.name ==# "clone"))
+        if !(classFile.methods exists (method => method.name ==# "clone" && method.descriptor ==# MethodDescriptor(Seq(), ObjectType.Object)))
       } yield classFile.thisClass.className
     }
 
