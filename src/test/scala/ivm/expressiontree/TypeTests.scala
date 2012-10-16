@@ -163,9 +163,9 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
         Util.assertType[Exp[T]](ret1)
 
         m.base match {
-          case Sym(m2: MapNode[t2, repr2, u2, that2]) =>
+          case Sym(m2: MapNode[t2, repr2, u2, that2]) => //Traversable[u2] >: that2 <: repr <: Traversable[t]
             //((m2.base map m2.f)(m2.c) map m.f)(m.c) //doesn't work
-            expToTraversableLikeOps[t, repr](m2.base.map(m2.f)(m2.c)).map(m.f)(m.c) //works
+            (((m2.base map m2.f)(m2.c): Exp[repr with TraversableLike[t, repr]]) map m.f)(m.c) //works
           case _ => e
         }
       case _ => e
@@ -201,7 +201,7 @@ class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benc
             //What we know (but the compiler doesn't) is that that2 is a collection type, whose element type is equal
             //to u2, and we essentially know that from the contract.
             //However, maybe not everything is necessarily lost; Traversable[u2] >: that2 = repr <: Traversable[t] still
-            //gives constraints, namely that that2 = repr must be also a subtype of u2 with t; that's exactly what we
+            //gives constraints, namely that that2 = repr must be also a subtype of Traversable[u2 with t]; that's exactly what we
             //would need, but Scalac instead fails. Here's the new output of -explaintypes showing the failure.
 /*
 that2 <: Traversable[t with u2] with scala.collection.TraversableLike[t with u2,that2]?
