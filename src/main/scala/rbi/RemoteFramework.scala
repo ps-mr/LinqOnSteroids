@@ -57,15 +57,19 @@ trait RemoteFramework {
   trait HostApi {
     hostSelf: LangIntf =>
     protected val addr: Option[Address]
-    //type Rep[+T] >: AnywhereHost.Rep[T @uncheckedVariance]// <: RepApi[T, hostSelf.type]
-    type Rep[+T]// <: RepApi[T, hostSelf.type]
+    type Rep[+T] >: AnywhereHost.Rep[T @uncheckedVariance]// <: RepApi[T, hostSelf.type]
+    //type Rep[+T]// <: RepApi[T, hostSelf.type]
     implicit def pureTo[T: ClassTag: TypeTag: Serializator](value: T): Rep[T]
   }
+  implicit def toAnywhereRep[ThisHost <: Host, T: Serializator](value: ThisHost#Rep[T]): AnywhereHost.Rep[T] =
+    moveTo(value, AnywhereHost)
 
   val AnywhereHost: Host /*{
     type Rep[+T] <: RepApi[T, AnywhereHost.type]
   }*/
   def moveTo[T: Serializator](value: Host#Rep[T], dest: Host): dest.Rep[T]
+  //Scalac does not apply this conversion impicitly, for some reason. Possibly because it has a dependent method type,
+  // unlike toAnywhereRep.
   implicit def move[T: Serializator](value: Host#Rep[T])(implicit dest: Host): dest.Rep[T] = moveTo(value, dest)
   //also takes a look at *TypeTag:
   //def in[U <: Universe with Singleton](otherMirror: MirrorOf[U]): U # AbsTypeTag[T]
@@ -94,12 +98,18 @@ trait ScalaRemoteFrameworkTest extends ScalaRemoteFramework with JavaSerializerF
   }
   def testImplicit(h1: Host, h2: Host)(v1: h1.Rep[Int], v2: h2.Rep[Int]) = {
     import h1.{pure => _, _}
+    def toAnywhereRep = ??? //shadow implicit conversion just to test that it's necessary
     implicit val h1Impl: h1.type = h1 //The type annotation is necessary
-    //    v1 + v2 //fails to compile.
+    //v1 + v2 //fails to compile.
     //Wrappers for methods should incorporate the call to move, probably. That way, though, they get longer (because
     //of all the constraints they need to incorporate.
     v1 + move(v2)
   }
+  def testImplicitAnywhere(h1: Host, h2: Host)(v1: h1.Rep[Int], v2: h2.Rep[Int]) = {
+    import h1.{pure => _, _}
+    v1 + v2 //compiles!!!
+  }
+
   def testOnHost(h1: Host, h2: Host)(v1: h1.Rep[Int], v2: h2.Rep[Int]) = {
     import h1.{pure => _, _}
     onHost(h1){ implicit h1I =>
