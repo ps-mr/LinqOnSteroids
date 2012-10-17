@@ -76,7 +76,7 @@ trait ScalaRemoteFramework extends RemoteFramework with ScalaLanguageFramework {
   this: JavaSerializerFramework =>
   type Host <: HostApi
   trait HostApi extends LangIntf with super.HostApi
-  def onHostOf[T](h1: Host)(body: h1.type => T): T = {
+  def onHost[T](h1: Host)(body: h1.type => T): T = {
     body(h1)
   }
 }
@@ -100,9 +100,9 @@ trait ScalaRemoteFrameworkTest extends ScalaRemoteFramework with JavaSerializerF
     //of all the constraints they need to incorporate.
     v1 + move(v2)
   }
-  def testOnHostOf(h1: Host, h2: Host)(v1: h1.Rep[Int], v2: h2.Rep[Int]) = {
+  def testOnHost(h1: Host, h2: Host)(v1: h1.Rep[Int], v2: h2.Rep[Int]) = {
     import h1.{pure => _, _}
-    onHostOf(h1){ implicit h1I =>
+    onHost(h1){ implicit h1I =>
       v1 + move(v2)
     }
   }
