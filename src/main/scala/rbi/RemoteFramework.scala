@@ -109,11 +109,12 @@ trait ScalaRemoteFrameworkTest extends ScalaRemoteFramework with JavaSerializerF
 
 object ScalaRemoteFrameworkImpl extends RemoteFramework with JavaSerializerFramework with ScalaLanguageFramework with ScalaRemoteFramework {
   type Host = HostApi
-  private[this] def newHost(nHostAddr: Option[Address]): Host {type Rep[+T] = Exp[T]} = new HostApi with LiftingLangIntf with LiftingTrait {
-    override protected val addr = nHostAddr
-    override type Rep[+T] = Exp[T]
+  class ConcreteHost(override protected val addr: Option[Address]) extends HostApi with LiftingLangIntf with LiftingTrait {
+    self =>
+    override type Rep[+T] = Exp[T]// with RepApi[T, self.type]
     override implicit def pureTo[T: ClassTag: TypeTag: Serializator](value: T): Rep[T] = ???
   }
+  private[this] def newHost(nHostAddr: Option[Address]): ConcreteHost = new ConcreteHost(nHostAddr)
   val AnywhereHost = newHost(None)
   override def moveTo[T: Serializator](value: Host#Rep[T], dest: Host): dest.Rep[T] = ???
 }
