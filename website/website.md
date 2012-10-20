@@ -37,7 +37,7 @@ And will provide:
 
 - the evaluation data from our new paper submission, including the raw dataset and
   scripts to regenerate the graphics and the tables.
-- a technical report accompanying the paper.
+- a technical report accompanying our paper submission.
 
 <!--
 - updated evaluation results from version 0.2, which lead to essentially the same
