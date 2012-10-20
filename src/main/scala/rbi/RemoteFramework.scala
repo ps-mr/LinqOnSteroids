@@ -54,12 +54,14 @@ trait RemoteFramework {
   trait RepApi[+T, SelfHost] {
     def host: SelfHost
   }
+  trait Liftable[T]
+  implicit def isLiftable[T: ClassTag: TypeTag: Serializator]: Liftable[T] = ???
   trait HostApi {
     hostSelf: LangIntf =>
     protected val addr: Option[Address]
     type Rep[+T] >: AnywhereHost.Rep[T @uncheckedVariance]// <: RepApi[T, hostSelf.type]
     //type Rep[+T]// <: RepApi[T, hostSelf.type]
-    implicit def pureTo[T: ClassTag: TypeTag: Serializator](value: T): Rep[T]
+    implicit def pureTo[T: Liftable](value: T): Rep[T] = ???
   }
   implicit def toAnywhereRep[ThisHost <: Host, T: Serializator](value: ThisHost#Rep[T]): AnywhereHost.Rep[T] =
     moveTo(value, AnywhereHost)
@@ -123,7 +125,7 @@ object ScalaRemoteFrameworkImpl extends RemoteFramework with JavaSerializerFrame
   class ConcreteHost(override protected val addr: Option[Address]) extends HostApi with LiftingLangIntf with LiftingTrait {
     self =>
     override type Rep[+T] = Exp[T]// with RepApi[T, self.type]
-    override implicit def pureTo[T: ClassTag: TypeTag: Serializator](value: T): Rep[T] = ???
+    //override implicit def pureTo[T: ClassTag: TypeTag: Serializator](value: T): Rep[T] = ???
   }
   private[this] def newHost(nHostAddr: Option[Address]): ConcreteHost = new ConcreteHost(nHostAddr)
   val AnywhereHost = newHost(None)
