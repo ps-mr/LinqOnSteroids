@@ -113,6 +113,7 @@ object OptimizationTransforms extends NumericOptimTransforms with Simplification
 //    //XXX We have this special case, instead of relying on simplification of
 //    //Not(Not(x)) => x, just because we run this optimization at the very end
 //    //of the pipeline.
+      //But we could invoke it.
 //    case Not(IsEmpty(Filter(coll, pred))) => Exists(coll, pred)
     //That case won't trigger since the traversal is bottom up. So instead:
     case Sym(Not(Sym(Not(x)))) => x
