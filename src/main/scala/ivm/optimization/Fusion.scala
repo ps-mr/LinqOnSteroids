@@ -52,7 +52,7 @@ trait Fusion {
   val mergeFilters2: PartialFunction[Exp[_], Exp[_]] = {
     case Sym(Filter(Sym(Filter(collection, pred2)), pred1)) =>
       //No need to call mergeFilters again on the result, since the traversal is top-down.
-      collection withFilter (x => pred2(x) && pred1(x))
+      collection filter (x => pred2(x) && pred1(x))
   }
 
   val mergeFilters: Exp[_] => Exp[_] = {
