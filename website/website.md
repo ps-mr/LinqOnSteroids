@@ -16,9 +16,9 @@ Queries are expressed through a quite natural syntax, almost identical to the
 syntax for Scala for comprehensions; however, executing such for comprehensions
 yields a representation of the query, which can then be optimized.
 
-This website is currently a _work in progress_.
+This website will continue being updated.
 
-
+# What we provide
 <!--
 We provide two source releases:
 
@@ -27,17 +27,13 @@ We provide two source releases:
   presented in the paper (with mostly cosmetic changes and some bugfixes).
 -->
 
-Our source is avilable on [GitHub](https://github.com/ps-mr/LinqOnSteroids).
-In addition, we provide:
+- Source code of our implementation, on [GitHub](https://github.com/ps-mr/LinqOnSteroids).
+- the [version of FindBugs](https://github.com/ps-mr/FindBugsBenchmark) we compared our results with.
+- a [technical report](giarrusso-techrep.pdf) accompanying our paper submission (soon be available on arXiv).
 
-- the version of FindBugs we compared our results with.
-- evaluation data from a previous evaluation.
-
-And will provide:
-
-- the evaluation data from our new paper submission, including the raw dataset and
-  scripts to regenerate the graphics and the tables.
-- a technical report accompanying our paper submission.
+Additionally, we will provide the evaluation data from our new paper submission, including the
+raw dataset and scripts to regenerate the graphics and the tables.
+The raw evaluation data from a previous evaluation is already available.
 
 <!--
 - updated evaluation results from version 0.2, which lead to essentially the same
@@ -58,6 +54,7 @@ This project benefited from code and ideas of many different people:
 - Katharina Haselhorst
 
 # News
+- 2012-10-23: technical report published.
 - 2012-10-12: began to update website, with link to GitHub sources.
 - 2012-04-26: added FindBugs source code and some details on reproducing the
   evaluation
@@ -75,14 +72,14 @@ This project benefited from code and ideas of many different people:
     - Less type annotations are needed in the optimizer.
 - 0.1 --- 2012-04-09 --- [.tar.gz](SQuOpt/tarballs/squopt-v0.1.tar.gz)
     - First release
--->
-
 Note: User documentation is currently missing.
 
-# Code from our paper
-Examples from our paper are implemented and tested in class `ivm.tests.PaperTutorial`.
+-->
 
-# Evaluation
+# Code from our paper
+Examples from our paper are implemented and tested in class [`ivm.tests.PaperTutorial`](https://github.com/ps-mr/LinqOnSteroids/blob/master/src/test/scala/ivm/tests/PaperTutorial.scala).
+
+# Old evaluation
 <!--
 The evaluation included in the paper was done on release 0.1; the new release
 gives similar results.
@@ -114,7 +111,8 @@ statistics were computed on a Mac OS X machine. The scripts _should_ work
 [R](http://www.r-project.org/).
 - choose the test data to use---we provide a test harness to run the evaluation on
 ScalaTest, that is `profileLos.sh`, or on the JDK, that is `profileLosJDK.sh`.
-- To reproduce the original evaluation, you need to use the JDK.
+- To reproduce the original evaluation, you need to use the JDK. The binary
+  library is in fact available in `data/rt.jar`.
     - Download the [version which was installed on our machine][JDKLink]
 and extract it, using for instance `rpm2cpio` (we plan to simplify this step).
     - Adjust `profileLosJDK.sh` to find the copy of `classes.jar` from the extracted
