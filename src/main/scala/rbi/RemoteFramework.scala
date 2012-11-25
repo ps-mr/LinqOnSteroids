@@ -74,8 +74,8 @@ trait RemoteFramework {
   // unlike toAnywhereRep.
   implicit def move[T: Serializator](value: Host#Rep[T])(implicit dest: Host): dest.Rep[T] = moveTo(value, dest)
   //also takes a look at *TypeTag:
-  //def in[U <: Universe with Singleton](otherMirror: MirrorOf[U]): U # AbsTypeTag[T]
-  //Hm. I have no clue sure why they would want to use U# instead of passing u: U and writing u.AbsTypeTag[T]. But I also don't fully get mirrors.
+  //def in[U <: Universe with Singleton](otherMirror: MirrorOf[U]): U # WeakTypeTag[T]
+  //Hm. I have no clue sure why they would want to use U# instead of passing u: U and writing u.WeakTypeTag[T]. But I also don't fully get mirrors.
 }
 
 trait ScalaRemoteFramework extends RemoteFramework with ScalaLanguageFramework {

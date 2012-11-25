@@ -50,7 +50,7 @@ trait ReusableMacrosParams {
 }
 
 object ReusableMacrosParams {
-  def wrap_squopt_gen_impl[T: c.AbsTypeTag, Sym <: BaseLangIntf: c.AbsTypeTag]
+  def wrap_squopt_gen_impl[T: c.WeakTypeTag, Sym <: BaseLangIntf: c.WeakTypeTag]
     (c: Context)
     (expr: c.Expr[Exp[T]], implementationFQClsName: String, prefix: String, ConvToTuple: Regex, macroDebug: Boolean):
   c.Expr[Any] = {
@@ -63,7 +63,7 @@ object ReusableMacrosParams {
   }
 
   //Reusable part.
-  def wrap_gen_impl_transf[T: c.AbsTypeTag, Sym <: BaseLangIntf: c.AbsTypeTag]
+  def wrap_gen_impl_transf[T: c.WeakTypeTag, Sym <: BaseLangIntf: c.WeakTypeTag]
     (c: Context)
     (expr: c.Expr[Exp[Any]], implementationFQClsName: String):
   c.universe.Tree = {
@@ -95,7 +95,7 @@ object ReusableMacrosParams {
     //TODO: process the expression to remove the cast - it's not needed in fact.
     newTree
   }
-  def wrap_gen_impl[T: c.AbsTypeTag, Sym <: BaseLangIntf: c.AbsTypeTag](c: Context)
+  def wrap_gen_impl[T: c.WeakTypeTag, Sym <: BaseLangIntf: c.WeakTypeTag](c: Context)
                                                                    (expr: c.Expr[Exp[T]],
                                                                     implementationFQClsName: String):
   c.Expr[Interpreted[Sym, T]] = {
@@ -114,14 +114,14 @@ object ReusableMacrosParams {
 
   val AnyTuple = "Tuple([0-9]+)".r
 
-  def squopt_impl[T: c.AbsTypeTag]
+  def squopt_impl[T: c.WeakTypeTag]
     (c: Context)
     (expr: c.Expr[T], implementationFQClsName: String, prefix: String, ConvToTuple: Regex, macroDebug: Boolean):
   c.Expr[Any] = {
     c.Expr(c.resetAllAttrs(squopt_impl_transf[T](c)(expr, implementationFQClsName, prefix, ConvToTuple, macroDebug)))
   }
 
-  def squopt_impl_transf[T: c.AbsTypeTag]
+  def squopt_impl_transf[T: c.WeakTypeTag]
     (c: Context)
     (expr: c.Expr[T], implementationFQClsName: String, prefix: String, ConvToTuple: Regex, macroDebug: Boolean):
   c.universe.Tree = {
@@ -222,12 +222,12 @@ object Macros extends ReusableMacrosParams {
 
 
   def macroId[T](arg: T): T = macro macroId_impl[T]
-  def macroId_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[T] = arg
+  def macroId_impl[T: c.WeakTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[T] = arg
 
 
   def stringify_base(c: Context)(arg: c.Expr[Any]): String =
     arg.tree.toString //The result here is a bit ugly - we need to print the tree before desugaring.
-  def stringify_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[String] = {
+  def stringify_impl[T: c.WeakTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[String] = {
     import c.universe._
     //c.Expr[String](Literal(Constant(stringify_base(c)(arg))))
     //reify(c.Expr[String](Literal(Constant(stringify_base(c)(arg)))).splice)
@@ -237,20 +237,20 @@ object Macros extends ReusableMacrosParams {
     c.Expr[String](Literal(Constant(v)))
   }
 
-  def show_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[Unit] = {
+  def show_impl[T: c.WeakTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[Unit] = {
     import c.universe._
     val v = stringify_base(c)(arg)
     //val v1 = reify(v)
     val v1 = c.Expr[String](Literal(Constant(v)))
     reify(println("Expr: %s evaluates to %s" format (v1.splice, arg.splice)))
   }
-  def ctShow_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[Unit] = {
+  def ctShow_impl[T: c.WeakTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[Unit] = {
     import c.universe._
     println(stringify_base(c)(arg))
     reify(())
   }
 
-  def ctShowDebug_impl[T: c.AbsTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[T] = {
+  def ctShowDebug_impl[T: c.WeakTypeTag](c: Context)(arg: c.Expr[T]): c.Expr[T] = {
     import c.universe._
     println("\n## Stringify: " + stringify_base(c)(arg) + "\n")
     println("## showRaw: " + showRaw(arg.tree) + "\n")//, printTypes = true, printIds = true
@@ -258,10 +258,10 @@ object Macros extends ReusableMacrosParams {
   }
 
   def wrap_squopt[T](expr: Exp[T]) = macro wrap_squopt_impl[T]
-  def wrap_squopt_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
+  def wrap_squopt_impl[T: c.WeakTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
     wrap_squopt_gen_impl[T, LiftingLangIntf](c)(expr)
   def wrap[T](expr: Exp[T]) = macro wrap_impl[T]
-  def wrap_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
+  def wrap_impl[T: c.WeakTypeTag](c: Context)(expr: c.Expr[Exp[T]]) =
     wrap_gen_impl[T, LiftingLangIntf](c)(expr)
   //TODO: merge this macro within squopt.
 
@@ -273,13 +273,13 @@ object Macros extends ReusableMacrosParams {
   override protected def implementationClsName = "Lifting"
 
   val ConvToTuple = "tuple[0-9]+ToTuple[0-9]+Exp".r
-  def wrap_squopt_gen_impl[T: c.AbsTypeTag, Sym <: BaseLangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Any] = {
+  def wrap_squopt_gen_impl[T: c.WeakTypeTag, Sym <: BaseLangIntf: c.WeakTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Any] = {
     ReusableMacrosParams.wrap_squopt_gen_impl[T, Sym](c)(expr, implementationFQClsName, prefix, ConvToTuple, macroDebug)
   }
-  def wrap_gen_impl[T: c.AbsTypeTag, Sym <: BaseLangIntf: c.AbsTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
+  def wrap_gen_impl[T: c.WeakTypeTag, Sym <: BaseLangIntf: c.WeakTypeTag](c: Context)(expr: c.Expr[Exp[T]]): c.Expr[Interpreted[Sym, T]] = {
     ReusableMacrosParams.wrap_gen_impl[T, Sym](c)(expr, implementationFQClsName)
   }
-  def squopt_impl[T: c.AbsTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[Any] = {
+  def squopt_impl[T: c.WeakTypeTag](c: Context)(expr: c.Expr[T]): c.Expr[Any] = {
     ReusableMacrosParams.squopt_impl[T](c)(expr, implementationFQClsName, prefix, ConvToTuple, macroDebug)
   }
 }
