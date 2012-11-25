@@ -29,7 +29,8 @@ We provide two source releases:
 
 - Source code of our implementation, on [GitHub](https://github.com/ps-mr/LinqOnSteroids).
 - the [version of FindBugs](https://github.com/ps-mr/FindBugsBenchmark) we compared our results with.
-- a [technical report](giarrusso-techrep.pdf) accompanying our paper submission (soon be available on arXiv).
+- a [technical report](giarrusso-techrep.pdf) accompanying our paper submission,
+  also available on [arXiv](http://arxiv.org/abs/1210.6284).
 
 Additionally, we will provide the evaluation data from our new paper submission, including the
 raw dataset and scripts to regenerate the graphics and the tables.
@@ -54,6 +55,7 @@ This project benefited from code and ideas of many different people:
 - Katharina Haselhorst
 
 # News
+- 2012-10-25: link to technical report on arXiv.
 - 2012-10-23: technical report published.
 - 2012-10-12: began to update website, with link to GitHub sources.
 - 2012-04-26: added FindBugs source code and some details on reproducing the
