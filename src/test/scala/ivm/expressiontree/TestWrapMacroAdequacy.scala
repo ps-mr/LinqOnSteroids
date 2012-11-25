@@ -17,7 +17,8 @@ class TestWrapMacroAdequacy extends FunSuite with ShouldMatchers {
     new Interpreted[LiftingConvsLangIntf with NumOpsLangIntf, Int] {
       def apply(s: ThisLangIntf): s.Rep[Int] = {
         import s._
-        pure(1) + 2
+        val a: Rep[Int] = 1
+        a + 2
       }
     } apply Lifting should be (expected)
   }
