@@ -3,7 +3,7 @@ import Keys._
 
 object LoSBuild extends Build {
     lazy val root = Project(id = "los-root",
-        base = file(".")) dependsOn(sampleapp)
+        base = file("."), settings = Defaults.defaultSettings ++ CompileQuickPlugin.compileQuickSettings) dependsOn(sampleapp)
 
     lazy val sampleapp = Project(id = "los-sampleapp",
         base = file("sampleapp"))
