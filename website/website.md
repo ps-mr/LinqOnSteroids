@@ -29,7 +29,7 @@ We provide two source releases:
 
 - Source code of our implementation, on [GitHub](https://github.com/ps-mr/LinqOnSteroids).
 - the [version of FindBugs](https://github.com/ps-mr/FindBugsBenchmark) we compared our results with.
-- a [technical report](giarrusso-techrep.pdf) accompanying our paper submission,
+- a [technical report](SQuOpt/giarrusso-techrep.pdf) accompanying our paper submission,
   also available on [arXiv](http://arxiv.org/abs/1210.6284).
 
 Additionally, we will provide the evaluation data from our new paper submission, including the
