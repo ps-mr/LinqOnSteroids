@@ -6,6 +6,7 @@ import Lifting._
 
 import scalaz._
 import Scalaz._
+import runtime.AbstractPartialFunction
 
 /**
  * User: pgiarrusso
@@ -96,22 +97,29 @@ class TransformationCombinators {
   //implicitly[Endo[Exp[_]]]
   //implicit val m: Monoid[PartialFunction[Exp[_], Exp[_]]]
   type Transformer = PartialFunction[Exp[_], Exp[_]]
-  abstract class Transformer2 extends PartialFunction[Exp[_], Exp[_]] {
+  trait Transformer2 extends PartialFunction[Exp[_], Exp[_]] {
     def &(q: => (Exp[_] => Exp[_])) = {
       //Transformer2 {}
       lazy val q0 = q
       //this andThen q0 //Eta-expansion should be applied _here_
       Transformer2 { case in if isDefinedAt(in) => q0(this(in)) }
     }
-    /*def |(q: => Transformer2) = {
+    def |(q: => Transformer2) = {
       //Transformer2 {}
       lazy val q0 = q
-      this orElse q0 //Eta-expansion should be applied _here_
-    }*/
+      //this orElse q0 //Eta-expansion should be applied _here_
+      //Transformer2 {case in if !isDefinedAt(in) => q0(in)} //buggy
+      Transformer2 {case in if !isDefinedAt(in) => q0(in)}
+    }
   }
   def Transformer2(f: Transformer) = new Transformer2 {
     def apply(in: Exp[_]) = f(in)
     def isDefinedAt(x: Exp[_]) = f.isDefinedAt(x)
+  }
+  def Transformer22(f: Transformer) = new AbstractPartialFunction[Exp[_], Exp[_]] with Transformer2 {
+    override def applyOrElse[A1 <: Exp[_], B1 >: Exp[_]](x: A1, default: A1 => B1): B1 =
+      f.applyOrElse(x, default)
+    override def isDefinedAt(x: Exp[_]) = f.isDefinedAt(x)
   }
 
   //This is the shortest way of writing identity.
