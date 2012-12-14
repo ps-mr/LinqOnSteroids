@@ -1,15 +1,17 @@
 package rbi
 
-import ivm.expressiontree.{Exp, LiftingTrait, LiftingLangIntf, BaseLangIntf, ClassTag, TypeTag}
-import annotation.unchecked.uncheckedVariance
-import java.net.InetAddress
-
+/*
 /**
  * User: pgiarrusso
  * Date: 13/10/2012
  */
 
 /*
+import ivm.expressiontree.{Exp, LiftingTrait, LiftingLangIntf, BaseLangIntf, ClassTag, TypeTag}
+import annotation.unchecked.uncheckedVariance
+import java.net.InetAddress
+import java.io.Reader
+
 //One possible interface:
 trait SerializerFramework {
   type SerializationStream
@@ -96,7 +98,7 @@ trait ScalaRemoteFrameworkTest extends ScalaRemoteFramework with JavaSerializerF
   def test2(h1: Host, h2: Host)(v1: h1.Rep[Int], v2: h2.Rep[Int]) = {
     import h1.{pure => _, _}
     v1 + moveTo(v2, h1)
-    //v1 + v2 //does not compile
+//    v1 + v2 //does not compile
   }
   def testImplicit(h1: Host, h2: Host)(v1: h1.Rep[Int], v2: h2.Rep[Int]) = {
     import h1.{pure => _, _}
@@ -120,6 +122,142 @@ trait ScalaRemoteFrameworkTest extends ScalaRemoteFramework with JavaSerializerF
   }
 }
 
+case class Room(available: Boolean, name: String)
+
+trait RoomBookingService {
+  def rooms: Seq[Room]
+}
+
+/*
+trait ScalaRemoteFrameworkTestHotelSearch extends ScalaRemoteFramework with JavaSerializerFramework {
+  trait Hotel {
+    def city: String
+    val server: Host
+    def management: server.Rep[RoomBookingService]
+    //def rooms: Seq[]
+  }
+  trait Service {
+    //def find(f: Hotel => )
+    def hotels: Seq[Hotel]
+  }
+  //implicit def toServiceOps(h: Rep[Service])
+  //Let's do hotel search.
+  def hotelSearch(searchEngineHost: Host)(searchEngine: searchEngineHost.Rep[Service], city: String) {
+    import searchEngineHost.{pure => _, _}
+
+    /*for {
+      hotel <- searchEngine.hotels
+      if hotel.city == city
+      room <- hotel.management.rooms
+      if room.available
+    } yield (hotel, room)*/
+    searchEngine.hotels.filter(_.city == city).flatMap { (hotel: searchEngineHost.Rep[Hotel]) =>
+      onHost(hotel.server) {
+        implicit hotelServer =>
+          import hotelServer.{pure => _, _} //Needed to make filter/flatMap available on rooms
+          //hotel: searchEngineHost.Rep[Hotel]
+          //room: hotel.server.
+          //hotel.management.rooms.filter(_.available).map((hotel, _))
+          hotel.management.rooms filter (_.available) map (room => (move(hotel), room))
+      }
+    }
+  }
+
+  def testHotelSearch(searchEngineHost: Host)(searchEngine: searchEngineHost.Rep[Service]) {
+    hotelSearch(searchEngineHost)(searchEngine, "New York")
+  }
+}
+*/
+
+trait ScalaRemoteFrameworkTestHotelSearch2 extends ScalaRemoteFramework with JavaSerializerFramework {
+  //case class DependantPair[T](h: Host)(v: h.Rep[T])
+  class DependantPair[T] {
+    val h: Host
+    val v: h.Rep[T]
+  }
+
+  trait Hotel {
+    def city: String
+    def management: RoomBookingService
+    //def rooms: Seq[]
+  }
+  trait Service {
+    def hotels: Seq[DependantPair[Hotel]]
+  }
+
+  /*
+h: Host
+h.Rep[Hotels]
+trait Host {
+  def runBatch(f: h.Rep[T]): T
+}
+
+/*h runBatch {implicit host =>
+  move(a)
+}*/
+   */
+  //Let's do hotel search - try again.
+  def hotelSearch(searchEngineHost: Host)(searchEngine: searchEngineHost.Rep[Service], city: String) {
+    searchEngineHost runBatch {
+      implicit _foo_ =>
+        import searchEngineHost.{pure => _, _}
+
+        /*
+
+         */
+        //hotelService
+        hotelServiceHost runBatch {
+          for {hotel <- hotelService.hotels}
+            if hotel.city == city
+        }
+    for {
+      hotelPair <- searchEngine.hotels
+      hotel = hotelPair.v
+      if hotel.city == city
+      room <- hotel.management.rooms
+      if room.available
+    } yield (hotel, room)
+      /*for {
+      hotelPair <- searchEngine.hotels
+    } yield {
+      val host = hotelPair.h
+      val hotel: host.Rep[Hotel] = hotelPair.host
+
+    }*/
+        searchEngine.hotels filter { hotelPair =>
+          val hotelServer = hotelPair.h
+          val hotel: hotelServer.Rep[Hotel] = hotelPair.host
+          import hotelServer.{pure => _, _}
+          hotel.city == city
+        } flatMap { hotelPair =>
+          val hotelServer: Host = hotelPair.h
+          val hotel: hotelServer.Rep[Hotel] = hotelPair.host
+          import hotelServer.{pure => _, _}
+          hotel.management.rooms filter (_.available) map (room => (hotel, room))
+        }
+        //What you want to run
+        /*
+        searchEngine.hotels flatMap { hotelPair =>
+          val hotelServer: Host = hotelPair.h
+          val hotel: hotelServer.Rep[Hotel] = hotelPair.host
+          import hotelServer.{pure => _, _}
+
+          if_# (hotel.city == city) {
+            hotel.management.rooms filter (_.available) map (room => (hotel, room))
+          } else_# {
+            Seq.empty
+          }
+        }
+        */
+    }
+  }
+
+  def testHotelSearch(searchEngineHost: Host)(searchEngine: searchEngineHost.Rep[Service]) {
+    hotelSearch(searchEngineHost)(searchEngine, "New York")
+  }
+  //def testSomethingInteresting(h: Host)(remoteFile: h.Rep[Reader])
+}
+
 object ScalaRemoteFrameworkImpl extends RemoteFramework with JavaSerializerFramework with ScalaLanguageFramework with ScalaRemoteFramework {
   type Host = HostApi
   class ConcreteHost(override protected val addr: Option[Address]) extends HostApi with LiftingLangIntf with LiftingTrait {
@@ -131,3 +269,4 @@ object ScalaRemoteFrameworkImpl extends RemoteFramework with JavaSerializerFrame
   val AnywhereHost = newHost(None)
   override def moveTo[T: Serializator](value: Host#Rep[T], dest: Host): dest.Rep[T] = ???
 }
+*/
