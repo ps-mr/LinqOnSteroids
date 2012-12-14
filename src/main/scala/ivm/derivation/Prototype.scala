@@ -22,8 +22,14 @@ trait Prototype {
         //But for a Set or a Bag, no problem. For a Map, ?.
         //For a List[T], it's more a set of events like Add(pos: Int, el: T), or even Add(pos: Int, el: List[T]) (to
         // batch additions).
-        //This should match more something like Union of f(BaseColl) and g(DeltaV).
       case Sym(MapNode(Sym(Union(BaseColl, DeltaV)), f)) => (BaseColl map f) union (DeltaV map f)
+      //This should match more something like Union of f(BaseColl) and g(DeltaV). More like:
+
+      case Sym(MapNode(Sym(Union(a: Exp[Traversable[_]], b: Exp[Traversable[_]])), f))
+        if (a isOrContains BaseColl) && !(a isOrContains DeltaV) &&
+                          !(b isOrContains BaseColl) && (b isOrContains DeltaV)
+      => (a map f) union (b map f)
+
       case Sym(FlatMap(Sym(Union(BaseColl, DeltaV)), f)) => (BaseColl flatMap f) union (DeltaV flatMap f)
       case Sym(Filter(Sym(Union(BaseColl, DeltaV)), p)) => (BaseColl filter p) union (DeltaV filter p)
       case Sym(i: IndexBy[U, repr, k, that]) =>
