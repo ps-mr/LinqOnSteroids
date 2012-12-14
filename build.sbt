@@ -142,7 +142,8 @@ sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, appCon
     scala.Console.err.printf("Failure creating output directory %s\n", dir)
   }
   val verFile = dir / "version.scala"
-  val gitVersion = "git describe --always --dirty --abbrev=40".!!
+  val path = ""
+  val gitVersion = (path + "git describe --always --dirty --abbrev=40").!!
   val writer = new FileWriter(verFile)
   try {
     writer write ("""package ivm
