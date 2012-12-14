@@ -10,7 +10,7 @@ version := "0.3-SNAPSHOT"
 
 //scalaVersion in ThisBuild := "2.9.2"
 
-scalaVersion in ThisBuild := "2.10.0-RC3"
+scalaVersion in ThisBuild := "2.10.0-RC5"
 
 //resolvers in ThisBuild += Resolver.sonatypeRepo("snapshots")
 

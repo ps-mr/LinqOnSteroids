@@ -4,7 +4,7 @@
     <facet type="scala" name="Scala">
       <configuration>
         <option name="compilerLibraryLevel" value="Project" />
-        <option name="compilerLibraryName" value="scala-2.10.0-M7" />
+        <option name="compilerLibraryName" value="scala-2.10.0-RC5" />
         <option name="deprecationWarnings" value="true" />
         <option name="fsc" value="true" />
         <option name="uncheckedWarnings" value="true" />
@@ -27,7 +27,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="org.scala-lang_scala-library_2.10.0-M7" level="project" />
+    <orderEntry type="library" name="org.scala-lang_scala-library_2.10.0-RC5" level="project" />
     <orderEntry type="library" name="bat-core_2.10.0-M7-1.0.0-SNAPSHOT.jar" level="project" />
   </component>
 </module>
