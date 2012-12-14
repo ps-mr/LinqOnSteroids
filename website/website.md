@@ -55,6 +55,7 @@ This project benefited from code and ideas of many different people:
 - Katharina Haselhorst
 
 # News
+- 2012-12-11: our paper submission was accepted for AOSD '13!
 - 2012-10-25: link to technical report on arXiv.
 - 2012-10-23: technical report published.
 - 2012-10-12: began to update website, with link to GitHub sources.
