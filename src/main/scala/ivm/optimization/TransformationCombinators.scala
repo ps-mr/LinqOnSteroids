@@ -109,7 +109,10 @@ class TransformationCombinators {
       lazy val q0 = q
       //this orElse q0 //Eta-expansion should be applied _here_
       //Transformer2 {case in if !isDefinedAt(in) => q0(in)} //buggy
-      Transformer2 {case in if !isDefinedAt(in) => q0(in)}
+      Transformer2 {
+        case in if isDefinedAt(in) => this(in)
+        case in if !isDefinedAt(in) => q0(in)
+      }
     }
   }
   def Transformer2(f: Transformer) = new Transformer2 {
