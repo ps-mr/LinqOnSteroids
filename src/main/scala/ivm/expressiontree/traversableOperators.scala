@@ -65,7 +65,7 @@ case class ForceIfPossible[T, Repr <: Traversable[T] with TraversableLike[T, Rep
   override def copy(base: Exp[Repr]) = ForceIfPossible(base)
 }
 
-case class Union[T, Repr <: TraversableLike[T, Repr], That](base: Exp[Repr], that: Exp[Traversable[T]])
+case class Union[T, Repr <: Traversable[T] with TraversableLike[T, Repr], That](base: Exp[Repr with Traversable[T]], that: Exp[Traversable[T]])
                                    (implicit protected[this] val c: CanBuildFrom[Repr, T, That]) extends Arity2OpExp[Repr, Traversable[T], That, Union[T, Repr, That]](base, that) with InfixPrinting {
   override def interpret() = base.interpret() ++ that.interpret()
   override def copy(base: Exp[Repr], that: Exp[Traversable[T]]) = Union[T, Repr, That](base, that)
