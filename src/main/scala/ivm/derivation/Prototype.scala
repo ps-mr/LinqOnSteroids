@@ -36,10 +36,13 @@ trait Prototype {
       case Sym(MapNode(Sym(Union(a, b)), f)) if correctDependencies(a, b) =>
         (a map f) union (b map f)
 
+      case Sym(FlatMap(Sym(Union(a, b)), f)) if correctDependencies(a, b) =>
+        (BaseColl flatMap f) union (DeltaV flatMap f)
+      case Sym(Filter(Sym(Union(a, b)), p)) if correctDependencies(a, b) =>
+        (BaseColl filter p) union (DeltaV filter p)
+
       case Sym(Union(Sym(Union(BaseColl, DeltaV)), coll)) =>
         BaseColl union coll union DeltaV //Side condition: no ordering.
-      case Sym(FlatMap(Sym(Union(BaseColl, DeltaV)), f)) => (BaseColl flatMap f) union (DeltaV flatMap f)
-      case Sym(Filter(Sym(Union(BaseColl, DeltaV)), p)) => (BaseColl filter p) union (DeltaV filter p)
       case Sym(i: IndexBy[U, repr, k, that]) =>
         i match {
           case IndexBy(Sym(Union(BaseColl, DeltaV)), f) =>
