@@ -103,11 +103,6 @@ object TransformationCombinatorsExperiments {
   }
 }
 
-trait SimplePartialFunction[-T1, R] extends Function1[T1, R] with PartialFunction[T1, R] { self =>
-  def simpleApplyOrElse[A1 <: T1](x: A1, default: A1 => R): R
-  def apply(x: T1): R = simpleApplyOrElse(x, PartialFunction.empty)
-}
-
 class TransformationCombinators[Exp[_]] {
   //implicitly[C]
   //implicitly[Endo[Exp[_]]]
@@ -122,14 +117,6 @@ class TransformationCombinators[Exp[_]] {
       //this andThen q0 //Eta-expansion should be applied _here_
       //TransformerT { case in if isDefinedAt(in) => q0(this(in)) }
 
-      /*
-      TransformerT (new SimplePartialFunction[Exp[T], Exp[T]] {
-        //On such a partial function, invoking applyOrElse goes through two steps. Hm.
-        override def simpleApplyOrElse[A1 <: Exp[T]](x: A1, default: A1 => Exp[T]): Exp[T] =
-          q0(self applyOrElse (x, default))
-        override def isDefinedAt(x: Exp[T]) = self isDefinedAt x
-      })
-      */
       TransformerT (new AbstractPartialFunction[Exp[T], Exp[T]] {
         override def applyOrElse[A1 <: Exp[T], B1 >: Exp[T]](x: A1, default: A1 => B1): B1 =
           self andThen q0 applyOrElse (x, default)
