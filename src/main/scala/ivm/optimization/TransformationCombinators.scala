@@ -1,9 +1,6 @@
 package ivm
 package optimization
 
-import expressiontree.{Lifting, Fun, Sym, FunSym, Exp}
-import Lifting._
-
 import scalaz._
 import Scalaz._
 import runtime.AbstractPartialFunction
@@ -14,6 +11,7 @@ import runtime.AbstractPartialFunction
  */
 
 object TransformationCombinatorsExperiments {
+  import expressiontree.Exp
   //TODO: For M[_] = Option, add overloads for PartialFunctions.
   class TransformationCombinatorsScalaz[T] {
     type TransformerFun[M[_]] = T => M[T]
@@ -105,27 +103,51 @@ object TransformationCombinatorsExperiments {
   }
 }
 
-class TransformationCombinators {
+trait SimplePartialFunction[-T1, R] extends Function1[T1, R] with PartialFunction[T1, R] { self =>
+  def simpleApplyOrElse[A1 <: T1](x: A1, default: A1 => R): R
+  def apply(x: T1): R = simpleApplyOrElse(x, PartialFunction.empty)
+}
+
+class TransformationCombinators[Exp[_]] {
   //implicitly[C]
   //implicitly[Endo[Exp[_]]]
   //implicit val m: Monoid[PartialFunction[Exp[_], Exp[_]]]
   type TransformerBase = PartialFunction[Exp[_], Exp[_]]
   trait Transformer[T] extends PartialFunction[Exp[T], Exp[T]] {
+    self =>
     //def on[T](in: Exp[T]): Exp[T] = apply(in).asInstanceOf[Exp[T]]
     def on(in: Exp[T]): Exp[T] = apply(in)
     def &(q: => (Exp[T] => Exp[T])): Transformer[T] = {
       lazy val q0 = q
       //this andThen q0 //Eta-expansion should be applied _here_
-      TransformerT { case in if isDefinedAt(in) => q0(this(in)) }
+      //TransformerT { case in if isDefinedAt(in) => q0(this(in)) }
+
+      /*
+      TransformerT (new SimplePartialFunction[Exp[T], Exp[T]] {
+        //On such a partial function, invoking applyOrElse goes through two steps. Hm.
+        override def simpleApplyOrElse[A1 <: Exp[T]](x: A1, default: A1 => Exp[T]): Exp[T] =
+          q0(self applyOrElse (x, default))
+        override def isDefinedAt(x: Exp[T]) = self isDefinedAt x
+      })
+      */
+      TransformerT (new AbstractPartialFunction[Exp[T], Exp[T]] {
+        override def applyOrElse[A1 <: Exp[T], B1 >: Exp[T]](x: A1, default: A1 => B1): B1 =
+          self andThen q0 applyOrElse (x, default)
+        override def isDefinedAt(x: Exp[T]) = self isDefinedAt x
+      })
     }
     def |(q: => Transformer[T]): Transformer[T] = {
       lazy val q0 = q
       //this orElse q0 //Eta-expansion should be applied _here_
       //Transformer {case in if !isDefinedAt(in) => q0(in)} //buggy
-      TransformerT {
-        case in if isDefinedAt(in) => this(in)
+      TransformerT (new AbstractPartialFunction[Exp[T], Exp[T]] {
+        override def applyOrElse[A1 <: Exp[T], B1 >: Exp[T]](x: A1, default: A1 => B1): B1 =
+          self applyOrElse (x, (x: A1) => q0 applyOrElse (x, default))
+        override def isDefinedAt(x: Exp[T]) = (self isDefinedAt x) || (q0 isDefinedAt x)
+      })
+      /*case in if isDefinedAt(in) => this(in)
         case in if !isDefinedAt(in) => q0(in)
-      }
+      }*/
     }
   }
   /*def Transformer(f: TransformerOld) = new Transformer {
@@ -162,40 +184,4 @@ class TransformationCombinators {
   */
 }
 
-object TransformationCombinators extends TransformationCombinators /*with App*/ {
-  import OptimizationTransforms.{deltaReductionTuple, betaReduction}
-
-  //def betaDeltaReducer2 = kleeneStar(deltaReductionTuple orElse betaReduction)
-  def betaDeltaReducer2 = fromPoly(kleeneStar(Transformer { deltaReductionTuple orElse betaReduction }))
-
-  def applyFun[A, B] = {
-    //\x f -> f x
-    FunSym(Fun((x: Exp[A]) => Fun((f: Exp[A => B]) => f(x))))
-  }
-  def applyFun2[A, B]: Exp[(A => B) => (A => B)] = {
-    //\f x -> f x
-    FunSym(Fun((f: Exp[A => B]) => FunSym(Fun(f(_)))))
-  }
-  def applyIdFun[A, B]: Exp[A => A] = {
-    //\x -> applyFun x id
-    FunSym(Fun((x: Exp[A]) => applyFun(x)(FunSym(Fun(x => x)))))
-  }
-  def applyIdFunMoreComplex[A, B]: Exp[A => A] = {
-    //\x -> applyFun x id
-    //Fun((x: Exp[A]) => applyFun(x)(Fun(x => x)))
-    FunSym(Fun((x: Exp[A]) => (letExp(x)(applyFun[A, A].f))(FunSym(Fun(x => x)))))
-  }
-
-  def main(args: Array[String]) {
-    for (term <- Seq(applyIdFun, applyIdFunMoreComplex)) {
-      println("Term:" + term)
-      val opt1 = term.transform(betaDeltaReducer2)
-      println("Beta-reduced term:" + opt1)
-      assert(opt1 == Fun[Int, Int](x => x))
-      val opt2 = term.transform(TransformationCombinatorsExperiments.TransformationCombinators.betaDeltaReducer3)
-      println("Beta-reduced term - with Scalaz:" + opt2)
-      assert(opt2 == opt1)
-      println()
-    }
-  }
-}
+object TransformationCombinators extends TransformationCombinators[expressiontree.Exp]
