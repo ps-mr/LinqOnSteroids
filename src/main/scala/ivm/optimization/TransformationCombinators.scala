@@ -110,18 +110,19 @@ class TransformationCombinators {
   //implicitly[Endo[Exp[_]]]
   //implicit val m: Monoid[PartialFunction[Exp[_], Exp[_]]]
   type TransformerBase = PartialFunction[Exp[_], Exp[_]]
-  trait Transformer extends PartialFunction[Exp[_], Exp[_]] {
-    def on[T](in: Exp[T]): Exp[T] = apply(in).asInstanceOf[Exp[T]]
-    def &(q: => (Exp[_] => Exp[_])) = {
+  trait Transformer[T] extends PartialFunction[Exp[T], Exp[T]] {
+    //def on[T](in: Exp[T]): Exp[T] = apply(in).asInstanceOf[Exp[T]]
+    def on(in: Exp[T]): Exp[T] = apply(in)
+    def &(q: => (Exp[T] => Exp[T])): Transformer[T] = {
       lazy val q0 = q
       //this andThen q0 //Eta-expansion should be applied _here_
-      Transformer { case in if isDefinedAt(in) => q0(this(in)) }
+      TransformerT { case in if isDefinedAt(in) => q0(this(in)) }
     }
-    def |(q: => Transformer) = {
+    def |(q: => Transformer[T]): Transformer[T] = {
       lazy val q0 = q
       //this orElse q0 //Eta-expansion should be applied _here_
       //Transformer {case in if !isDefinedAt(in) => q0(in)} //buggy
-      Transformer {
+      TransformerT {
         case in if isDefinedAt(in) => this(in)
         case in if !isDefinedAt(in) => q0(in)
       }
@@ -131,18 +132,22 @@ class TransformationCombinators {
     def apply(in: Exp[_]) = f(in)
     def isDefinedAt(x: Exp[_]) = f.isDefinedAt(x)
   }*/
-  def Transformer(f: TransformerBase) = new AbstractPartialFunction[Exp[_], Exp[_]] with Transformer {
-    override def applyOrElse[A1 <: Exp[_], B1 >: Exp[_]](x: A1, default: A1 => B1): B1 =
+  def Transformer[T](f: TransformerBase) = TransformerT(f.asInstanceOf[PartialFunction[Exp[T], Exp[T]]])
+
+  def TransformerT[T](f: PartialFunction[Exp[T], Exp[T]]) = new AbstractPartialFunction[Exp[T], Exp[T]] with Transformer[T] {
+    override def applyOrElse[A1 <: Exp[T], B1 >: Exp[T]](x: A1, default: A1 => B1): B1 =
       f.applyOrElse(x, default)
-    override def isDefinedAt(x: Exp[_]) = f.isDefinedAt(x)
+    override def isDefinedAt(x: Exp[T]) = f.isDefinedAt(x)
   }
 
   //This is the shortest way of writing identity.
   val emptyTransformOld: TransformerBase = {case e => e}
 
-  val emptyTransform: Transformer = Transformer(emptyTransformOld)
-  def kleeneStar(f: => Transformer): Exp[_] => Exp[_] =
+  def emptyTransform[T]: Transformer[T] = Transformer(emptyTransformOld)
+  def kleeneStar[T](f: => Transformer[T]): Exp[T] => Exp[T] =
     f & kleeneStar(f) orElse emptyTransform
+
+  def fromPoly(e: Exp[Any] => Exp[Any]) = e
 
   def kleeneStarOld(f: TransformerBase): Exp[_] => Exp[_] = {
     def resultFun(exp: Exp[_]): Exp[_] = (f andThen resultFun orElse emptyTransformOld)(exp)
@@ -161,7 +166,7 @@ object TransformationCombinators extends TransformationCombinators /*with App*/ 
   import OptimizationTransforms.{deltaReductionTuple, betaReduction}
 
   //def betaDeltaReducer2 = kleeneStar(deltaReductionTuple orElse betaReduction)
-  def betaDeltaReducer2 = kleeneStar(Transformer { deltaReductionTuple orElse betaReduction })
+  def betaDeltaReducer2 = fromPoly(kleeneStar(Transformer { deltaReductionTuple orElse betaReduction }))
 
   def applyFun[A, B] = {
     //\x f -> f x
