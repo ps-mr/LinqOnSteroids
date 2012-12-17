@@ -13,7 +13,7 @@ class TransformationCombinatorTests extends TransformationCombinators[Exp] with 
   import OptimizationTransforms.{deltaReductionTuple, betaReduction}
 
   //def betaDeltaReducer2 = kleeneStar(deltaReductionTuple orElse betaReduction)
-  def betaDeltaReducer2 = fromPoly(kleeneStar(Transformer { deltaReductionTuple orElse betaReduction }))
+  val betaDeltaReducer2 = fromPoly(kleeneStar(Transformer { deltaReductionTuple orElse betaReduction }))
 
   def applyFun[A, B] = {
     //\x f -> f x

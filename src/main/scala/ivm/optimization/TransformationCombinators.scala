@@ -3,6 +3,7 @@ package optimization
 
 import scalaz._
 import Scalaz._
+import tests.Debug
 
 /**
  * User: pgiarrusso
@@ -103,6 +104,7 @@ object TransformationCombinatorsExperiments {
 }
 
 class TransformationCombinators[Exp[_]] {
+  def debugPrintln[T](x: T) = if (Debug.active) Console.println(x)
   import runtime.AbstractPartialFunction
 
   //implicitly[C]
@@ -114,62 +116,57 @@ class TransformationCombinators[Exp[_]] {
     //def on[T](in: Exp[T]): Exp[T] = apply(in).asInstanceOf[Exp[T]]
     def on(in: Exp[T]): Exp[T] = apply(in)
     def &(q: => (Exp[T] => Exp[T])): Transformer[T] = {
-      lazy val q0 = q
-      //this andThen q0 //Eta-expansion should be applied _here_
-      //TransformerT { case in if isDefinedAt(in) => q0(this(in)) }
-
-      TransformerT (new AbstractPartialFunction[Exp[T], Exp[T]] {
-        override def applyOrElse[A1 <: Exp[T], B1 >: Exp[T]](x: A1, default: A1 => B1): B1 =
-          self andThen q0 applyOrElse (x, default)
-        override def isDefinedAt(x: Exp[T]) = self isDefinedAt x
-      })
+      debugPrintln("& evaluated!")
+      TransformerT(this andThen q, Some("&"))
     }
     def |(q: => Transformer[T]): Transformer[T] = {
-      lazy val q0 = q
-      //this orElse q0 //Eta-expansion should be applied _here_
-      //Transformer {case in if !isDefinedAt(in) => q0(in)} //buggy
-      TransformerT (new AbstractPartialFunction[Exp[T], Exp[T]] {
-        override def applyOrElse[A1 <: Exp[T], B1 >: Exp[T]](x: A1, default: A1 => B1): B1 =
-          self applyOrElse (x, (x: A1) => q0 applyOrElse (x, default))
-        override def isDefinedAt(x: Exp[T]) = (self isDefinedAt x) || (q0 isDefinedAt x)
-      })
-      /*case in if isDefinedAt(in) => this(in)
-        case in if !isDefinedAt(in) => q0(in)
-      }*/
+      debugPrintln("| evaluated!")
+      TransformerT(this orElse q, Some("|"))
     }
   }
-  /*def Transformer(f: TransformerOld) = new Transformer {
-    def apply(in: Exp[_]) = f(in)
-    def isDefinedAt(x: Exp[_]) = f.isDefinedAt(x)
-  }*/
-  def Transformer[T](f: TransformerBase) = TransformerT(f.asInstanceOf[PartialFunction[Exp[T], Exp[T]]])
 
-  def TransformerT[T](f: PartialFunction[Exp[T], Exp[T]]) = new AbstractPartialFunction[Exp[T], Exp[T]] with Transformer[T] {
-    override def applyOrElse[A1 <: Exp[T], B1 >: Exp[T]](x: A1, default: A1 => B1): B1 =
-      f.applyOrElse(x, default)
-    override def isDefinedAt(x: Exp[T]) = f.isDefinedAt(x)
+  //Note that those accept by-name parameters!
+  def Transformer[T](f: => TransformerBase) = TransformerT(f.asInstanceOf[PartialFunction[Exp[T], Exp[T]]])
+
+  def TransformerT[T](f: => PartialFunction[Exp[T], Exp[T]], debugMsg: Option[String] = None) = {
+    lazy val f0 = f //Without memoization, f would be recomputed over and over.
+    //Having memoization here allows avoiding it in the combinators.
+    new AbstractPartialFunction[Exp[T], Exp[T]] with Transformer[T] {
+      override def applyOrElse[A1 <: Exp[T], B1 >: Exp[T]](x: A1, default: A1 => B1): B1 = {
+        debugMsg match {
+          case Some(debug) =>
+            debugPrintln(s"Debug: result of $debug on $x")
+          case _ =>
+        }
+        f0.applyOrElse(x, default)
+      }
+      override def isDefinedAt(x: Exp[T]) = f0.isDefinedAt(x)
+    }
   }
 
   //This is the shortest way of writing identity.
   val emptyTransformOld: TransformerBase = {case e => e}
 
   def emptyTransform[T]: Transformer[T] = Transformer(emptyTransformOld)
-  def kleeneStar[T](f: => Transformer[T]): Exp[T] => Exp[T] =
-    f & kleeneStar(f) orElse emptyTransform
+  def kleeneStar[T](f: => Transformer[T]): Exp[T] => Exp[T] = {
+    //Almost ideal definition: this works, and in fact it seems decently fast (in terms of reduction steps needed) thanks to the
+    //laziness in the combinators
+    //f & kleeneStar(f) | emptyTransform
+    //But well, kleeneStar is where we do recursion, so tying the knot here is best. But we need lazy val, otherwise
+    //this is pointless!
+    lazy val resultFun: Exp[T] => Exp[T] = f & resultFun | emptyTransform
+    resultFun
+  }
 
   def fromPoly(e: Exp[Any] => Exp[Any]) = e
 
   def kleeneStarOld(f: TransformerBase): Exp[_] => Exp[_] = {
+    //This is slower, because for each input it needs to reconstruct the function to apply.
     def resultFun(exp: Exp[_]): Exp[_] = (f andThen resultFun orElse emptyTransformOld)(exp)
     resultFun _
     //def resultFun: Exp[_] => Exp[_] = (f andThen resultFun orElse emptyTransform)
     //resultFun
   }
-  /*
-  //Ideal definition, maybe - this should at least work, if not very efficiently because of the lack of sharing:
-  def kleeneStar(f: => Transformer): Exp[_] => Exp[_] =
-    f andThen kleeneStar(f) orElse emptyTransform
-  */
 }
 
 object TransformationCombinators extends TransformationCombinators[expressiontree.Exp]
