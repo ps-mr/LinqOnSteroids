@@ -55,7 +55,7 @@ trait Prototype {
             (BaseColl indexBy f) union (DeltaV indexBy f)
         }
     }
-    val res = Sym(new FunInterp(e transform (deriver | emptyTransform2), deltaVVar))
+    val res = Sym(new FunInterp(e transform (deriver | emptyTransform), deltaVVar))
     res
   }
 
