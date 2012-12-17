@@ -111,6 +111,7 @@ class TransformationCombinators {
   //implicit val m: Monoid[PartialFunction[Exp[_], Exp[_]]]
   type TransformerBase = PartialFunction[Exp[_], Exp[_]]
   trait Transformer extends PartialFunction[Exp[_], Exp[_]] {
+    def on[T](in: Exp[T]): Exp[T] = apply(in).asInstanceOf[Exp[T]]
     def &(q: => (Exp[_] => Exp[_])) = {
       lazy val q0 = q
       //this andThen q0 //Eta-expansion should be applied _here_

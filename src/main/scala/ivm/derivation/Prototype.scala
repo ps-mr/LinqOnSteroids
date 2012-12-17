@@ -21,7 +21,12 @@ trait Prototype {
       && !(b isOrContains BaseColl) //That's only required for self-maintainable views.
       */
 
-    val deriver = Transformer2 {
+    def topDownFiniteDiff: Transformer = Transformer {
+      case BaseColl => BaseColl union DeltaV
+      case Sym(MapNode(base, f: FunSym[s, t])) => topDownFiniteDiff on base map f union (base map (x => topDownFiniteDiff on f(x)))
+    }
+
+    val deriver = Transformer {
       case BaseColl =>
         //The interesting operator is not really union - it should be extended to handle also removals, but that's doable.
         BaseColl union DeltaV
@@ -52,6 +57,16 @@ trait Prototype {
     }
     val res = Sym(new FunInterp(e transform (deriver | emptyTransform2), deltaVVar))
     res
+  }
+
+  //How to handle derivation of f(g(x)), say with f = sin?
+  def topDownMathDerivative(Base: TypedVar[Int]): Exp[Int] => Exp[Int] = {
+    case Sym(Plus(t1, t2)) => topDownMathDerivative(Base)(t1) + topDownMathDerivative(Base)(t2)
+    case Sym(Times(t1, t2)) => topDownMathDerivative(Base)(t1) * t2 + t1 * topDownMathDerivative(Base)(t2)
+    case Sym(Base) => 1
+    case Sym(TypedVar(_)) => 0
+    case Const(_) => 0
+    case e => e
   }
 }
 
