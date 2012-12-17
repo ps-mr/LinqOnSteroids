@@ -3,7 +3,6 @@ package optimization
 
 import scalaz._
 import Scalaz._
-import runtime.AbstractPartialFunction
 
 /**
  * User: pgiarrusso
@@ -104,6 +103,8 @@ object TransformationCombinatorsExperiments {
 }
 
 class TransformationCombinators[Exp[_]] {
+  import runtime.AbstractPartialFunction
+
   //implicitly[C]
   //implicitly[Endo[Exp[_]]]
   //implicit val m: Monoid[PartialFunction[Exp[_], Exp[_]]]
