@@ -3,4 +3,21 @@ The idea seems to work quite well. It's weird the relation between andThen and ~
 Parser t = Input -> ParseResult t = {more or less} Input -> (Option t, Input).
 Now, ~ runs the second parser on the result of the first. If we consider a Parser as a function Input -> m Input, where m is a writer monad where the state is a suitable monoid (producing tuples with ~), we can say that the parser concatenation operator ~ is just the same as function composition, only "in a suitable monad" (in fact, it's a special case of (>=>)).
 To be more accurate, we need to consider the Kleisli category of this suitable Writer monad; there function composition is defined exactly by (>=>) (as mentioned in Typeclassopedia).
-Moreover, I should prove that ParseResult is also a monad.
+Moreover, I should prove that ParseResult is also a monad, but that sounds not
+so hard (analogously to the Maybe/Either l monads)
+
+The problem is associativity. Producing tuples with ~ is not associative - and
+indeed, parser combinator concatenation is usually not associative.
+Could I, in Scalaz, offer a non-associative implementation of monads, thanks to
+its granularity? Possible but boring; also, this is not Agda, so laws aren't
+first-class!
+Let's rather make applicative concatenation associative? Hm. Monadic
+concatenation via >=> on the parser results is already associative, but that's not the same.
+I guess we need just to add a few identities to nested tuples to make them
+associative. The annoying thing is that the normalization is highly polymorphic.
+
+f (a, (b, c)) = (a, (b, c))
+f ((a, b), c) = (a, (b, c))
+f[A, B, ARes, BRes, CRes](a: A, b: B)(implicit af: Flatten[A, ARes], bf: Flatten[B, BRes], cf: Flatten[(ARes, BRes), CRes]): CRes
+Flatten is isomorphic to Function1, but we keep it different to avoid ambiguouos
+implicits: its instances are not arbitrary functions!
