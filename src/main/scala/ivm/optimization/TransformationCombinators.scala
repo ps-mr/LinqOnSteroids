@@ -70,23 +70,25 @@ object TransformationCombinatorsExperiments {
   }
 
   class TransformationCombinators {
-    type TransformerOpt = Exp[_] => Option[Exp[_]]
-    abstract class Transformer3 extends TransformerOpt {
-      def &(q: => TransformerOpt): TransformerOpt = {
-        lazy val q0 = q
-        Transformer3 { kleisli(this) >=> q0 }
+    type TransformerOptBase = Exp[_] => Option[Exp[_]]
+    abstract class TransformerOpt extends TransformerOptBase {
+      p =>
+      def &(q: => TransformerOptBase): TransformerOpt = {
+        TransformerOpt { kleisli(p) >=> q }
       }
-      def |(q: => TransformerOpt): TransformerOpt = {
-        lazy val q0 = q
-        Transformer3 { in => this(in) orElse q0(in) }
+      def |(q: => TransformerOptBase): TransformerOpt = {
+        TransformerOpt { in => p(in) orElse q(in) }
       }
     }
-    def Transformer3(f: TransformerOpt) = new Transformer3 {
-      def apply(in: Exp[_]) = f(in)
+    def TransformerOpt(f0: => TransformerOptBase) = {
+      lazy val f = f0
+      new TransformerOpt {
+        def apply(in: Exp[_]) = f(in)
+      }
     }
 
-    def test(f: TransformerOpt) = kleisli(f)
-    def compose(f: TransformerOpt, g: TransformerOpt) = kleisli(f) >=> g
+    def test(f: TransformerOptBase) = kleisli(f)
+    def compose(f: TransformerOptBase, g: TransformerOptBase) = kleisli(f) >=> g
     implicitly[Monad[Option]]
     implicitly[Monoid[Endo[Exp[_]]]](Monoid.monoid(Semigroup.EndoSemigroup, Zero.EndoZero))
     Category.KleisliCategory[Option] //Now we need to convert this to a monoid. Actually we don't - we only want to
