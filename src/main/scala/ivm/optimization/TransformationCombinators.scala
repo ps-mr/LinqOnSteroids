@@ -94,11 +94,38 @@ object TransformationCombinatorsExperiments {
     implicitly[Monoid[Endo[Exp[_]]]](Monoid.monoid(Semigroup.EndoSemigroup, Zero.EndoZero))
     Category.KleisliCategory[Option] //Now we need to convert this to a monoid. Actually we don't - we only want to
     // abstract on suitable Kleisli categories of Monads.
+
+    //This dups the above for Lists instead of Option.
+    type TransformerListBase = Exp[_] => List[Exp[_]]
+    abstract class TransformerList extends TransformerListBase {
+      p =>
+      def &(q: => TransformerListBase): TransformerList = {
+        TransformerList { kleisli(p) >=> q }
+      }
+      def |(q: => TransformerListBase): TransformerList = {
+        TransformerList { in => p(in) ++ q(in) }
+      }
+    }
+    def TransformerList(f0: => TransformerListBase) = {
+      lazy val f = f0
+      new TransformerList {
+        def apply(in: Exp[_]) = f(in)
+      }
+    }
+
+    implicitly[Monad[List]]
+    implicitly[Monoid[List[_]]]
+    implicitly[Semigroup[List[_]]]
+    Category.KleisliCategory[List]
+    Monad.monad[({type l[a] = Writer[List[_], a]})#l](Writer.WriterBind[List[_]], Writer.WriterPure[List[_]]): Monad[({type l[a] = Writer[List[_], a]})#l]
+    //Writer
+    //implicitly[Monad[({type l[a] = Writer[List[_], a]})#l]]
   }
   object TransformationCombinators extends TransformationCombinators /*with App*/ {
     import OptimizationTransforms.{deltaReductionTuple, betaReduction}
 
     object Foo extends TransformationCombinatorsScalaz[Exp[_]]
+    type TransformerListScalaz = Foo.Transformer[List]
     def betaDeltaReducer3 = {
       import Foo._
       Function.unlift((Transformer {(deltaReductionTuple orElse betaReduction).lift}).*)
