@@ -10,7 +10,7 @@ version := "0.3-SNAPSHOT"
 
 //scalaVersion in ThisBuild := "2.9.2"
 
-scalaVersion in ThisBuild := "2.10.0-RC5"
+scalaVersion in ThisBuild := "2.10.0"
 
 //resolvers in ThisBuild += Resolver.sonatypeRepo("snapshots")
 
@@ -36,7 +36,7 @@ libraryDependencies += "junit" % "junit" % "4.8.2" % "test->default"
 //libraryDependencies <+= scalaVersion (ver => "org.scalatest" % ("scalatest_" + ver) % ("1.9-%s-B2" format ver))
 //libraryDependencies += "org.scalatest" % "scalatest" % ("1.9-%s-B1" format "2.10.0-M7") cross CrossVersion.full
 //libraryDependencies <+= scalaVersion (ver => "org.scalatest" % "scalatest" % ("1.9-%s-B1" format ver) cross CrossVersion.full)
-libraryDependencies += "org.scalatest" % "scalatest" % "2.0.M5-B1" cross CrossVersion.full
+libraryDependencies += "org.scalatest" %% "scalatest" % "2.0.M5b"
 
 libraryDependencies += "com.google.guava" % "guava" % "13.0"
 
@@ -51,7 +51,7 @@ libraryDependencies += "com.google.code.findbugs" % "jsr305" % "1.3.9"
 
 //libraryDependencies in ThisBuild += "de.tud.cs.st" % "bat-core" % "1.0.0-SNAPSHOT" cross CrossVersion.full
 
-libraryDependencies += "org.scalaz" % "scalaz-core" % "6.0.4" cross CrossVersion.full
+libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
 
