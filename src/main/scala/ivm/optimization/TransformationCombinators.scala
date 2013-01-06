@@ -13,6 +13,7 @@ import tests.Debug
 object TransformationCombinatorsExperiments {
   import expressiontree.Exp
   //TODO: For M[_] = Option, add overloads for PartialFunctions.
+  //XXX: the interesting case is when M is a writer monad with a monoid as state. Hence, not List[X], but Writer[List[X]]!
   class TransformationCombinatorsScalaz[T] {
     type TransformerFun[M[_]] = T => M[T]
     // This implicit conversion makes crazy Scalaz methods (like >=>) available on TransformerFun.
@@ -64,9 +65,10 @@ object TransformationCombinatorsExperiments {
     //were a monoid. OTOH, parser combinators work without requiring an actual monad - sequencing in parser combinators
     //relies on a non-associative pairing operation.
     abstract class Transformer[U] extends super.Transformer[({type l[a] = (a, U)})#l] {
-      //We need to emulate virtual classes - here we get super.Transformer as the result type. See the emulation of virtual
-      // classes in the Scala implementation of views.
-      def ^^[V](f: U => V): ParserCombinatorFromTransformerCombinator.super.Transformer[({type l[a] = (a, V)})#l] = super.compose[({type l[a] = (a, V)})#l] {(_: (T, U)/* ({type l[a] = (a, U)})#l[T]*/) map f}
+      //We need to emulate virtual classes - here we get super.Transformer as the result type, which is bad. See the
+      // emulation of virtual classes in the Scala implementation of views.
+      def ^^[V](f: U => V): ParserCombinatorFromTransformerCombinator.super.Transformer[({type l[a] = (a, V)})#l] =
+        super.compose[({type l[a] = (a, V)})#l] {(_: (T, U)/* ({type l[a] = (a, U)})#l[T]*/) map f}
     }
   }
 
@@ -158,7 +160,7 @@ class TransformationCombinators[Exp[_]] {
   //Note that those accept by-name parameters!
   def Transformer[T](f: => TransformerBase) = TransformerT(f.asInstanceOf[PartialFunction[Exp[T], Exp[T]]])
 
-  def TransformerT[T](f: => PartialFunction[Exp[T], Exp[T]], debugMsg: Option[String] = None) = {
+  def TransformerT[T](f: => PartialFunction[Exp[T], Exp[T]], debugMsg: Option[String] = None): Transformer[T] = {
     lazy val f0 = f //Without memoization, f would be recomputed over and over.
     //Having memoization here allows avoiding it in the combinators.
     new AbstractPartialFunction[Exp[T], Exp[T]] with Transformer[T] {
