@@ -51,8 +51,9 @@ object TransformationCombinatorsExperiments {
       f & kleeneStar(f) | emptyTransform
 
     //...hence "tie the knot" explicitly. TODO: test that this is actually beneficial.
+    //as tested in another case, this needs a lazy val. Still, retesting might be useful.
     def rep[M[_]: Monad: Plus](f: => Transformer[M]): Transformer[M] = {
-      def resultFun: Transformer[M] = Transformer { f & resultFun | emptyTransform }
+      lazy val resultFun: Transformer[M] = Transformer { f & resultFun | emptyTransform }
       resultFun
     }
   }
