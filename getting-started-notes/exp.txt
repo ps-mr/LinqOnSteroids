@@ -1,0 +1,104 @@
+Use cases
+/src/test/scala/ivm/tests/PaperTutorial.scala
+
+Jar of everything
+/target/scala-2.10/linqonsteroids_2.10-0.3-SNAPSHOT.jar
+
+
+
+// how to get exp trees
+
+shell$ scala -classpath $(Jar of everything)
+>
+
+import squopt.imports._
+val blah = SomeRandomCollection.asSquopt
+
+val set = Set(1,2,3,4,5)
+val eset = set.asSquopt
+val fed = for { x <- eset ; if (x % 2 == 1) } yield x
+
+fed: ivm.expressiontree.Exp[scala.collection.immutable.Set[Int]] = 
+Sym(
+  MapNode(
+    Sym(
+      Filter(
+        ConstByIdentity(
+          Instance of class scala.collection.immutable.HashSet$HashTrieSet,
+          ID = 94521481
+        ),
+        FunSym(v2 =>
+          Const(false) // Ach-tung!
+        )
+      )
+    ),
+    FunSym(v3 =>
+      Sym(v3)
+    )
+  )
+)
+
+val fed2 = for { x <- eset ; if (x % 2.asSquopt == 1.asSquopt) } yield x
+
+fed2: ivm.expressiontree.Exp[scala.collection.immutable.Set[Int]] = 
+Sym(
+  MapNode(
+    Sym(
+      Filter(
+        ConstByIdentity(
+          Instance of class scala.collection.immutable.HashSet$HashTrieSet,
+          ID = 94521481
+        ),
+        FunSym(v5 =>
+          Const(false) // Whut?
+        )
+      )
+    ),
+    FunSym(v6 =>
+      Sym(v6)
+    )
+  )
+)
+
+val map = Map(1 -> 100, 2 -> 200)
+val emap = map.asSquopt
+val emapped = for { z <- emap } yield z._1 + z._2
+
+emapped: ivm.expressiontree.Exp[scala.collection.immutable.Iterable[Int]] = 
+Sym(
+   MapNode(
+    ConstByIdentity(
+      Instance of class scala.collection.immutable.Map$Map2, ID = 227192198
+    ),
+    FunSym(v4 =>
+      Sym(
+        Plus(
+          Sym(
+            Product2Proj1(
+              Sym(v4)
+            )
+          ),
+          Sym(
+            Product2Proj2(
+              Sym(v4)
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+
+val fed2 = for {x <- eset} yield (x, x)
+fed2: ivm.expressiontree.Exp[scala.collection.immutable.Set[(Int,
+Int)]] = Sym(MapNode(ConstByIdentity(Instance of class
+scala.collection.immutable.HashSet$HashTrieSet, ID =
+94521481),FunSym(v7 => Sym(LiftTuple2(Sym(v7),Sym(v7))))))
+
+scala> eset.filter{_ <= 3}
+res1: ivm.expressiontree.Exp[scala.collection.immutable.Set[Int]] =
+Sym(Filter(ConstByIdentity(Instance of class
+scala.collection.immutable.HashSet$HashTrieSet, ID =
+107445688),FunSym(v2 => Sym(LEq(Sym(v2),Const(3))))))
+
