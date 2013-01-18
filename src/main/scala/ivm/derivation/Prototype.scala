@@ -21,10 +21,17 @@ trait Prototype {
       && !(b isOrContains BaseColl) //That's only required for self-maintainable views.
       */
 
+    /*
     def topDownFiniteDiff[T]: Transformer[T] = Transformer[T] {
       case BaseColl => BaseColl union DeltaV
-      case Sym(MapNode(base, f: FunSym[s, t])) => topDownFiniteDiff on base map f union (base map (x => topDownFiniteDiff on f(x)))
+      case Sym(MapNode(base, f: FunSym[s, t])) => topDownFiniteDiff on base map f union
+                                                  (base map (x => topDownFiniteDiff on f(x))) //crap!
+      case Sym(Filter(base, p: FunSym[s, Boolean])) =>
+        topDownFiniteDiff on base filter f
+      case Sym(Union(a, b)) =>
+        a union b
     }
+    */
 
     def deriver[T] = Transformer[T] {
       case BaseColl =>
