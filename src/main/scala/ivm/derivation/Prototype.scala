@@ -5,13 +5,59 @@ import optimization._
 import TransformationCombinators._
 import expressiontree._
 import Lifting._
-import collection.IterableLike
+
+import collection.TraversableLike
+import collection.generic.CanBuildFrom
+import language.postfixOps
 
 /**
  * User: pgiarrusso
  * Date: 13/12/2012
  */
 trait Prototype {
+  def isIncremental: PartialFunction[Exp[_], Boolean] = {
+    case Sym(Var(_)) => true //This is a stub implementation - we should check for incremental collections instead.
+  }
+  //This is a top-down procedure.
+  def derive2[T](e: Exp[T]): (Exp[T], Seq[Var]) = {
+    case class VarDelta[T](v: Exp[T], delta: TypedVar[T])
+    val baseCollections = e __find isIncremental
+    val varDeltaPairs = baseCollections map (v => VarDelta(v, Fun.gensym()))
+    val toDelta: Map[Exp[_], Var] = varDeltaPairs map {case VarDelta(v: Exp[_], delta: Var) => v -> delta} toMap;
+
+    def topDownFiniteDiff[T]: Transformer[T] = Transformer[T] {
+      case baseColl if isIncremental(baseColl) => toAtomImplicit(toDelta(baseColl))
+      case Const(_) =>
+        Seq.empty
+      case Sym(MapNode(base, f: FunSym[s, t])) => topDownFiniteDiff(base) map f union
+                                                  (base map (x => topDownFiniteDiff(f(x)))) //XXX this looks expensive.
+      // This would also mean that the graph changes when new elements are
+      // added, which would be unacceptable.
+      case Sym(FlatMap(base, f: FunSym[s, t])) => topDownFiniteDiff(base) flatMap f union
+                                                  (base flatMap (x => topDownFiniteDiff(f(x)))) //XXX this looks expensive.
+      // This would also mean that the graph changes when new elements are
+      // added, which would be unacceptable.
+      // It seems that the best solution would be to use a derivation-based approach for first-order operators
+      case Sym(Filter(base, p: FunSym[s, Boolean])) =>
+        topDownFiniteDiff(base) filter p union
+          (base filter (x => topDownFiniteDiff(p(x)))) //XXX again bad.
+      case Sym(Union(a, b)) =>
+        topDownFiniteDiff(a) union topDownFiniteDiff(b)
+      //case Sym(Join(collA: Exp[Traversable[a]], collB: Exp[Traversable[b]], keyASel, keyBSel, resultSel)) =>
+      case Sym(Join(collA, collB, keyASel, keyBSel, resultSel)) =>
+        val diffA = topDownFiniteDiff(collA)
+        val diffB = topDownFiniteDiff(collB)
+        diffA.join(collB)(keyASel, keyBSel, resultSel) union
+        collA.join(diffB)(keyASel, keyBSel, resultSel) union
+        diffA.join(diffB)(keyASel, keyBSel, resultSel)
+      case unhandledExp@Sym(unhandledDef) =>
+        //Doesn't work - we need to use ++ only for collection children, not for all of them.
+        //toAtomImplicit(unhandledDef.genericConstructor(unhandledDef.children map (child => child ++ topDownFiniteDiff(child)))) diff unhandledExp
+        ???
+    }
+    (topDownFiniteDiff(e), varDeltaPairs map (_.delta))
+  }
+
   def derive[T, U: TypeTag](e: Exp[T], BaseColl: Exp[Traversable[U]]): Exp[Traversable[U] => T] = {
     val deltaVVar = Fun.gensym[Traversable[U]]()
     val DeltaV = Sym(deltaVVar)
