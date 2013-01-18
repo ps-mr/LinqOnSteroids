@@ -147,16 +147,14 @@ case class GroupBy[T, Repr <: Traversable[T] with TraversableLike[T, Repr], K](b
   def operator = "groupBy"
 }
 
-case class Join[T, Repr <: TraversableLike[T, Repr], S, TKey, TResult, That](colouter: Exp[Repr],
-                                                                             colinner: Exp[Traversable[S]],
-                                                                             outerKeySelector: FunSym[T, TKey],
-                                                                             innerKeySelector: FunSym[S, TKey],
-                                                                             resultSelector: FunSym[(T, S), TResult])
-                                                                            (implicit cbf: CanBuildFrom[Repr, TResult, That]) extends
-Arity5Op[Exp[Repr],
-  Exp[Traversable[S]],
-  FunSym[T, TKey], FunSym[S, TKey], FunSym[(T, S), TResult],
-  That, Join[T, Repr, S, TKey, TResult, That]](colouter, colinner, outerKeySelector, innerKeySelector, resultSelector) {
+
+case class Join[T, Repr <: Traversable[T] with TraversableLike[T, Repr], S, TKey, TResult, That]
+  (colouter: Exp[Repr with Traversable[T] with TraversableLike[T, Repr]], colinner: Exp[Traversable[S]],
+   outerKeySelector: FunSym[T, TKey], innerKeySelector: FunSym[S, TKey], resultSelector: FunSym[(T, S), TResult])
+  (implicit cbf: CanBuildFrom[Repr, TResult, That]) extends Arity5Op[Exp[Repr], Exp[Traversable[S]],
+  FunSym[T, TKey], FunSym[S, TKey], FunSym[(T, S), TResult], That, Join[T, Repr, S, TKey, TResult, That]](
+  colouter, colinner, outerKeySelector, innerKeySelector, resultSelector)
+{
   override def copy(colouter: Exp[Repr],
                     colinner: Exp[Traversable[S]],
                     outerKeySelector: FunSym[T, TKey],
