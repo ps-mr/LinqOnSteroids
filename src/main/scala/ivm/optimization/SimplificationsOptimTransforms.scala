@@ -126,7 +126,7 @@ trait SimplificationsOptimTransforms {
     case Sym(appNode@App(fun: FunSym[_, _], arg))
       //Inlining side conditions. Damn, we need to use unrestricted inlining as here, simplify, and then use CSE again,
       //to have a robust solution.
-      if isTrivial(arg) || usesArgAtMostOnce(fun)
+      if isTrivial(arg) || usesArgAtMostOnce(fun) != UsageCount.more
     =>
       subst(fun.defNode)(arg)
   }

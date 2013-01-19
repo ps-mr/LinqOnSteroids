@@ -38,14 +38,44 @@ We want to characterize the subterms of f which are only evaluated once; in addi
 Theorem: if and only if a variable bound in a for-comprehension (using only FlatMap) is used at most once, then and only then it is used either in the
    */
 
-  private def usesArgAtMostOnceNotUnderLambda(exp: Exp[_], v1: Exp[_]): Boolean =
-    exp.findTotFun(_ == v1).length <= 1 &&
-      (exp.__find {
+  case class UsageCount private(n: Option[Int]) {
+    def +(that: UsageCount): UsageCount = {
+      UsageCount build (for {
+        a <- this.n
+        b <- that.n
+      } yield a + b)
+    }
+  }
+  object UsageCount {
+    val zero = new UsageCount(Some(0))
+    val one = new UsageCount(Some(1))
+    val more = new UsageCount(None)
+    def build(n: Option[Int]) = {
+      n match {
+        case Some(0) => zero
+        case Some(1) => one
+        case _ => more
+      }
+    }
+  }
+
+  private def usesArgAtMostOnceNotUnderLambda(exp: Exp[_], v1: Exp[_]): UsageCount = {
+    import UsageCount._
+    if (exp.__find {
         case f: FunSym[_, _] => true
       } forall (!_.isOrContains(v1)))
+      exp.findTotFun(_ == v1).length match {
+        case 0 => zero
+        case 1 => one
+        case _ => more
+      }
+    else
+      more
+  }
+
 
   //Problem here: this assumes that the variable does not appear under explicit lambdas
-  @tailrec private def usesArgAtMostOnce(f: FunSym[_, _], v1: Exp[_]): Boolean = {
+  @tailrec private def usesArgAtMostOnce(f: FunSym[_, _], v1: Exp[_]): UsageCount = {
     f match {
       case FunSym(FuncExpBody(Sym(Binding(Sym(ExpSeq(Seq(exp2))), g)))) if !exp2.isOrContains(v1) =>
         //This allows to inline id1 in cases like:
@@ -60,14 +90,14 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
         //Let's assume that unnesting has already happened, hence all functions we find are just function definitions and not nested FlatMaps to further analyze.
         //Since functions might be applied multiple times, we just make sure that nested function definitions do not refer to g.
         usesArgAtMostOnceNotUnderLambda(baseUsingV, v1)
-      case _ => false
+      case _ => UsageCount.more
     }
   }
 
   //Cannot be written as default argument - this is a dependent default argument, and it can't be part of the same
   //parameter list; using a separate parameter list with only a default argument means that the caller must provide
   // a second parameter list, possibly empty - producing call syntaxes like "usesArgAtMostOnce(f)()".
-  def usesArgAtMostOnce[S, T](f: FunSym[S, T]): Boolean = usesArgAtMostOnce(f, f.x)
+  def usesArgAtMostOnce[S, T](f: FunSym[S, T]): UsageCount = usesArgAtMostOnce(f, f.x)
 
   //This is the shortest way of writing identity.
   val emptyTransform: PartialFunction[Exp[_], Exp[_]] = {
@@ -89,7 +119,7 @@ trait Inlining extends InliningDefs {
   //We also reduce lets where the variable is only used once. Papers on the GHC inliner explain how to do this and why
   //a linear type system is needed for that. See letTransformerUsedAtMostOnce.
   val selectiveLetFlatMapInliner: PartialFunction[Exp[_], Exp[_]] = {
-    case Sym(FlatMap(Sym(ExpSeq(Seq(v))), fs @ FunSym(f))) if isTrivial(v) || usesArgAtMostOnce(fs) =>
+    case Sym(FlatMap(Sym(ExpSeq(Seq(v))), fs @ FunSym(f))) if isTrivial(v) || usesArgAtMostOnce(fs) != UsageCount.more =>
       subst(f)(v)
     // XXX: The following case is also a valid optimization, but I expect code to which it applies to never be created,
     // for now (say by inlining Lets). Hence for now disable it. Reenable later.
@@ -99,7 +129,7 @@ trait Inlining extends InliningDefs {
     //constantFoldSequences is probably a more powerful and robust replacement.
     //However, we would still need to lift the if upward for this to be useful.
     case Sym(FlatMap(Sym(Filter(seq @ Sym(ExpSeq(Seq(v))), predSym @ FunSym(pred))), fs @ FunSym(f)))
-      if isTrivial(v) || usesArgAtMostOnce(fs) && usesArgAtMostOnce(predSym)
+      if isTrivial(v) || usesArgAtMostOnce(fs) != UsageCount.more && usesArgAtMostOnce(predSym) != UsageCount.more //XXX: this duplicates work!
     =>
       if_# (subst(pred)(v)) { subst(f)(v) } else_# { Seq.empty }
 
@@ -107,7 +137,7 @@ trait Inlining extends InliningDefs {
 
   val selectiveLetFilterInliner: PartialFunction[Exp[_], Exp[_]] = {
     //This case breaks indexing when part of selectiveLetInliner
-    case Sym(Filter(Sym(ExpSeq(Seq(v))), predSym @ FunSym(pred))) if isTrivial(v) || usesArgAtMostOnce(predSym) =>
+    case Sym(Filter(Sym(ExpSeq(Seq(v))), predSym @ FunSym(pred))) if isTrivial(v) || usesArgAtMostOnce(predSym) != UsageCount.more =>
       if_# (subst(pred)(v)) { Seq(v) } else_# { Seq.empty }
   }
   val selectiveLetInliner: Exp[_] => Exp[_] = selectiveLetFlatMapInliner orElse emptyTransform
@@ -115,7 +145,7 @@ trait Inlining extends InliningDefs {
 
   //This implements rules from "How to Comprehend Queries Functionally", page 14, rules (12a, b).
   val selectiveConstantSeqInliner: Exp[_] => Exp[_] = {
-    case binder @ BaseBinding(Sym(ExpSeq(seq)), fun) if (seq exists (isTrivial _)) || usesArgAtMostOnce(fun) =>
+    case binder @ BaseBinding(Sym(ExpSeq(seq)), fun) if (seq exists (isTrivial _)) || usesArgAtMostOnce(fun) != UsageCount.more =>
       //FoldRight means that the zero element is at the left and will set the result type to Seq, which is correct since
       //the original mapping is on a sequence.
       (seq map (seqEl => ExpTransformer(selectiveLetCompleteInliner) apply
