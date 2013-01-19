@@ -129,7 +129,7 @@ trait Inlining extends InliningDefs {
     //constantFoldSequences is probably a more powerful and robust replacement.
     //However, we would still need to lift the if upward for this to be useful.
     case Sym(FlatMap(Sym(Filter(seq @ Sym(ExpSeq(Seq(v))), predSym @ FunSym(pred))), fs @ FunSym(f)))
-      if isTrivial(v) || usesArgAtMostOnce(fs) != UsageCount.more && usesArgAtMostOnce(predSym) != UsageCount.more //XXX: this duplicates work!
+      if isTrivial(v) || usesArgAtMostOnce(fs) + usesArgAtMostOnce(predSym) != UsageCount.more
     =>
       if_# (subst(pred)(v)) { subst(f)(v) } else_# { Seq.empty }
 
