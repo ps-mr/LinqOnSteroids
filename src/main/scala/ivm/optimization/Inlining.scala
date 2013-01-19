@@ -60,7 +60,7 @@ Theorem: if and only if a variable bound in a for-comprehension (using only Flat
         //Let's assume that unnesting has already happened, hence all functions we find are just function definitions and not nested FlatMaps to further analyze.
         //Since functions might be applied multiple times, we just make sure that nested function definitions do not refer to g.
         usesArgAtMostOnceNotUnderLambda(baseUsingV, v1)
-      case _ => false //XXX add corresponding cases for Filter. Or add a common pattern-matcher encompassing both FlatMap and Filter, or more in general all available binding constructs!
+      case _ => false
     }
   }
 
