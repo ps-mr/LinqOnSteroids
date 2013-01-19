@@ -109,13 +109,15 @@ class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
     showExp(recordsQueryOpt, "recordsQueryOpt")
     recordsQueryOpt.eval should be (records)
     //The call to optimize is needed to get the same query as recordsQueryOpt for two reasons:
-    //- we need to replace the index with the preevaluated one (not with an equal collection, but the same one)
+    //- we need to replace the index with the preevaluated one (not with an equal collection, but the same one).
+    //  But that stopped working when we disabled directsubquerySharing, so we must call this query directly.
     //- optimize also normalizes some details of the query.
     //  For instance reassociation transforms book.authors.size - 1 to (-1) + book.authors.size.
     //  This normalization allows more effective constant folding - see Optimization.buildSum and its comment.
+    val computedIdxByPublisher = idxByPublisher.transform(Optimization.subquerySharer.directsubqueryShare)
     val indexedQuery =
       (for {
-        book <- idxByPublisher("Pearson Education")
+        book <- computedIdxByPublisher("Pearson Education")
         author <- book.authors
       } yield BookData(book.title, author.firstName + " " + author.lastName, book.authors.size - 1)).optimize
     showExp(indexedQuery, "indexedQuery")
