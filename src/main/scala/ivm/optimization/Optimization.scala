@@ -142,13 +142,13 @@ object Optimization {
       compose filterFusion[T]
       compose physicalOptimize[T] //returns result of flatMapToMap
       compose betaDeltaReducer[T]
-      compose newHandleFilters[T] //3s
-      compose selectiveLetInliner[T] //5-7s
-      compose existsUnnester[T] //6s
+      compose newHandleFilters[T]
+      compose selectiveLetInliner[T]
+      compose existsUnnester[T]
       compose removeRedundantOption[T] compose toTypeFilter[T] compose sizeToEmpty[T]
-      compose generalUnnesting[T] //11s
-      compose mapToFlatMap[T] //12-18s
-      compose removeIdentityMaps[T] //40s
+      compose generalUnnesting[T]
+      compose mapToFlatMap[T]
+      compose removeIdentityMaps[T]
       compose betaDeltaReducer[T])(exp)
 
   //}}}
