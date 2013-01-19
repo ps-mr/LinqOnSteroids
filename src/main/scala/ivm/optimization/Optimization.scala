@@ -55,9 +55,11 @@ object Optimization {
     subqueries -= normalize(optimize(query))
   }
 
+  val subquerySharer = new SubquerySharing(castedSubqueries)
+
   //removeIdentityMaps is appropriate here because typed-indexing can introduce identity maps.
   def shareSubqueries[T](query: Exp[T]): Exp[T] =
-    removeIdentityMaps(new SubquerySharing(castedSubqueries).shareSubqueries(query))
+    removeIdentityMaps(subquerySharer.shareSubqueries(query))
   //}}}
 
   //Check that optim(exp) == exp, but only if we are in debugging mode (flag Benchmarking.debugBench) and
