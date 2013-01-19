@@ -147,7 +147,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     intercept[MatchError] {
       val e: Exp[Map[Int, Int]] = c map (_ match {
         case Sym(LiftTuple2(a, b)) => (a, b + 1) //Inadequate term, even if it's the first I wrote; it causes a crash
-        case e => e //This line is just to silence warnings
+        //case e => e //This line is just to silence warnings
       })
       assertType[Exp[Map[Int, Int]]](e)
       showInterp("e", e)
