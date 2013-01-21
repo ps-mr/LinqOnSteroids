@@ -273,6 +273,8 @@ object Compile {
 
     //We need a top-down traversal...
     //...but with a visitor controlling the traversal (a state monad would also work to make this non-imperative).
+    //Note that even though the traversal is top-down, the tree is still built bottom-up, so this should stil have
+    //linear and not quadratic complexity.
     def topDownTraverse[V]: Exp[V] => Exp[V] = {
       case c @ Const(_) => c
       case s @ Sym(v: Var) => s
