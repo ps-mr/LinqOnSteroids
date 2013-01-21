@@ -25,19 +25,28 @@ trait Prototype {
     val varDeltaPairs = baseCollections map (v => VarDelta(v, Fun.gensym()))
     val toDelta: Map[Exp[_], Var] = varDeltaPairs map {case VarDelta(v: Exp[_], delta: Var) => v -> delta} toMap;
 
+    // Invariant: this should only be invoked when T is in fact a monoid/group. Otherwise, we need to be able to make it into a
+    // group by adding negation.
+    // For instance, we can't have map(T => Int): we need to use flatMap(T => Bag[Int]), where Bag[T] allows for negative
+    // multiplicities.
     def topDownFiniteDiff[T]: Transformer[T] = Transformer[T] {
       case baseColl if isIncremental(baseColl) => toAtomImplicit(toDelta(baseColl))
       case Const(_) =>
         Seq.empty
-      case Sym(MapNode(base, f: FunSym[s, t])) => topDownFiniteDiff(base) map f union
-                                                  (base map (x => topDownFiniteDiff(f(x)))) //XXX this looks expensive.
-      // This would also mean that the graph changes when new elements are
-      // added, which would be unacceptable.
       case Sym(FlatMap(base, f: FunSym[s, t])) => topDownFiniteDiff(base) flatMap f union
                                                   (base flatMap (x => topDownFiniteDiff(f(x)))) //XXX this looks expensive.
       // This would also mean that the graph changes when new elements are
-      // added, which would be unacceptable.
-      // It seems that the best solution would be to use a derivation-based approach for first-order operators
+      // added, which would be unacceptable. XXX No! That'd be the case if flatMap were run now, but it's just staged!
+      // TODO: here and below, replace that with some other approach. Remember the idea of splitting these functions into
+      //a function creating a data structure and a projection to what we need.
+      //IDEA: we could have FlatMapMaintain, re-emit this node here and rely on CSE to have it built only once, and use
+      //it to handle changes to the subcollections. Changes to base could still be handled using derivatives - which
+      // would however need to update also that node.
+      // It seems that the best solution might be to use a derivation-based approach only for first-order operators.
+
+      case Sym(MapNode(base, f: FunSym[s, t])) => topDownFiniteDiff(base) map f union
+                                                  (base map (x => topDownFiniteDiff(f(x)))) //XXX this looks expensive.
+      //Same problems as above, plus the fact that `t` might not be a monoid/group.
       case Sym(Filter(base, p: FunSym[s, Boolean])) =>
         topDownFiniteDiff(base) filter p union
           (base filter (x => topDownFiniteDiff(p(x)))) //XXX again bad.
