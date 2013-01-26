@@ -13,11 +13,6 @@ package object expressiontree {
   implicit def toAtomImplicit[T](d: Def[T]): Exp[T] = BaseLangImpl toAtom d
   implicit def toFunSymImplicit[S, T](f: Fun[S, T]): FunSym[S, T] = BaseLangImpl toFunSym f
 
-  /*
-  type TravMessage[+T] = Message[Traversable[T]]
-  type TravMsgSeqPublisher[+T, +Pub <: TravMsgSeqPublisher[T, Pub]] = MsgSeqPublisher[Traversable[T], Pub]
-  type TravMsgSeqSubscriber[-T, -Repr] = MsgSeqSubscriber[Traversable[T], Repr]
-  */
   type Var = TypedVar[_]
   //With 2.10, these must be defined together.
   object Var {

@@ -1,5 +1,4 @@
-/*
-package ivm.expressiontree
+package ivm.rfp
 
 import collection.mutable.Subscriber
 import collection.immutable.HashSet
@@ -124,14 +123,15 @@ trait EvtTransformer[-T, +U, -Repr] extends EvtTransformerBase[Traversable[T], T
 }
 
 //Interface used by EvtTransformerEl
-trait ExpWithCache[+T] extends Exp[T] {
+trait WithCache[+T] /*extends Exp[T]*/ {
   protected[this] def cache: Option[T]
+  def eval(): T
 }
 
 // Cache the computed result value of an expression.
 // One reusable implementation of the EvtTransformerEl interface
-trait CachingExp[+T] extends ExpWithCache[T] {
-  //This field is never set by Exp or CachingExp itself, only by result-caching nodes
+trait Caching[+T] extends WithCache[T] {
+  //This field is never set by CachingExp itself, only by result-caching nodes
 
   //Note: this declaration overrides both getter and setter. Therefore, they both need to be already declared in parent
   //types; therefore, we need to declare WorkaroundExp.
@@ -139,15 +139,15 @@ trait CachingExp[+T] extends ExpWithCache[T] {
 
   override def value(): T = cache match {
     case None =>
-      val res = interpret()
+      val res = eval()
       cache = Some(res)
       res
     case Some(v) => v
   }
 }
 
-trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U, Exp[U]] {
-  this: ExpWithCache[U] =>
+trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with MsgSeqPublisher[U, EvtTransformerEl[T, U, Repr]] {
+  this: WithCache[U] =>
 
   def notifyEv(pub: Repr, evt: Message[T])
   override def notify(pub: Repr, evts: Seq[Message[T]]) {
@@ -162,11 +162,6 @@ trait EvtTransformerEl[-T, +U, -Repr] extends MsgSeqSubscriber[T, Repr] with Msg
     }
   }
 }
-
-object Debug {
-  val verbose = false
-}
-*/
 //XXX: make EvtTransformerEl descend from EvtTransformerBase
 
 // vim: set ts=4 sw=4 et:

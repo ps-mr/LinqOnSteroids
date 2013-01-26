@@ -3,6 +3,7 @@ package ivm.expressiontree
 import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
 import org.junit.Test
 import ref.WeakReference
+import ivm.rfp.EqWeakReference
 
 /**
 * User: pgiarrusso
