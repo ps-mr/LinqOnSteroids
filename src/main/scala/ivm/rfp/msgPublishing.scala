@@ -10,6 +10,7 @@ import collection.immutable.HashSet
  * Date: 13/8/2011
  */
 
+//Rather, associate with a type function the right type of messages to each value.
 sealed trait Message[+T]
 case class Include[+T](t: T) extends TravMessage[T]
 /*class Include[T](_t: => T) extends Message[T] {
@@ -18,6 +19,10 @@ case class Include[+T](t: T) extends TravMessage[T]
 case class Remove[+T](t: T) extends TravMessage[T]
 case class Update[+T](old: T, curr: T) extends TravMessage[T]
 case object Reset extends TravMessage[Nothing]
+
+//Here we should use IncludeBag.
+case class IncludeSeq[+T](t: Seq[T]) extends TravMessage[T]
+case class RemoveSeq[+T](t: Seq[T]) extends TravMessage[T]
 
 //Allow updating single elements (e.g. the result of folds)!
 case class NewVal[T](newV: T) extends Message[T]
