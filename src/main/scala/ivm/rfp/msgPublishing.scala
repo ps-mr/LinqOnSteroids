@@ -137,7 +137,8 @@ trait Caching[+T] extends WithCache[T] {
   //types; therefore, we need to declare WorkaroundExp.
   protected[this] var cache: Option[T] = None
 
-  override def value(): T = cache match {
+  //This would override Exp's value() method.
+  def value(): T = cache match {
     case None =>
       val res = eval()
       cache = Some(res)
