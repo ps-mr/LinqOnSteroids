@@ -13,17 +13,12 @@ libraryDependencies += "org.slf4j" % "slf4j-simple" % "1.6.1"
 
 addSbtPlugin("com.typesafe.startscript" % "xsbt-start-script-plugin" % "0.5.3")
 
+//resolvers += "FuseSource Public Repository" at "http://repo.fusesource.com/nexus/content/repositories/public"
 //This is enough to build our own generator:
-libraryDependencies += "org.fusesource.scalate" % "scalate-core" % "1.5.3"
+libraryDependencies += "org.fusesource.scalate" % "scalate-core_2.9" % "1.6.1"
+//(Note the brokenness of using _2.9).
 //so we don't need this:
-
-//libraryDependencies <+= sbtVersion(v => "com.mojolly.scalate" %% "xsbt-scalate-generator" % (v + "-0.1.5"))
-//BTW, that's a hack.
-//They should fix their plugin for one to use:
-//addSbtPlugin("com.mojolly.scalate" %% "xsbt-scalate-generator" % "0.1.5")
-
-//Indeed, this line works!
-//addSbtPlugin("com.mojolly.scalate" %% "xsbt-scalate-generator" % "0.1.1")
+//addSbtPlugin("com.mojolly.scalate" % "xsbt-scalate-generator" % "0.4.2")
 
 libraryDependencies += "org.scala-lang" % "scalap" % "2.9.2"
 

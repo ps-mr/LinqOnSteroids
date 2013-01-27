@@ -19,12 +19,9 @@ class Generator(scalaLibraryPath: File) {
   import Generator._
 
   val engine = new TemplateEngine()
-  // XXX: workaround to big bug, as discussed here:
-  // http://groups.google.com/group/scalate/browse_frm/thread/b17acb9a345badbc/3a9cbc742edf6cda?#3a9cbc742edf6cda
-  //In practice, this is quite robust wrt. non-invasive changes to SBT; as long
-  //as the scala library is managed using Ivy and named according to this
-  //scheme, everything works.
 
+  // XXX: workaround to big bug, as discussed here:
+  // https://groups.google.com/d/msg/scalate/sXrLmjRbrbw/36M_U5I7p7UJ
   engine.combinedClassPath = true
   val cpBuilder = new ClassPathBuilder
   cpBuilder.addEntry(scalaLibraryPath.absolutePath)
