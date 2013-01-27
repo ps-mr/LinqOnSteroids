@@ -1,3 +1,3 @@
 #!/bin/sh
-> tags
-find src target sampleapp -name '*.scala'|xargs ctags -a
+find sampleapp src eval macros rfp target -name '*.scala'|xargs ctags -a -f tags.tmp
+mv -f tags.tmp tags

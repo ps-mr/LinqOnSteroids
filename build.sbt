@@ -29,7 +29,7 @@ libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-reflect" 
 
 libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-actors" % ver)
 
-libraryDependencies += "junit" % "junit" % "4.8.2" % "test->default"
+libraryDependencies in ThisBuild += "junit" % "junit" % "4.8.2" % "test->default"
 
 //We can't restrict this to "test" as long as FindBugsAnalysis is in main, including its "testing" part.
 //libraryDependencies += "org.scalatest" %% "scalatest" % "1.7.1"// % "test"
@@ -52,26 +52,26 @@ libraryDependencies += "com.google.code.findbugs" % "jsr305" % "1.3.9"
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 
-scalacOptions ++= Seq("-unchecked", "-deprecation")
+scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
 
 //scalacOptions ++= Seq("-Xprint:typer")
 
-scalacOptions ++= Seq("-feature", "-language:implicitConversions",
+scalacOptions in ThisBuild ++= Seq("-feature", "-language:implicitConversions",
   "-language:higherKinds", "-language:existentials")
 
-scalacOptions ++= Seq("-Ywarn-adapted-args", "-Ywarn-inaccessible", 
+scalacOptions in ThisBuild ++= Seq("-Ywarn-adapted-args", "-Ywarn-inaccessible", 
   "-Ywarn-nullary-override", "-Ywarn-nullary-unit", "-Ywarn-numeric-widen") //All -Ywarn except -Ywarn-dead-code, which gives tons
 //of false positives, and -Ywarn-value-discard, which doesn't sound relevant.
 
-//scalacOptions += "-explaintypes"
+//scalacOptions in ThisBuild += "-explaintypes"
 
-scalacOptions += "-optimise"
+scalacOptions in ThisBuild += "-optimise"
 
-//scalacOptions += "-Yinline"
+//scalacOptions in ThisBuild += "-Yinline"
 
 //addCompilerPlugin("org.scala-tools.sxr" %% "sxr" % "0.2.8-SNAPSHOT")
 
-//scalacOptions <+= scalaSource in Compile map { "-P:sxr:base-directory:" + _.getAbsolutePath }
+//scalacOptions in ThisBuild <+= scalaSource in Compile map { "-P:sxr:base-directory:" + _.getAbsolutePath }
 
 //JUnit integration. It is disabled because our tests are both JUnit tests and
 //ScalaTest ones, so it would run again the same tests.
