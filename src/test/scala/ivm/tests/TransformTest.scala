@@ -15,27 +15,6 @@ import collection.mutable.ArrayBuffer
 * Date: 25/8/2011
 */
 
-trait TransformTestHelper {
-  this: JUnitSuite with ShouldMatchersForJUnit =>
-  val forceRebuild: Exp[_] => Exp[_] =
-    e => e match {
-      case Sym(f: Fun[_, _]) => Fun(f.f)
-      case _ => e
-    }
-
-  def testRebuildP[T](t: Exp[T], transf: Exp[_] => Exp[_]) = {
-    val tTransf = t transform transf
-    tTransf should equal (t)
-    assert(tTransf equals t)
-    (t, tTransf)
-  }
-
-  def testRebuild[T](t: Exp[T]) = {
-    testRebuildP(t, forceRebuild)
-    testRebuildP(t, identity)
-  }
-}
-
 class TransformTest extends JUnitSuite with ShouldMatchersForJUnit with TransformTestHelper {
   import performancetests.Benchmarking.debugBench
   private val collSize = if (debugBench) 10 else 100
