@@ -1,6 +1,15 @@
 package ivm.rfp
 
-import scalaz.Monoid
+import scalaz.{Monoid,GeneralizedCategory,GeneralizedGroupoid,Hom}
+
+trait MyCategory[~>:[_,_]] extends GeneralizedCategory {
+  trait U extends Hom {
+    type L = scalaz.Scalaz.⊥
+    type U = Singleton
+    type C[A, B] = ~>:[A, B]
+  }
+}
+trait MyGroupoid[~>:[_, _]] extends GeneralizedGroupoid with MyCategory[~>:]
 
 /**
  * A group, as known from abstract algebra.
