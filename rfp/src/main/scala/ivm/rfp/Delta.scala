@@ -1,89 +1,21 @@
 package ivm.rfp
 
-import scalaz.Monoid
-
-/*
 import scalaz.Group
-import scalaz.{GeneralizedCategory,GeneralizedGroupoid,Hom}
- */
-/**
- * Defines a category.
- *
- * <p>
- * All instances must satisfy 3 laws:
- * <ol>
- * <li><strong>left identity</strong><br/><code>∀ a. compose(id, a) == a</code></li>
- * <li><strong>right identity</strong><br/><code>∀ a. compose(a, id) == a</code></li>
- * <li><strong>associativity</strong><br/><code>∀ a b c. compose(a, compose(b, c)) == compose(compose(a, b), c)</code></li>
- * </ol>
- * </p>
- */
-/*
-trait Hom {
-  type L
-  type H>:L
-  type C[_ >: L <: H, _ >: L <: H]
+
+trait GenArrow[A, B] {
+  def src: A
+  def dst: B
 }
 
-trait GeneralizedCategory {
-  type U <: Hom
-  type =>:[A >: U#L <: U#H, B >: U#L <: U#H] = U#C[A, B]
-
-  def id[A >: U#L <: U#H]: A =>: A
-  def compose[A >: U#L <: U#H, B >: U#L <: U#H, C >: U#L <: U#H](
-    f: B =>: C,
-    g: A =>: B
-  ): A =>: C
-  //def *[UY<:Hom](that : GeneralizedCategory {type U=UY}) = Category.ProductCategory[U,UY](this,that)
+trait ConcreteGroupoid[T, H <: T, L <: H, =>:[A >: L <: H, B >: L <: H] <: GenArrow[A, B]] {
+  def compose[A >: L <: H, B >: L <: H, C >: L <: H](a1: A =>: B, a2: B =>: C): A =>: C
+  def id[A >: L <: H]: A =>: A
+  def invert[A >: L <: H, B >: L <: H](f : A =>: B): B =>: A
 }
 
-trait GeneralizedGroupoid extends GeneralizedCategory {
-  def invert[A >: U#L <: U#H, B >: U#L <: U#H](f : A =>: B): B =>: A
-}
 
-trait Category[~>:[_,_]] extends GeneralizedCategory {
-  trait U extends Hom {
-    type L = Nothing
-    type H = Any
-    type C[A, B] = ~>:[A, B]
-  }
-}
-
-trait Groupoid[~>:[_, _]] extends GeneralizedGroupoid with Category[~>:]
-
-trait SingletonCategory[T] extends GeneralizedCategory {
-  class U extends Hom {
-    type L = Nothing
-    type U = T with Singleton
-    type C[A, B] = ~>:[A, B]
-  }
-  trait ~>:[A, B]
-  //case class Arrow(a: T, b: T) extends (a.type ~>: b.type)
-}
-trait SingletonGroupoid[T] extends GeneralizedGroupoid with SingletonCategory[T]
-
-trait ConcreteGroupoid[T] {
-  type H <: T
-  trait Arrow[A <: H, B <: H] {
-    def src: A
-    def dst: B
-  }
-  def compose[A, B, C](a1: Arrow[A, B], a2: Arrow[B, C]): Arrow[A, C]
-}
-
-trait BaseDelta[T, DT[_, _]] extends SingletonGroupoid[T] {
-  def reassemble[U](base: T, delta: DT[T, U]): U
-}
- */
-
-/**
- * A group, as known from abstract algebra.
- *
- * Beyond laws on [[scalaz.Monoid]], this should satisfy one additional law:
- * <code>forall a. append(a, inverse(a)) = append(inverse(a), a) = zero</code>
- */
-trait Group[T] extends Monoid[T] {
-  def inverse(a: T): T
+trait BaseDelta[T, H <: T, L <: H, DT[A >: L <: H, B >: L <: H] <: GenArrow[A, B]] extends ConcreteGroupoid[T, H, L, DT] {
+  def reassemble[A >: L <: H, B >: L <: H](base: A, delta: DT[A, B]): B
 }
 
 /**

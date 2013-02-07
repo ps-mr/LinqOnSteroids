@@ -14,7 +14,7 @@ trait DeltaValueDefs {
    * In fact, ChangeValue values naturally correspond to the arrows of a
    * (rather boring) category (with a single arrow between each pair of
    * objects), and append to arrow composition. Since all arrows are
-   * invertible, we get in fact a categoric groupoid (which induces an
+   * invertible, we get in fact a categorical groupoid (which induces an
    * algebraic groupoid, but the categorical definition fits better)!
    * http://en.wikipedia.org/wiki/Groupoid
    */
