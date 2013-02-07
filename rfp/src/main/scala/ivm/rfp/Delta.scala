@@ -1,15 +1,80 @@
 package ivm.rfp
 
-import scalaz.{Monoid,GeneralizedCategory,GeneralizedGroupoid,Hom}
+import scalaz.Monoid
 
-trait MyCategory[~>:[_,_]] extends GeneralizedCategory {
+/*
+import scalaz.Group
+import scalaz.{GeneralizedCategory,GeneralizedGroupoid,Hom}
+ */
+/**
+ * Defines a category.
+ *
+ * <p>
+ * All instances must satisfy 3 laws:
+ * <ol>
+ * <li><strong>left identity</strong><br/><code>∀ a. compose(id, a) == a</code></li>
+ * <li><strong>right identity</strong><br/><code>∀ a. compose(a, id) == a</code></li>
+ * <li><strong>associativity</strong><br/><code>∀ a b c. compose(a, compose(b, c)) == compose(compose(a, b), c)</code></li>
+ * </ol>
+ * </p>
+ */
+/*
+trait Hom {
+  type L
+  type H>:L
+  type C[_ >: L <: H, _ >: L <: H]
+}
+
+trait GeneralizedCategory {
+  type U <: Hom
+  type =>:[A >: U#L <: U#H, B >: U#L <: U#H] = U#C[A, B]
+
+  def id[A >: U#L <: U#H]: A =>: A
+  def compose[A >: U#L <: U#H, B >: U#L <: U#H, C >: U#L <: U#H](
+    f: B =>: C,
+    g: A =>: B
+  ): A =>: C
+  //def *[UY<:Hom](that : GeneralizedCategory {type U=UY}) = Category.ProductCategory[U,UY](this,that)
+}
+
+trait GeneralizedGroupoid extends GeneralizedCategory {
+  def invert[A >: U#L <: U#H, B >: U#L <: U#H](f : A =>: B): B =>: A
+}
+
+trait Category[~>:[_,_]] extends GeneralizedCategory {
   trait U extends Hom {
-    type L = scalaz.Scalaz.⊥
-    type U = Singleton
+    type L = Nothing
+    type H = Any
     type C[A, B] = ~>:[A, B]
   }
 }
-trait MyGroupoid[~>:[_, _]] extends GeneralizedGroupoid with MyCategory[~>:]
+
+trait Groupoid[~>:[_, _]] extends GeneralizedGroupoid with Category[~>:]
+
+trait SingletonCategory[T] extends GeneralizedCategory {
+  class U extends Hom {
+    type L = Nothing
+    type U = T with Singleton
+    type C[A, B] = ~>:[A, B]
+  }
+  trait ~>:[A, B]
+  //case class Arrow(a: T, b: T) extends (a.type ~>: b.type)
+}
+trait SingletonGroupoid[T] extends GeneralizedGroupoid with SingletonCategory[T]
+
+trait ConcreteGroupoid[T] {
+  type H <: T
+  trait Arrow[A <: H, B <: H] {
+    def src: A
+    def dst: B
+  }
+  def compose[A, B, C](a1: Arrow[A, B], a2: Arrow[B, C]): Arrow[A, C]
+}
+
+trait BaseDelta[T, DT[_, _]] extends SingletonGroupoid[T] {
+  def reassemble[U](base: T, delta: DT[T, U]): U
+}
+ */
 
 /**
  * A group, as known from abstract algebra.
