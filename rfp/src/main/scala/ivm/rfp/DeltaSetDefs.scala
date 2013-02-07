@@ -7,7 +7,6 @@ trait DeltaSetDefs {
 
   implicit def deltaSet[T]: Delta[Set[T], UnorderedCollDelta[T]] = new Delta[Set[T], UnorderedCollDelta[T]] {
     // Members declared in ivm.rfp.Delta
-    def embed(t: Set[T]): UnorderedCollDelta[T] = SetChange(t, Set.empty)
     def reassemble(base: Set[T], delta: UnorderedCollDelta[T]): Set[T] = delta match {
       case SetChange(added, removed) => base ++ added -- removed
     }

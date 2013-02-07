@@ -20,7 +20,6 @@ trait DeltaValueDefs {
    */
   implicit def deltaValue[T]: Delta[T, DeltaValue[T]] = new Delta[T, DeltaValue[T]] {
     //Maybe split out the group instance from here (?)
-    def embed(t: T): DeltaValue[T] = ChangeValue(???, t)
     def reassemble(base: T, delta: DeltaValue[T]): T = delta match {
       case NoChange() => base
       case ChangeValue(oldVal, newVal) =>

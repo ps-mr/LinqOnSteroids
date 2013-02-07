@@ -9,7 +9,6 @@ trait DeltaSetOfIncDefs {
   case class SetChange[T, DT](changes: Seq[(T, DT)])
   implicit def deltaSet[T, DT](implicit d: Delta[T, DT]): Delta[Set[T], SetChange[T, DT]] = new Delta[Set[T], SetChange[T, DT]] {
     // Members declared in ivm.rfp.Delta
-    def embed(t: Set[T]): SetChange[T, DT] = SetChange((t map (el => (el, d embed el)))(collection.breakOut)) //Very bad, performance-wise, having to do a mapping step.
     def reassemble(base: Set[T], delta: SetChange[T, DT]): Set[T] =
       (delta.changes foldLeft base) { (state, change) =>
         state - change._1 + (d reassemble (change._1, change._2)) //This is also quite inefficient. But it's O(1) (relative to d.reassemble)!
