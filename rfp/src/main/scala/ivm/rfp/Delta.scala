@@ -37,7 +37,7 @@ trait Delta[T, DT] extends Group[DT] {
   def reassemble(base: T, delta: DT): T
 }
 
-object Delta extends DeltaValueDefs with DeltaSetDefs {
+object Delta extends DeltaValueDefs with DeltaSetOfIncDefs {
   implicit def deltaIsItsOwnDelta[T, DT](implicit d: Delta[T, DT]): Delta[DT, DT] = new Delta[DT, DT] with ForwardingGroup[DT] {
     def underlying = d
     def reassemble(base: DT, delta: DT): DT = append(base, delta)
