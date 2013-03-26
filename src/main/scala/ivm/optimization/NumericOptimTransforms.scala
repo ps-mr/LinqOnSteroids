@@ -41,9 +41,9 @@ trait NumericOptimTransforms {
         l match {
           case Const(a) => //R1
             a + rV
-          case Sym(Plus(Const(a), b)) => //R9 - must be before R2!
+          case Sym(Plus(Const(a), b)) => //R9
             buildSum(a + rV, b)
-          case _ => //R2 - must be after R1!
+          case _ => //R2 - must be after R1 and R9!
             buildSum(r, l)
         }
       case Sym(Plus(rl, rr)) => //R7
