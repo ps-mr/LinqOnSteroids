@@ -1,9 +1,7 @@
 package ivm.rfp
 
 trait DeltaValueDefs {
-  sealed trait DeltaValue[T]
-  case class NoChange[T]() extends DeltaValue[T]
-  case class ChangeValue[T](oldVal: T, newVal: T) extends DeltaValue[T]
+  case class ChangeValue[T](src: T, dst: T) extends GenArrow[T, T]
 
   /*
    * This satisfies indeed group laws? No. Either the A + (-A) != the identity (we get ChangeValue(x, x)), or we normalize that to NoChange, but then we lose associativity since
@@ -18,10 +16,9 @@ trait DeltaValueDefs {
    * algebraic groupoid, but the categorical definition fits better)!
    * http://en.wikipedia.org/wiki/Groupoid
    */
-  implicit def deltaValue[T]: Delta[T, DeltaValue[T]] = new Delta[T, DeltaValue[T]] {
+  implicit def deltaValue[T]: Delta[T, ChangeValue[T]] = new Delta[T, ChangeValue[T]] {
     //Maybe split out the group instance from here (?)
-    def reassemble(base: T, delta: DeltaValue[T]): T = delta match {
-      case NoChange() => base
+    def reassemble(base: T, delta: ChangeValue[T]): T = delta match {
       case ChangeValue(oldVal, newVal) =>
         if (oldVal != base) {
           println(s"Warning: oldVal '${oldVal}' != base '${base}', what should we do?")
@@ -29,30 +26,22 @@ trait DeltaValueDefs {
         newVal
     }
     
-    // Members declared in ivm.rfp.Group
-    def inverse(a: DeltaValue[T]): DeltaValue[T] = a match {
-      case NoChange() => a
+    // Members declared in scalaz.Group
+    def inverse(a: ChangeValue[T]): ChangeValue[T] = a match {
       case ChangeValue(oldVal, newVal) => ChangeValue(newVal, oldVal)
     }
     
     // Members declared in scalaz.Semigroup
-    def append(s1: DeltaValue[T], s2thunk: => DeltaValue[T]): DeltaValue[T] = {
-      val s2 = s2thunk
+    def append(s1: ChangeValue[T], s2: => ChangeValue[T]): ChangeValue[T] = {
       (s1, s2) match {
-        case (NoChange(), _) => s2
-        case (_, NoChange()) => s1
-
         case (ChangeValue(old1, new1), ChangeValue(old2, new2)) =>
           //Does this make sense when new1 != old2?
-          if (old1 != new2) {
-            ChangeValue(old1, new2)
-          } else
-            NoChange()
+          ChangeValue(old1, new2)
       }
     }
     
     // Members declared in scalaz.Zero
-    val zero: DeltaValue[T] = NoChange()
+    val zero: ChangeValue[T] = ???
   }
 }
 

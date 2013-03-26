@@ -12,7 +12,7 @@ trait DeltaSetOfIncDefs {
         //When T is a mutable, incremental collection, we want the update to happen as a side effect.
       } ++ delta.added -- delta.removed
 
-    // Members declared in ivm.rfp.Group
+    // Members declared in scalaz.Group
     def inverse(c: SetChange[T, DT]): SetChange[T, DT] =
       c match {
         case SetChange(added, removed, changes) =>

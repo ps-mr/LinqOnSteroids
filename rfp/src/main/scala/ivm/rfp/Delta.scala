@@ -9,13 +9,13 @@ trait GenArrow[A, B] {
 
 trait ConcreteGroupoid[T, H <: T, L <: H, =>:[A >: L <: H, B >: L <: H] <: GenArrow[A, B]] {
   def compose[A >: L <: H, B >: L <: H, C >: L <: H](a1: A =>: B, a2: B =>: C): A =>: C
-  def id[A >: L <: H]: A =>: A
+  def id[A >: L <: H](a: A): A =>: A
   def invert[A >: L <: H, B >: L <: H](f : A =>: B): B =>: A
 }
 
 
 trait BaseDelta[T, H <: T, L <: H, DT[A >: L <: H, B >: L <: H] <: GenArrow[A, B]] extends ConcreteGroupoid[T, H, L, DT] {
-  def reassemble[A >: L <: H, B >: L <: H](base: A, delta: DT[A, B]): B
+  def reassemble[A >: L <: H, B >: L <: H](base: A, delta: DT[A, B]): B = delta.dst
 }
 
 /**
@@ -38,6 +38,7 @@ trait Delta[T, DT] extends Group[DT] {
 }
 
 object Delta extends DeltaValueDefs with DeltaSetOfIncDefs {
+  /*implicit*/ def deltaGroupoidFromGroup[T: Group]: BaseDelta[T, T, T, GenArrow] = ???
   implicit def deltaIsItsOwnDelta[T, DT](implicit d: Delta[T, DT]): Delta[DT, DT] = new Delta[DT, DT] with ForwardingGroup[DT] {
     def underlying = d
     def reassemble(base: DT, delta: DT): DT = append(base, delta)
