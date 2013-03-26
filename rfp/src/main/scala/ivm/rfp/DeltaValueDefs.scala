@@ -16,32 +16,26 @@ trait DeltaValueDefs {
    * algebraic groupoid, but the categorical definition fits better)!
    * http://en.wikipedia.org/wiki/Groupoid
    */
-  implicit def deltaValue[T]: Delta[T, ChangeValue[T]] = new Delta[T, ChangeValue[T]] {
-    //Maybe split out the group instance from here (?)
-    def reassemble(base: T, delta: ChangeValue[T]): T = delta match {
-      case ChangeValue(oldVal, newVal) =>
-        if (oldVal != base) {
-          println(s"Warning: oldVal '${oldVal}' != base '${base}', what should we do?")
-        }
-        newVal
-    }
-    
-    // Members declared in scalaz.Group
-    def inverse(a: ChangeValue[T]): ChangeValue[T] = a match {
-      case ChangeValue(oldVal, newVal) => ChangeValue(newVal, oldVal)
-    }
-    
-    // Members declared in scalaz.Semigroup
-    def append(s1: ChangeValue[T], s2: => ChangeValue[T]): ChangeValue[T] = {
-      (s1, s2) match {
-        case (ChangeValue(old1, new1), ChangeValue(old2, new2)) =>
-          //Does this make sense when new1 != old2?
-          ChangeValue(old1, new2)
+  implicit def deltaValue[T]: BaseDelta[T, T, T, ({ type L[A >: T <: T, B >: T <: T] = ChangeValue[T] })#L] =
+    new BaseDelta[T, T, T, ({ type L[A >: T <: T, B >: T <: T] = ChangeValue[T] })#L] {
+      def reassemble(base: T, delta: ChangeValue[T]): T = {
+        assert(delta.src == base)
+        delta.dst
       }
-    }
-    
-    // Members declared in scalaz.Zero
-    val zero: ChangeValue[T] = ???
-  }
-}
 
+      def invert[A >: T <: T, B >: T <: T](a: ChangeValue[T]): ChangeValue[T] =
+        a match {
+          case ChangeValue(oldVal, newVal) => ChangeValue(newVal, oldVal)
+        }
+
+      def compose[A >: T <: T, B >: T <: T, C >: T <: T](s1: ChangeValue[T], s2: ChangeValue[T]): ChangeValue[T] = {
+        (s1, s2) match {
+          case (ChangeValue(old1, new1), ChangeValue(old2, new2)) =>
+            assert(new1 == old2)
+            ChangeValue(old1, new2)
+        }
+      }
+
+      def id[A >: T <: T](a: A): ChangeValue[T] = ChangeValue(a, a)
+    }
+}
