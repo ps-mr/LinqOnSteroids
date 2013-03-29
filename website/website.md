@@ -34,6 +34,10 @@ We provide two source releases:
 
 Additionally, we will provide the evaluation data from our new paper submission, including the
 raw dataset and scripts to regenerate the graphics and the tables.
+
+The source code for which the evaluation was run corresponds to version
+[aosd13-evaluated](https://github.com/ps-mr/LinqOnSteroids/tree/aosd13-evaluated).
+
 The raw evaluation data from a previous evaluation is already available.
 
 <!--
@@ -53,6 +57,7 @@ This project benefited from code and ideas of many different people:
 - Christian Kästner
 - Sebastian Erdweg
 - Katharina Haselhorst
+- Cai Yufei
 
 # News
 - 2012-12-11: our paper submission was accepted for AOSD '13!
