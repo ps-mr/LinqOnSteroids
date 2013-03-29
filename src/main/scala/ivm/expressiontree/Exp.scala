@@ -2,89 +2,17 @@ package ivm.expressiontree
 
 import annotation.unchecked.uncheckedVariance
 
-/*
-trait Exp[+T] /*extends MsgSeqPublisher[T, Exp[T]]*/ {
-  //This method recomputes the contained value
-  def interpret(): T
-
-  //This method returns the cached value (if any) or invokes interpret().
-  def value(): T = interpret()
-
-  def nodeArity: Int
-
-  def children: List[Exp[_]]
-  protected def checkedGenericConstructor(v: List[Exp[_]]): Exp[T]
-
-  def genericConstructor(v: List[Exp[_]]): Exp[T] =
-    if (v.length == nodeArity)
-      checkedGenericConstructor(v)
-    else
-      throw new IllegalArgumentException()
-
-  // some child management auxiliary functions
-
-  def transform(transformer: Exp[_] => Exp[_]): Exp[T] = {
-    val transformedChildren = children mapConserve (_ transform transformer)
-    val newself =
-      if (transformedChildren eq children)
-        this
-      else
-        genericConstructor(transformedChildren)
-    transformer(newself).asInstanceOf[Exp[T]]
-  }
-  //This could use as interface some Foldable-like stuff (or Haskell's Traversable, IIRC).
-  def treeMap[S](mapper: (Exp[_], Seq[S]) => S): S = {
-    val mappedChilds = for (c <- children) yield c.treeMap(mapper)
-    mapper(this, mappedChilds)
-  }
-
-  /* I renamed this method to avoid conflicts with Matcher.find. XXX test if
-   * just making it private also achieves the same result.
-   */
-  def __find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = {
-    val baseSeq =
-      if (PartialFunction.cond(this)(filter))
-        Seq(this)
-      else
-        Seq.empty
-    children.map(_ __find filter).fold(baseSeq)(_ ++ _)
-  }
-
-  // This overload is not called find because that would confuse type inference - it would fail to infer that filter's
-  // domain type is Exp[_].
-  def findTotFun(filter: Exp[_] => Boolean): Seq[Exp[_]] = __find(filter.asPartial)
-
-  def isOrContains(e: Exp[_]): Boolean =
-    (this findTotFun (_ == e)).nonEmpty
-
-  def substSubTerm[S](SubTerm: Exp[_], e: Exp[S]) =
-    transform {
-      case SubTerm => e
-      case exp => exp
-    }
-
-  def freeVars: Set[Var] = {
-    def mapper(e: Exp[_], c: Seq[Set[Var]]): Set[Var] = e match {
-      case v@Var(_) => Set(v)
-      case fe@Fun(_) => c.fold(Set.empty)(_ union _).filter(!_.equals(fe.x))
-      case _ => c.fold(Set.empty)(_ union _)
-    }
-    treeMap(mapper)
-  }
-  def toCode: String = ""
-  def persistValues() { children foreach (_.persistValues()) }
-}
-*/
 trait ExpTransformer {
   def apply[T](e: Exp[T]): Exp[T]
 }
+
 object ExpTransformer {
   def apply(f: Exp[_] => Exp[_]) = new ExpTransformer {
     def apply[T](e: Exp[T]): Exp[T] = f(e).asInstanceOf[Exp[T]]
   }
 }
 
-sealed trait TreeNode[+T, +MyType >: Exp[_]/* <: TreeNode[_, MyType]*/] {
+sealed trait TreeNode[+T, +MyType >: Exp[_]] {
   this: MyType =>
   //This method computes the contained value
   def interpret(): T
@@ -117,24 +45,6 @@ sealed trait Exp[+T] extends TreeNode[T, Exp[_]] /*with MsgSeqPublisher[T, Exp[T
   def __find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = __findGen(filter)
   def findTotFun(filter: Exp[_] => Boolean): Seq[Exp[_]] = findTotFunGen(filter)
   def isOrContains(e: Exp[_]): Boolean = isOrContainsGen(e)
-  /*
-  type RootType
-  private[ivm] def activateIVM() {}
-
-  //XXX: does this really belong here?
-  private[ivm] def pullAndPropagateContent() {}
-  def isRoot = roots.isEmpty
-
-  def roots: Seq[Exp[RootType]] = Nil
-  def visitPreorderRoots(visitor: Exp[_] => Unit) = visitPreorder(visitor, _.roots)
-
-  def visitPreorder(visitor: Exp[_] => Unit, childSelector: Exp[_] => Seq[Exp[_]]) {
-    visitor(this)
-    for (c <- childSelector(this)) {
-      c.visitPreorder(visitor, childSelector)
-    }
-  }
-   */
 
   def toCode: String
   def transformImpl(transformer: ExpTransformer): Exp[T]
