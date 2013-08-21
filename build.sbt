@@ -116,21 +116,21 @@ initialCommands in console := """
     val bench = new Benchmarking { override val debugBench = false }
 """
 
-initialCommands in (Test, console) := """
-    import ivm._
-    import expressiontree._
-    import Lifting._
-    import optimization._
-    import tests._
-    import performancetests._
-    import opaltests._
-//
-    import de.tud.cs.st.bat
-    import bat.resolved._
-    import bat.resolved.analyses._
-//
-    import reader.Java6Framework
-"""
+//initialCommands in (Test, console) := """
+//    import ivm._
+//    import expressiontree._
+//    import Lifting._
+//    import optimization._
+//    import tests._
+//    import performancetests._
+//    import opaltests._
+////
+//    import de.tud.cs.st.bat
+//    import bat.resolved._
+//    import bat.resolved.analyses._
+////
+//    import reader.Java6Framework
+//"""
 
 //scalaVersion in GlobalScope <<= appConfiguration(_.provider.scalaProvider.version)
 
