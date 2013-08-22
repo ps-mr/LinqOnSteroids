@@ -173,12 +173,12 @@ case class Join[T, Repr <: Traversable[T] with TraversableLike[T, Repr], S, TKey
     //if (ci.size > co.size) {
       val map = ci.groupBy(innerKeySelector.interpret()) //Cost O(|ci|) hash-map insertions
       for (c <- co; d <- map(outerKeySelector.interpret()(c))) //Cost O(|co|) hash-map lookups
-        builder += resultSelector.interpret()(c, d)
+        builder += resultSelector.interpret()((c, d))
     //XXX: this is non-order-preserving, and might be suboptimal.
     /*} else {
       val map = co.groupBy(outerKeySelector.interpret())
       for (c <- ci; d <- map(innerKeySelector.interpret()(c)))
-        builder += resultSelector.interpret()(d, c)
+        builder += resultSelector.interpret()((d, c))
     }*/
     builder.result()
   }
