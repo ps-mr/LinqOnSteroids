@@ -44,8 +44,8 @@ object Optimization {
 
         //Let us ensure that both the unoptimized and the optimized version of the query are recognized by the
         // optimizer. TODO: Reconsider again whether this is a good idea.
-        subqueries += normalize(query) -> (intQuery, classTag[T], typeTag[T])
-        subqueries += normalize(optquery) -> (intQuery, classTag[T], typeTag[T])
+        subqueries += normalize(query) -> ((intQuery, classTag[T], typeTag[T]))
+        subqueries += normalize(optquery) -> ((intQuery, classTag[T], typeTag[T]))
     }
   }
 
