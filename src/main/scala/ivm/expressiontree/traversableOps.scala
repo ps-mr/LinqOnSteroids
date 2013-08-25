@@ -334,7 +334,9 @@ trait ForceOps {
   //of T will be picked usually), therefore this implicit will be picked when needed. Note that since Forceable is invariant,
   //implicit resolution will not have other alternatives
   implicit def TraversableViewForceable[T]: Forceable[T, TraversableView[T, Traversable[_]]] = new Forceable[T, TraversableView[T, Traversable[_]]] {
-    def force(t: Exp[TraversableView[T, Traversable[_]]]) = t.force
+    def force(t: Exp[TraversableView[T, Traversable[_]]]) =
+      expToTravViewExp2(t).force
+      //t.force //Fails compilation on 2.10.2. The same error appears on tests.
     def force(t: TraversableView[T, Traversable[_]]) = t.force
   }
 
