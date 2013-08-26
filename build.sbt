@@ -4,15 +4,7 @@ version := "0.3-SNAPSHOT"
 
 scalaVersion in ThisBuild := "2.10.2"
 
-libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-compiler" % ver)
-
-libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-reflect" % ver)
-
-libraryDependencies <+= scalaVersion (ver => "org.scala-lang" % "scala-actors" % ver)
-
 scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
-
-//scalacOptions ++= Seq("-Xprint:typer")
 
 scalacOptions in ThisBuild ++= Seq("-feature", "-language:implicitConversions",
   "-language:higherKinds", "-language:existentials")
