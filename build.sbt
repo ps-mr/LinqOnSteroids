@@ -65,8 +65,6 @@ scalacOptions in ThisBuild ++= Seq("-Ywarn-adapted-args", "-Ywarn-inaccessible",
 
 //scalacOptions in ThisBuild += "-explaintypes"
 
-scalacOptions in ThisBuild += "-optimise"
-
 //scalacOptions in ThisBuild += "-Yinline"
 
 //addCompilerPlugin("org.scala-tools.sxr" %% "sxr" % "0.2.8-SNAPSHOT")
