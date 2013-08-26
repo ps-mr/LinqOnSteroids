@@ -132,37 +132,6 @@ initialCommands in console := """
 
 //scalaVersion in GlobalScope <<= appConfiguration(_.provider.scalaProvider.version)
 
-sourceGenerators in Compile <+= (sourceManaged in Compile, baseDirectory, appConfiguration) map { (dir, baseDir, appConfig ) =>
-  val gen = new Generator(scalaLibraryPath = appConfig.provider.scalaProvider.libraryJar)
-  dir.mkdirs()
-  if (!(dir.exists() && dir.isDirectory())) {
-    scala.Console.err.printf("Failure creating output directory %s\n", dir)
-  }
-  val verFile = dir / "version.scala"
-  val path = ""
-  val gitVersion = (path + "git describe --always --dirty --abbrev=40").!!
-  val writer = new FileWriter(verFile)
-  try {
-    writer write ("""package ivm
-object GitVersion {
-  val version = "%s"
-}
-""" format gitVersion.trim)
-  } finally {
-    writer.close()
-  }
-  (for {
-    base <- Generator.templates
-    file = dir / (base + ".scala")
-  } yield {
-    if (!file.exists() || (baseDir / "src" / "main" / "resources" / (base + ".ssp") newerThan file)) {
-      printf("Generating %s\n", file)
-      gen.render(dir.absolutePath, base)
-    }
-    file
-  }) :+ verFile
-}
-
 //Generate start scripts
 //seq(StartScriptPlugin.startScriptForClassesSettings: _*)
 seq(StartScriptPlugin.startScriptForJarSettings: _*)
