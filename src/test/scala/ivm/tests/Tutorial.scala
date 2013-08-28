@@ -160,14 +160,14 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     showInterp("a", a)
     assertType[Exp[Traversable[Int]]](a)
     assertType[Exp[TraversableView[Int, Traversable[Int]]]](a)
-    val b = a.map(_ + 1)
+    val b = expToTravViewExp2(a).map(_ + 1)
     assertType[Exp[Traversable[Int]]](b)
     // The wildcard in the type is due to the type of TraversableView.canBuildFrom. However, it doesn't really matter - see the
     // type of forcedB
     assertType[Exp[TraversableView[Int, Traversable[_]]]](b)
     //assertType[Exp[TraversableView[Int, Traversable[Int]]]](b)
     showInterp("b", b)
-    val forcedB = b.force
+    val forcedB = expToTravViewExp2(b).force
     showInterp("forcedB", forcedB)
     assertType[Exp[Traversable[Int]]](forcedB)
 
@@ -176,7 +176,7 @@ class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
     assertType[Exp[TraversableView[Int, Traversable[Int]]]](c)
     showInterp("c", c)
 
-    val forcedC = c.force
+    val forcedC = expToTravViewExp2(c).force
     showInterp("forcedC", forcedC)
     assertType[Exp[Traversable[Int]]](forcedC)
   }
