@@ -3,13 +3,13 @@ package expressiontree
 
 import scala.collection.immutable.Vector
 import Lifting._
-import org.scalatest.junit.JUnitSuite
-import org.scalatest.junit.ShouldMatchersForJUnit
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import org.junit.{Ignore, Test}
 import optimization.Optimization
 import Optimization.optimize
 
-class ReificationTests extends JUnitSuite with ShouldMatchersForJUnit {
+class ReificationTests extends JUnitSuite with AssertionsForJUnit with Matchers {
   def test(x: Int, y: Int): Boolean = x+y == 12
   def foo(x: Int): Int = x
   def bar(x: Int): Int = x

@@ -1,7 +1,8 @@
 package ivm
 package optimization
 
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import org.junit.{Ignore, Test}
 import expressiontree._
 import Lifting._
@@ -13,7 +14,7 @@ import collection.generic.CanBuildFrom
  * Date: 2/1/2012
  */
 
-class OptimTests extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
+class OptimTests extends JUnitSuite with Matchers with AssertionsForJUnit with TestUtil {
   val x: Exp[Int] = Fun.gensym[Int]()
 
   def testIdempotence[T](e: Exp[T]) = {

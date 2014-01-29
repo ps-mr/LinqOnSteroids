@@ -1,10 +1,11 @@
 package ivm.expressiontree
 
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import org.junit.Test
 import Lifting._
 
-class BooleanOperatorTests extends JUnitSuite with ShouldMatchersForJUnit {
+class BooleanOperatorTests extends JUnitSuite with Matchers with AssertionsForJUnit {
   def expSet[A](elems: Exp[A]*): Set[Exp[A]] = Set(elems: _*)
   @Test
   def testcnfconversion() {

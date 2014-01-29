@@ -1,6 +1,7 @@
 package ivm.expressiontree
 
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import org.junit.Test
 import Lifting._
 
