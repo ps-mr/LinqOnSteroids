@@ -2,14 +2,14 @@ package ivm.optimization
 
 import ivm.expressiontree._
 import Lifting._
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.FunSuiteLike
+import org.scalatest.Matchers
 
 /**
  * User: pgiarrusso
  * Date: 17/12/2012
  */
-class TransformationCombinatorTests extends TransformationCombinators[Exp] with FunSuite with ShouldMatchers {
+class TransformationCombinatorTests extends TransformationCombinators[Exp] with FunSuiteLike with Matchers {
   import OptimizationTransforms.{deltaReductionTuple, betaReduction}
 
   //def betaDeltaReducer2 = kleeneStar(deltaReductionTuple orElse betaReduction)
