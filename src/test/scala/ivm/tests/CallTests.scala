@@ -4,10 +4,11 @@ package tests
 import expressiontree._
 import Lifting._
 import org.scalatest.junit.JUnitSuite
-import org.scalatest.junit.ShouldMatchersForJUnit
+import org.scalatest.Matchers
+import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Test
 
-class CallTests extends JUnitSuite with ShouldMatchersForJUnit {
+class CallTests extends JUnitSuite with Matchers with AssertionsForJUnit {
   def test(x: Int, y: Int): Boolean = x+y == 12
   def foo(x: Int): Int = x
   def bar(x: Int): Int = x

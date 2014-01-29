@@ -2,13 +2,14 @@ package ivm.tests
 
 
 import org.scalatest.junit.JUnitSuite
-import org.scalatest.junit.ShouldMatchersForJUnit
+import org.scalatest.Matchers
+import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Test
 import ivm.expressiontree.Exp
 import ivm.optimization.Optimization
 import ivm.expressiontree.Lifting._
 
-class GroupByTests extends JUnitSuite with ShouldMatchersForJUnit {
+class GroupByTests extends JUnitSuite with Matchers with AssertionsForJUnit {
   val l: Exp[Traversable[Int]] = pure(Vector.range(1, 10))
 
   @Test

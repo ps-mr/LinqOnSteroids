@@ -6,7 +6,8 @@ package tests
 import org.junit.Test
 import collections.IncHashSet
 import collection.mutable.HashSet
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import expressiontree.{Lifting, Exp, Queryable, IncrementalResult}
 
 /**
@@ -14,7 +15,7 @@ import expressiontree.{Lifting, Exp, Queryable, IncrementalResult}
  * Date: 31/10/2011
  */
 
-class IVMTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
+class IVMTest1 extends JUnitSuite with Matchers with AssertionsForJUnit with IVMTestUtil {
   import Lifting._
 
   @Test

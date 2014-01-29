@@ -1,7 +1,8 @@
 package ivm
 package tests
 
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import org.junit.Test
 import expressiontree._
 import Lifting._
@@ -18,7 +19,7 @@ case class Library(name: String, depends: Seq[Library], developers: Seq[String])
 // I altered this definition to refer to developers by name, instead of by a direct pointer to the developer itself.
 // I still preserve the original syntax (for now) with this implicit conversion (yes, it's ugly).
 
-class Tutorial extends JUnitSuite with ShouldMatchersForJUnit with TestUtil {
+class Tutorial extends JUnitSuite with Matchers with AssertionsForJUnit with TestUtil {
   import Util.assertType
 
   /*

@@ -4,11 +4,12 @@ package tests
 import optimization.Optimization
 import expressiontree.Lifting._
 import org.scalatest.junit.JUnitSuite
-import org.scalatest.junit.ShouldMatchersForJUnit
+import org.scalatest.Matchers
+import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Test
 import expressiontree.Exp
 
-class NormalizationTests extends JUnitSuite with ShouldMatchersForJUnit {
+class NormalizationTests extends JUnitSuite with Matchers with AssertionsForJUnit {
   val l: Exp[Traversable[Int]] = pure(Vector.range(1, 10))
 
   @Test

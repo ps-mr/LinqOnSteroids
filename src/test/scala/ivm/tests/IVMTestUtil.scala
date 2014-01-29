@@ -2,7 +2,7 @@ package ivm.tests
 
 /*
 import ivm.expressiontree.IncrementalResult
-import org.scalatest.junit.ShouldMatchersForJUnit
+import org.scalatest.junit.Matchers with AssertionsForJUnit
 
 /**
  * User: pgiarrusso
@@ -10,7 +10,7 @@ import org.scalatest.junit.ShouldMatchersForJUnit
  */
 
 trait IVMTestUtil {
-  this: ShouldMatchersForJUnit =>
+  this: Matchers with AssertionsForJUnit =>
   def checkIncRes[T](coll: IncrementalResult[T]) {
     coll.eval should be (coll.base.eval)
   }

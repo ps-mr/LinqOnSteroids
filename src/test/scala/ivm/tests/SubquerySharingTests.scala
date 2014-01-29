@@ -1,7 +1,8 @@
 package ivm
 package tests
 
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import org.junit.{Ignore, Test}
 
 import expressiontree._
@@ -15,7 +16,7 @@ import optimization.Optimization
 * Date: 25/8/2011
 */
 
-class SubquerySharingTests extends JUnitSuite with ShouldMatchersForJUnit {
+class SubquerySharingTests extends JUnitSuite with Matchers with AssertionsForJUnit {
   val l: Exp[Seq[(Int, Int)]] = asExp(Vector.range(1, 3).flatMap(i => Vector.range(1, 2).map((i, _))))
   val baseRange = Vector.range(1, 10).asSquopt
 

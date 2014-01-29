@@ -1,7 +1,8 @@
 package ivm
 package tests
 
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import org.junit.Test
 import ivm.expressiontree._
 
@@ -10,7 +11,7 @@ import ivm.expressiontree._
  * Date: 11/8/2011
  */
 
-class FixpointTest extends JUnitSuite with ShouldMatchersForJUnit {
+class FixpointTest extends JUnitSuite with Matchers with AssertionsForJUnit {
   @Test def staticAnal() {
 
   }

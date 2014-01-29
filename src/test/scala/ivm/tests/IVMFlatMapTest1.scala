@@ -5,7 +5,7 @@ package tests
 import expressiontree._
 
 import org.scalatest.junit.JUnitSuite
-import org.scalatest.junit.ShouldMatchersForJUnit
+import org.scalatest.junit.Matchers with AssertionsForJUnit
 import collections.IncHashSet
 import org.junit.{Ignore, Test}
 import optimization.Optimization
@@ -17,7 +17,7 @@ import ivm.expressiontree.Lifting
  */
 
 
-class IVMFlatMapTest1 extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
+class IVMFlatMapTest1 extends JUnitSuite with Matchers with AssertionsForJUnit with IVMTestUtil {
   import Lifting._
 
   def testFlatMap(working: Boolean) {

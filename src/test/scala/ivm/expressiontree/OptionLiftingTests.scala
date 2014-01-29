@@ -11,7 +11,7 @@ import Lifting._
  */
 
 /*
-class OptionLiftingTests /*extends JUnitSuite with ShouldMatchersForJUnit*/ {
+class OptionLiftingTests /*extends JUnitSuite with Matchers with AssertionsForJUnit*/ {
   // Test that this code compiles, i.e. that OptionOps.flatMap can also accept Exp[T] => Exp[Option[U]] and produce
   // Exp[Option[U]] in that case.
   asExp(Some(1)) flatMap (i => Some(i)) orElse Some(2)

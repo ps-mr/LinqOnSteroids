@@ -5,12 +5,12 @@ package tests
 import expressiontree._
 
 import org.scalatest.junit.JUnitSuite
-import org.scalatest.junit.ShouldMatchersForJUnit
+import org.scalatest.junit.Matchers with AssertionsForJUnit
 import collections.{IncHashSet, IncArrayBuffer}
 import collection.mutable.{HashSet, ArrayBuffer}
 import org.junit.Test
 
-class QueryableTest extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil {
+class QueryableTest extends JUnitSuite with Matchers with AssertionsForJUnit with IVMTestUtil {
   import Lifting._
 
   @Test

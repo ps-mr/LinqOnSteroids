@@ -5,11 +5,12 @@ import expressiontree.Lifting._
 import expressiontree._
 import optimization.Optimization
 import org.scalatest.junit.JUnitSuite
-import org.scalatest.junit.ShouldMatchersForJUnit
+import org.scalatest.Matchers
+import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Test
 import collection.TraversableView
 
-class RemoveIdentityMapsTests extends JUnitSuite with ShouldMatchersForJUnit {
+class RemoveIdentityMapsTests extends JUnitSuite with Matchers with AssertionsForJUnit {
   type QRes = Exp[Traversable[Int]]
   val l: Exp[Traversable[Int]] = pure(Vector.range(1, 10))
   def withFilterQueries: (QRes, QRes) = {

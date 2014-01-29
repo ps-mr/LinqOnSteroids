@@ -1,7 +1,8 @@
 package ivm
 package tests
 
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import org.junit.Test
 
 import expressiontree._
@@ -15,7 +16,7 @@ import collection.mutable.ArrayBuffer
 * Date: 25/8/2011
 */
 
-class TransformTest extends JUnitSuite with ShouldMatchersForJUnit with TransformTestHelper {
+class TransformTest extends JUnitSuite with Matchers with AssertionsForJUnit with TransformTestHelper {
   import performancetests.Benchmarking.debugBench
   private val collSize = if (debugBench) 10 else 100
   private val l: Exp[Traversable[Int]] = pure(ArrayBuffer.range(1, collSize))

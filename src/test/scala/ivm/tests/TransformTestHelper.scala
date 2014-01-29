@@ -1,12 +1,13 @@
 package ivm
 package tests
 
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 
 import expressiontree._
 
 trait TransformTestHelper {
-  this: JUnitSuite with ShouldMatchersForJUnit =>
+  this: JUnitSuite with Matchers with AssertionsForJUnit =>
   val forceRebuild: Exp[_] => Exp[_] =
     e => e match {
       case Sym(f: Fun[_, _]) => Fun(f.f)
