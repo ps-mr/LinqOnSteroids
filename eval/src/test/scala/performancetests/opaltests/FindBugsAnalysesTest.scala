@@ -1,12 +1,12 @@
 package performancetests
 package opaltests
 
-import org.scalatest.{FunSuite, BeforeAndAfterAll}
+import org.scalatest.{FunSuiteLike, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 
 class FindBugsAnalysesTest
   extends FindBugsAnalyses(FBConfig(zipFiles = List("src/test/resources/Bugs.zip"), debugBench = Benchmarking.debugBench))
-          with FunSuite with BeforeAndAfterAll with ShouldMatchers {
+          with FunSuiteLike with BeforeAndAfterAll with ShouldMatchers {
   test("BX_BOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION") {
     analyzeBOXING_IMMEDIATELY_UNBOXED_TO_PERFORM_COERCION()
   }
