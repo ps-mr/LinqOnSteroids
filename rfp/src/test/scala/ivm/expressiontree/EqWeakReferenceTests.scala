@@ -14,8 +14,8 @@ import ivm.rfp.EqWeakReference
 class EqWeakReferenceTests extends JUnitSuite with Matchers with AssertionsForJUnit {
   //Should be part of ScalaTest.
   def assertEqualsAndSameHash[T](l: T, r: T) {
-    l should be === (r)
-    l.hashCode should be === (r.hashCode)
+    l should === (r)
+    l.hashCode should === (r.hashCode)
   }
 
   val o = new AnyRef()
@@ -26,8 +26,8 @@ class EqWeakReferenceTests extends JUnitSuite with Matchers with AssertionsForJU
     assertEqualsAndSameHash(refO1, refO2)
 
     val nullRef1 = new EqWeakReference(null)
-    refO1 should not be === (nullRef1)
-    nullRef1 should not be === (refO1)
+    refO1 should !== (nullRef1)
+    nullRef1 should !== (refO1)
 
     val nullRef2 = new EqWeakReference(null)
     assertEqualsAndSameHash(nullRef1, nullRef2)
@@ -37,7 +37,7 @@ class EqWeakReferenceTests extends JUnitSuite with Matchers with AssertionsForJU
   def eqWeakReferenceDiffersFromWeakReference() {
     val eqWeakRef = new EqWeakReference(o)
     val weakRef = new WeakReference(o) //Note that this is WeakReference, not EqWeakReference, and thus differs from a.
-    eqWeakRef should not be === (weakRef)
-    weakRef should not be === (eqWeakRef)
+    eqWeakRef should !== (weakRef)
+    weakRef should !== (eqWeakRef)
   }
 }
