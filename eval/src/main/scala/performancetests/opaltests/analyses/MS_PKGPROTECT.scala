@@ -48,7 +48,7 @@ trait MS_PKGPROTECT{
                  !field.isVolatile &&
                  (field.isPublic || field.isProtected) &&
                  (isArray(field.fieldType) || isHashTable(field.fieldType)) &&
-                 !readFieldsFromPackage.exists(entry => entry._2 ==(classFile.thisClass, field.name, field.fieldType) && entry._1 != classFile.thisClass.packageName)
+                 !readFieldsFromPackage.exists(entry => entry._2 == ((classFile.thisClass, field.name, field.fieldType)) && entry._1 != classFile.thisClass.packageName)
                 )
         ) yield
           (classFile.thisClass, field.name, field.fieldType)
@@ -93,7 +93,7 @@ trait MS_PKGPROTECT{
                  !field.isVolatile &&
                  (field.isPublic || field.isProtected) &&
                  (isArray(field.fieldType) || isHashTable(field.fieldType)) &&
-                 !readFieldsFromPackage.exists(entry => entry._2 ==(classFile.thisClass, field.name, field.fieldType) && entry._1 != classFile.thisClass.packageName)
+                 !readFieldsFromPackage.exists(entry => entry._2 == ((classFile.thisClass, field.name, field.fieldType)) && entry._1 != classFile.thisClass.packageName)
                 )
       ) yield
         (classFile.thisClass, field.name, field.fieldType)
