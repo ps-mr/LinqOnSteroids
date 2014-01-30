@@ -93,7 +93,7 @@ object Optimization {
 
   //Optimization entry points and major phases {{{
 
-  //After letTransformer (an inliner), we can reduce redexes which arised; let's not do that, to avoid inlining
+  //After letTransformer (which transforms flatMap-based lets into functions applications), we can reduce redexes which arised; let's not do that, to avoid inlining
   // let definitions introduced by the user.
   //The reasoning described above would imply that this optimizer is not idempotent, since we transform
   //stuff into App nodes which we beta-reduce only in a second call to the optimizer.
@@ -101,6 +101,8 @@ object Optimization {
   //we'll miss some opportunities for inlining and optimization, so maybe it should be reversed.
   //In that case, we need to call letTransformer(betaDeltaReducer(selectiveLetInliner(...))), which is however a bit wasteful.
   //So use betaDeltaReducer(letTransformer(...)) instead, at least for now.
+  //
+  //XXX: Questions, an year after: why do I have side conditions on let-to-beta-redex-transformations? Why do I use flatMap to implement let (because let would not work in for comprehensions? But it would! Why do I have side conditions on inlining both for flatmap-based lets and for beta-redexes? Is there anywhere a phase diagram showing what the heck is supposed to happen?)
   def optimize[T](exp: Exp[T], idxLookup: Boolean = true): Exp[T] =
     checkIdempotent(exp, idxLookup, "optimize") {
       optimize(_, idxLookup = false)
