@@ -7,11 +7,11 @@ import expressiontree._
 import Lifting._
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 //import tests.TestUtil
 
 //Try to have an assertFusable annotation
-class ForceFusion extends FunSuite with ShouldMatchers {
+class ForceFusion extends FunSuite with Matchers {
   val testQuery = Set(1).asSquopt map (_+1) map (_+2)
 
   //Trivial case

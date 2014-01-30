@@ -10,7 +10,7 @@ import org.scalatest._
  * Date: 13/12/2012
  */
 
-class PrototypeTest extends FunSuite with ShouldMatchers with Prototype {
+class PrototypeTest extends FunSuite with Matchers with Prototype {
   val l = asExp(List(1, 2, 3))
   test("derive") {
     val query1 = l map (_ + 1)

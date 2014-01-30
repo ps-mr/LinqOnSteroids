@@ -3,7 +3,8 @@ package performancetests
 
 import ivm._
 
-import org.scalatest.junit.{JUnitSuite, ShouldMatchersForJUnit}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import org.junit.{Ignore, Test}
 import collection.mutable
 
@@ -21,7 +22,7 @@ import optimization.Optimization
  * Date: 2/11/2011
  */
 
-class IVMPerformanceTests extends JUnitSuite with ShouldMatchersForJUnit with IVMTestUtil with Benchmarking {
+class IVMPerformanceTests extends JUnitSuite with Matchers with AssertionsForJUnit with IVMTestUtil with Benchmarking {
   val maxN = if (debugBench) 9 else 17
   val mapCounts = (1 until (maxN, 4)) :+ maxN
 

@@ -3,9 +3,9 @@ package expressiontree
 
 import Lifting._
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
-class IfTests extends FunSuite with ShouldMatchers {
+class IfTests extends FunSuite with Matchers {
   test("if-1") {
     (if_# (asExp(1) + 2 ==# 4) {1} else_# if_# (asExp(1) + 2 ==# 3) {2} else_# 3).value() should be (2)
   }

@@ -2,7 +2,7 @@ package ivm
 package expressiontree
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 import Lifting._
 import performancetests.Benchmarking
@@ -12,7 +12,7 @@ import performancetests.Benchmarking
  * Date: 17/7/2012
  */
 
-class Compilation extends FunSuite with ShouldMatchers with Benchmarking {
+class Compilation extends FunSuite with Matchers with Benchmarking {
   Compile.reset()
 
   import Compile.toCode

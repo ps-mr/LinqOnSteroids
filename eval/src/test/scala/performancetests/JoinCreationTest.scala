@@ -2,7 +2,8 @@ package performancetests
 
 import ivm._
 
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import org.junit.Test
 import optimization.Optimization._
 import expressiontree.Lifting._
@@ -13,7 +14,7 @@ import expressiontree.Exp
  * Date: 12/10/2011
  */
 
-class JoinCreationTest extends JUnitSuite with ShouldMatchersForJUnit with Benchmarking {
+class JoinCreationTest extends JUnitSuite with Matchers with AssertionsForJUnit with Benchmarking {
   @Test
   def performancetests() {
     //small performance test

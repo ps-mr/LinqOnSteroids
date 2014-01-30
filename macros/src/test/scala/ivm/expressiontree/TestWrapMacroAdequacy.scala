@@ -2,9 +2,9 @@ package ivm.expressiontree
 
 import language.reflectiveCalls
 import org.scalatest._
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
-class TestWrapMacroAdequacy extends FunSuite with ShouldMatchers {
+class TestWrapMacroAdequacy extends FunSuite with Matchers {
   val expected = Sym(Plus(Const(1), Const(2)))
 
   //Convert some compile-time failures into run-time ones.

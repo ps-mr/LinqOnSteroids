@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.FunSuite
 import Lifting._
 
@@ -8,7 +8,7 @@ import Lifting._
  * User: pgiarrusso
  * Date: 2/10/2012
  */
-class CompileCSETest extends FunSuite with ShouldMatchers {
+class CompileCSETest extends FunSuite with Matchers {
   import Compile.{reset, toValueCSE}
   test("basic") {
     reset()

@@ -2,7 +2,8 @@ package ivm
 package expressiontree
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.{HavePropertyMatchResult, HavePropertyMatcher, ShouldMatchers}
+import org.scalatest.matchers.{HavePropertyMatchResult, HavePropertyMatcher}
+import org.scalatest.Matchers
 import java.io.{Closeable, File}
 import java.nio.channels.FileChannel
 import performancetests.Benchmarking
@@ -28,7 +29,7 @@ trait TypeMatchers {
  * User: pgiarrusso
  * Date: 5/3/2012
  */
-class TypeTests extends FunSuite with ShouldMatchers with TypeMatchers with Benchmarking {
+class TypeTests extends FunSuite with Matchers with TypeMatchers with Benchmarking {
   import java.{lang => jl}
   val seenTypesEx: Set[Class[_]] = Set(classOf[jl.Integer], classOf[Null], classOf[AnyRef], classOf[String], classOf[File], classOf[jl.Long], classOf[FileChannel])
 

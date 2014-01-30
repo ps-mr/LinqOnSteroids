@@ -15,14 +15,14 @@ import bat.resolved.analyses.ClassHierarchy
 import collection.immutable.Seq
 import collection.{Seq => CSeq}
 
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 /**
  * User: pgiarrusso
  * Date: 4/8/2012
  */
 
-abstract class FBAnalysesBase extends QueryBenchmarking with ShouldMatchers {
+abstract class FBAnalysesBase extends QueryBenchmarking with Matchers {
   def zipFiles: Seq[String]
 
   val classFiles: Seq[ClassFile] = benchMark("Reading all class files", execLoops = 1, minSampleLoops = 1, maxCoV = None) {

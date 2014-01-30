@@ -16,7 +16,7 @@ import resolved.Attributes
 import java.util.zip.ZipFile
 import java.io.File
 import collections.TypeMapping
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.FunSuite
 import collection.TraversableLike
 
@@ -101,7 +101,7 @@ object OpalTestData {
   val expectNResults = 84
 }
 
-class BasicTests extends FunSuite with ShouldMatchers with Benchmarking {
+class BasicTests extends FunSuite with Matchers with Benchmarking {
   import OpalTestData._
 
   object __match {

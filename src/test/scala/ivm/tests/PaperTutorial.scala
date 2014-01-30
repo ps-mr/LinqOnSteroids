@@ -2,7 +2,7 @@ package ivm
 package tests
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import optimization.Optimization
 import expressiontree.Util
 import expressiontree.{ClassTag, TypeTag}
@@ -16,7 +16,7 @@ import expressiontree.{ClassTag, TypeTag}
 
 //Import most definitions from Figure 1 - Definition of the schema and of content
 import schema.{squopt => _, _}
-class PaperTutorial extends FunSuite with ShouldMatchers with TestUtil {
+class PaperTutorial extends FunSuite with Matchers with TestUtil {
   //Rest of Figure 1 - Definition of the schema and of content
   val books: Set[Book] = Set(Book("Compilers: Principles, Techniques, and Tools", "Pearson Education", Seq(Author("Alfred V.", "Aho"), Author("Monica S.", "Lam"), Author("Ravi", "Sethi"), Author("Jeffrey D.", "Ullman"))))
 

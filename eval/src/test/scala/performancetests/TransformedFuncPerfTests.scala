@@ -7,7 +7,8 @@ import ivm._
  * Date: 22/11/2011
  */
 
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import org.junit.Test
 
 import expressiontree.Exp
@@ -22,7 +23,7 @@ import tests.TransformTestHelper
 * Date: 25/8/2011
 */
 
-class TransformedFuncPerfTests extends JUnitSuite with ShouldMatchersForJUnit with TransformTestHelper with Benchmarking {
+class TransformedFuncPerfTests extends JUnitSuite with Matchers with AssertionsForJUnit with TransformTestHelper with Benchmarking {
   override val defaultExecLoops = 10
   val collSize = if (debugBench) 10 else 100
   val l: Exp[Traversable[Int]] = pure(ArrayBuffer.range(1, collSize))

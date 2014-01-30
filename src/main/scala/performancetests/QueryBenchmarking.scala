@@ -5,7 +5,7 @@ import tests.TestUtil
 import expressiontree.{Compile, Lifting, Exp, TypeTag}
 import Lifting._
 import optimization.Optimization
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 
 /**
  * User: pgiarrusso
@@ -21,7 +21,7 @@ trait OptParamSupport {
 }
 
 trait QueryBenchmarking extends TestUtil with Benchmarking with OptParamSupport {
-  this: ShouldMatchers =>
+  this: Matchers =>
 
   def onlyOptimized = false
   def onlyBaseline = false

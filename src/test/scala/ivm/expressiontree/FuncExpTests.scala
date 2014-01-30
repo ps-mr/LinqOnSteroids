@@ -1,6 +1,6 @@
 package ivm.expressiontree
 
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers
 import org.scalatest.FunSuite
 import Lifting._
 
@@ -9,7 +9,7 @@ import Lifting._
  * Date: 26/1/2012
  */
 
-class FuncExpTests extends FunSuite with ShouldMatchers {
+class FuncExpTests extends FunSuite with Matchers {
   val f = Fun((x: Exp[Int]) => Fun((y: Exp[Int]) => x + y))
   val f1 = f.interpret()(1) //(x = 1, y => x + y)
 

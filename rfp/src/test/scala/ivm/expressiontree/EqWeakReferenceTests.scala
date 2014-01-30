@@ -1,6 +1,7 @@
 package ivm.expressiontree
 
-import org.scalatest.junit.{ShouldMatchersForJUnit, JUnitSuite}
+import org.scalatest.Matchers
+import org.scalatest.junit.{JUnitSuite, AssertionsForJUnit}
 import org.junit.Test
 import ref.WeakReference
 import ivm.rfp.EqWeakReference
@@ -10,7 +11,7 @@ import ivm.rfp.EqWeakReference
 * Date: 15/9/2011
 */
 
-class EqWeakReferenceTests extends JUnitSuite with ShouldMatchersForJUnit {
+class EqWeakReferenceTests extends JUnitSuite with Matchers with AssertionsForJUnit {
   //Should be part of ScalaTest.
   def assertEqualsAndSameHash[T](l: T, r: T) {
     l should be === (r)
