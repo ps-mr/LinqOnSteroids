@@ -100,7 +100,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
   //Rewrite (if possible) coll.withFilter(elem => F[elem] ==# k && OtherConds[elem]) to (coll.indexBy(elem => F[elem]))(k).withFilter(x => OtherConds[x]),
   //with F and OtherConds expression contexts and under the condition that coll.indexBy(f) is already available as a precomputed subquery (i.e. an index).
   val groupByShare: Exp[_] => Exp[_] = {
-    case e @ Sym(Filter(c: Exp[Traversable[_ /*t*/]], f: FunSym[t, _ /*Boolean*/])) if c.freeVars == Set.empty =>
+    case e @ Sym(Filter(c: Exp[Traversable[_ /*t*/]] @unchecked, f: FunSym[t, _ /*Boolean*/])) if c.freeVars == Set.empty =>
       val conds: Set[Exp[Boolean]] = BooleanOperators.cnf(f.body)
       val optimized: Option[Exp[_]] = collectFirst(conds)(tryGroupBy(OptimizationUtil.stripView(c.asInstanceOf[Exp[Traversable[t]]]), conds, f.x)(_))
       optimized.getOrElse(e)
@@ -252,7 +252,7 @@ class SubquerySharing(val subqueries: Map[Exp[_], (Any, ClassTag[Any], TypeTag[A
     //We are removing too many filters, and not keeping track of their bindings :-(.
     val res = indexBaseToLookup transform { //We only want to recognize filtering in the collection branch of FlatMap nodes. Easy!
       e => e match {
-        case Sym(FlatMap(Sym(Filter(base: Exp[Traversable[_]], f: FunSym[_, _ /*Boolean*/])), fmFun)) =>
+        case Sym(FlatMap(Sym(Filter(base: Exp[Traversable[_]] @unchecked, f: FunSym[_, _ /*Boolean*/])), fmFun)) =>
           val alphaRenamed = f.body.substSubTerm(f.x, fmFun.x) //tuplingTransform acts on var from flatMap functions, not filter functions.
           v += tuplingTransform(alphaRenamed.asInstanceOf[Exp[U]], fx).asInstanceOf[Exp[Boolean]] //XXX fix typing here
           OptimizationUtil.stripView(base) flatMap fmFun

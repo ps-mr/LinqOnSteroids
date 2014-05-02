@@ -34,19 +34,30 @@ object OptimizationUtil {
     }
   }
 
-  object BaseBinding {
+  object BaseBindingRaw {
     def unapply(e: Sym[Traversable[Any]]): Option[(Exp[Traversable[Any]], FunSym[_, _])] = e match {
       case Sym(FlatMap(base, f)) => Some((base, f))
       case Sym(Filter(base, f)) => Some((base, f))
       case _ => None
     }
   }
-  object Binding {
+
+  object BaseBinding {
+    def unapply(e: Sym[Any]): Option[(Exp[Traversable[Any]], FunSym[_, _])] =
+      BaseBindingRaw.unapply(e.asInstanceOf[Sym[Traversable[Any]]])
+  }
+
+  object BindingRaw {
     def unapply(e: Sym[Traversable[Any]]): Option[(Exp[Traversable[Any]], FunSym[_, _])] =
       BaseBinding.unapply(e) orElse (e match {
         case Sym(MapNode(base, f)) => Some((base, f))
         case _ => None
       })
+  }
+
+  object Binding {
+    def unapply(e: Sym[_]): Option[(Exp[Traversable[Any]], FunSym[_, _])] =
+      BindingRaw.unapply(e.asInstanceOf[Sym[Traversable[Any]]])
   }
 
   val FlatMapId = 0

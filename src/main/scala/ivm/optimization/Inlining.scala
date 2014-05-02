@@ -149,7 +149,7 @@ trait Inlining extends InliningDefs {
       //FoldRight means that the zero element is at the left and will set the result type to Seq, which is correct since
       //the original mapping is on a sequence.
       (seq map (seqEl => ExpTransformer(selectiveLetCompleteInliner) apply
-                      Sym(binder.defNode genericConstructor List(asExp(Seq(seqEl)), fun)))).
+                      Sym(binder.asInstanceOf[Sym[Traversable[Any]]].defNode genericConstructor List(asExp(Seq(seqEl)), fun)))).
         foldLeft[Exp[Traversable[Any]]](Seq.empty)(_ ++ _)
     case e => e
 //    case Sym(FlatMap(Sym(ExpSeq(Seq(v))), fs @ FunSym(f))) if v exists (isTrivial(v) || usesArgAtMostOnce(fs)  =>
