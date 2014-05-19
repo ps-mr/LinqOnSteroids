@@ -28,7 +28,7 @@ sealed trait TreeNode[+T, +MyType >: Exp[_]] {
         Seq(this)
       else
         Seq.empty
-    children.map(_ __find filter.asInstanceOf[PartialFunction[Exp[_], Boolean]]).fold[Seq[MyType]](baseSeq)(_ ++ _)
+    baseSeq ++ (children.flatMap(_ __find filter.asInstanceOf[PartialFunction[Exp[_], Boolean]]): Seq[MyType])
   }
 
   // This overload is not called find because that would confuse type inference - it would fail to infer that filter's
