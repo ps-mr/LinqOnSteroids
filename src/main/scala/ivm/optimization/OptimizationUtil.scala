@@ -97,6 +97,7 @@ object OptimizationUtil {
    * Altered from https://github.com/Blaisorblade/scrap-expr-boilerplate/blob/master/src/traversal/Extractor.scala.
    * This collapses the cost of writing small extractors.
    * TODO: add combinators!
+   * TODO2: allow for some polymorphism (like natural transformations) ?
    */
   def extractor[A, B](f: A => Option[B]) = new Extractor[A, B] { def unapply(x: A): Option[B] = f(x) }
 
@@ -116,5 +117,19 @@ object OptimizationUtil {
   def uniqueFinder[B](subExtractor: Extractor[Exp[_], B]): Extractor[Exp[_], Set[B]] = {
     val tfinder = finder(subExtractor)
     extractor { x => tfinder unapply x map (_.toSet) }
+  }
+
+  //Instead of only returning unique subterms, also return the corresponding holes.
+  // The implementation uses substitution, so it is probably horribly slow.
+  // However, the interface is better (for me) than higher-order matching (not unification!)
+  // It's better because it is guaranteed to find "maximal substitution",
+  // that is, substitute away all the occurrences of a subterm.
+  // But so, why does higher-order pattern unification not achieve what I want?
+
+  //A closer approximation to the "perfect" type. Of course that's not correct because all needs to be more polytypic.
+  //def uniqueFinderAndContexts[A, B](subExtractor: Extractor[Exp[A], Exp[B]]): Extractor[Exp[A], Set[(Exp[B], Exp[B] => Exp[A])]]
+  def uniqueFinderAndContexts(subExtractor: Extractor[Exp[_], Exp[_]]): Extractor[Exp[_], Set[(Exp[_], Exp[_] => Exp[_])]] = {
+    val tfinder = uniqueFinder(subExtractor)
+    extractor { exp => tfinder unapply exp map (_ map (subTerm => (subTerm, (replacement: Exp[_]) => exp substSubTerm (subTerm, replacement)))) }
   }
 }
