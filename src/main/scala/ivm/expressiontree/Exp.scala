@@ -19,6 +19,20 @@ sealed trait TreeNode[+T, +MyType >: Exp[_]] {
   def children: List[Exp[_]]
   def persistValues()
 
+  //From Haskell's Data.Foldable. Given Scalaz's monoids, it'd be more convenient to have foldMap though.
+  def __foldr[B](zero: B)(op: (MyType, B) => B): B =
+    ((this: MyType) +: children).foldRight[B](zero)(op)
+
+  def __findGen2(filter: PartialFunction[MyType, Boolean]): Seq[MyType] =
+    __foldr(Seq.empty[MyType]) { (cand, seq) =>
+      {
+        if (PartialFunction.cond(cand)(filter))
+          Seq(cand)
+        else
+          Seq.empty
+      } ++ seq
+    }
+
   /* I renamed this method to avoid conflicts with Matcher.find. XXX test if
   * just making it private also achieves the same result.
   */
