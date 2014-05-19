@@ -88,4 +88,33 @@ object OptimizationUtil {
     }
 
   def Transformer(f: PartialFunction[Exp[_], Exp[_]]) = f
+
+  trait Extractor[From, To] {
+    def unapply(from: From): Option[To]
+  }
+
+  /*
+   * Altered from https://github.com/Blaisorblade/scrap-expr-boilerplate/blob/master/src/traversal/Extractor.scala.
+   * This collapses the cost of writing small extractors.
+   * TODO: add combinators!
+   */
+  def extractor[A, B](f: A => Option[B]) = new Extractor[A, B] { def unapply(x: A): Option[B] = f(x) }
+
+  /**
+   * Find children matching a certain pattern. Without zippers, we cannot return the context, but we have our nice and expensive substSubTerm for that.
+   * If there are no such children, fail the match.
+   * Inspired by use cases for higher-order unification.
+   */
+  //def finder[B](a: Extractor[Exp[_], B]) = extractor[Exp[_], B](_ findTotFunGen (x => (a unapply x).nonEmpty))
+  def finder[B](subExtractor: Extractor[Exp[_], B]): Extractor[Exp[_], Seq[B]] = extractor[Exp[_], Seq[B]] {
+    _.__foldr(Seq.empty[B])((cand, seq) => ((subExtractor unapply cand).toList ++ seq)) match {
+      case Seq() => None
+      case elems => Some(elems)
+    }
+  }
+
+  def uniqueFinder[B](subExtractor: Extractor[Exp[_], B]): Extractor[Exp[_], Set[B]] = {
+    val tfinder = finder(subExtractor)
+    extractor { x => tfinder unapply x map (_.toSet) }
+  }
 }
