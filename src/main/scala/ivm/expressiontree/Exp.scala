@@ -1,5 +1,7 @@
 package ivm.expressiontree
 
+import language.postfixOps
+
 import annotation.unchecked.uncheckedVariance
 import scalaz._
 import syntax.monoid._
@@ -32,10 +34,7 @@ sealed trait TreeNode[+T, +MyType >: Exp[Any]] {
 
   def __findGen2(filter: PartialFunction[MyType, Boolean]): List[MyType] =
     this __foldMap { cand =>
-      if (PartialFunction.cond(cand)(filter))
-        List(cand)
-      else
-        List.empty
+      Some(cand) filter (PartialFunction.cond(_)(filter)) toList
     }
 
   /* I renamed this method to avoid conflicts with Matcher.find. XXX test if
