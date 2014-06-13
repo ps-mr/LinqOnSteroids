@@ -6,7 +6,7 @@
   <classpathentry path="../sampleapp/lib/bat-core_2.10-1.0.0-SNAPSHOT-sources.jar" kind="lib"></classpathentry>
   <classpathentry path="../sampleapp/lib/bat-core_2.10-1.0.0-SNAPSHOT.jar" kind="lib"></classpathentry>
   <classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"></classpathentry>
-  <classpathentry path="/Users/pgiarrusso/.ivy2/cache/junit/junit/jars/junit-4.8.2.jar" kind="lib"></classpathentry>
+  <classpathentry kind="lib" path="/Users/pgiarrusso/.ivy2/cache/junit/junit/jars/junit-4.8.2.jar" sourcepath="/Users/pgiarrusso/.ivy2/cache/junit/junit/srcs/junit-4.8.2-sources.jar"></classpathentry>
   <classpathentry path="org.eclipse.jdt.launching.JRE_CONTAINER" kind="con"></classpathentry>
   <classpathentry path="bin" kind="output"></classpathentry>
 </classpath>

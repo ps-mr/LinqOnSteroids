@@ -177,3 +177,7 @@ assemblySettings
 mainClass in assembly := Some("performancetests.opaltests.FindBugsAnalyses")
 
 test in assembly := {}
+
+EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Managed
+
+EclipseKeys.withSource in ThisBuild := true
