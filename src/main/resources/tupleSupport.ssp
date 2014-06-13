@@ -39,13 +39,13 @@ import annotation.switch
 ///////////////////////////////////////////////////
 
 //Passing Self allows to prevent statically the only boilerplate-related copy-n-paste bug in defining tree classes.
-trait Arity${arity}OpTrait[${paramsLoopComma("A%d <: Exp[_]")}, +R, +Self <: Def[R]] extends Def[R] {<%--
+trait Arity${arity}OpTrait[${paramsLoopComma("A%d <: Exp[Any]")}, +R, +Self <: Def[R]] extends Def[R] {<%--
   //Ensure that Self is actually correct: --%>
   this: Self =>
   ${paramsLoop("\n  ")("def " + argPfx + "%d: A%<d")}
   override def nodeArity = ${arity}
   def children = List(${params})
-  override protected def checkedGenericConstructor(v: List[Exp[_]]) =
+  override protected def checkedGenericConstructor(v: List[Exp[Any]]) =
     copy(${baseParLoop(arity)(i => "v(%d).asInstanceOf[A%d]" format (i - 1, i))})
 <%--
   //Ensure that copy returns the correct type. --%>
@@ -57,7 +57,7 @@ trait Arity${arity}OpExpTrait[${tparams}, +R, +Self <: Def[R]]
   this: Self =>
 }
 
-abstract class Arity${arity}Op[${paramsLoopComma(tpPfx + "%d <: Exp[_]")}, +R, +Self <: Def[R]](${paramsLoopComma("val " + argPfx + "%d: A%<d")}) extends Arity${arity}OpTrait[${tparams}, R, Self] {
+abstract class Arity${arity}Op[${paramsLoopComma(tpPfx + "%d <: Exp[Any]")}, +R, +Self <: Def[R]](${paramsLoopComma("val " + argPfx + "%d: A%<d")}) extends Arity${arity}OpTrait[${tparams}, R, Self] {
   this: Self =>
 }
 <%--
@@ -225,16 +225,16 @@ object TupleSupport2 {
     (arity: @switch) match {
       case 1 =>
         idx match {
-          case 0 => (e: Exp[_]).asInstanceOf[Exp[Nothing]]
+          case 0 => (e: Exp[Any]).asInstanceOf[Exp[Nothing]]
         }
 #for (arity <- minTupleArity to maxArity)
       case ${arity} =>
         (idx: @switch) match {
-          ${baseParLoop(arity)(i => "case %d => Product%dProj%d[%s]((e: Exp[_]).asInstanceOf[Exp[(%<s)]])" format (i - 1, arity, i, nothingN(arity)), "\n          ")}
+          ${baseParLoop(arity)(i => "case %d => Product%dProj%d[%s]((e: Exp[Any]).asInstanceOf[Exp[(%<s)]])" format (i - 1, arity, i, nothingN(arity)), "\n          ")}
         }
 #end
     }
-  def toTuple(exps: Seq[Exp[_]]): Exp[_] = {
+  def toTuple(exps: Seq[Exp[Any]]): Exp[Any] = {
     val arity = exps.length
     (arity: @switch) match {
       case 0 => Const(())
