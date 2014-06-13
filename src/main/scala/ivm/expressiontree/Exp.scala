@@ -30,14 +30,12 @@ sealed trait TreeNode[+T, +MyType >: Exp[Any]] {
   def __foldMap[B: Monoid](f: MyType => B): B =
     ((this: MyType) +: children) foldMap f
 
-  def __findGen2(filter: PartialFunction[MyType, Boolean]): Seq[MyType] =
-    __foldr(Seq.empty[MyType]) { (cand, seq) =>
-      {
-        if (PartialFunction.cond(cand)(filter))
-          Seq(cand)
-        else
-          Seq.empty
-      } ++ seq
+  def __findGen2(filter: PartialFunction[MyType, Boolean]): List[MyType] =
+    this __foldMap { cand =>
+      if (PartialFunction.cond(cand)(filter))
+        List(cand)
+      else
+        List.empty
     }
 
   /* I renamed this method to avoid conflicts with Matcher.find. XXX test if
