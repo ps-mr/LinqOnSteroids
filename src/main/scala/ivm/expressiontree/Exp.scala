@@ -1,6 +1,10 @@
 package ivm.expressiontree
 
 import annotation.unchecked.uncheckedVariance
+import scalaz._
+import syntax.monoid._
+import syntax.foldable._
+import std.list._
 
 trait ExpTransformer {
   def apply[T](e: Exp[T]): Exp[T]
@@ -19,9 +23,12 @@ sealed trait TreeNode[+T, +MyType >: Exp[Any]] {
   def children: List[Exp[Any]]
   def persistValues()
 
-  //From Haskell's Data.Foldable. Given Scalaz's monoids, it'd be more convenient to have foldMap though.
+  //From Haskell's Data.Foldable.
   def __foldr[B](zero: B)(op: (MyType, B) => B): B =
-    ((this: MyType) +: children).foldRight[B](zero)(op)
+    ((this: MyType) +: children).foldRight(zero)(op)
+
+  def __foldMap[B: Monoid](f: MyType => B): B =
+    ((this: MyType) +: children) foldMap f
 
   def __findGen2(filter: PartialFunction[MyType, Boolean]): Seq[MyType] =
     __foldr(Seq.empty[MyType]) { (cand, seq) =>
@@ -91,7 +98,7 @@ sealed trait Exp[+T] extends TreeNode[T, Exp[Any]] /*with MsgSeqPublisher[T, Exp
 }
 
 object Exp {
-  private def ordering[T] = new Ordering[Exp[T]] {
+  private def ordering[T] = new scala.Ordering[Exp[T]] {
     override def compare(a: Exp[T], b: Exp[T]): Int = a.toString compareTo b.toString
   }
   def min[T](a: Exp[T], b: Exp[T]): Exp[T] = ordering.min(a,b)
