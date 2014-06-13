@@ -34,7 +34,7 @@ object TransformationExperiments {
   //val betaReduction: PartialFunction[Exp[_], Exp[_]] = {
     //case a: App[s, t] => a.f(a.t) //causes a warning
   //}
-  val mergeFlatMaps: Exp[_] => Exp[_] = {
+  val mergeFlatMaps: Exp[Any] => Exp[Any] = {
     case Sym(FlatMap(Sym(MapNode(coll, f)), g)) =>
       mergeFlatMaps(coll flatMap (x => letExp(f(x))(g))) //The body is not really typechecked, unlike in buildMergedFlatMap1.
     //XXX is the case below useful? Never tested. It's probably better to see what shortcut fusion would do instead.

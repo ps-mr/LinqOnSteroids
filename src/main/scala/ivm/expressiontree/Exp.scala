@@ -28,11 +28,11 @@ sealed trait TreeNode[+T, +MyType >: Exp[Any]] {
         Seq(this)
       else
         Seq.empty
-    children.map(_ __find filter.asInstanceOf[PartialFunction[Exp[_], Boolean]]).fold[Seq[MyType]](baseSeq)(_ ++ _)
+    children.map(_ __find filter.asInstanceOf[PartialFunction[Exp[Any], Boolean]]).fold[Seq[MyType]](baseSeq)(_ ++ _)
   }
 
   // This overload is not called find because that would confuse type inference - it would fail to infer that filter's
-  // domain type is Exp[_].
+  // domain type is Exp[Any].
   def findTotFunGen(filter: MyType => Boolean): Seq[MyType] = __findGen(filter.asPartial)
 
   //Using @uncheckedVariance here is safe: a subclass with a more specific MyType might be upcast and get an unexpected
@@ -42,8 +42,8 @@ sealed trait TreeNode[+T, +MyType >: Exp[Any]] {
 }
 
 sealed trait Exp[+T] extends TreeNode[T, Exp[Any]] /*with MsgSeqPublisher[T, Exp[T]]*/ {
-  def __find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = __findGen(filter)
-  def findTotFun(filter: Exp[Any] => Boolean): Seq[Exp[_]] = findTotFunGen(filter)
+  def __find(filter: PartialFunction[Exp[Any], Boolean]): Seq[Exp[Any]] = __findGen(filter)
+  def findTotFun(filter: Exp[Any] => Boolean): Seq[Exp[Any]] = findTotFunGen(filter)
   def isOrContains(e: Exp[Any]): Boolean = isOrContainsGen(e)
 
   def toCode: String
@@ -70,7 +70,7 @@ sealed trait Exp[+T] extends TreeNode[T, Exp[Any]] /*with MsgSeqPublisher[T, Exp
     //Doesn't work.
     //val mappedChilds: List[S] = children.asInstanceOf[List[Exp[Any]]].map[S, List[S]](c => c.asInstanceOf[Exp[Any]].treeMap[S](mapper))(List.canBuildFrom)
     //Works in 2.10.1! (Maybe in 2.10.2).
-    val mappedChilds: List[S] = children.asInstanceOf[List[Exp[Any]]].map[S, List[S]](c => c.asInstanceOf[Exp[Any]].treeMap[S](mapper))(List.canBuildFrom[S])
+    val mappedChilds: List[S] = children.map[S, List[S]](c => c.treeMap[S](mapper))(List.canBuildFrom[S])
 
     //After compiling with that line, we can use pretty much any definition and
     //it will work. That is, we can comment out the working definition, comment
