@@ -3,7 +3,6 @@ package optimization
 
 import expressiontree._
 
-
 /**
  * User: pgiarrusso
  * Date: 22/5/2012
@@ -13,7 +12,7 @@ import expressiontree._
  * Represent a first-class extractor.
  *
  * Altered from https://github.com/Blaisorblade/scrap-expr-boilerplate/blob/master/src/traversal/Extractor.scala.
- * TODO: allow for some polymorphism (like natural transformations) ?
+ * TODO: allow for some polymorphism (like natural transformations)?
  */
 trait Extractor[-From, +To] {
   val fun: From => Option[To]
@@ -23,23 +22,42 @@ trait Extractor[-From, +To] {
 case class ConcreteExtractor[-From, +To](fun: From => Option[To])
   extends Extractor[From, To]
 
+/**
+ * An extractor binding no variables. This type is isomorphic to a predicate
+ * From => Boolean; ConcreteBooleanExtractor witnesses one half of the isomorphism.
+ */
+trait BoolExtractor[-From] {
+  val fun: From => Boolean
+  def unapply(from: From): Boolean = fun(from)
+}
+
+case class ConcreteBoolExtractor[-From](fun: From => Boolean)
+  extends BoolExtractor[From]
+
 trait ExtractorCombinators {
-  implicit def toExtractorOps[T, U](t: Extractor[T, U]) = new ExtractorOps(t)
+  implicit def toExtractorOps[From, To](t: Extractor[From, To]) = new ExtractorOps(t)
+  implicit def toBoolExtractorOps[From](t: BoolExtractor[From]) = new BoolExtractorOps(t)
+
   /**
    * Ease writing a small extractor.
    */
-  def extractor[A, B](f: A => Option[B]): Extractor[A, B] = ConcreteExtractor[A, B](f)
+  def extractor[From, To](f: From => Option[To]): Extractor[From, To] = ConcreteExtractor(f)
+  def boolExtractor[From](f: From => Boolean): BoolExtractor[From] = ConcreteBoolExtractor(f)
 
-  def toExtractor[T, U](pf: PartialFunction[T, U]): Extractor[T, U] = extractor(pf.lift)
-  //We need a language of extractor combinators, arguably. Stratego-like?
-  //For instance, comparer should be ID filter (_ == v), where ID = pure for the extractor monad.
-  def ID[T] = extractor[T, T](Some(_))
+  def pfExtractor[From, To](pf: PartialFunction[From, To]): Extractor[From, To] = extractor(pf.lift)
+
+  def toBoolExtractor[From, To](ext: Extractor[From, To]): BoolExtractor[From] = ConcreteBoolExtractor(toFilter(ext))
+
+  def Success[T] = extractor[T, T](Some(_))
+  def Fail[T] = extractor[T, T](_ => None)
+  def BoolSuccess[T] = boolExtractor[T](_ => true)
+  def BoolFail[T] = boolExtractor[T](_ => false)
 
   //Turn extractor into a predicate
-  def toFilter[T, U](ext: Extractor[T, U]): T => Boolean = { x => (ext fun x).nonEmpty }
+  def toFilter[From, To](ext: Extractor[From, To]): From => Boolean = { x => (ext fun x).nonEmpty }
 
-  def restrictedId[T, U](ext: Extractor[T, U]): Extractor[T, T] =
-    ID[T] filter toFilter(ext)
+  def restrictedId[From, To](ext: Extractor[From, To]): Extractor[From, From] =
+    Success[From] filter toFilter(ext)
 }
 
 object OptimizationUtil extends ExtractorCombinators {
@@ -50,9 +68,15 @@ object OptimizationUtil extends ExtractorCombinators {
     def unapply[S, T](f: Fun[S, T]): Option[Exp[T]] = Some(f.body)
   }
 
+  //Reimplementation. Note: the type parameters move externally.
+  def FuncExpBody2[S, T]: Extractor[Fun[S, T], Exp[T]] =
+    Success[Fun[S, T]] map (_.body)
+
   object FuncExpBodyUntyped {
     def unapply(f: Fun[_, _]): Option[Exp[_]] = Some(f.body)
   }
+
+  def FuncExpIdentity2[S, T](f: FunSym[S, T]) = toBoolExtractor(FuncExpBody2[S, T] filter (Sym(f.x) == _))
 
   object FuncExpIdentity {
     def unapply[S, T](f: FunSym[S, T]): Boolean = f.body == Sym(f.x)
@@ -155,7 +179,8 @@ object OptimizationUtil extends ExtractorCombinators {
 
   def uniqueFinder[B](subExtractor: Extractor[Exp[Any], B]): Extractor[Exp[Any], Set[B]] = {
     val tfinder = finder(subExtractor)
-    extractor { x => tfinder unapply x map (_.toSet) }
+    tfinder map (_.toSet)
+    //extractor { x => tfinder unapply x map (_.toSet) }
   }
 
   //Instead of only returning unique subterms, also return the corresponding holes.
@@ -165,14 +190,41 @@ object OptimizationUtil extends ExtractorCombinators {
   // that is, substitute away all the occurrences of a subterm.
   // But so, why does higher-order pattern unification not achieve what I want?
 
+  def addContexts(tfinder: Extractor[Exp[Any], Set[Exp[Any]]]): Extractor[Exp[Any], Set[(Exp[Any], Exp[Any] => Exp[Any])]] =
+    extractor { exp =>
+      tfinder unapply exp map { matches =>
+        matches map { subTerm =>
+          (subTerm, { (replacement: Exp[Any]) =>
+            exp substSubTerm (subTerm, replacement)
+          })
+        }
+      }
+    }
+
   //A closer approximation to the "perfect" type. Of course that's not correct because all needs to be more polytypic.
   //def uniqueFinderAndContexts[A, B](subExtractor: Extractor[Exp[A], Exp[B]]): Extractor[Exp[A], Set[(Exp[B], Exp[B] => Exp[A])]]
-  def uniqueFinderAndContexts(subExtractor: Extractor[Exp[Any], Exp[Any]]): Extractor[Exp[Any], Set[(Exp[Any], Exp[Any] => Exp[Any])]] = {
-    val tfinder = uniqueFinder(subExtractor)
-    extractor { exp => tfinder unapply exp map (_ map (subTerm => (subTerm, (replacement: Exp[_]) => exp substSubTerm (subTerm, replacement)))) }
+  def uniqueFinderAndContexts(subExtractor: Extractor[Exp[Any], Exp[Any]]) =
+    addContexts(uniqueFinder(subExtractor))
+
+  def guard(t: Boolean) = {
+    assert(t)
+    true
   }
 
-  def comparer[T](t: Exp[T]) = ID[Exp[T]] filter { _ == t }
+  def matcherAndContexts(v: Exp[Any]) = {
+    val vFinder = uniqueFinder(matcher(v))
+    //XXX This should arguably also be reusable.
+    addContexts(vFinder) map { matches =>
+      //Matches cannot be distinct, so the number of distinct matches must be one
+      assert(matches.size == 1)
+      matches.head
+    }
+  }
+
+  def matcher[T](t: Exp[T]) = Success[Exp[T]] filter { _ == t }
+
+  def expExtractor[To](f: Exp[Any] => Option[To]) = extractor(f)
+  def pfExpExtractor[To](f: PartialFunction[Exp[Any], To]) = pfExtractor(f)
 }
 
 import OptimizationUtil._
@@ -189,3 +241,10 @@ class ExtractorOps[T, U](val t: Extractor[T, U]) extends AnyVal {
   //In fact, flatMap lifts the composition for from Kleisli arrows T => Option[U] (known as >=>, among other names) to Extractor[T, U].
   def >=>[V](u: Extractor[U, V]): Extractor[T, V] = flatMap(u.fun)
 }
+
+class BoolExtractorOps[From](val ext: BoolExtractor[From]) extends AnyVal {
+  //Replaces filter
+  def intersect(p: From => Boolean) =
+    boolExtractor[From](x => ext.fun(x) && p(x))
+}
+
