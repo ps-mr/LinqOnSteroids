@@ -56,33 +56,7 @@ sealed trait Exp[+T] extends TreeNode[T, Exp[Any]] /*with MsgSeqPublisher[T, Exp
   //This could use as interface some Foldable-like stuff (or Haskell's Traversable, IIRC).
   //Write it as a fold on the tree!!!
   def treeMap[S](mapper: (Exp[Any], Seq[S]) => S): S = {
-    //Worked in 2.10.0, not in 2.10.1 or 2.10.2 - now it does again!
-    //val mappedChilds = for (c <- children) yield c.treeMap(mapper)
-    // Help a bit type inference:
-    //val mappedChilds = for (c <- children) yield c.treeMap[S](mapper)
-    // Doesn't give additional help.
-    //val mappedChilds: List[S] = for (c <- children) yield c.treeMap[S](mapper)
-    // This tells that no implicit is found:
-    //val mappedChilds: List[S] = children.map[S, List[S]](c => c.treeMap[S](mapper))
-    //Also doesn't work:
-    //val mappedChilds = for (c <- children) yield (c: Exp[_]).asInstanceOf[Exp[Any]].treeMap[S](mapper)
-
-    //Doesn't work.
-    //val mappedChilds: List[S] = children.asInstanceOf[List[Exp[Any]]].map[S, List[S]](c => c.asInstanceOf[Exp[Any]].treeMap[S](mapper))(List.canBuildFrom)
-    //Works in 2.10.1! (Maybe in 2.10.2).
-    val mappedChilds: List[S] = children.map[S, List[S]](c => c.treeMap[S](mapper))(List.canBuildFrom[S])
-
-    //After compiling with that line, we can use pretty much any definition and
-    //it will work. That is, we can comment out the working definition, comment
-    //back in the one which worked in 2.10.0 (or many other ones, but I didn't
-    //test each of them), and that one will compile. At least in 2.10.1.
-    //
-    //Yeah, that's crazy, yet reproducible on this computer. And compiling a
-    //file separate from its codebase is known to work differently. Usually not
-    //up to this point though.
-
-    // This is another of the many examples of code which works after the first compilation.
-    //val mappedChilds = children.asInstanceOf[List[Exp[Any]]].map(c => c.treeMap(mapper))
+    val mappedChilds: List[S] = children map { _ treeMap mapper }
     mapper(this, mappedChilds)
   }
 
