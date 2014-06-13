@@ -9,7 +9,42 @@ import expressiontree._
  * Date: 22/5/2012
  */
 
-object OptimizationUtil {
+/**
+ * Represent a first-class extractor.
+ *
+ * Altered from https://github.com/Blaisorblade/scrap-expr-boilerplate/blob/master/src/traversal/Extractor.scala.
+ * TODO: allow for some polymorphism (like natural transformations) ?
+ */
+trait Extractor[-From, +To] {
+  val fun: From => Option[To]
+  def unapply(from: From): Option[To] = fun(from)
+}
+
+case class ConcreteExtractor[-From, +To](fun: From => Option[To])
+  extends Extractor[From, To]
+
+trait ExtractorCombinators {
+  implicit def toExtractorOps[T, U](t: Extractor[T, U]) = new ExtractorOps(t)
+  /**
+   * Ease writing a small extractor.
+   */
+  def extractor[A, B](f: A => Option[B]): Extractor[A, B] = ConcreteExtractor[A, B](f)
+
+  def toExtractor[T, U](pf: PartialFunction[T, U]): Extractor[T, U] = extractor(pf.lift)
+  //We need a language of extractor combinators, arguably. Stratego-like?
+  //For instance, comparer should be ID filter (_ == v), where ID = pure for the extractor monad.
+  def ID[T] = extractor[T, T](Some(_))
+
+  //Turn extractor into a predicate
+  def toFilter[T, U](ext: Extractor[T, U]): T => Boolean = { x => (ext fun x).nonEmpty }
+
+  def restrictedId[T, U](ext: Extractor[T, U]): Extractor[T, T] =
+    ID[T] filter toFilter(ext)
+}
+
+object OptimizationUtil extends ExtractorCombinators {
+  //TODO: simplify using pattern combinators, if possible.
+
   //Pattern-matchers for simplifying writing patterns
   object FuncExpBody {
     def unapply[S, T](f: Fun[S, T]): Option[Exp[T]] = Some(f.body)
@@ -89,22 +124,6 @@ object OptimizationUtil {
 
   def Transformer(f: PartialFunction[Exp[_], Exp[_]]) = f
 
-  trait Extractor[-From, +To] {
-    val fun: From => Option[To]
-    def unapply(from: From): Option[To] = fun(from)
-  }
-
-  case class ConcreteExtractor[-From, +To](fun: From => Option[To])
-    extends Extractor[From, To]
-
-  /*
-   * Altered from https://github.com/Blaisorblade/scrap-expr-boilerplate/blob/master/src/traversal/Extractor.scala.
-   * This collapses the cost of writing small extractors.
-   * TODO: add combinators!
-   * TODO2: allow for some polymorphism (like natural transformations) ?
-   */
-  def extractor[A, B](f: A => Option[B]): Extractor[A, B] = ConcreteExtractor[A, B](f)
-
   /**
    * Find children matching a certain pattern. Without zippers, we cannot return the context, but we have our nice and expensive substSubTerm for that.
    * If there are no such children, fail the match.
@@ -153,29 +172,20 @@ object OptimizationUtil {
     extractor { exp => tfinder unapply exp map (_ map (subTerm => (subTerm, (replacement: Exp[_]) => exp substSubTerm (subTerm, replacement)))) }
   }
 
-  def toExtractor[T, U](pf: PartialFunction[T, U]): Extractor[T, U] = extractor(pf.lift)
-  //We need a language of extractor combinators, arguably. Stratego-like?
-  //For instance, comparer should be ID filter (_ == v), where ID = pure for the extractor monad.
-  def ID[T] = extractor[T, T](Some(_))
-
-  implicit class ExtractorOps[T, U](val t: Extractor[T, U]) extends AnyVal {
-    //Extend combinators for Option[U] to Extractor[T, U] == (T =>) Option[U] = Reader T Option[U].
-    def filter(p: U => Boolean) =
-      extractor(t.fun andThen (_ filter p))
-    def map[V](f: U => V) =
-      extractor(t.fun andThen (_ map f))
-
-    def flatMap[V](u: U => Option[V]): Extractor[T, V] =
-      extractor(t.fun andThen (_ flatMap u))
-    //In fact, flatMap lifts the composition for from Kleisli arrows T => Option[U] (known as >=>, among other names) to Extractor[T, U].
-    def >=>[V](u: Extractor[U, V]): Extractor[T, V] = flatMap(u.fun)
-  }
-
   def comparer[T](t: Exp[T]) = ID[Exp[T]] filter { _ == t }
+}
 
-  //Turn extractor into a predicate
-  def toFilter[T, U](ext: Extractor[T, U]): T => Boolean = { x => (ext fun x).nonEmpty }
+import OptimizationUtil._
 
-  def restrictedId[T, U](ext: Extractor[T, U]): Extractor[T, T] =
-    ID[T] filter toFilter(ext)
+class ExtractorOps[T, U](val t: Extractor[T, U]) extends AnyVal {
+  //Extend combinators for Option[U] to Extractor[T, U] == (T =>) Option[U] = Reader T Option[U].
+  def filter(p: U => Boolean) =
+    extractor(t.fun andThen (_ filter p))
+  def map[V](f: U => V) =
+    extractor(t.fun andThen (_ map f))
+
+  def flatMap[V](u: U => Option[V]): Extractor[T, V] =
+    extractor(t.fun andThen (_ flatMap u))
+  //In fact, flatMap lifts the composition for from Kleisli arrows T => Option[U] (known as >=>, among other names) to Extractor[T, U].
+  def >=>[V](u: Extractor[U, V]): Extractor[T, V] = flatMap(u.fun)
 }
