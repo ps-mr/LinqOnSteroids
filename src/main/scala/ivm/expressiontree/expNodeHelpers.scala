@@ -10,7 +10,7 @@ package ivm.expressiontree
 trait Arity0Exp[+R] extends Def[R] {
   override def nodeArity = 0
   def children = Nil
-  override protected def checkedGenericConstructor(v: List[Exp[_]]) = this
+  override protected def checkedGenericConstructor(v: List[Exp[Any]]) = this
 }
 
 //Note: descendents of this class are not necessarily supposed to be commutative, just to have type (A, A) => B.

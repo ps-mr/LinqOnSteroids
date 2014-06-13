@@ -192,7 +192,7 @@ object ExpSeq {
 
 case class ExpSeq[T](children: List[Exp[T]]) extends Def[Seq[T]] with PrefixPrinting {
   override def nodeArity = children.size
-  override protected def checkedGenericConstructor(v: List[Exp[_]]): Def[Seq[T]] = ExpSeq((v.asInstanceOf[List[Exp[T]]]))
+  override protected def checkedGenericConstructor(v: List[Exp[Any]]): Def[Seq[T]] = ExpSeq((v.asInstanceOf[List[Exp[T]]]))
   override def interpret() = children.map(_.interpret())
   def prefix = "Seq"
 }

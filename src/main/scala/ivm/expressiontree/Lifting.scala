@@ -80,7 +80,7 @@ trait OptionLifting extends BaseExps {
   case class ExpOption[T](e: Option[Exp[T]]) extends Def[Option[T]] {
     override def children = e.toList
     override def nodeArity = if (e.nonEmpty) 1 else 0
-    override protected def checkedGenericConstructor(v: List[Exp[_]]): Def[Option[T]] = v match {
+    override protected def checkedGenericConstructor(v: List[Exp[Any]]): Def[Option[T]] = v match {
       //Note: the length of the input sequence is checked by genericConstructor and will match the current one.
       //Knowing that does not lead to simplifying this code though.
       case Nil =>

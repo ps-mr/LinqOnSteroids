@@ -61,7 +61,7 @@ abstract class Fun[-S, +T](val f: Exp[S] => Exp[T]) extends FuncExpBase[S, T, S 
   def copy[U >: T](t1: Exp[U]): Fun[S, U] = Fun.makefun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[Fun[_,_]]
   //Copied from Arity1OpTrait:
-  override protected def checkedGenericConstructor(v: List[Exp[_]]) = copy(v.head.asInstanceOf[Exp[T]])
+  override protected def checkedGenericConstructor(v: List[Exp[Any]]) = copy(v.head.asInstanceOf[Exp[T]])
 }
 
 // Note that giving f the type PartialFunction[Exp[S],Exp[T]] would be incorrect, because "definedness"
@@ -75,7 +75,7 @@ case class PartialFuncExp[-S, +T](f: Exp[S] => Exp[Option[T]]) extends FuncExpBa
   def copy[U >: T](t1: Exp[Option[U]]): PartialFuncExp[S, U] = Fun.makePartialFun(t1, x)
   override def canEqual(other: Any): Boolean = other.isInstanceOf[PartialFuncExp[_,_]]
   //Copied from Arity1OpTrait:
-  override protected def checkedGenericConstructor(v: List[Exp[_]]) = copy(v.head.asInstanceOf[Exp[Option[T]]])
+  override protected def checkedGenericConstructor(v: List[Exp[Any]]) = copy(v.head.asInstanceOf[Exp[Option[T]]])
   // CSP mutates expression trees, extremely annoyingly. Whenever toCode visits a subtree, persistValues() must have
   // previously visited that subtree.
   private[this] val savedFunF = Fun(f)

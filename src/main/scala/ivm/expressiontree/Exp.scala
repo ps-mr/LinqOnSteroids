@@ -12,11 +12,11 @@ object ExpTransformer {
   }
 }
 
-sealed trait TreeNode[+T, +MyType >: Exp[_]] {
+sealed trait TreeNode[+T, +MyType >: Exp[Any]] {
   this: MyType =>
   //This method computes the contained value
   def interpret(): T
-  def children: List[Exp[_]]
+  def children: List[Exp[Any]]
   def persistValues()
 
   /* I renamed this method to avoid conflicts with Matcher.find. XXX test if
@@ -41,21 +41,21 @@ sealed trait TreeNode[+T, +MyType >: Exp[_]] {
     (this findTotFunGen (_ == e)).nonEmpty
 }
 
-sealed trait Exp[+T] extends TreeNode[T, Exp[_]] /*with MsgSeqPublisher[T, Exp[T]]*/ {
+sealed trait Exp[+T] extends TreeNode[T, Exp[Any]] /*with MsgSeqPublisher[T, Exp[T]]*/ {
   def __find(filter: PartialFunction[Exp[_], Boolean]): Seq[Exp[_]] = __findGen(filter)
-  def findTotFun(filter: Exp[_] => Boolean): Seq[Exp[_]] = findTotFunGen(filter)
-  def isOrContains(e: Exp[_]): Boolean = isOrContainsGen(e)
+  def findTotFun(filter: Exp[Any] => Boolean): Seq[Exp[_]] = findTotFunGen(filter)
+  def isOrContains(e: Exp[Any]): Boolean = isOrContainsGen(e)
 
   def toCode: String
   def transformImpl(transformer: ExpTransformer): Exp[T]
-  def transform(f: Exp[_] => Exp[_]) = transformImpl(ExpTransformer(f))
+  def transform(f: Exp[Any] => Exp[Any]) = transformImpl(ExpTransformer(f))
 
   //This method returns the cached value (if any) or invokes interpret().
   def value(): T = interpret()
 
   //This could use as interface some Foldable-like stuff (or Haskell's Traversable, IIRC).
   //Write it as a fold on the tree!!!
-  def treeMap[S](mapper: (Exp[_], Seq[S]) => S): S = {
+  def treeMap[S](mapper: (Exp[Any], Seq[S]) => S): S = {
     //Worked in 2.10.0, not in 2.10.1 or 2.10.2 - now it does again!
     //val mappedChilds = for (c <- children) yield c.treeMap(mapper)
     // Help a bit type inference:
@@ -86,14 +86,14 @@ sealed trait Exp[+T] extends TreeNode[T, Exp[_]] /*with MsgSeqPublisher[T, Exp[T
     mapper(this, mappedChilds)
   }
 
-  def substSubTerm[S](SubTerm: Exp[_], e: Exp[S]) =
+  def substSubTerm[S](SubTerm: Exp[Any], e: Exp[S]) =
     this transform {
       case SubTerm => e
       case exp => exp
     }
 
   def freeVars: Set[Var] = {
-    def mapper(e: Exp[_], c: Seq[Set[Var]]): Set[Var] = e match {
+    def mapper(e: Exp[Any], c: Seq[Set[Var]]): Set[Var] = e match {
       case Sym(v@Var(_)) => Set(v)
       case FunSym(fe@Fun(_)) => c.fold(Set.empty)(_ union _).filter(!_.equals(fe.x))
       case _ => c.fold(Set.empty)(_ union _)
@@ -110,14 +110,14 @@ object Exp {
   def max[T](a: Exp[T], b: Exp[T]): Exp[T] = ordering.max(a,b)
 }
 
-trait Def[+T] extends TreeNode[T, TreeNode[_, _]] {
+trait Def[+T] extends TreeNode[T, TreeNode[Any, Any]] {
   def nodeArity: Int
 
   def persistValues() { children foreach (_.persistValues()) }
-  def children: List[Exp[_]]
-  protected def checkedGenericConstructor(v: List[Exp[_]]): Def[T]
+  def children: List[Exp[Any]]
+  protected def checkedGenericConstructor(v: List[Exp[Any]]): Def[T]
 
-  def genericConstructor(v: List[Exp[_]]): Def[T] =
+  def genericConstructor(v: List[Exp[Any]]): Def[T] =
     if (v.length == nodeArity)
       checkedGenericConstructor(v)
     else
@@ -165,7 +165,7 @@ case class Const[T](x: T)(implicit val cTag: ClassTag[T], val tTag: TypeTag[T]) 
   import Const._
 
   def interpret() = x
-  def children: List[Exp[_]] = Nil
+  def children: List[Exp[Any]] = Nil
   def persistValues() {}
   def transformImpl(transformer: ExpTransformer): Exp[T] = transformer(this)
   override def toString = Const toString (x, productPrefix)
