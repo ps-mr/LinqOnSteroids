@@ -93,7 +93,7 @@ object Util {
     import java.util.concurrent.TimeUnit
 
     JavaConversions mapAsScalaConcurrentMap CacheBuilder.newBuilder()
-      .maximumSize(10000).expireAfterAccess(10, TimeUnit.MINUTES)
+      .maximumSize(10000).expireAfterAccess(30, TimeUnit.MINUTES)
       .softValues()
       .concurrencyLevel(2)
       .build().asMap()
