@@ -4,7 +4,7 @@
 	<classpathentry kind="src" output="target/scala-2.10/classes" path="target/scala-2.10/src_managed/main"/>
 	<classpathentry kind="src" output="target/scala-2.10/test-classes" path="src/test/scala"/>
 	<classpathentry kind="lib" path="sampleapp/lib/bat-core_2.10-1.0.0-SNAPSHOT-sources.jar"/>
-	<classpathentry kind="lib" path="sampleapp/lib/bat-core_2.10-1.0.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="sampleapp/lib/bat-core_2.10-1.0.0-SNAPSHOT.jar" sourcepath="sampleapp/lib/bat-core_2.10-1.0.0-SNAPSHOT-sources.jar"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_COMPILER_CONTAINER"/>
 	<classpathentry kind="lib" path="/Users/pgiarrusso/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.10.2.jar"/>
