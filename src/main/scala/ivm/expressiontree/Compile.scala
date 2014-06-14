@@ -53,7 +53,7 @@ object ScalaCompile {
     //settings.verbose.value = true
     // -usejavacp needed on windows?
 
-    reporter = new ConsoleReporter(settings, null, new PrintWriter(Console.err))//writer
+    reporter = new ConsoleReporter(settings, null, new PrintWriter(Console.err, true))//writer
     compiler = new Global(settings, reporter)
   }
 
