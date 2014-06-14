@@ -3,4 +3,4 @@ scala:
   - 2.10.4
 jdk:
   - openjdk6
-script: sbt ++$TRAVIS_SCALA_VERSION test "project los-global" test
+script: sbt ++$TRAVIS_SCALA_VERSION "project los-global" test:compile test
