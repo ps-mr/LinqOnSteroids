@@ -211,7 +211,7 @@ object OptimizationUtil extends ExtractorCombinators {
     true
   }
 
-  def matcherAndContexts(v: Exp[Any]) = {
+  def uniqueMatcherAndContexts(v: Exp[Any]) = {
     val vFinder = uniqueFinder(matcher(v))
     //XXX This should arguably also be reusable.
     addContexts(vFinder) map { matches =>
