@@ -206,7 +206,7 @@ object OptimizationUtil extends ExtractorCombinators {
   def uniqueFinderAndContexts(subExtractor: Extractor[Exp[Any], Exp[Any]]) =
     addContexts(uniqueFinder(subExtractor))
 
-  def guard(t: Boolean) = {
+  def guardAssert(t: Boolean) = {
     assert(t)
     true
   }

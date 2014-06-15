@@ -45,6 +45,12 @@ trait IndexingOptims {
       //Non-deterministic matching without the List monad:
       val FindGen = SplitList(GenExtractor)
       val FindPred = SplitList(EqPred)
+      def permutePair[T](a: T, b: T): Seq[(T, T)] = {
+        Seq((a, b), (b, a))
+      }
+      //This does not deal with nested indexes; but neither does Koch (since he doesn't have nested data anyway).
+      //Question: can this rewrite filter joins into hash joins? No, it's too monolithic.
+      //We need to split the creation of the index from rewriting filter to an index lookup.
       qualifiers match {
         case FindGen(splits1) =>
           for {
@@ -55,17 +61,15 @@ trait IndexingOptims {
             val MatchV = uniqueMatcherAndContexts(v)
             //Look for (proj v == [ ]) or ([ ] == proj v), returns the content of the hole if found.
             (for {
-              side <- eqOperands
-              MatchV(vAgain, proj) = side
-              if guard(vAgain == v && eqOperands.size == 2) //DEBUG
-              //XXX: we should iterate over permutations of the pair!
-              otherSide = (eqOperands.toSet - side).head //XXX could fail if the two sides are equal. Normalize away such things before!
+              (MatchV(vAgain, proj), otherSide) <- permutePair(a, b)
+              if guardAssert(vAgain == v)
             } yield (proj, otherSide)) match {
               case Seq((proj, otherSide)) => // Check there's a single match.
                 //If we have two results, v appears in both, so we cannot lift the second one.
                 import Lifting._
                 //XXX finish reconstructing the target expression.
-                (before, coll indexBy proj apply otherSide, before2, rest)
+                //val kvPairVar = Fun.gensym
+                new Comprehension(head, before ++ before2 ++ (Generator(v, coll indexBy proj apply otherSide) :: rest))
             }
           }
       }
