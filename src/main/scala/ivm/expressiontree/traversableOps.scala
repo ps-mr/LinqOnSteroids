@@ -200,7 +200,7 @@ trait TraversableOps extends TraversableOpsLangIntf {
 
     def view: Exp[TraversableView[T, Repr]] = View(this.t)
 
-    override def indexBy[K, That](f: Exp[T] => Exp[K])(implicit cbf: CanBuildFrom[Repr /* with Traversable[A]*/, T, That], cTag: ClassTag[T], tTag: TypeTag[T], tTag2: TypeTag[Repr], tTag3: TypeTag[That]): Exp[Map[K, That]] =
+    override def indexBy[K, That](f: Exp[T] => Exp[K])(implicit cbf: CanBuildFrom[Repr, T, That], cTag: ClassTag[T], tTag: TypeTag[T], tTag2: TypeTag[Repr], tTag3: TypeTag[That]): Exp[Map[K, That]] =
       IndexBy[T, Repr, K, That](this.t, Fun(f))
 
     def groupBySel[K, Rest, That <: Traversable[Rest] with TraversableLike[Rest, That]](f: Exp[T] => Exp[K], g: Exp[T] => Exp[Rest])
@@ -216,7 +216,7 @@ trait TraversableOps extends TraversableOpsLangIntf {
                                      innerKeySelector: Exp[S] => Exp[TKey],
                                      resultSelector: Exp[(T, S)] => Exp[TResult])
                                     (implicit cbf: CanBuildFrom[Repr, TResult, That]): Exp[That]
-    = Join[T,Repr,S,TKey,TResult,That](this.t, innerColl, Fun(outerKeySelector), Fun(innerKeySelector), Fun(resultSelector))
+    = Join[T, Repr, S, TKey, TResult, That](this.t, innerColl, Fun(outerKeySelector), Fun(innerKeySelector), Fun(resultSelector))
 
     //def forall(f: Exp[T] => Exp[Boolean]) = Forall(this.t, Fun(f))
     //This awkward form is needed to help type inference - it cannot infer the type of x in `x => !f(x)`.
