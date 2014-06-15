@@ -1,4 +1,7 @@
 import AssemblyKeys._
+import com.typesafe.startscript.StartScriptPlugin
+
+seq(StartScriptPlugin.startScriptForJarSettings: _*)
 
 assemblySettings
 
