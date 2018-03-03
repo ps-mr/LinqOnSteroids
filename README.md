@@ -1,3 +1,9 @@
+# Intro
+
+This repository contains a proof-of-concept implementation and examples for the [SQuOpt research project](http://www.informatik.uni-marburg.de/~pgiarrusso/SQuOpt/) and the relevant paper:
+
+P. G. Giarrusso, K. Ostermann, M. Eichberg, R. Mitschke, T. Rendel, and C. Kästner. Reify your collection queries for modularity and speed! In *Proceedings of AOSD*, pages 1–12. ACM, 2013. Extended version available from http://www.informatik.uni-marburg.de/~pgiarrusso/SQuOpt/giarrusso-techrep.pdf, Official Version from https://dl.acm.org/citation.cfm?id=2451438.
+
 # Code examples
 An example of the optimization abilities of the framework is available in
 [`src/test/scala/ivm/tests/PaperTutorial.scala`](src/test/scala/ivm/tests/PaperTutorial.scala). When run as a test, it verifies
