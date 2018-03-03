@@ -2,5 +2,5 @@ language: scala
 scala:
   - 2.10.4
 jdk:
-  - oraclejdk7
+  - openjdk7
 script: sbt ++$TRAVIS_SCALA_VERSION "project los-global" test:compile "test-only ivm.* macrotest.*"
